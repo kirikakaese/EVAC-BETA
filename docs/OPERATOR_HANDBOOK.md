@@ -36,7 +36,7 @@ credentials, TOTP seeds) cannot be decrypted.
 
 ### One server for EVAC and DIAL (production)
 
-`deploy/server/` contains a complete, tested setup for running EVAC and DIAL side by side on one fresh
+`deploy/server/` contains a complete setup for running EVAC and DIAL side by side on one fresh
 Debian/Ubuntu server: bootstrap script (Docker, Caddy, firewall), compose overrides binding both apps to
 localhost, a Caddyfile with automatic HTTPS, production `.env` values and nightly backups. Follow
 `deploy/server/README.md`.
