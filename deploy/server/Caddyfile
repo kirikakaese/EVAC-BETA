@@ -1,7 +1,7 @@
-# /etc/caddy/Caddyfile for evac.pm and dial.pm. Set the e-mail below (Let's Encrypt expiry warnings).
+# /etc/caddy/Caddyfile for evac.pm and dial.pm. The e-mail receives Let's Encrypt expiry warnings.
 # Caddy obtains and renews the Let's Encrypt certificates on its own (ports 80 and 443 must be open).
 {
-	email admin@example.org
+	email mail@kirikajung.de
 }
 
 evac.pm {

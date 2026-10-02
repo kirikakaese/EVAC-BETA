@@ -21,8 +21,8 @@ Internet ──443──► Caddy (HTTPS, automatic Let's Encrypt certificates)
 | `Caddyfile` | `/etc/caddy/Caddyfile` |
 | `backup.sh`, `evac-dial-backup.service`, `evac-dial-backup.timer` | nightly backups |
 
-Domains: **evac.pm** and **dial.pm**. Only `admin@example.org` in the `Caddyfile` still needs your
-e-mail address (Let's Encrypt sends certificate expiry warnings there).
+Domains: **evac.pm** and **dial.pm**. Let's Encrypt certificate expiry warnings go to
+`mail@kirikajung.de` (set in the `Caddyfile`).
 
 ## 1. DNS
 
@@ -86,7 +86,6 @@ docker compose exec web python manage.py createsuperuser   # your DIAL admin acc
 
 ```sh
 cp /opt/evac/deploy/server/Caddyfile /etc/caddy/Caddyfile
-nano /etc/caddy/Caddyfile          # your e-mail address in the first block
 caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 ```
