@@ -40,7 +40,8 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 | Threat | Control |
 |---|---|
 | Credential stuffing / brute force | argon2, per-account and per-IP lockout, rate limits on login, 2FA, setup and webhooks |
-| First-run takeover (someone else finishes the wizard) | Optional `EVAC_SETUP_TOKEN`; the wizard creates the first account only while none exists (row lock) |
+| First-run takeover (someone else finishes the wizard) | Early-access gate (`EVAC_EARLY_ACCESS_PASSWORD`) in front of everything, optional `EVAC_SETUP_TOKEN`; the wizard creates the first account only while none exists (row lock) |
+| Premature public exposure | Early-access gate: signed, password-bound cookie, constant-time check, rate limit, WebSockets gated too |
 | CSRF / clickjacking | Django CSRF on all forms, HTMX sends the token header, `X-Frame-Options: DENY`, `frame-ancestors 'none'` |
 | Webhook forgery / replay | HMAC-SHA256 with constant-time comparison, per-config secrets shown once, delivery-id idempotency |
 | SSRF via outbound webhooks | Only admins/orgas with `extensions.manage` add endpoints; deliveries do not follow redirects. Venue LANs are private networks by design, so private addresses are allowed — restrict egress at the firewall if needed |

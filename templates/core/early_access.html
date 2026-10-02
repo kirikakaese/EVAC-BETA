@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Early access" %}{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>{% trans "Early access" %}</h1>
+  <p>{% if message %}{{ message }}{% else %}{% trans "This EVAC instance is not public yet. Enter the access password you were given to continue." %}{% endif %}</p>
+  {% if error %}<div class="alert alert-error" role="alert">{% trans "That password is not correct." %}</div>{% endif %}
+  <form method="post" action="{% url 'early_access' %}">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="field">
+      <label for="ea-password">{% trans "Access password" %}</label>
+      <input id="ea-password" type="password" name="password" autocomplete="current-password" required autofocus>
+    </div>
+    <button class="btn btn-primary btn-block">{% trans "Continue" %}</button>
+  </form>
+</div>
+{% endblock %}

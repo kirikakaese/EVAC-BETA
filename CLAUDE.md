@@ -126,6 +126,17 @@ docs/                served at /docs/ (apps/portal/docs.py lists the pages)
   (`manage.py evac_a11y`). One `<h1>`, labelled controls, `<th>` in tables, icon buttons with
   `aria-label`, status never by colour alone (badges carry a glyph).
 
+## Git branches
+
+Name branches after their purpose (`phase-1-screens`, `fix-sse-atomic-requests`, `early-access-gate`), never
+after a tool, agent or AI (no `claude/…`).
+
+## Sibling project
+
+PET (`kirikakaese/PET-BETA`) is being renamed to **DIAL — DECT & IP Administration Layer**. Docs still say
+PET until the rename is done; then the brief, roadmap and the extension (phase 4) follow the new name.
+Shared contracts (OIDC, early-access gate ADR-0012) must stay identical in both projects.
+
 ## Before you push
 
 1. `make lint typecheck test openapi-check` — regenerate `docs/api/openapi.yaml` with `make openapi`

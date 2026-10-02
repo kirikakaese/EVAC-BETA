@@ -45,6 +45,7 @@ RATE_LIMITED_PATHS = {
     "/setup/": "setup",
     "/invite/": "invite",
     "/api/v1/extensions/": "webhook",
+    "/early-access/": "early_access",
 }
 
 
@@ -68,8 +69,8 @@ class RateLimitMiddleware(MiddlewareMixin):
         return None
 
 
-FIRST_RUN_EXEMPT = ("/setup/", "/static/", "/media/", "/healthz", "/readyz", "/metrics", "/api/schema/",
-                    "/favicon.ico", "/docs/")
+FIRST_RUN_EXEMPT = ("/setup/", "/early-access/", "/static/", "/media/", "/healthz", "/readyz", "/metrics",
+                    "/api/schema/", "/favicon.ico", "/docs/")
 
 
 class FirstRunMiddleware(MiddlewareMixin):

@@ -51,6 +51,15 @@ evac.example.org {
 `deploy/ansible/roles/evac` installs EVAC into `/opt/evac` with the units from `deploy/systemd/`
 (`evac.target` groups web, channels, worker and beat). See `deploy/ansible/README.md`.
 
+### Early access (public server, not public yet)
+
+Set `EVAC_EARLY_ACCESS_PASSWORD` before the server is reachable from the internet. Every visitor then has
+to enter that password once per browser (valid `EVAC_EARLY_ACCESS_DAYS`, default 30) before they see
+anything — including the first-run wizard. Share the password with your team; change it to lock everyone
+out again; remove it to go public. Health probes, `/metrics`, signed webhooks and API calls with a service
+token keep working. Optional `EVAC_EARLY_ACCESS_MESSAGE` replaces the text on the gate page.
+([ADR-0012](adr/0012-early-access-gate.md))
+
 ## 2. First run
 
 Open EVAC in a browser. Until the first account exists every page redirects to the **first-run wizard**:
