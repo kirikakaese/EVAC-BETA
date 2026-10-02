@@ -9,7 +9,7 @@ It is being built in phases (see [the roadmap](docs/ROADMAP.md)):
   offline-capable content *(phase 1)*.
 - **Announcements** across screens, push, ntfy, e-mail, Matrix, Telegram, Mastodon and phone *(phase 2)*.
 - **Evacuation and alarm information** that keeps working when the network or the server fails *(phase 3)*.
-- **Integrations** ("extensions"), first of all **PET — Portable Event Telephone** *(phase 4)*, and optional
+- **Integrations** ("extensions"), first of all **DIAL — DECT & IP Administration Layer** *(phase 4)*, and optional
   modules for program, crew, incidents, crowd control, access, inventory and the helpdesk.
 
 **Available now (phase 0, foundation):** multi-event platform with events and lifecycle, reusable venues,

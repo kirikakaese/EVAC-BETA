@@ -20,7 +20,7 @@ green. (Verified by `apps/portal/tests/test_portal.py::test_first_run_wizard` an
 
 | ID | Ticket | Acceptance criteria | Status |
 |---|---|---|---|
-| 0.1.1 | Scaffold (layout mirrors PET) | `evac/` settings base/dev/prod/test, `apps/*`, `extensions/*`, `docs/`, `deploy/`; `manage.py check` clean | ✅ |
+| 0.1.1 | Scaffold (layout mirrors DIAL) | `evac/` settings base/dev/prod/test, `apps/*`, `extensions/*`, `docs/`, `deploy/`; `manage.py check` clean | ✅ |
 | 0.1.2 | Docker image + compose | One image, roles web/channels/worker/beat via entrypoint; compose with postgres + redis healthchecks; migrate + optional seed on start | ✅ |
 | 0.1.3 | Ansible role + systemd units | `deploy/ansible/roles/evac`, `deploy/systemd/evac-*.service` + `evac.target` | ✅ |
 | 0.1.4 | CI | ruff, mypy (strict list), makemigrations check, pytest + coverage ≥ 85 %, PostgreSQL migrate/seed/deploy check, append-only audit check, a11y, OpenAPI drift, pip-audit, Docker build, compose smoke | ✅ |
@@ -177,18 +177,18 @@ ADR-0003 must be accepted before implementation starts.**
 | 3.11 | Safety acknowledgement | once per event when enabling the module; shown on settings page and in the wizard |
 | 3.12 | Tests [§8.7] | unit, property (routing), Playwright E2E, chaos (kill web/channels, partition), load (500 WS players); `make e2e load chaos` |
 
-## Phase 4 — PET extension ⬜ [§9]
+## Phase 4 — DIAL extension ⬜ [§9]
 
-**Gate:** against a running PET demo: webhook → evac arm; evac → PET broadcast; phone-recorded
-announcement → approval queue; PET widgets render.
+**Gate:** against a running DIAL demo: webhook → evac arm; evac → DIAL broadcast; phone-recorded
+announcement → approval queue; DIAL widgets render.
 
 | ID | Ticket |
 |---|---|
 | 4.1 | Link config + test connection (`/api/v1/health/?event=`, `/api/v1/me/`), token scopes documented |
-| 4.2 | Inbound: `X-PET-Signature`, `X-PET-Event`; emergency.triggered → trigger policy; page.updated; announcement.recorded → draft (optional Whisper); dect.* → data source + ops log |
+| 4.2 | Inbound: `X-DIAL-Signature`, `X-DIAL-Event`; emergency.triggered → trigger policy; page.updated; announcement.recorded → draft (optional Whisper); dect.* → data source + ops log |
 | 4.3 | Outbound: emergency broadcast + messaging broadcast via outbox; delivery report |
 | 4.4 | Data sources + widgets: phonebook, important numbers, info pages, DECT status, "call X for Y" |
-| 4.5 | Shared OIDC IdP docs; manual PET-role → EVAC-role mapping table |
+| 4.5 | Shared OIDC IdP docs; manual DIAL-role → EVAC-role mapping table |
 
 ## Phase 5 — Program ⬜ [§11.1]
 **Gate:** imported schedule shows now/next on screens; live change propagates < 5 s.

@@ -133,9 +133,11 @@ after a tool, agent or AI (no `claude/…`).
 
 ## Sibling project
 
-PET (`kirikakaese/PET-BETA`) is being renamed to **DIAL — DECT & IP Administration Layer**. Docs still say
-PET until the rename is done; then the brief, roadmap and the extension (phase 4) follow the new name.
-Shared contracts (OIDC, early-access gate ADR-0012) must stay identical in both projects.
+**DIAL — DECT & IP Administration Layer** (`kirikakaese/DIAL-BETA`, formerly PET — Portable Event
+Telephone) is the sibling project whose conventions EVAC mirrors and the first extension (phase 4,
+`extensions/dial`). Its names: `dial_…` service tokens, `X-DIAL-Signature` / `X-DIAL-Event` webhook headers,
+`X-DIAL-PBX-Secret`, `DIAL_*` settings. Shared contracts (OIDC, early-access gate ADR-0012 with `DIAL_`
+variables) must stay identical in both projects.
 
 ## Before you push
 

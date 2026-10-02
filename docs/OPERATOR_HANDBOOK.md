@@ -94,7 +94,7 @@ The wizard cannot be re-run once an account exists.
   says so. Alarm-relevant (*sensitive*) permissions always need a two-factor verified session, also for
   instance admins. Admins can reset a user's second factors under *Instance → Users*.
 - **Single sign-on**: set `EVAC_OIDC_*` (redirect URI `<EVAC_PUBLIC_URL>/accounts/oidc/callback/`). EVAC
-  and PET can use the same identity provider. Accounts are linked by verified e-mail address;
+  and DIAL can use the same identity provider. Accounts are linked by verified e-mail address;
   `EVAC_OIDC_ALLOW_PASSWORD_LOGIN=0` makes SSO the only login. `EVAC_OIDC_TRUST_MFA=1` accepts the IdP's
   multi-factor login (`amr` claim) as EVAC two-factor.
 

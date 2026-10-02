@@ -1,6 +1,6 @@
 # Extensions
 
-An **extension** connects EVAC to an external system (PET, pretalx, pretix, Matrix, …). Extensions are
+An **extension** connects EVAC to an external system (DIAL, pretalx, pretix, Matrix, …). Extensions are
 plugins (see [PLUGIN_SDK.md](PLUGIN_SDK.md)) that register an `ExtensionSpec`. They are configured under
 **Settings → Extensions**:
 
@@ -32,7 +32,7 @@ failed).
 
 `POST /api/v1/extensions/<key>/<config-id>/webhook/` with a JSON body.
 
-- Signature header (default `X-EVAC-Signature`, extensions may use their own, e.g. `X-PET-Signature`):
+- Signature header (default `X-EVAC-Signature`, extensions may use their own, e.g. `X-DIAL-Signature`):
   `sha256=<hex HMAC-SHA256 of the raw body with the webhook secret>`, compared in constant time.
 - Optional delivery id header (`X-EVAC-Delivery`): the same id is processed once; repeats return the stored
   answer with `"duplicate": true`.
@@ -45,7 +45,7 @@ failed).
 | Extension | Phase | Page |
 |---|---|---|
 | Webhooks (generic, in/out) | 0 | [webhooks](extensions/webhooks.md) |
-| PET — Portable Event Telephone | 4 | – |
+| DIAL — DECT & IP Administration Layer | 4 | – |
 | pretalx / frab / iCal | 5 | – |
 | pretix | 8 | – |
 | Engelsystem | 7 | – |

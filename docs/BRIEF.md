@@ -3,6 +3,9 @@
 
 > This is the product specification EVAC is built from, kept unchanged (apart from the title) as the
 > source of truth.
+> The sibling project PET (Portable Event Telephone) has since been renamed to **DIAL — DECT & IP
+> Administration Layer** (`kirikakaese/DIAL-BETA`); this brief uses the new names (`dial_` tokens,
+> `X-DIAL-*` headers, `extensions/dial`).
 > `docs/ROADMAP.md` breaks it down into phases, epics and tickets; `docs/adr/` records the decisions
 > taken while implementing it.
 
@@ -75,7 +78,7 @@ with **fully customizable content**, handles **announcements** across every chan
 **supplementary evacuation and alarm information system** that keeps working when the network or the
 server fails. Around that core sit optional modules for venue maps, schedule, crew shifts, incidents,
 crowd control, ticketing, inventory and the helpdesk. Integrations ("Extensions") connect EVAC to
-existing tools, the first being **PET (Portable Event Telephone)**.
+existing tools, the first being **DIAL (DECT & IP Administration Layer)**.
 
 ### Guiding principles (apply to every decision)
 
@@ -108,24 +111,24 @@ replaces them.
 
 ## 3. Tech stack and architecture
 
-Match the conventions of the sibling project **PET** (`kirikakaese/PET-BETA`) so that code, operating
-know-how and integration are natural. Read PET's `README.md`, `docs/ARCHITECTURE.md` and
+Match the conventions of the sibling project **DIAL** (`kirikakaese/DIAL-BETA`) so that code, operating
+know-how and integration are natural. Read DIAL's `README.md`, `docs/ARCHITECTURE.md` and
 `docs/DEVELOPING.md` for conventions before you start.
 
 | Layer | Choice |
 |---|---|
 | Backend | **Python 3.12+, Django 5.2, Django REST Framework**, drf-spectacular (OpenAPI) |
 | Database | **PostgreSQL 16** (SQLite only for dev and unit tests) |
-| Async / jobs | **Redis + Celery + Celery beat** (durable outbox pattern for outgoing deliveries, like PET's `PBXJob`) |
+| Async / jobs | **Redis + Celery + Celery beat** (durable outbox pattern for outgoing deliveries, like DIAL's `PBXJob`) |
 | Realtime | **Django Channels** (ASGI, Daphne/Uvicorn) over WebSockets, with **SSE** fallback and long-poll as the last resort |
 | Admin / staff UI | Server-rendered Django templates + **HTMX** + small vanilla/Alpine.js islands; dark mode; no inline handlers (strict CSP) |
 | Rich editors | The **screen layout editor** and the **floor plan editor** are separate TypeScript apps (Vite build, framework of your choice; justify it in an ADR. Lit or Svelte preferred for small bundles), mounted as islands |
 | Screen player | **One framework-light TypeScript bundle** (`/player/`), runs in any modern browser; Service Worker + IndexedDB for offline |
-| Auth | E-mail login, argon2, **OpenID Connect SSO** (authorization code + PKCE, same approach as PET), **TOTP + WebAuthn 2FA**, scoped service tokens |
+| Auth | E-mail login, argon2, **OpenID Connect SSO** (authorization code + PKCE, same approach as DIAL), **TOTP + WebAuthn 2FA**, scoped service tokens |
 | Packaging | Dockerfile, `docker-compose.yml` (web, worker, beat, channels, postgres, redis), Ansible role, systemd units |
 | Quality | pytest, pytest-django, Playwright (E2E for player, editor, evacuation), ruff, mypy (strict on the evacuation core), pre-commit, GitHub Actions CI |
 
-### 3.1 Repository layout (mirror PET)
+### 3.1 Repository layout (mirror DIAL)
 
 ```
 evac/                 settings (base/dev/prod/test), urls, asgi, celery
@@ -148,7 +151,7 @@ apps/access           ticketing / attendees / wristbands / access zones
 apps/inventory        resources, lending, tracking
 apps/helpdesk         lost & found, requests, FAQ
 apps/extensions       extension framework + Extensions settings page
-extensions/pet        the PET extension (first-party, removable)
+extensions/dial       the DIAL extension (first-party, removable)
 extensions/…          further first-party extensions (pretalx, pretix, Engelsystem, Matrix, …)
 apps/api              API root, auth, permissions, CLI (`evac`)
 apps/portal           shared UI shell, navigation, dashboards
@@ -158,12 +161,12 @@ mapeditor/            floor plan / zone / route editor (TypeScript)
 pwa/                  staff PWA shell (or part of portal; decide in ADR)
 bridge/               reference hardware trigger bridge (Python for Pi + ESP32 sketch)
 deploy/               compose, ansible, venue-node, kiosk images
-docs/                 documentation (served inside the portal at /docs/, like PET)
+docs/                 documentation (served inside the portal at /docs/, like DIAL)
 ```
 
 ### 3.2 Central service + venue node
 
-Like PET, EVAC runs as **one permanent service under a fixed domain** hosting many events. Venues can
+Like DIAL, EVAC runs as **one permanent service under a fixed domain** hosting many events. Venues can
 run an **EVAC venue node**: the same codebase in `EVAC_MODE=node`, on a small server or mini PC at the
 venue, so that screens, announcements, evacuation and ops keep working without an uplink.
 
@@ -172,7 +175,7 @@ venue, so that screens, announcements, evacuation and ops keep working without a
   counters). Central remains authoritative for **configuration** (layouts, themes, users), and those
   changes sync down.
 - Sync runs over HTTPS (outbound from the node, so no inbound ports are needed at the venue): versioned snapshots with
-  ETags for config (as in PET's venue agent), an append-only event log with idempotency keys for
+  ETags for config (as in DIAL's venue agent), an append-only event log with idempotency keys for
   operational data, and resumable asset sync (content-hashed files).
 - Screens at the venue connect **to the node**, not to central (local DNS name or mDNS discovery,
   configured at pairing).
@@ -182,7 +185,7 @@ venue, so that screens, announcements, evacuation and ops keep working without a
 
 - **Module** = a built-in feature area (Screens, Announcements, Evacuation, Crew, …). Toggle under
   **Settings → Modules**, globally and per event.
-- **Extension** = an integration with an external system (PET, pretalx, pretix, Matrix, …). Configured
+- **Extension** = an integration with an external system (DIAL, pretalx, pretix, Matrix, …). Configured
   under **Settings → Extensions** (§7).
 - **Plugin** = the packaging mechanism. Every module and extension, built-in or third-party, is a plugin:
   a Django app plus a `evac_plugin.toml`/`AppConfig` manifest registering models, URLs, nav entries,
@@ -212,7 +215,7 @@ venue, so that screens, announcements, evacuation and ops keep working without a
 - **Feature flags / settings framework**: a typed settings registry (JSON schema → auto-generated forms)
   with instance → venue → event → screen-group → screen inheritance and visible "overridden here" markers.
 - **Service tokens** (`Authorization: Bearer evac_…`, hashed, scoped `<module>:read|write`, optional event
-  binding and expiry), the same model as PET.
+  binding and expiry), the same model as DIAL.
 - **First-run wizard**: create admin → create venue → create event → pair the first screen → show the
   welcome slide. Under 5 minutes from `docker compose up` to a screen showing content.
 - **Demo seed** (`EVAC_SEED_DEMO=1`): demo venue with floor plan, zones, exits, screens, themes,
@@ -345,7 +348,7 @@ instance.
 | Venue | floor plan with "you are here", wayfinding arrow to a target, room occupancy/"room full", evacuation route arrow (§8) |
 | Ops | shift board ("needed now"), crew call ("Team X to Desk"), lost & found highlights, open helpdesk queue (staff screens) |
 | Data | generic JSON value/list/table, MQTT value, chart (line/bar/gauge), counter |
-| PET (via extension) | important numbers, "call 1234 for …", phonebook highlights, DECT network status, PET info pages |
+| DIAL (via extension) | important numbers, "call 1234 for …", phonebook highlights, DECT network status, DIAL info pages |
 
 ### 5.6 Playlists, scheduling and overrides (all optional and switchable)
 
@@ -379,11 +382,11 @@ instance.
   approver roles configurable; `emergency` level and evacuation **bypass approval** for permitted roles.
 - **Multi-channel delivery** via `apps/notify` channel adapters (each optional): screens, public web
   page/PWA feed, Web Push (VAPID), ntfy, e-mail, Matrix, Telegram, Mastodon/Fediverse, generic webhook,
-  and through the **PET extension**: DECT SMS / phone broadcast / IVR announcement. Each channel has a
+  and through the **DIAL extension**: DECT SMS / phone broadcast / IVR announcement. Each channel has a
   per-channel text variant (short text for SMS, long text for web), delivery status tracking
   through a durable outbox with retries, and a delivery report.
 - **TTS**: optional offline TTS (Piper, English voice) to generate audio for screens with speakers and
-  for PET phone broadcasts; pre-render and cache.
+  for DIAL phone broadcasts; pre-render and cache.
 - Everything is archived and searchable, can be re-sent, and is exported in the event export.
 
 ---
@@ -404,10 +407,10 @@ integration plugs into it.
   display for inbound webhooks, and a "disconnect & purge data" action.
 - Extensions can be instance-wide (configured once, used by many events) or per event (each event
   links its own external instance).
-- Planned first-party extensions (each its own phase/ticket): **PET** (§9), **pretalx / frab / iCal**
+- Planned first-party extensions (each its own phase/ticket): **DIAL** (§9), **pretalx / frab / iCal**
   (program import), **pretix** (ticketing/check-in), **Engelsystem** (crew/shifts import), **Matrix**,
   **Telegram**, **ntfy**, **Mastodon**, **SMTP**, **generic webhooks in/out**, **MQTT broker**,
-  **OIDC IdP** (shared with PET), **Open-Meteo weather warnings**, **info-beamer hosted**.
+  **OIDC IdP** (shared with DIAL), **Open-Meteo weather warnings**, **info-beamer hosted**.
 
 ---
 
@@ -434,7 +437,7 @@ Configurable per event, with sensible defaults:
 | State | Default meaning |
 |---|---|
 | `normal` | regular content |
-| `staff_alert` (pre-alarm) | silent: staff channels only (PWA, ntfy, PET SMS), screens unchanged or a discrete staff-only marker |
+| `staff_alert` (pre-alarm) | silent: staff channels only (PWA, ntfy, DIAL SMS), screens unchanged or a discrete staff-only marker |
 | `attention` | public "please pay attention to announcements" overlay |
 | `shelter_in_place` | stay inside / severe weather layout |
 | `evacuate` | full evacuation layout with routes |
@@ -455,7 +458,7 @@ Configurable per event, with sensible defaults:
 - **Hardware bridge**: reference implementation in `bridge/` for Raspberry Pi GPIO / an ESP32 (dry
   contact from a fire alarm panel relay, physical mushroom buttons, key switches). It talks to the node
   via authenticated MQTT or HTTPS and supervises its line (a heartbeat, so a dead bridge raises an alert).
-- **PET**: `emergency.triggered` webhook or a configured feature code (via the PET extension, §9).
+- **DIAL**: `emergency.triggered` webhook or a configured feature code (via the DIAL extension, §9).
 - **API / MQTT**: authenticated endpoint for external systems (BMA gateways, weather warnings,
   other tools).
 - **Scheduled drills**.
@@ -478,13 +481,13 @@ Configurable per event, with sensible defaults:
   next waypoint, with manual per-screen override ("arrow left, text 'Exit B'").
 - **Audio/PA**: screens with speakers play the configured gong/siren and pre-rendered messages (TTS or
   recordings) in a loop; kiosk setup docs cover autoplay flags. Optional PA integration: relay output
-  via the hardware bridge, and phone broadcast via PET.
+  via the hardware bridge, and phone broadcast via DIAL.
 
 ### 8.5 Propagation and notifications
 
 - On a state change, push immediately to all affected screens, the staff PWA (Web Push + in-app
   alarm with sound/vibration, overriding silent mode where the platform allows), ntfy, Matrix,
-  Telegram, e-mail, and **PET** (emergency broadcast: phone announcement + DECT SMS).
+  Telegram, e-mail, and **DIAL** (emergency broadcast: phone announcement + DECT SMS).
 - Target latency: **≤ 2 s from trigger to rendered state on 95 % of online screens on the LAN**,
   measured and shown.
 - **Acknowledgements**: every screen confirms "evac layout rendered" (with the version hash). The control
@@ -517,41 +520,41 @@ Configurable per event, with sensible defaults:
 
 ---
 
-## 9. PET extension (Phase 4): "small but deep"
+## 9. DIAL extension (Phase 4): "small but deep"
 
-PET (`kirikakaese/PET-BETA`) is a Django/DRF event phone network manager. **Read PET's `docs/API.md`
+DIAL (`kirikakaese/DIAL-BETA`) is a Django/DRF event phone network manager. **Read DIAL's `docs/API.md`
 and its OpenAPI schema (`/api/schema/`) before implementing**, and verify every endpoint and payload
-below against them. The extension lives in `extensions/pet`, can be disabled, and nothing outside it
+below against them. The extension lives in `extensions/dial`, can be disabled, and nothing outside it
 imports it.
 
-**Link configuration (per EVAC event, Settings → Extensions → PET)**
-- PET base URL, PET event slug, **PET service token** (`Authorization: Bearer pet_…`, minted at
+**Link configuration (per EVAC event, Settings → Extensions → DIAL)**
+- DIAL base URL, DIAL event slug, **DIAL service token** (`Authorization: Bearer dial_…`, minted at
   `/e/<slug>/orga/tokens/`; document the needed scopes, e.g. `pages:read`, `phonebook:read`,
   `dect:read`, `emergency:*`), webhook secret.
-- "Test connection" calls PET `GET /api/v1/health/?event=<slug>` and `GET /api/v1/me/`.
-- EVAC shows the inbound webhook URL to paste into PET (`/e/<slug>/orga/webhooks/`).
+- "Test connection" calls DIAL `GET /api/v1/health/?event=<slug>` and `GET /api/v1/me/`.
+- EVAC shows the inbound webhook URL to paste into DIAL (`/e/<slug>/orga/webhooks/`).
 
-**Inbound webhooks** (`POST /api/v1/extensions/pet/<link-id>/webhook/`)
-- Verify `X-PET-Signature: sha256=<HMAC-SHA256(raw body)>` with constant-time comparison; dispatch on
-  `X-PET-Event`; payload envelope `{type, sent_at, data}`; idempotent handling.
+**Inbound webhooks** (`POST /api/v1/extensions/dial/<link-id>/webhook/`)
+- Verify `X-DIAL-Signature: sha256=<HMAC-SHA256(raw body)>` with constant-time comparison; dispatch on
+  `X-DIAL-Event`; payload envelope `{type, sent_at, data}`; idempotent handling.
 - `emergency.triggered` → evacuation trigger (policy per §8.3: execute / arm / notify).
-- `page.updated` → refresh the PET info page data source.
+- `page.updated` → refresh the DIAL info page data source.
 - `announcement.recorded` (`data = {extension, event, audio, file, duration, imported}`) → **"announce
-  by phone"**: an orga calls PET, records a message, and EVAC imports the audio, optionally transcribes
+  by phone"**: an orga calls DIAL, records a message, and EVAC imports the audio, optionally transcribes
   it (offline Whisper, English model, optional), and creates a **draft announcement** in the approval queue
   (or auto-publishes when the calling extension is on an allowlist with auto-publish enabled).
 - `dect.rfp.down|rfp.up|sync.degraded` → DECT status data source + ops log entries.
 
 **Outbound**
-- Evacuation/emergency announcements → PET `POST /api/v1/emergency/broadcast/`
+- Evacuation/emergency announcements → DIAL `POST /api/v1/emergency/broadcast/`
   (`{event, announcement, group?}`): rings handsets with the announcement. Messaging broadcast
-  (`POST /api/v1/messaging/broadcast/`) for DECT SMS where PET has the `messaging` flag enabled.
+  (`POST /api/v1/messaging/broadcast/`) for DECT SMS where DIAL has the `messaging` flag enabled.
 - Delivered through the durable outbox, with retries, status shown in the announcement delivery report.
 
 **Data sources and widgets**: phonebook (search, highlights), important/emergency numbers,
-PET info pages (Markdown rendered), DECT network status, and a "call X for Y" widget.
+DIAL info pages (Markdown rendered), DECT network status, and a "call X for Y" widget.
 
-**SSO**: document and support using the **same OIDC IdP** for EVAC and PET; optionally map PET event
+**SSO**: document and support using the **same OIDC IdP** for EVAC and DIAL; optionally map DIAL event
 roles to EVAC roles (manual mapping table, no automatic privilege escalation).
 
 ---
@@ -587,7 +590,7 @@ calls ("Team Build to Info Desk") are sent as announcements to team channels.
 Incident log (security, medical, technical, lost child, …) with categories, severity, location
 (map pin/zone), assignment, status, timeline, attachments and linked announcements/evacuations; a
 radio-style **ops log**; tasks; and a **control room dashboard** (single page, large-screen friendly) with map,
-active alarms, open incidents, screen health, occupancy, PET/DECT status and recent announcements.
+active alarms, open incidents, screen health, occupancy, DIAL/DECT status and recent announcements.
 Configurable incident escalation to notification channels. Export for post-event reports.
 
 ### 11.4 Crowd and occupancy
@@ -631,7 +634,7 @@ could be added later without refactoring, but only `en` is configured in `LANGUA
 RTL text rendering for operator-entered content.
 
 **Accessibility**: WCAG 2.2 AA in admin, PWA and public pages; automated a11y checks in the test suite
-(as PET's `pet_a11y`); keyboard navigation; reduced motion; high-contrast mode; colour-blind-safe status
+(as DIAL's `dial_a11y`); keyboard navigation; reduced motion; high-contrast mode; colour-blind-safe status
 colours (never colour only).
 
 **Security**: strict CSP; CSRF; argon2; rate limits; 2FA enforcement for alarm roles; scoped tokens;
@@ -673,7 +676,7 @@ demand).
 `README.md`, `docs/ARCHITECTURE.md`, `docs/OPERATOR_HANDBOOK.md` (running EVAC at an event, the venue
 node, kiosk setup, evacuation drills, the safety statement), `docs/DESIGNER_GUIDE.md` (themes, fonts,
 editor, widgets, code mode), `docs/EVACUATION.md` (models, states, triggers, fail-safe, testing,
-limitations), `docs/EXTENSIONS.md` + one page per extension (PET first), `docs/PLUGIN_SDK.md`,
+limitations), `docs/EXTENSIONS.md` + one page per extension (DIAL first), `docs/PLUGIN_SDK.md`,
 `docs/API.md`, `docs/SECURITY.md`, `docs/DEVELOPING.md`, `docs/adr/`, `CHANGELOG.md`.
 No document carries an AI byline or credit (§0.1).
 
@@ -690,7 +693,7 @@ No document carries an AI byline or credit (§0.1).
   and an **attribution check** that fails if commit messages or tracked files contain
   `Co-Authored-By`, "Generated with Claude", or Claude/Anthropic credits (§0.1; allowlist `CLAUDE.md`'s
   filename and this check's own pattern list).
-- Makefile targets mirroring PET: `dev`, `migrate`, `seed`, `run`, `test`, `lint`, `openapi`, `e2e`,
+- Makefile targets mirroring DIAL: `dev`, `migrate`, `seed`, `run`, `test`, `lint`, `openapi`, `e2e`,
   `load`, `chaos`.
 
 ---
@@ -703,7 +706,7 @@ No document carries an AI byline or credit (§0.1).
 | **1 Screens core** | Player (browser kiosk + OBS mode), pairing, groups, themes, **fonts**, assets, layout editor (visual + tokens + code mode), widget contract + basic widgets, playlists, scheduling, overrides, remote management, offline caching, time sync, Pi kiosk recipe | Pair a screen, design a slide with an uploaded font, publish, override, unplug the network: the screen keeps playing |
 | **2 Announcements** | Priorities, templates, approval, scheduling, targeting, notify channels (Web Push, ntfy, e-mail, Matrix, Telegram, Mastodon, webhook), offline TTS, staff PWA basics, custom widget builder, `.evacpack` import/export | One announcement reaches screens + 3 channels with a delivery report; approval flow tested |
 | **3 Venue + evacuation** | Floor plan/map editor, zones, exits, routes; evacuation module (all three models, states, drills, triggers incl. hardware bridge, policies, two-person rule, guardrail linter, fallback layout, text rotation, audio, acks, fail-safe, watchdog, self-test), venue node mode + sync | All tests in §8.7 pass; a documented drill runbook works end to end |
-| **4 PET extension** | Everything in §9 | Against a running PET demo instance (`docker compose up` in PET-BETA): webhook → evac arm; evac → PET broadcast; phone-recorded announcement → approval queue; PET widgets render |
+| **4 DIAL extension** | Everything in §9 | Against a running DIAL demo instance (`docker compose up` in DIAL-BETA): webhook → evac arm; evac → DIAL broadcast; phone-recorded announcement → approval queue; DIAL widgets render |
 | **5 Program** | Program module + pretalx/frab/iCal extensions + program widgets | Imported schedule shows now/next on screens; live change propagates < 5 s |
 | **6 Ops + crowd** | Incidents, ops log, control room dashboard, occupancy (counter PWA, MQTT sensors, capacity rules → screens) | "Room full" appears automatically at the threshold |
 | **7 Crew, inventory, helpdesk** | §11.2, §11.6, §11.7 + Engelsystem extension | Shift board on screens; lend/return with QR |

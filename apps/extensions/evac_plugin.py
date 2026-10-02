@@ -9,7 +9,7 @@ manifest = PluginManifest(key="extensions", name="Extensions framework", version
 
 def register(r: Registry) -> None:
     r.module(ModuleSpec(key="extensions", name=str(_("Extensions")), order=5, category="integration",
-                        description=str(_("Integrations with external systems (PET, pretalx, Matrix, webhooks, "
+                        description=str(_("Integrations with external systems (DIAL, pretalx, Matrix, webhooks, "
                                           "...), configured under Settings -> Extensions."))))
     r.permission(PermissionSpec("extensions.manage", str(_("Configure extensions and their credentials"))))
     r.nav(NavEntry(module="extensions", label=str(_("Extensions")), url_name="extensions:instance_index",

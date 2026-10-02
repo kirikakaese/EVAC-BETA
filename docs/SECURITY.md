@@ -7,7 +7,7 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 1. **What every screen shows** (phase 1+) — misuse means misinformation or panic.
 2. **Alarm state** (phase 3) — false alarms and suppressed alarms are both dangerous.
 3. **Accounts, roles and tokens** — the keys to 1 and 2.
-4. **Extension secrets** — credentials of other systems (PET, pretix, Matrix, …).
+4. **Extension secrets** — credentials of other systems (DIAL, pretix, Matrix, …).
 5. **Personal data** — names, e-mail addresses, later crew data, lost & found reports.
 6. **The audit trail** — needed to reconstruct incidents.
 
@@ -33,7 +33,7 @@ Threat model and controls. Updated with every phase; evacuation-specific control
   policies execute / arm / notify, drills clearly marked and separated in the audit log.
 - Signed state messages; screens accept only monotonic sequence numbers; a stale "all clear" is never
   applied; no auto-clear ([ADR-0003](adr/0003-alarm-delivery-redundancy.md)).
-- Inbound trigger webhooks (PET, bridges) need HMAC signatures and are idempotent.
+- Inbound trigger webhooks (DIAL, bridges) need HMAC signatures and are idempotent.
 
 ### Other threats
 

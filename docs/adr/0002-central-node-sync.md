@@ -8,7 +8,7 @@
 One permanent central service hosts many events. A venue may run an **EVAC venue node** (same codebase,
 `EVAC_MODE=node`) so screens, announcements, evacuation and ops keep working without an uplink. Screens
 at the venue talk to the node. Only outbound HTTPS from the node is allowed (no inbound ports at the
-venue). PET solved a similar problem with a venue agent pulling versioned snapshots with ETags.
+venue). DIAL solved a similar problem with a venue agent pulling versioned snapshots with ETags.
 
 ## Decision (proposed)
 
@@ -72,6 +72,6 @@ not timestamps.
 
 1. Is freezing live-state writes on central during checkout acceptable for remote control rooms (e.g.
    an orga at home)? Alternative: proxy live actions through central → node when the link is up.
-2. Should secrets of extensions be synced to nodes (needed e.g. for PET broadcast from the node)? Proposal:
+2. Should secrets of extensions be synced to nodes (needed e.g. for DIAL broadcast from the node)? Proposal:
    yes, re-encrypted with the node's public key, per extension opt-in.
 3. Polling intervals and limits for 200 screens per Pi 5–class node.

@@ -2,7 +2,7 @@
 """Root URL configuration.
 
 Module UIs: an installed app with ``urls.py`` declaring ``PORTAL_MOUNT = True`` is mounted at
-``/e/<slug>/<app label>/`` under its own namespace (same convention as PET).
+``/e/<slug>/<app label>/`` under its own namespace (same convention as DIAL).
 """
 from importlib import import_module
 

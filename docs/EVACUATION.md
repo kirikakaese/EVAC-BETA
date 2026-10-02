@@ -21,7 +21,7 @@ procedures of the venue. Operators must acknowledge this once per event when ena
 - **Tamper-evident audit log** with a drill flag, so real alarms and drills are reported separately.
 - **Hold-to-confirm** buttons (`data-hold`) for safety actions in the UI.
 - **Realtime fan-out** with WebSocket → SSE → long-poll fallbacks.
-- **Evacuation trigger registry** (`EvacTriggerSpec`) so extensions (PET, hardware bridge) can contribute
+- **Evacuation trigger registry** (`EvacTriggerSpec`) so extensions (DIAL, hardware bridge) can contribute
   trigger sources.
 
 ## Design (phase 3)
@@ -30,7 +30,7 @@ procedures of the venue. Operators must acknowledge this once per event when ena
 - States: normal, staff alert (pre-alarm), attention, shelter in place, evacuate, all clear; persisted
   state machine per event and zone, highest severity wins, drills, **never auto-clear**.
 - Triggers: control room and mobile panic page (hold-to-confirm, optional two-person rule), hardware
-  bridge, PET, API/MQTT, scheduled drills; policies execute / arm / notify per source, stage and zone.
+  bridge, DIAL, API/MQTT, scheduled drills; policies execute / arm / notify per source, stage and zone.
 - Content: guardrail linter, non-deletable built-in fallback layout (ISO 7010 + English), text rotation,
   per-screen arrows from the route graph, audio.
 - Propagation: ≤ 2 s on 95 % of online LAN screens, acknowledgements per screen and zone.

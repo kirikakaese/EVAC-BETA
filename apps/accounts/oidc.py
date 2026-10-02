@@ -1,6 +1,6 @@
 """OpenID Connect login - authorization code flow with PKCE, implemented on plain ``requests``.
 
-Same approach as PET, so EVAC and PET can share one identity provider.
+Same approach as DIAL, so EVAC and DIAL can share one identity provider.
 
 No signature verification is performed on the ID token: it is fetched by EVAC directly from the token
 endpoint over TLS, which OIDC Core 1.0 section 3.1.3.7 (rule 6) explicitly allows. Instead we validate

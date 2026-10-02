@@ -7,7 +7,7 @@
 
 EVAC must be modular down to "screens only" (brief §1), let third parties add modules, widgets, data
 sources, extensions and evacuation triggers (§3.3), and run one permanent multi-event service plus venue
-nodes (§3.2). The sibling project PET sets the conventions (Django/DRF, `apps/<area>`, per-app UIs under
+nodes (§3.2). The sibling project DIAL sets the conventions (Django/DRF, `apps/<area>`, per-app UIs under
 `/e/<slug>/<app>/`, outbox, service tokens).
 
 ## Decision
@@ -27,7 +27,7 @@ nodes (§3.2). The sibling project PET sets the conventions (Django/DRF, `apps/<
    `apps/core/modules.py`).
 4. The **core uses the same API** (core, accounts, events, venues, extensions, portal all have
    `evac_plugin.py`), so the API is exercised from day one. The core never imports an optional module.
-5. UI mounting follows PET: an app's `urls.py` with `PORTAL_MOUNT = True` is mounted at
+5. UI mounting follows DIAL: an app's `urls.py` with `PORTAL_MOUNT = True` is mounted at
    `/e/<slug>/<label>/`. The sidebar is generated from registered `NavEntry`s filtered by module state and
    permissions.
 6. Brief §3.3 mentions `evac_plugin.toml`; we use a Python module instead (no second manifest format,
@@ -44,4 +44,4 @@ nodes (§3.2). The sibling project PET sets the conventions (Django/DRF, `apps/<
 ## Alternatives considered
 
 - Django signals only: no discoverability, no typed contract.
-- Separate microservices per module: contradicts "boring, proven", offline venue nodes and the PET model.
+- Separate microservices per module: contradicts "boring, proven", offline venue nodes and the DIAL model.
