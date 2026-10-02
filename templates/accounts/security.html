@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% trans "Security" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Security & two-factor authentication" %}</h1></div>
+<p>{% if verified %}<span class="badge badge-ok">{% trans "This session is two-factor verified" %}</span>{% else %}<span class="badge badge-warn">{% trans "This session is not two-factor verified" %}</span>{% endif %}</p>
+<p class="muted">{% trans "Roles that may trigger alarms or manage people require two-factor authentication. Without it, their permissions stay inactive." %}</p>
+{% if new_codes %}
+<div class="card alert alert-warning" role="status">
+  <h2>{% trans "Your recovery codes" %}</h2>
+  <p>{% trans "Store them somewhere safe. Each code works once. They will not be shown again." %}</p>
+  <pre id="recovery-codes" class="codes">{% for c in new_codes %}{{ c }}
+{% endfor %}</pre>
+  <button type="button" class="btn btn-sm" data-action="copy" data-target="#recovery-codes" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button>
+</div>
+{% endif %}
+<div class="grid grid-2">
+  <section class="card">
+    <h2>{% trans "Authenticator apps" %}</h2>
+    {% for d in totp_devices %}
+    <form method="post" action="{% url 'accounts:factor_delete' 'totp' d.pk %}" class="split" data-confirm="{% trans 'Remove this authenticator app?' %}">{% csrf_token %}
+      <span>{{ d.name }} <span class="muted small">{% trans "added" %} {{ d.created_at|date:"Y-m-d" }}</span></span><button class="btn btn-sm btn-danger">{% trans "Remove" %}</button></form>
+    {% empty %}<p class="muted">{% trans "None yet." %}</p>{% endfor %}
+    <a class="btn" href="{% url 'accounts:totp_setup' %}">{% trans "Add authenticator app" %}</a>
+  </section>
+  <section class="card" id="webauthn-register" data-options-url="{% url 'accounts:webauthn_register_options' %}" data-verify-url="{% url 'accounts:webauthn_register_verify' %}">
+    <h2>{% trans "Security keys & passkeys" %}</h2>
+    {% for c in webauthn %}
+    <form method="post" action="{% url 'accounts:factor_delete' 'webauthn' c.pk %}" class="split" data-confirm="{% trans 'Remove this security key?' %}">{% csrf_token %}
+      <span>{{ c.name }} <span class="muted small">{% trans "added" %} {{ c.created_at|date:"Y-m-d" }}</span></span><button class="btn btn-sm btn-danger">{% trans "Remove" %}</button></form>
+    {% empty %}<p class="muted">{% trans "None yet." %}</p>{% endfor %}
+    <label for="webauthn-name">{% trans "Name for the new key" %}</label>
+    <input id="webauthn-name" type="text" maxlength="60" value="Security key">
+    <button type="button" class="btn" data-webauthn="register">{% trans "Add security key" %}</button>
+    <p class="small muted" data-webauthn-status role="status" aria-live="polite"></p>
+  </section>
+  <section class="card">
+    <h2>{% trans "Recovery codes" %}</h2>
+    <p>{% blocktrans count n=recovery_left %}{{ n }} unused code left.{% plural %}{{ n }} unused codes left.{% endblocktrans %}</p>
+    <form method="post" action="{% url 'accounts:recovery_regenerate' %}" data-confirm="{% trans 'Old codes stop working. Continue?' %}">{% csrf_token %}<button class="btn">{% trans "Generate new codes" %}</button></form>
+  </section>
+  {% if oidc_enabled %}
+  <section class="card">
+    <h2>{% trans "Single sign-on" %}</h2>
+    {% if user.oidc_subject %}
+    <p>{% trans "Your account is linked to the identity provider." %}</p>
+    <form method="post" action="{% url 'accounts:oidc_unlink' %}">{% csrf_token %}<button class="btn">{% trans "Unlink" %}</button></form>
+    {% else %}
+    <form method="post" action="{% url 'accounts:oidc_login' %}">{% csrf_token %}<input type="hidden" name="link" value="1"><button class="btn">{% trans "Link single sign-on" %}</button></form>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/webauthn.js' %}?v={{ ASSET_VERSION }}" defer></script>{% endblock %}

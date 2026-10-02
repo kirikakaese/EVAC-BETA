@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Add authenticator app" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Add an authenticator app" %}</h1></div>
+<div class="grid grid-2">
+  <div class="card">
+    <h2>{% trans "1. Scan this code" %}</h2>
+    <div class="qr" role="img" aria-label="{% trans 'QR code for your authenticator app' %}">{{ qr|safe }}</div>
+    <p class="small">{% trans "Or enter this key manually:" %} <code id="totp-secret">{{ secret }}</code></p>
+  </div>
+  <form method="post" class="card">{% csrf_token %}
+    <h2>{% trans "2. Enter the code it shows" %}</h2>
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary">{% trans "Confirm" %}</button>
+  </form>
+</div>
+{% endblock %}

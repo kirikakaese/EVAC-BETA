@@ -1,0 +1,134 @@
+# EVAC - full stack for a laptop or a single server.
+#
+#   cp .env.example .env      # set SECRET_KEY and EVAC_SECRETS_KEYS
+#   docker compose up --build -d
+#   open http://localhost:8000   -> first-run wizard (or demo: EVAC_SEED_DEMO=1, admin@evac.local / evac-demo-admin)
+#
+# Services: web (HTTP + SSE, gunicorn with ASGI workers), channels (WebSockets, daphne), worker + beat
+# (celery), db, redis. Without a reverse proxy, browsers open WebSockets on :8001 (EVAC_REALTIME_URL).
+# Behind a reverse proxy, route /ws/ to channels:8001 and everything else to web:8000, and leave
+# EVAC_REALTIME_URL empty.
+
+x-evac-env: &evac-env
+  DJANGO_SETTINGS_MODULE: evac.settings.prod
+  DATABASE_URL: postgres://${POSTGRES_USER:-evac}:${POSTGRES_PASSWORD:-evac}@db:5432/${POSTGRES_DB:-evac}
+  REDIS_URL: redis://redis:6379/0
+  MEDIA_ROOT: /app/media
+  SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-0}
+  CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-0}
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8000}
+  EVAC_PUBLIC_URL: ${EVAC_PUBLIC_URL:-http://localhost:8000}
+  EVAC_REALTIME_URL: ${EVAC_REALTIME_URL:-http://localhost:8001}
+  EVAC_SEED_DEMO: ${EVAC_SEED_DEMO:-0}
+  EVAC_ALLOW_INSECURE: ${EVAC_ALLOW_INSECURE:-0}
+
+x-evac-service: &evac-service
+  build: .
+  image: evac:local
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  environment: *evac-env
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-evac}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-evac}
+      POSTGRES_DB: ${POSTGRES_DB:-evac}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evac} -d ${POSTGRES_DB:-evac}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  web:
+    <<: *evac-service
+    command: ["web"]
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4).status != 200)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+    volumes:
+      - media:/app/media
+
+  channels:
+    <<: *evac-service
+    command: ["channels"]
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=4).status != 200)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+  worker:
+    <<: *evac-service
+    command: ["worker"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A evac inspect ping -d celery@$$HOSTNAME --timeout 5 | grep -q pong"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
+    volumes:
+      - media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+  beat:
+    <<: *evac-service
+    command: ["beat"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+volumes:
+  pgdata:
+  redisdata:
+  media:

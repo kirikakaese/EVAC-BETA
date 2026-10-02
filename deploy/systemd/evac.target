@@ -1,0 +1,7 @@
+# Groups all EVAC services: systemctl start|stop|restart evac.target
+[Unit]
+Description=EVAC - Event and Venue Administration Core
+Wants=evac-web.service evac-channels.service evac-worker.service evac-beat.service
+
+[Install]
+WantedBy=multi-user.target

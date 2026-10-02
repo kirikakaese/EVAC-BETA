@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Modules" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if level == "event" %}{% trans "Modules of this event" %}{% else %}{% trans "Modules (whole instance)" %}{% endif %}</h1></div>
+<p class="muted">{% if level == "event" %}{% trans "Switch modules off for this event, or follow the instance setting. A module that is off at instance level cannot be switched on here." %}{% else %}{% trans "Modules switched off here are off for every event." %}{% endif %}</p>
+<div class="table-wrap card"><table>
+  <thead><tr><th scope="col">{% trans "Module" %}</th><th scope="col">{% trans "Instance" %}</th>{% if level == "event" %}<th scope="col">{% trans "This event" %}</th>{% endif %}<th scope="col">{% trans "Active" %}</th></tr></thead>
+  <tbody>{% for r in rows %}<tr>
+    <td><strong>{{ r.spec.name }}</strong>{% if r.spec.required %} <span class="badge">{% trans "required" %}</span>{% endif %}<div class="small muted">{{ r.spec.description }}</div>
+      {% if r.spec.depends_on %}<div class="small">{% trans "Needs:" %} {{ r.spec.depends_on|join:", " }}</div>{% endif %}
+      {% if r.missing_deps %}<div class="small badge badge-warn">{% trans "Inactive because these are off:" %} {{ r.missing_deps|join:", " }}</div>{% endif %}</td>
+    <td>{% if r.spec.required %}<span class="badge badge-ok">{% trans "on" %}</span>{% elif level == "instance" %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="key" value="{{ r.spec.key }}">
+        {% if r.instance %}<button class="btn btn-sm" name="value" value="off" aria-label="{% blocktrans with m=r.spec.name %}Switch {{ m }} off{% endblocktrans %}">{% trans "Switch off" %}</button>{% else %}<button class="btn btn-sm btn-primary" name="value" value="on" aria-label="{% blocktrans with m=r.spec.name %}Switch {{ m }} on{% endblocktrans %}">{% trans "Switch on" %}</button>{% endif %}</form>
+      {% else %}{% if r.instance %}<span class="badge badge-ok">{% trans "on" %}</span>{% else %}<span class="badge badge-off">{% trans "off" %}</span>{% endif %}{% endif %}</td>
+    {% if level == "event" %}<td>{% if r.spec.required or not r.spec.event_toggle %}–{% else %}
+      <form method="post" class="seg">{% csrf_token %}<input type="hidden" name="key" value="{{ r.spec.key }}">
+        <button class="btn btn-sm{% if r.event is None %} btn-primary{% endif %}" name="value" value="inherit" {% if r.event is None %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{% trans "Follow instance" %}</button>
+        <button class="btn btn-sm{% if r.event is True %} btn-primary{% endif %}" name="value" value="on" aria-pressed="{% if r.event is True %}true{% else %}false{% endif %}">{% trans "On" %}</button>
+        <button class="btn btn-sm{% if r.event is False %} btn-primary{% endif %}" name="value" value="off" aria-pressed="{% if r.event is False %}true{% else %}false{% endif %}">{% trans "Off" %}</button>
+      </form>{% endif %}</td>{% endif %}
+    <td>{% if r.active %}<span class="badge badge-ok">{% trans "active" %}</span>{% else %}<span class="badge badge-off">{% trans "inactive" %}</span>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

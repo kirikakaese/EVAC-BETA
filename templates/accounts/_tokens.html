@@ -1,0 +1,31 @@
+{% load i18n %}
+{% if new_token %}
+<div class="alert alert-warning" role="status">
+  <p><strong>{% trans "Your new token (shown once):" %}</strong></p>
+  <code id="new-token">{{ new_token }}</code>
+  <button type="button" class="btn btn-sm" data-action="copy" data-target="#new-token" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button>
+  <p class="small">{% trans "Use it as: Authorization: Bearer <token>" %}</p>
+</div>
+{% endif %}
+<div class="grid grid-2">
+  <form method="post" class="card">{% csrf_token %}
+    <h2>{% trans "New token" %}</h2>
+    {% include "portal/_form.html" with form=form %}
+    <p class="small muted">{% trans "A token never has more rights than you. Tokens created in a two-factor verified session can use alarm-relevant permissions; others cannot." %}</p>
+    <button class="btn btn-primary">{% trans "Create token" %}</button>
+  </form>
+  <div class="card">
+    <h2>{% trans "Existing tokens" %}</h2>
+    {% if tokens %}
+    <div class="table-wrap"><table>
+      <thead><tr><th scope="col">{% trans "Name" %}</th><th scope="col">{% trans "Scopes" %}</th><th scope="col">{% trans "Last used" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+      <tbody>{% for t in tokens %}<tr>
+        <td>{{ t.name }} <code class="small">{{ t.token_prefix }}…</code>{% if t.event %}<div class="small muted">{{ t.event.name }}</div>{% endif %}{% if t.created_with_2fa %} <span class="badge badge-ok">2FA</span>{% endif %}{% if t.is_expired %} <span class="badge badge-err">{% trans "expired" %}</span>{% endif %}</td>
+        <td class="small">{{ t.scopes|join:" "|default:_("all") }}</td>
+        <td class="small muted">{{ t.last_used_at|date:"Y-m-d H:i"|default:"–" }}</td>
+        <td><form method="post" action="{% url 'accounts:token_revoke' t.pk %}" data-confirm="{% trans 'Revoke this token?' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-sm btn-danger">{% trans "Revoke" %}</button></form></td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="muted">{% trans "No tokens yet." %}</p>{% endif %}
+  </div>
+</div>

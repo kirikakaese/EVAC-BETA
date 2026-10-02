@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Notifications" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Notifications" %}</h1>
+  <form method="post" action="{% url 'core:notifications_read_all' %}" class="actions">{% csrf_token %}<button class="btn btn-sm">{% trans "Mark all as read" %}</button></form>
+</div>
+{% if items %}
+<div class="table-wrap"><table>
+  <thead><tr><th scope="col">{% trans "When" %}</th><th scope="col">{% trans "Notification" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+  <tbody>{% for n in items %}
+  <tr class="{% if not n.read_at %}unread{% endif %}">
+    <td class="small muted">{{ n.created_at|date:"Y-m-d H:i" }}</td>
+    <td><span class="badge badge-{{ n.level }}">{{ n.get_level_display }}</span> <strong>{{ n.title }}</strong>{% if n.body %}<div class="small">{{ n.body }}</div>{% endif %}</td>
+    <td>{% if not n.read_at or n.url %}<form method="post" action="{% url 'core:notification_read' n.pk %}">{% csrf_token %}<button class="btn btn-sm">{% if n.url %}{% trans "Open" %}{% else %}{% trans "Mark read" %}{% endif %}</button></form>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<div class="empty"><p>{% trans "No notifications. Alerts about your events will show up here." %}</p></div>{% endif %}
+{% endblock %}

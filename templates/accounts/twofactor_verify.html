@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% trans "Two-factor authentication" %}{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>{% trans "Confirm it's you" %}</h1>
+  {% if has_webauthn %}
+  <div id="webauthn-login" data-options-url="{% url 'accounts:webauthn_login_options' %}" data-verify-url="{% url 'accounts:webauthn_login_verify' %}">
+    <button type="button" class="btn btn-primary btn-block" data-webauthn="login">{% trans "Use your security key" %}</button>
+    <p class="small muted" data-webauthn-status role="status" aria-live="polite"></p>
+  </div>
+  {% endif %}
+  <form method="post" novalidate>{% csrf_token %}
+    {% if has_totp %}<p>{% trans "Enter the 6-digit code from your authenticator app." %}</p>{% endif %}
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn {% if not has_webauthn %}btn-primary {% endif %}btn-block">{% trans "Verify" %}</button>
+  </form>
+  <form method="post" action="{% url 'accounts:logout' %}" class="center">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% trans "Cancel" %}</button></form>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/webauthn.js' %}?v={{ ASSET_VERSION }}" defer></script>{% endblock %}

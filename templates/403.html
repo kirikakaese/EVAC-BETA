@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Not allowed" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "You are not allowed to do this" %}</h1></div>
+<p>{% trans "Your roles in this event do not include this permission, or it needs a two-factor verified session." %}</p>
+<p><a class="btn" href="{% url 'portal:home' %}">{% trans "Back to the start page" %}</a></p>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Invitation" %}{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>{% blocktrans with e=inv.event.name %}Join {{ e }}{% endblocktrans %}</h1>
+  <p>{% blocktrans with r=inv.role.name email=inv.email %}You were invited as <strong>{{ r }}</strong> ({{ email }}).{% endblocktrans %}{% if inv.scope_label %} {% blocktrans with s=inv.scope_label %}Limited to {{ s }}.{% endblocktrans %}{% endif %}</p>
+  {% if mode == "accept" %}
+  <form method="post">{% csrf_token %}<button class="btn btn-primary btn-block">{% trans "Accept invitation" %}</button></form>
+  {% elif mode == "login" %}
+  <p>{% trans "You already have an account. Log in to accept." %}</p>
+  <a class="btn btn-primary btn-block" href="{{ login_url }}">{% trans "Log in" %}</a>
+  {% else %}
+  {% if oidc_enabled %}<form method="post" action="{% url 'accounts:oidc_login' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-block">{{ oidc_button_label }}</button></form><p class="divider"><span>{% trans "or create a password" %}</span></p>{% endif %}
+  <form method="post" novalidate>{% csrf_token %}
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary btn-block">{% trans "Create account and join" %}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

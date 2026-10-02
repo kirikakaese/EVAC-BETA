@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if role.pk %}{{ role.name }}{% else %}{% trans "New role" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if role.pk %}{% blocktrans with n=role.name %}Role: {{ n }}{% endblocktrans %}{% else %}{% trans "New role" %}{% endif %}</h1></div>
+<form method="post" class="card" novalidate>{% csrf_token %}
+  {% include "portal/_form.html" with form=form %}
+  <p class="small muted">{% trans "Permissions marked * are alarm-relevant: they only work in a two-factor verified session." %}</p>
+  <div class="actions"><button class="btn btn-primary">{% trans "Save role" %}</button>
+  {% if role.pk and not role.builtin %}<button class="btn btn-danger" name="delete" value="1" data-confirm="{% trans 'Delete this role?' %}">{% trans "Delete" %}</button>{% endif %}
+  <a class="btn btn-ghost" href="{% url 'portal:roles' event.slug %}">{% trans "Cancel" %}</a></div>
+</form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Events" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Your events" %}</h1>
+  {% if user.is_superuser %}<div class="actions"><a class="btn btn-primary" href="{% url 'portal:event_create' %}">{% trans "New event" %}</a><a class="btn" href="{% url 'portal:event_import' %}">{% trans "Import event" %}</a></div>{% endif %}
+</div>
+{% if events %}
+<div class="grid grid-3">
+  {% for e in events %}
+  <a class="card card-link" href="{% url 'portal:event_dashboard' e.slug %}">
+    <h2>{{ e.name }}</h2>
+    <p><span class="badge badge-{{ e.state }}">{{ e.get_state_display }}</span>
+    {% if e.start_date %}<span class="muted small">{{ e.start_date|date:"j M Y" }}{% if e.end_date and e.end_date != e.start_date %} – {{ e.end_date|date:"j M Y" }}{% endif %}</span>{% endif %}</p>
+    {% if e.venues.all %}<p class="small muted">{% for v in e.venues.all %}{{ v.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty card">
+  <h2>{% trans "No events yet" %}</h2>
+  {% if user.is_superuser %}<p>{% trans "Create your first event to start pairing screens and inviting your team." %}</p><a class="btn btn-primary" href="{% url 'portal:event_create' %}">{% trans "Create an event" %}</a>
+  {% else %}<p>{% trans "You are not a member of any event yet. Ask an organiser for an invitation." %}</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

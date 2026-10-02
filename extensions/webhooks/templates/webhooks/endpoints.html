@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Webhook endpoints" %}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{{ settings_url }}">{% trans "Webhooks" %}</a> <span aria-hidden="true">›</span> {% trans "Endpoints" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Outbound webhook endpoints" %}</h1></div>
+<p class="muted">{% trans "Every delivery is a JSON POST {type, sent_at, event, data} signed with the endpoint's secret: X-EVAC-Signature: sha256=<HMAC-SHA256 of the body>. Failed deliveries are retried with backoff." %}</p>
+<div class="grid grid-2">
+  <form method="post" class="card" novalidate>{% csrf_token %}
+    <h2>{% trans "Add endpoint" %}</h2>
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary">{% trans "Add" %}</button>
+  </form>
+  <div>
+  {% for it in items %}
+  <section class="card">
+    <div class="split"><h2>{{ it.ep.name }}</h2>
+      <form method="post" action="{{ request.path }}{{ it.ep.pk }}/delete/" data-confirm="{% trans 'Remove this endpoint?' %}">{% csrf_token %}<button class="btn btn-sm btn-danger">{% trans "Remove" %}</button></form></div>
+    <p class="small"><code>{{ it.ep.url }}</code> {% if not it.ep.active %}<span class="badge badge-off">{% trans "inactive" %}</span>{% endif %}</p>
+    {% if it.secret %}<div class="alert alert-warning" role="status">{% trans "Signing secret (shown once):" %} <code id="sec-{{ it.ep.pk }}">{{ it.secret }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#sec-{{ it.ep.pk }}" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></div>{% endif %}
+    <p class="small muted">{% trans "Events:" %} {{ it.ep.event_types|join:", "|default:_("all") }} · {% trans "last:" %} {{ it.ep.last_status|default:"–" }}</p>
+    {% if it.attempts %}<details><summary>{% trans "Recent deliveries" %}</summary><ul class="plain small">{% for a in it.attempts %}<li>{{ a.created_at|date:"H:i:s" }} <code>{{ a.event_type }}</code> {% if a.ok %}<span class="badge badge-ok">{{ a.status_code }}</span>{% else %}<span class="badge badge-err">{{ a.error|default:a.status_code }}</span>{% endif %} {{ a.duration_ms }} ms</li>{% endfor %}</ul></details>{% endif %}
+  </section>
+  {% empty %}<div class="card empty"><p>{% trans "No endpoints yet." %}</p></div>{% endfor %}
+  </div>
+</div>
+<section class="card"><h2>{% trans "Received inbound webhooks" %}</h2>
+{% for i in inbound %}<details><summary>{{ i.received_at|date:"Y-m-d H:i:s" }} <code>{{ i.event_type|default:"–" }}</code></summary><pre>{{ i.payload|pprint }}</pre></details>
+{% empty %}<p class="muted">{% trans "None yet." %}</p>{% endfor %}</section>
+{% endblock %}

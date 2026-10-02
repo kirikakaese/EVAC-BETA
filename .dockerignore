@@ -1,0 +1,14 @@
+.git
+.venv
+**/__pycache__
+.ruff_cache
+.pytest_cache
+.mypy_cache
+.hypothesis
+.coverage
+htmlcov
+*.sqlite3
+media
+staticfiles
+node_modules
+.env

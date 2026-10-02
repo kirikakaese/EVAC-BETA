@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ ns.title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ ns.title }} <span class="muted small">· {% if level == "instance" %}{% trans "instance default" %}{% else %}{% trans "this event" %}{% endif %}</span></h1></div>
+{% if level != "instance" %}<p class="muted">{% trans "Tick 'Inherit' to use the value from the instance (or the built-in default). Values set here are marked 'overridden here'." %}</p>{% endif %}
+<form method="post" class="card settings-form" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-error" role="alert">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+  {% for field, inherit, src in form.rows %}
+  <fieldset class="setting">
+    <legend>{{ field.label }}
+      {% if level != "instance" %}{% if src == level %}<span class="badge badge-info">{% trans "overridden here" %}</span>{% elif src == "default" %}<span class="badge">{% trans "default" %}</span>{% else %}<span class="badge">{% blocktrans %}inherited from {{ src }}{% endblocktrans %}</span>{% endif %}{% endif %}
+    </legend>
+    {% include "portal/_field.html" with field=field %}
+    {% if inherit %}{% include "portal/_field.html" with field=inherit %}{% endif %}
+  </fieldset>
+  {% endfor %}
+  <div class="actions"><button class="btn btn-primary">{% trans "Save" %}</button>
+  {% if back %}<a class="btn btn-ghost" href="{% url back.0 back.1 %}">{% trans "Back" %}</a>{% endif %}</div>
+</form>
+{% endblock %}

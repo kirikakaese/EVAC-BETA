@@ -1,0 +1,6 @@
+evac_repo: https://github.com/kirikakaese/EVAC-BETA.git
+evac_version: main
+evac_root: /opt/evac
+evac_user: evac
+evac_env: {}
+evac_services: [web, channels, worker, beat]

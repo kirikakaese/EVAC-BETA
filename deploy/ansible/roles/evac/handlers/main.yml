@@ -1,0 +1,5 @@
+- name: restart evac
+  ansible.builtin.systemd:
+    name: evac.target
+    state: restarted
+    daemon_reload: true

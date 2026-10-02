@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Settings" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Instance settings" %}</h1></div>
+<p class="muted">{% trans "Defaults for every event. Events can override most values." %}</p>
+<div class="grid grid-3">{% for ns in namespaces %}<a class="card card-link" href="{% url 'portal:instance_settings_ns' ns.key %}"><h2>{{ ns.title }}</h2><p class="small muted">{% trans "Module:" %} {{ ns.module }}</p></a>{% endfor %}</div>
+{% endblock %}

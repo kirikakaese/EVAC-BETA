@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "API tokens" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "API tokens for this event" %}</h1></div>
+<p class="muted">{% trans "Tokens created here only work for this event. They act with your permissions, narrowed by their scopes." %}</p>
+{% include "accounts/_tokens.html" %}
+{% endblock %}

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+
+# Django
+*.sqlite3
+media/
+staticfiles/
+*.mo
+celerybeat-schedule*
+
+# Node (player/editor builds from Phase 1 on)
+node_modules/
+
+# Config / secrets
+.env
+.env.*
+!.env.example
+!.env.node.example
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+dump.rdb

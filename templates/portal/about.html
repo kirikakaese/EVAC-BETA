@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "About" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "About EVAC" %}</h1></div>
+<div class="card prose">
+  <p><strong>EVAC — Event and Venue Administration Core</strong>, {% trans "version" %} {{ EVAC_VERSION }}.</p>
+  <p>{% trans "A self-hostable operations platform for events and venues: screens, announcements, a supplementary evacuation information system and event operations." %}</p>
+  <p>{% trans "Created and maintained by kirikakaese." %}</p>
+  <p>{% trans "Licensed under the GNU Affero General Public License v3.0 or later. If you run a modified version for others, you must offer them its source code." %}</p>
+  <h2>{% trans "Safety statement" %}</h2>
+  {% include "portal/_safety.html" %}
+</div>
+{% endblock %}

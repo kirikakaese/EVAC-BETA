@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ venue.name }}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'venues:index' event.slug %}">{% trans "Venues" %}</a> <span aria-hidden="true">›</span> {{ venue.name }}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ venue.name }}</h1></div>
+{% if shared_with %}<p class="alert alert-info" role="status">{% blocktrans count n=shared_with %}This venue is also used by {{ n }} other event. Changes apply there too.{% plural %}This venue is also used by {{ n }} other events. Changes apply there too.{% endblocktrans %}</p>{% endif %}
+<p class="muted small">{% trans "Floor plans, exits, assembly points and routes are added with the evacuation phase of the roadmap." %}</p>
+<div class="grid grid-2">
+  <section class="card"><h2>{% trans "Buildings & floors" %}</h2>
+    {% for b in buildings %}<h3>{{ b.name }}{% if b.outdoor %} <span class="badge">{% trans "open air" %}</span>{% endif %}
+      {% if can_edit %}<form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'building' b.pk %}" class="inline" data-confirm="{% trans 'Delete this building and its floors?' %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with n=b.name %}Delete {{ n }}{% endblocktrans %}">✕</button></form>{% endif %}</h3>
+      <ul class="plain">{% for f in b.floors.all %}<li>{{ f.name }} <span class="muted small">({% trans "level" %} {{ f.level }})</span>
+        {% if can_edit %}<form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'floor' f.pk %}" class="inline">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with n=f.name %}Delete {{ n }}{% endblocktrans %}">✕</button></form>{% endif %}</li>{% empty %}<li class="muted small">{% trans "No floors." %}</li>{% endfor %}</ul>
+    {% empty %}<p class="muted">{% trans "No buildings yet." %}</p>{% endfor %}
+  </section>
+  <section class="card"><h2>{% trans "Zones" %}</h2>
+    <ul class="plain">{% for z in zones %}<li><span class="swatch" data-color="{{ z.color }}" aria-hidden="true"></span> {{ z.name }}{% if z.capacity %} <span class="muted small">{% trans "capacity" %} {{ z.capacity }}</span>{% endif %}{% if z.outdoor %} <span class="badge">{% trans "outdoor" %}</span>{% endif %}
+      {% if can_edit %}<form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'zone' z.pk %}" class="inline">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with n=z.name %}Delete {{ n }}{% endblocktrans %}">✕</button></form>{% endif %}</li>{% empty %}<li class="muted">{% trans "No zones yet." %}</li>{% endfor %}</ul>
+  </section>
+</div>
+<section class="card"><h2>{% trans "Rooms" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Room" %}</th><th scope="col">{% trans "Floor" %}</th><th scope="col">{% trans "Zones" %}</th><th scope="col">{% trans "Capacity" %}</th><th scope="col">{% trans "Accessibility" %}</th>{% if can_edit %}<th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th>{% endif %}</tr></thead>
+<tbody>{% for r in rooms %}<tr><td>{{ r.name }}</td><td class="small">{{ r.floor|default:"–" }}</td><td class="small">{% for z in r.zones.all %}{{ z.name }}{% if not forloop.last %}, {% endif %}{% empty %}–{% endfor %}</td><td>{{ r.capacity|default:"–" }}</td>
+  <td class="small">{% if r.step_free %}{% trans "step-free" %}{% else %}{% trans "steps" %}{% endif %}{% if r.has_lift %} · {% trans "lift" %}{% endif %}{% if r.wheelchair_spaces %} · {% blocktrans with n=r.wheelchair_spaces %}{{ n }} wheelchair spaces{% endblocktrans %}{% endif %}</td>
+  {% if can_edit %}<td><form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'room' r.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with n=r.name %}Delete {{ n }}{% endblocktrans %}">✕</button></form></td>{% endif %}</tr>
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No rooms yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if can_edit %}
+<div class="grid grid-2">
+  {% for key, pair in part_forms.items %}
+  <form method="post" class="card" novalidate>{% csrf_token %}<input type="hidden" name="part" value="{{ key }}">
+    <h2>{% blocktrans with w=pair.0 %}Add {{ w }}{% endblocktrans %}</h2>{% include "portal/_form.html" with form=pair.1 %}<button class="btn">{% trans "Add" %}</button></form>
+  {% endfor %}
+  <form method="post" class="card" novalidate>{% csrf_token %}<input type="hidden" name="part" value="venue">
+    <h2>{% trans "Venue details" %}</h2>{% include "portal/_form.html" with form=venue_form %}<button class="btn btn-primary">{% trans "Save venue" %}</button></form>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Members" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Members" %}</h1></div>
+{% if last_invite_url %}<div class="alert alert-info" role="status">{% trans "Invitation link (also sent by e-mail):" %} <code id="invite-url">{{ last_invite_url }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#invite-url" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></div>{% endif %}
+<div class="grid grid-2">
+  <form method="post" class="card" novalidate>{% csrf_token %}
+    <h2>{% trans "Add or invite someone" %}</h2>
+    <p class="small muted">{% trans "Existing accounts get the role immediately; other addresses receive an invitation." %}</p>
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary">{% trans "Add" %}</button>
+  </form>
+  <section class="card">
+    <h2>{% trans "Open invitations" %}</h2>
+    {% for inv in invitations %}
+    <form method="post" action="{% url 'portal:member_action' event.slug %}" class="split small">{% csrf_token %}
+      <span>{{ inv.email }} · {{ inv.role }}{% if inv.scope_label %} ({{ inv.scope_label }}){% endif %} <span class="muted">{% trans "until" %} {{ inv.expires_at|date:"Y-m-d" }}</span></span>
+      <button class="btn btn-sm" name="revoke_invitation" value="{{ inv.pk }}">{% trans "Revoke" %}</button></form>
+    {% empty %}<p class="muted">{% trans "None." %}</p>{% endfor %}
+  </section>
+</div>
+<div class="table-wrap card"><table>
+  <thead><tr><th scope="col">{% trans "Person" %}</th><th scope="col">{% trans "Roles" %}</th><th scope="col">{% trans "2FA" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+  <tbody>{% for m in members %}<tr>
+    <td>{{ m.user }}<div class="small muted">{{ m.user.email }}</div></td>
+    <td>{% for a in m.assignments.all %}
+      <form method="post" action="{% url 'portal:member_action' event.slug %}" class="chip">{% csrf_token %}
+        <span>{{ a.role.name }}{% if a.scope_kind %} · {{ a.scope_label }}{% endif %}</span>
+        <button class="btn btn-ghost btn-icon btn-sm" name="remove_assignment" value="{{ a.pk }}" aria-label="{% blocktrans with r=a.role.name %}Remove role {{ r }}{% endblocktrans %}">✕</button></form>
+      {% empty %}<span class="muted small">{% trans "no role" %}</span>{% endfor %}</td>
+    <td>{% if m.user.has_two_factor %}<span class="badge badge-ok">{% trans "yes" %}</span>{% else %}<span class="badge badge-warn">{% trans "no" %}</span>{% endif %}</td>
+    <td><form method="post" action="{% url 'portal:member_action' event.slug %}" data-confirm="{% trans 'Remove this person from the event?' %}">{% csrf_token %}<button class="btn btn-sm btn-danger" name="remove_member" value="{{ m.pk }}">{% trans "Remove" %}</button></form></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

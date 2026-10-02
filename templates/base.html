@@ -1,0 +1,112 @@
+{% load i18n static %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}" data-theme="{{ request.COOKIES.evac_theme|default:'dark' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}EVAC{% endblock %} · {% if current_event %}{{ current_event.name }}{% else %}EVAC{% endif %}</title>
+  <link rel="stylesheet" href="{% static 'css/evac.css' %}?v={{ ASSET_VERSION }}">
+  {% if current_event %}<style nonce="{{ csp_nonce }}">:root{--primary:{{ current_event.primary_color }};--accent:{{ current_event.accent_color }};}</style>{% endif %}
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" type="image/svg+xml" href="{% static 'icons/favicon.svg' %}?v={{ ASSET_VERSION }}">
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false}'>
+  <script src="{% static 'vendor/htmx.min.js' %}?v={{ ASSET_VERSION }}" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% if nav_sections %}has-sidenav{% endif %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<a class="skip-link" href="#main">{% trans "Skip to main content" %}</a>
+
+<header class="topbar">
+  <nav class="topbar-inner" aria-label="{% trans 'Main navigation' %}">
+    {% if nav_sections %}
+    <button type="button" class="btn btn-ghost sidenav-toggle" id="sidenav-toggle" aria-expanded="false" aria-controls="sidenav">
+      <span aria-hidden="true">☰</span> <span class="sr-only">{% trans "Toggle menu" %}</span>
+    </button>
+    {% endif %}
+    <a class="brand" href="{% url 'portal:home' %}"><span class="brand-icon" aria-hidden="true">◈</span><span>EVAC</span></a>
+    <ul class="nav-links">
+      {% if current_event %}
+      <li class="nav-current-event">
+        <a href="{% url 'portal:event_dashboard' current_event.slug %}">
+          {% if current_event.logo %}<img src="{{ current_event.logo.url }}" alt="" class="nav-event-logo">{% endif %}{{ current_event.name|truncatechars:28 }}
+          <span class="badge badge-{{ current_event.state }} nav-event-state">{{ current_event.get_state_display }}</span>
+        </a>
+      </li>
+      {% endif %}
+      <li><a href="{% url 'portal:docs_index' %}">{% trans "Docs" %}</a></li>
+    </ul>
+    <div class="nav-right">
+      {% if user.is_authenticated %}
+      <form method="get" action="{% url 'portal:search' %}" class="inline nav-search" role="search">
+        <label class="sr-only" for="global-q">{% trans "Search" %}</label>
+        <input id="global-q" type="search" name="q" placeholder="{% trans 'Search…' %}" value="{{ request.GET.q|default:'' }}">
+      </form>
+      {% if switcher_events|length > 1 %}
+      <label class="sr-only" for="event-switch">{% trans "Switch event" %}</label>
+      <select id="event-switch" class="event-switch" data-action="navigate" data-href="{% url 'portal:switch_event' '__slug__' %}">
+        <option value="">{% trans "Switch event…" %}</option>
+        {% for e in switcher_events %}<option value="{{ e.slug }}" {% if current_event and e.pk == current_event.pk %}selected{% endif %}>{{ e.name }}</option>{% endfor %}
+      </select>
+      {% endif %}
+      <a class="btn btn-ghost btn-icon" href="{% url 'core:notifications' %}" aria-label="{% blocktrans count n=unread_notifications %}Notifications, {{ n }} unread{% plural %}Notifications, {{ n }} unread{% endblocktrans %}"><span aria-hidden="true">🔔</span>{% if unread_notifications %}<span class="badge badge-warn">{{ unread_notifications }}</span>{% endif %}</a>
+      {% endif %}
+      <button type="button" class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="{% trans 'Toggle dark mode' %}" title="{% trans 'Toggle dark mode' %}">◐</button>
+      {% if user.is_authenticated %}
+      <details class="menu" id="account-menu">
+        <summary class="btn btn-ghost btn-avatar" aria-label="{% trans 'Account menu' %}" title="{{ user }}"><span class="avatar" aria-hidden="true">{{ user.get_short_name|slice:":1"|upper }}</span></summary>
+        <div class="menu-panel">
+          <div class="menu-user"><strong>{{ user }}</strong><span class="muted small">{{ user.email }}</span></div>
+          <div class="menu-sep"></div>
+          <a href="{% url 'accounts:profile' %}">{% trans "Profile" %}</a>
+          <a href="{% url 'accounts:security' %}">{% trans "Security & two-factor" %}</a>
+          <a href="{% url 'accounts:tokens' %}">{% trans "API tokens" %}</a>
+          <div class="menu-sep"></div>
+          <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="menu-item">{% trans "Log out" %}</button></form>
+        </div>
+      </details>
+      {% else %}
+      <a href="{% url 'accounts:login' %}" class="btn btn-ghost">{% trans "Log in" %}</a>
+      {% endif %}
+    </div>
+  </nav>
+</header>
+
+<div class="layout">
+  {% if nav_sections %}
+  <aside class="sidenav" id="sidenav">
+    <nav class="sidenav-nav" aria-label="{% trans 'Section navigation' %}">
+      {% for title, entries in nav_sections %}
+      <div class="sidenav-group{% if title == 'Instance' %} sidenav-orga{% endif %}">
+        <h2 class="sidenav-h">{{ title }}</h2>
+        {% for e in entries %}<a href="{{ e.url }}" {% if e.active %}aria-current="page"{% endif %}>{% if e.icon %}<span aria-hidden="true">{{ e.icon }}</span> {% endif %}{{ e.label }}</a>{% endfor %}
+      </div>
+      {% endfor %}
+    </nav>
+  </aside>
+  {% endif %}
+  <main id="main" class="page {% block main_class %}{% endblock %}">
+    {% block breadcrumbs %}{% endblock %}
+    {% if blocked_roles %}
+    <div class="alert alert-warning split" role="status">
+      <span>{% blocktrans with roles=blocked_roles|join:", " %}Your roles {{ roles }} require two-factor authentication. Their permissions are inactive in this session.{% endblocktrans %}</span>
+      <a class="btn btn-sm" href="{% url 'accounts:security' %}">{% trans "Set up or use two-factor" %}</a>
+    </div>
+    {% endif %}
+    {% if messages %}
+    <div class="messages">
+      {% for m in messages %}<div class="alert alert-{{ m.tags }}" role="{% if 'error' in m.tags %}alert{% else %}status{% endif %}">{{ m }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span>EVAC — Event and Venue Administration Core · {{ EVAC_VERSION }}{% if EVAC_MODE == 'node' %} · {% trans "venue node" %}{% endif %}</span>
+    <span class="footer-links"><a href="{% url 'portal:docs_index' %}">{% trans "Docs" %}</a><a href="{% url 'swagger-ui' %}">{% trans "API" %}</a><a href="{% url 'portal:about' %}">{% trans "About" %}</a></span>
+  </div>
+</footer>
+<script src="{% static 'js/evac.js' %}?v={{ ASSET_VERSION }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

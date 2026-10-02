@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Invitation" %}{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<div class="card auth-card"><h1>{% trans "This invitation is not valid" %}</h1>
+<p>{% trans "It may have expired or already been used. Ask the organiser for a new one." %}</p></div>
+{% endblock %}

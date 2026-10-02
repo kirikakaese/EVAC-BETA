@@ -1,0 +1,25 @@
+# EVAC channels (WebSockets). Install: copy to /etc/systemd/system/, then: systemctl enable --now evac-channels
+[Unit]
+Description=EVAC channels (WebSockets)
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+PartOf=evac.target
+
+[Service]
+Type=simple
+User=evac
+Group=evac
+WorkingDirectory=/opt/evac
+EnvironmentFile=/etc/evac/evac.env
+Environment=DJANGO_SETTINGS_MODULE=evac.settings.prod
+ExecStart=/opt/evac/.venv/bin/daphne -b 127.0.0.1 -p 8001 --proxy-headers evac.asgi:application
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/evac
+
+[Install]
+WantedBy=evac.target

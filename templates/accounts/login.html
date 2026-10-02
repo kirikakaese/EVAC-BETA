@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Log in" %}{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<div class="card auth-card">
+  <h1>{% trans "Log in to EVAC" %}</h1>
+  {% if oidc_enabled %}
+  <form method="post" action="{% url 'accounts:oidc_login' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    <button class="btn btn-primary btn-block">{{ oidc_button_label }}</button>
+  </form>
+  {% if oidc_password_login %}<p class="divider"><span>{% trans "or with your password" %}</span></p>{% endif %}
+  {% endif %}
+  {% if oidc_password_login %}
+  <form method="post" novalidate>{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary btn-block">{% trans "Log in" %}</button>
+  </form>
+  {% endif %}
+  <p class="small muted">{% trans "No account yet? Accounts are created by invitation from an event organiser." %}</p>
+</div>
+{% endblock %}

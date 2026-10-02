@@ -1,0 +1,74 @@
+- name: System packages
+  ansible.builtin.apt:
+    name: [git, python3, python3-venv, python3-dev, libpq5, build-essential]
+    state: present
+    update_cache: true
+
+- name: Service user
+  ansible.builtin.user:
+    name: "{{ evac_user }}"
+    system: true
+    home: "{{ evac_root }}"
+    shell: /usr/sbin/nologin
+
+- name: Directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ evac_user }}"
+    mode: "0750"
+  loop: [/etc/evac, /var/lib/evac, "{{ evac_root }}"]
+
+- name: Checkout
+  ansible.builtin.git:
+    repo: "{{ evac_repo }}"
+    dest: "{{ evac_root }}"
+    version: "{{ evac_version }}"
+  become_user: "{{ evac_user }}"
+  notify: restart evac
+
+- name: Environment file
+  ansible.builtin.template:
+    src: evac.env.j2
+    dest: /etc/evac/evac.env
+    owner: root
+    group: "{{ evac_user }}"
+    mode: "0640"
+  notify: restart evac
+
+- name: Virtualenv with dependencies
+  ansible.builtin.shell: |
+    test -d .venv || python3 -m venv .venv
+    .venv/bin/pip install --upgrade pip
+    .venv/bin/python -c "import tomllib; d = tomllib.load(open('pyproject.toml', 'rb'))['project']; print('\n'.join(d['dependencies']))" | .venv/bin/pip install -r /dev/stdin
+  args:
+    chdir: "{{ evac_root }}"
+  become_user: "{{ evac_user }}"
+  changed_when: false
+
+- name: Migrate and collect static files
+  ansible.builtin.shell: |
+    set -a; . /etc/evac/evac.env; set +a
+    export DJANGO_SETTINGS_MODULE=evac.settings.prod
+    .venv/bin/python manage.py migrate --noinput
+    .venv/bin/python manage.py collectstatic --noinput
+  args:
+    chdir: "{{ evac_root }}"
+  become_user: "{{ evac_user }}"
+  changed_when: false
+
+- name: systemd units
+  ansible.builtin.copy:
+    src: "{{ evac_root }}/deploy/systemd/{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    remote_src: true
+    mode: "0644"
+  loop: "{{ ['evac.target'] + (evac_services | map('regex_replace', '^(.*)$', 'evac-\\1.service') | list) }}"
+  notify: restart evac
+
+- name: Enable services
+  ansible.builtin.systemd:
+    name: evac.target
+    enabled: true
+    state: started
+    daemon_reload: true

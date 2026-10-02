@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Venues" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Venues" %}</h1></div>
+<div class="grid grid-3">
+{% for v in venues %}
+  <a class="card card-link" href="{% url 'venues:detail' event.slug v.slug %}"><h2>{{ v.name }}</h2>
+    <p class="small muted">{{ v.address|linebreaksbr }}</p>{% if v.is_permanent %}<span class="badge">{% trans "permanent venue" %}</span>{% endif %}</a>
+{% empty %}<div class="card empty"><p>{% trans "No venue is linked to this event yet." %}</p></div>{% endfor %}
+</div>
+{% if can_add %}
+<div class="grid grid-2">
+  <form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "Add a venue" %}</h2>{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Add venue" %}</button></form>
+  {% if linkable %}<form method="post" class="card">{% csrf_token %}<h2>{% trans "Use an existing venue" %}</h2>
+    <label for="link-venue">{% trans "Venue" %}</label><select id="link-venue" name="link">{% for v in linkable %}<option value="{{ v.pk }}">{{ v.name }}</option>{% endfor %}</select>
+    <button class="btn">{% trans "Link to this event" %}</button></form>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

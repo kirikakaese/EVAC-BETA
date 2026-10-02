@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Import event" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Import an event" %}</h1></div>
+<form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}
+  <p>{% trans "Upload a JSON export from this or another EVAC instance. Venues with the same short name are reused; members are matched by e-mail address." %}</p>
+  {% include "portal/_form.html" with form=form %}
+  <button class="btn btn-primary">{% trans "Import" %}</button>
+</form>
+{% endblock %}

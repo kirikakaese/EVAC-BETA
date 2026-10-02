@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "API tokens" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Your API tokens" %}</h1></div>
+{% include "accounts/_tokens.html" %}
+{% endblock %}

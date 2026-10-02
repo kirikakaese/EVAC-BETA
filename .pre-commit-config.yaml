@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+  - repo: local
+    hooks:
+      - id: attribution
+        name: attribution check (CLAUDE.md section 0.1)
+        entry: python scripts/check_attribution.py --range HEAD~0..HEAD
+        language: system
+        pass_filenames: false
+      - id: migrations
+        name: migrations up to date
+        entry: env DJANGO_SETTINGS_MODULE=evac.settings.test python manage.py makemigrations --check --dry-run
+        language: system
+        pass_filenames: false

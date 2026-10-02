@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Extensions" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if level == "event" %}{% trans "Extensions of this event" %}{% else %}{% trans "Extensions (whole instance)" %}{% endif %}</h1></div>
+<p class="muted">{% if level == "event" %}{% trans "Connect this event to external systems. Instance-wide connections configured by an admin can be used here too." %}{% else %}{% trans "Connections configured here can be used by every event." %}{% endif %}</p>
+<div class="grid grid-3">
+{% for c in cards %}
+  <a class="card card-link ext-card" href="{{ c.url }}">
+    <div class="split"><h2>{% if c.spec.icon %}<span aria-hidden="true">{{ c.spec.icon }}</span> {% endif %}{{ c.spec.name }}</h2><span class="muted small">v{{ c.spec.version }}</span></div>
+    <p class="small">{{ c.spec.description }}</p>
+    <p>{% if c.status == "enabled" %}<span class="badge badge-ok">{% trans "enabled" %}</span>{% elif c.status == "instance" %}<span class="badge badge-ok">{% trans "uses instance connection" %}</span>{% elif c.status == "disabled" %}<span class="badge badge-off">{% trans "disabled" %}</span>{% elif c.status == "error" %}<span class="badge badge-err">{% trans "error" %}</span>{% else %}<span class="badge">{% trans "not configured" %}</span>{% endif %}
+    {% if c.spec.permissions %}<span class="small muted">{% trans "needs" %} {{ c.spec.permissions|join:", " }}</span>{% endif %}</p>
+  </a>
+{% empty %}
+  <div class="empty card"><p>{% trans "No extensions are installed." %}</p></div>
+{% endfor %}
+</div>
+{% endblock %}

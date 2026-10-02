@@ -1,0 +1,3011 @@
+openapi: 3.0.3
+info:
+  title: EVAC - Event and Venue Administration Core API
+  version: 0.1.0
+  description: 'REST API for events, venues, roles, modules, extensions and audit.
+    Authenticate with a session or `Authorization: Bearer evac_...` service token.'
+paths:
+  /api/v1/audit/verify/:
+    get:
+      operationId: audit_verify_retrieve
+      tags:
+      - audit
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/buildings/:
+    get:
+      operationId: buildings_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - buildings
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBuildingList'
+          description: ''
+    post:
+      operationId: buildings_create
+      tags:
+      - buildings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BuildingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BuildingRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+          description: ''
+  /api/v1/buildings/{id}/:
+    get:
+      operationId: buildings_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this building.
+        required: true
+      tags:
+      - buildings
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+          description: ''
+    put:
+      operationId: buildings_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this building.
+        required: true
+      tags:
+      - buildings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BuildingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BuildingRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+          description: ''
+    patch:
+      operationId: buildings_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this building.
+        required: true
+      tags:
+      - buildings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBuildingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBuildingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBuildingRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+          description: ''
+    delete:
+      operationId: buildings_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this building.
+        required: true
+      tags:
+      - buildings
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/:
+    get:
+      operationId: events_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+          enum:
+          - archived
+          - draft
+          - live
+          - setup
+          - teardown
+        description: |-
+          * `draft` - Draft
+          * `setup` - Setup
+          * `live` - Live
+          * `teardown` - Teardown
+          * `archived` - Archived
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEventList'
+          description: ''
+    post:
+      operationId: events_create
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/{event_slug}/audit/:
+    get:
+      operationId: events_audit_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+      - in: query
+        name: drill
+        schema:
+          type: boolean
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: target_id
+        schema:
+          type: string
+      - in: query
+        name: target_type
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditList'
+          description: ''
+  /api/v1/events/{event_slug}/audit/{id}/:
+    get:
+      operationId: events_audit_retrieve
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this audit log.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Audit'
+          description: ''
+  /api/v1/events/{event_slug}/members/:
+    get:
+      operationId: events_members_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMembershipList'
+          description: ''
+  /api/v1/events/{event_slug}/members/{id}/:
+    get:
+      operationId: events_members_retrieve
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this membership.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+          description: ''
+    delete:
+      operationId: events_members_destroy
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this membership.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/{event_slug}/members/assign/:
+    post:
+      operationId: events_members_assign_create
+      description: Give a role to a user by e-mail (optionally scoped); invites unknown
+        addresses.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignRoleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignRoleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignRoleRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/events/{event_slug}/modules/:
+    get:
+      operationId: events_modules_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        description: Module key
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModuleState'
+          description: ''
+  /api/v1/events/{event_slug}/modules/{id}/:
+    patch:
+      operationId: events_modules_partial_update
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        description: Module key
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedModuleStateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedModuleStateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedModuleStateRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModuleState'
+          description: ''
+  /api/v1/events/{event_slug}/roles/:
+    get:
+      operationId: events_roles_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoleList'
+          description: ''
+    post:
+      operationId: events_roles_create
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoleRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+          description: ''
+  /api/v1/events/{event_slug}/roles/{key}/:
+    get:
+      operationId: events_roles_retrieve
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+          description: ''
+    patch:
+      operationId: events_roles_partial_update
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRoleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoleRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+          description: ''
+    delete:
+      operationId: events_roles_destroy
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/{slug}/:
+    get:
+      operationId: events_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    patch:
+      operationId: events_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEventRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEventRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/{slug}/clone/:
+    post:
+      operationId: events_clone_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CloneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CloneRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/{slug}/export/:
+    get:
+      operationId: events_export_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/events/{slug}/transition/:
+    post:
+      operationId: events_transition_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransitionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransitionRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/import/:
+    post:
+      operationId: events_import_create
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/extensions/:
+    get:
+      operationId: extensions_retrieve
+      description: Extensions and their status (instance level, or ``?event=<slug>``).
+      tags:
+      - extensions
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/floors/:
+    get:
+      operationId: floors_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - floors
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFloorList'
+          description: ''
+    post:
+      operationId: floors_create
+      tags:
+      - floors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FloorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FloorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FloorRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Floor'
+          description: ''
+  /api/v1/floors/{id}/:
+    get:
+      operationId: floors_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this floor.
+        required: true
+      tags:
+      - floors
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Floor'
+          description: ''
+    put:
+      operationId: floors_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this floor.
+        required: true
+      tags:
+      - floors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FloorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FloorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FloorRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Floor'
+          description: ''
+    patch:
+      operationId: floors_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this floor.
+        required: true
+      tags:
+      - floors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFloorRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFloorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFloorRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Floor'
+          description: ''
+    delete:
+      operationId: floors_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this floor.
+        required: true
+      tags:
+      - floors
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: Liveness and version information (no authentication).
+      tags:
+      - health
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/me/:
+    get:
+      operationId: me_retrieve
+      tags:
+      - me
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/registry/:
+    get:
+      operationId: registry_retrieve
+      description: |-
+        What this instance provides: modules, permissions, scope kinds, webhook events, extensions, data
+        sources, widgets, notification channels and evacuation triggers.
+      tags:
+      - registry
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/rooms/:
+    get:
+      operationId: rooms_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - rooms
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoomList'
+          description: ''
+    post:
+      operationId: rooms_create
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{id}/:
+    get:
+      operationId: rooms_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this room.
+        required: true
+      tags:
+      - rooms
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+    put:
+      operationId: rooms_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this room.
+        required: true
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+    patch:
+      operationId: rooms_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this room.
+        required: true
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+    delete:
+      operationId: rooms_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this room.
+        required: true
+      tags:
+      - rooms
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/tokens/:
+    get:
+      operationId: tokens_list
+      description: Your own service tokens. Tokens cannot mint tokens (session login
+        required for create).
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - tokens
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTokenList'
+          description: ''
+    post:
+      operationId: tokens_create
+      description: Your own service tokens. Tokens cannot mint tokens (session login
+        required for create).
+      tags:
+      - tokens
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: ''
+  /api/v1/tokens/{id}/:
+    delete:
+      operationId: tokens_destroy
+      description: Your own service tokens. Tokens cannot mint tokens (session login
+        required for create).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this service token.
+        required: true
+      tags:
+      - tokens
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/venues/:
+    get:
+      operationId: venues_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - venues
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVenueList'
+          description: ''
+    post:
+      operationId: venues_create
+      tags:
+      - venues
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VenueRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VenueRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VenueRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+          description: ''
+  /api/v1/venues/{slug}/:
+    get:
+      operationId: venues_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - venues
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+          description: ''
+    put:
+      operationId: venues_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - venues
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VenueRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VenueRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VenueRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+          description: ''
+    patch:
+      operationId: venues_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - venues
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVenueRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVenueRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVenueRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+          description: ''
+    delete:
+      operationId: venues_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - venues
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/zones/:
+    get:
+      operationId: zones_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - zones
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedZoneList'
+          description: ''
+    post:
+      operationId: zones_create
+      tags:
+      - zones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+  /api/v1/zones/{id}/:
+    get:
+      operationId: zones_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone.
+        required: true
+      tags:
+      - zones
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+    put:
+      operationId: zones_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone.
+        required: true
+      tags:
+      - zones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+    patch:
+      operationId: zones_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone.
+        required: true
+      tags:
+      - zones
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedZoneRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedZoneRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedZoneRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+    delete:
+      operationId: zones_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone.
+        required: true
+      tags:
+      - zones
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    AssignRoleRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        role:
+          type: string
+          minLength: 1
+          pattern: ^[-a-zA-Z0-9_]+$
+        scope_kind:
+          type: string
+          default: ''
+        scope_id:
+          type: string
+          default: ''
+        invite:
+          type: boolean
+          default: true
+          description: Send an invitation if no account exists.
+      required:
+      - email
+      - role
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        scope_kind:
+          type: string
+          maxLength: 32
+        scope_id:
+          type: string
+          maxLength: 64
+        scope_label:
+          type: string
+          maxLength: 200
+      required:
+      - id
+      - role
+    Audit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+        actor_repr:
+          type: string
+          maxLength: 200
+        event_repr:
+          type: string
+          maxLength: 200
+        action:
+          type: string
+          maxLength: 64
+        target_type:
+          type: string
+          maxLength: 100
+        target_id:
+          type: string
+          maxLength: 64
+        target_repr:
+          type: string
+          maxLength: 300
+        scope: {}
+        message:
+          type: string
+          maxLength: 500
+        changes: {}
+        ip_address:
+          type: string
+          nullable: true
+        drill:
+          type: boolean
+          description: Action happened as part of a drill.
+        prev_hash:
+          type: string
+          maxLength: 64
+        hash:
+          type: string
+          maxLength: 64
+      required:
+      - action
+      - hash
+      - id
+      - prev_hash
+    Building:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        venue:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        outdoor:
+          type: boolean
+          title: Open-air site
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - id
+      - name
+      - venue
+    BuildingRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        outdoor:
+          type: boolean
+          title: Open-air site
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - name
+      - venue
+    CloneRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        slug:
+          oneOf:
+          - type: string
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        with_content:
+          type: boolean
+          default: false
+      required:
+      - name
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        slug:
+          type: string
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          readOnly: true
+        timezone:
+          type: string
+          title: Time zone
+          maxLength: 64
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          title: First day
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          title: Last day
+        venues:
+          type: array
+          items:
+            type: string
+        primary_color:
+          type: string
+          title: Primary colour
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        accent_color:
+          type: string
+          title: Accent colour
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        default_theme:
+          type: string
+          description: Theme key used by screens (Phase 1 designer).
+          maxLength: 64
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - slug
+      - state
+      - updated_at
+    EventRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        timezone:
+          type: string
+          minLength: 1
+          title: Time zone
+          maxLength: 64
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          title: First day
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          title: Last day
+        venues:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        primary_color:
+          type: string
+          minLength: 1
+          title: Primary colour
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        accent_color:
+          type: string
+          minLength: 1
+          title: Accent colour
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        default_theme:
+          type: string
+          description: Theme key used by screens (Phase 1 designer).
+          maxLength: 64
+      required:
+      - name
+      - slug
+    Floor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        building:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        level:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: 0 = ground floor, negative = basement.
+      required:
+      - building
+      - id
+      - name
+    FloorRequest:
+      type: object
+      properties:
+        building:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        level:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: 0 = ground floor, negative = basement.
+      required:
+      - building
+      - name
+    Membership:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assignment'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assignments
+      - created_at
+      - id
+      - user
+    ModuleState:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        required:
+          type: boolean
+          readOnly: true
+        instance:
+          type: boolean
+          readOnly: true
+        event:
+          type: boolean
+          nullable: true
+        active:
+          type: boolean
+          readOnly: true
+      required:
+      - active
+      - description
+      - event
+      - instance
+      - key
+      - name
+      - required
+    PaginatedAuditList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Audit'
+    PaginatedBuildingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Building'
+    PaginatedEventList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+    PaginatedFloorList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Floor'
+    PaginatedMembershipList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+    PaginatedRoleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+    PaginatedRoomList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Room'
+    PaginatedTokenList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Token'
+    PaginatedVenueList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Venue'
+    PaginatedZoneList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Zone'
+    PatchedBuildingRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        outdoor:
+          type: boolean
+          title: Open-air site
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+    PatchedEventRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        timezone:
+          type: string
+          minLength: 1
+          title: Time zone
+          maxLength: 64
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          title: First day
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          title: Last day
+        venues:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        primary_color:
+          type: string
+          minLength: 1
+          title: Primary colour
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        accent_color:
+          type: string
+          minLength: 1
+          title: Accent colour
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        default_theme:
+          type: string
+          description: Theme key used by screens (Phase 1 designer).
+          maxLength: 64
+    PatchedFloorRequest:
+      type: object
+      properties:
+        building:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        level:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: 0 = ground floor, negative = basement.
+    PatchedModuleStateRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+        event:
+          type: boolean
+          nullable: true
+    PatchedRoleRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 300
+        permissions: {}
+        require_2fa:
+          type: boolean
+          title: Require two-factor authentication
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+    PatchedRoomRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        floor:
+          type: string
+          format: uuid
+          nullable: true
+        zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        step_free:
+          type: boolean
+          title: Step-free access
+        has_lift:
+          type: boolean
+          title: Lift access
+        wheelchair_spaces:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+    PatchedVenueRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        is_permanent:
+          type: boolean
+          title: Permanent venue
+          description: A club, hall or campus that hosts many events.
+    PatchedZoneRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        outdoor:
+          type: boolean
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        color:
+          type: string
+          minLength: 1
+          maxLength: 7
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 300
+        permissions: {}
+        require_2fa:
+          type: boolean
+          title: Require two-factor authentication
+        builtin:
+          type: boolean
+          readOnly: true
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        effective_permissions:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - builtin
+      - effective_permissions
+      - id
+      - key
+      - name
+    RoleRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 300
+        permissions: {}
+        require_2fa:
+          type: boolean
+          title: Require two-factor authentication
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - key
+      - name
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        venue:
+          type: string
+          format: uuid
+        floor:
+          type: string
+          format: uuid
+          nullable: true
+        zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        name:
+          type: string
+          maxLength: 200
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        step_free:
+          type: boolean
+          title: Step-free access
+        has_lift:
+          type: boolean
+          title: Lift access
+        wheelchair_spaces:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - id
+      - name
+      - venue
+    RoomRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        floor:
+          type: string
+          format: uuid
+          nullable: true
+        zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        step_free:
+          type: boolean
+          title: Step-free access
+        has_lift:
+          type: boolean
+          title: Lift access
+        wheelchair_spaces:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - name
+      - venue
+    StateEnum:
+      enum:
+      - draft
+      - setup
+      - live
+      - teardown
+      - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `setup` - Setup
+        * `live` - Live
+        * `teardown` - Teardown
+        * `archived` - Archived
+    Token:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        event:
+          type: string
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+          nullable: true
+        scopes: {}
+        token_prefix:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+        created_with_2fa:
+          type: boolean
+          readOnly: true
+          description: Minted in a two-factor verified session; only such tokens can
+            use sensitive permissions.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_used_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        token:
+          type: string
+          readOnly: true
+          description: Only returned once, on creation.
+      required:
+      - created_at
+      - created_with_2fa
+      - id
+      - last_used_at
+      - name
+      - token
+      - token_prefix
+    TokenRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        event:
+          type: string
+          minLength: 1
+          title: Short name
+          description: 'Used in URLs: /e/<short name>/'
+          nullable: true
+        scopes: {}
+        is_active:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - name
+    TransitionRequest:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - state
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: E-mail address
+        display_name:
+          type: string
+          readOnly: true
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Superuser status
+          description: Designates that this user has all permissions without explicitly
+            assigning them.
+        email_verified:
+          type: boolean
+          readOnly: true
+        has_two_factor:
+          type: boolean
+          readOnly: true
+      required:
+      - display_name
+      - email
+      - email_verified
+      - has_two_factor
+      - id
+      - is_superuser
+    Venue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+          maxLength: 64
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        is_permanent:
+          type: boolean
+          title: Permanent venue
+          description: A club, hall or campus that hosts many events.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - slug
+      - updated_at
+    VenueRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        is_permanent:
+          type: boolean
+          title: Permanent venue
+          description: A club, hall or campus that hosts many events.
+      required:
+      - name
+      - slug
+    Zone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        venue:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        outdoor:
+          type: boolean
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        color:
+          type: string
+          maxLength: 7
+      required:
+      - id
+      - name
+      - venue
+    ZoneRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        outdoor:
+          type: boolean
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        color:
+          type: string
+          minLength: 1
+          maxLength: 7
+      required:
+      - name
+      - venue
+  securitySchemes:
+    ServiceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: evac_<token>
+      description: Service token from Account -> API tokens (or `manage.py evac_token`).
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

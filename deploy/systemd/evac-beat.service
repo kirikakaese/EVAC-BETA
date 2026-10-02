@@ -1,0 +1,25 @@
+# EVAC celery beat. Install: copy to /etc/systemd/system/, then: systemctl enable --now evac-beat
+[Unit]
+Description=EVAC celery beat
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+PartOf=evac.target
+
+[Service]
+Type=simple
+User=evac
+Group=evac
+WorkingDirectory=/opt/evac
+EnvironmentFile=/etc/evac/evac.env
+Environment=DJANGO_SETTINGS_MODULE=evac.settings.prod
+ExecStart=/opt/evac/.venv/bin/celery -A evac beat -l info --schedule /var/lib/evac/celerybeat-schedule
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/evac
+
+[Install]
+WantedBy=evac.target

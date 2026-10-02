@@ -1,0 +1,75 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ spec.name }}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{{ urls.index }}">{% trans "Extensions" %}</a> <span aria-hidden="true">›</span> {{ spec.name }}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ spec.name }} <span class="muted small">v{{ spec.version }}</span></h1>
+  <div class="actions">{% if spec.docs %}<a class="btn btn-sm" href="{% url 'portal:docs_page' 'extension-'|add:spec.key %}">{% trans "Documentation" %}</a>{% endif %}</div>
+</div>
+<p>{{ spec.description }}</p>
+<div class="grid grid-2">
+  <form method="post" class="card" novalidate>{% csrf_token %}
+    <h2>{% trans "Connection" %}</h2>
+    {% include "portal/_field.html" with field=base_form.enabled %}
+    {% if can_inherit %}
+    <div class="field"><label class="checkbox" for="use_instance"><input type="checkbox" id="use_instance" name="use_instance" value="1" {% if config.use_instance %}checked{% endif %} {% if not instance_config or not instance_config.enabled %}disabled{% endif %}> <span>{% trans "Use the instance-wide connection" %}</span></label>
+      <div class="help">{% if instance_config and instance_config.enabled %}{% trans "An admin configured this extension for the whole instance." %}{% else %}{% trans "No instance-wide connection is configured." %}{% endif %}</div></div>
+    {% endif %}
+    {% include "portal/_form.html" with form=schema_form %}
+    {% for field, clear, stored in secret_rows %}
+      {% include "portal/_field.html" with field=field %}
+      {% if stored %}<p class="small"><span class="badge badge-ok">{% trans "stored" %}</span></p>{% include "portal/_field.html" with field=clear %}{% endif %}
+    {% endfor %}
+    {% if spec.features %}
+    <fieldset><legend>{% trans "Features" %}</legend>
+      <p class="small muted">{% trans "What this extension contributes; switch each part on or off." %}</p>
+      {% include "portal/_form.html" with form=feature_form bare=True %}
+    </fieldset>
+    {% endif %}
+    <button class="btn btn-primary">{% trans "Save" %}</button>
+  </form>
+  <div>
+    <section class="card">
+      <h2>{% trans "Status" %}</h2>
+      <dl class="kv">
+        <dt>{% trans "State" %}</dt><dd>{% if config.is_saved %}{% if config.enabled %}<span class="badge badge-ok">{% trans "enabled" %}</span>{% else %}<span class="badge badge-off">{% trans "disabled" %}</span>{% endif %}{% else %}<span class="badge">{% trans "not configured" %}</span>{% endif %}</dd>
+        <dt>{% trans "Health" %}</dt><dd>{% if config.health == "ok" %}<span class="badge badge-ok">{% trans "OK" %}</span>{% elif config.health == "error" %}<span class="badge badge-err">{% trans "error" %}</span>{% else %}<span class="badge">{% trans "not tested" %}</span>{% endif %}</dd>
+        <dt>{% trans "Last check" %}</dt><dd>{{ config.last_check_at|date:"Y-m-d H:i"|default:"–" }}</dd>
+        <dt>{% trans "Last sync" %}</dt><dd>{{ config.last_sync_at|date:"Y-m-d H:i"|default:"–" }}</dd>
+      </dl>
+      {% if config.last_error %}<div class="alert alert-error small" role="alert">{{ config.last_error }}</div>{% endif %}
+      {% if config.is_saved %}
+      <form method="post" action="{{ urls.detail }}test/" hx-post="{{ urls.detail }}test/" hx-target="#test-result" hx-swap="innerHTML">{% csrf_token %}
+        <button class="btn">{% trans "Test connection" %}</button></form>
+      <div id="test-result" aria-live="polite"></div>
+      {% endif %}
+    </section>
+    {% if spec.inbound_webhooks and config.is_saved %}
+    <section class="card">
+      <h2>{% trans "Inbound webhook" %}</h2>
+      <p class="small">{% trans "Paste this URL into the other system:" %}</p>
+      <code id="webhook-url" class="block">{{ webhook_url }}</code>
+      <button type="button" class="btn btn-sm" data-action="copy" data-target="#webhook-url" data-copied="{% trans 'Copied' %}">{% trans "Copy URL" %}</button>
+      <p class="small">{% blocktrans with h=spec.signature_header %}Requests must carry <code>{{ h }}: sha256=&lt;HMAC-SHA256 of the body&gt;</code>.{% endblocktrans %}</p>
+      {% if new_webhook_secret %}<div class="alert alert-warning" role="status">{% trans "Secret (shown once):" %} <code id="wh-secret">{{ new_webhook_secret }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#wh-secret" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></div>
+      {% elif has_webhook_secret %}<p><span class="badge badge-ok">{% trans "secret stored" %}</span></p>{% endif %}
+      <form method="post" action="{{ urls.detail }}webhook-secret/" data-confirm="{% trans 'The old secret stops working. Continue?' %}">{% csrf_token %}<button class="btn btn-sm">{% if has_webhook_secret %}{% trans "Regenerate secret" %}{% else %}{% trans "Generate secret" %}{% endif %}</button></form>
+    </section>
+    {% endif %}
+    {% if spec.urls and config.is_saved %}
+    <section class="card"><h2>{% trans "More" %}</h2><a class="btn" href="{{ urls.detail }}x/endpoints/">{% trans "Manage" %}</a></section>
+    {% endif %}
+    {% if config.is_saved %}
+    <section class="card">
+      <h2>{% trans "Disconnect" %}</h2>
+      <p class="small">{% trans "Removes the configuration and its secrets and deletes everything this extension imported." %}</p>
+      <form method="post" action="{{ urls.detail }}disconnect/" data-confirm="{% trans 'Disconnect and purge all data of this extension?' %}">{% csrf_token %}<button class="btn btn-danger">{% trans "Disconnect & purge data" %}</button></form>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% if logs %}
+<section class="card"><h2>{% trans "Log" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Time" %}</th><th scope="col">{% trans "Level" %}</th><th scope="col">{% trans "Message" %}</th></tr></thead>
+<tbody>{% for l in logs %}<tr><td class="small">{{ l.created_at|date:"Y-m-d H:i:s" }}</td><td><span class="badge badge-{{ l.level }}">{{ l.get_level_display }}</span></td><td class="small">{{ l.message }}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endif %}
+{% endblock %}

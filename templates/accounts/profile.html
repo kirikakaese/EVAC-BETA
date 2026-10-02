@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Profile" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Your profile" %}</h1></div>
+<div class="grid grid-2">
+  <form method="post" class="card">{% csrf_token %}
+    <h2>{% trans "Profile" %}</h2>
+    <p class="muted">{{ user.email }}</p>
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary" name="save_profile">{% trans "Save" %}</button>
+  </form>
+  {% if user.has_usable_password %}
+  <form method="post" class="card">{% csrf_token %}
+    <h2>{% trans "Change password" %}</h2>
+    {% include "portal/_form.html" with form=pw_form %}
+    <button class="btn" name="change_password">{% trans "Change password" %}</button>
+  </form>
+  {% endif %}
+  <div class="card">
+    <h2>{% trans "Your data" %}</h2>
+    <p>{% trans "Download everything EVAC stores about your account, or delete your account." %}</p>
+    <div class="actions"><a class="btn" href="{% url 'accounts:gdpr_export' %}">{% trans "Download my data (JSON)" %}</a>
+    <a class="btn btn-danger" href="{% url 'accounts:gdpr_delete' %}">{% trans "Delete my account" %}</a></div>
+  </div>
+</div>
+{% endblock %}

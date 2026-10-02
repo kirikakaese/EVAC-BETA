@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Overview" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ event.name }}</h1>
+  {% if can_manage %}<div class="actions"><a class="btn" href="{% url 'portal:event_settings' event.slug %}">{% trans "Event settings" %}</a></div>{% endif %}
+</div>
+<div class="live-status small muted" data-live-url="{% url 'core:sse' event.slug %}" data-poll-url="{% url 'core:poll' event.slug %}" data-live-ws="{{ realtime_ws_base }}/ws/e/{{ event.slug }}/">
+  <span data-live-status data-label-websocket="{% trans 'Live (WebSocket)' %}" data-label-sse="{% trans 'Live (SSE)' %}" data-label-polling="{% trans 'Live (polling)' %}" data-label-reconnecting="{% trans 'Reconnecting…' %}" data-label-offline="{% trans 'Offline' %}">{% trans "Connecting…" %}</span>
+</div>
+<div class="grid grid-4 stats">
+  <div class="card stat"><span class="stat-label">{% trans "State" %}</span><span class="badge badge-{{ event.state }}">{{ event.get_state_display }}</span></div>
+  <div class="card stat"><span class="stat-label">{% trans "Dates" %}</span><span>{% if event.start_date %}{{ event.start_date|date:"j M" }} – {{ event.end_date|date:"j M Y" }}{% else %}–{% endif %}</span></div>
+  <div class="card stat"><span class="stat-label">{% trans "Members" %}</span><span class="number">{{ members }}</span></div>
+  <div class="card stat"><span class="stat-label">{% trans "Time zone" %}</span><span>{{ event.timezone }}</span></div>
+</div>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>{% trans "Screens" %}</h2>
+    <div class="empty"><p>{% trans "What is on every screen right now, active overrides and screen health will appear here once the screens module is installed (roadmap phase 1)." %}</p></div>
+  </section>
+  <section class="card">
+    <h2>{% trans "Alarms" %}</h2>
+    <div class="empty"><p>{% trans "The evacuation module is not installed yet (roadmap phase 3). No alarm state is shown." %}</p></div>
+  </section>
+  <section class="card">
+    <h2>{% trans "Venues" %}</h2>
+    {% if venues %}<ul>{% for v in venues %}<li>{{ v.name }}</li>{% endfor %}</ul>{% else %}<p class="muted">{% trans "No venue linked yet." %}</p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>{% trans "Modules" %}</h2>
+    <ul class="plain">{% for r in modules %}<li>{% if r.active %}<span class="badge badge-ok">{% trans "on" %}</span>{% else %}<span class="badge badge-off">{% trans "off" %}</span>{% endif %} {{ r.spec.name }}</li>{% endfor %}</ul>
+  </section>
+  {% if scheduled %}
+  <section class="card"><h2>{% trans "Scheduled lifecycle changes" %}</h2>
+    <ul>{% for s in scheduled %}<li>{{ s.get_target_state_display }} — {{ s.at|date:"Y-m-d H:i" }}</li>{% endfor %}</ul></section>
+  {% endif %}
+  {% if recent %}
+  <section class="card"><h2>{% trans "Recent activity" %}</h2>
+    <ul class="plain small">{% for a in recent %}<li><span class="muted">{{ a.created_at|date:"H:i" }}</span> {{ a.actor_repr }} · <code>{{ a.action }}</code> {{ a.message }}</li>{% endfor %}</ul>
+    <a class="btn btn-sm" href="{% url 'portal:audit' event.slug %}">{% trans "Full audit log" %}</a></section>
+  {% endif %}
+</div>
+{% endblock %}

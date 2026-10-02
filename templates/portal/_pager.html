@@ -1,0 +1,5 @@
+{% load i18n %}{% if page.has_other_pages %}<nav class="pager" aria-label="{% trans 'Pages' %}">
+{% if page.has_previous %}<a class="btn btn-sm" href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.previous_page_number }}">{% trans "Newer" %}</a>{% endif %}
+<span class="small muted">{% blocktrans with n=page.number t=page.paginator.num_pages %}Page {{ n }} of {{ t }}{% endblocktrans %}</span>
+{% if page.has_next %}<a class="btn btn-sm" href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page.next_page_number }}">{% trans "Older" %}</a>{% endif %}
+</nav>{% endif %}

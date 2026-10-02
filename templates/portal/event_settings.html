@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Event settings" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Event settings" %}</h1>
+  <div class="actions"><a class="btn" href="{% url 'portal:event_export' event.slug %}">{% trans "Export (JSON)" %}</a></div>
+</div>
+<div class="grid grid-2">
+  <form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}
+    <h2>{% trans "Details & branding" %}</h2>
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary">{% trans "Save" %}</button>
+  </form>
+  <div>
+    <section class="card">
+      <h2>{% trans "Lifecycle" %}</h2>
+      <p>{% trans "Current state:" %} <span class="badge badge-{{ event.state }}">{{ event.get_state_display }}</span></p>
+      <ol class="lifecycle small muted"><li>{% trans "Draft" %}</li><li>{% trans "Setup" %}</li><li>{% trans "Live" %}</li><li>{% trans "Teardown" %}</li><li>{% trans "Archived" %}</li></ol>
+      {% for target, label in transition_targets %}
+      {% if target != "archived" or can_delete %}
+      <form method="post" action="{% url 'portal:event_lifecycle' event.slug %}" class="inline" data-confirm="{% blocktrans %}Move the event to {{ label }}?{% endblocktrans %}">{% csrf_token %}
+        <input type="hidden" name="state" value="{{ target }}"><button class="btn btn-sm">{% blocktrans %}Move to {{ label }}{% endblocktrans %}</button></form>
+      {% endif %}
+      {% endfor %}
+      <h3>{% trans "Scheduled changes" %}</h3>
+      {% for s in scheduled %}
+      <div class="split small"><span>{{ s.get_target_state_display }} — {{ s.at|date:"Y-m-d H:i" }}{% if s.applied_at %} <span class="badge badge-ok">{% trans "applied" %}</span>{% endif %}{% if s.error %} <span class="badge badge-err">{{ s.error }}</span>{% endif %}</span>
+        {% if not s.applied_at %}<form method="post" action="{% url 'portal:event_lifecycle' event.slug %}">{% csrf_token %}<button class="btn btn-sm" name="cancel" value="{{ s.pk }}">{% trans "Cancel" %}</button></form>{% endif %}</div>
+      {% empty %}<p class="muted small">{% trans "None." %}</p>{% endfor %}
+      <form method="post" action="{% url 'portal:event_lifecycle' event.slug %}" novalidate>{% csrf_token %}<input type="hidden" name="schedule" value="1">
+        {% include "portal/_form.html" with form=schedule_form %}<button class="btn btn-sm">{% trans "Schedule" %}</button></form>
+    </section>
+    {% if namespaces %}
+    <section class="card"><h2>{% trans "More settings" %}</h2>
+      <ul>{% for ns in namespaces %}<li><a href="{% url 'portal:settings_ns' event.slug ns.key %}">{{ ns.title }}</a></li>{% endfor %}</ul></section>
+    {% endif %}
+    {% if user.is_superuser %}
+    <section class="card"><h2>{% trans "Clone this event" %}</h2>
+      <form method="post" action="{% url 'portal:event_clone' event.slug %}" novalidate>{% csrf_token %}
+        {% include "portal/_form.html" with form=clone_form %}
+        <p class="small muted">{% trans "Settings, roles, modules and venues are always copied. Extension secrets are never copied." %}</p>
+        <button class="btn">{% trans "Clone" %}</button></form></section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Audit log" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Audit log" %}{% if event %} · {{ event.name }}{% endif %}</h1>
+  <div class="actions">
+    <a class="btn btn-sm" href="?{{ request.GET.urlencode }}&format=csv">{% trans "Export CSV" %}</a>
+    <a class="btn btn-sm" href="?{{ request.GET.urlencode }}&format=json">{% trans "Export JSON" %}</a>
+    {% if instance %}<a class="btn btn-sm" href="?verify=1">{% trans "Verify hash chain" %}</a>{% endif %}
+  </div>
+</div>
+{% if verify %}<div class="alert {% if verify.ok %}alert-success{% else %}alert-error{% endif %}" role="{% if verify.ok %}status{% else %}alert{% endif %}">
+  {% if verify.ok %}{% blocktrans with n=verify.checked %}Hash chain intact: {{ n }} entries verified.{% endblocktrans %}{% else %}{% blocktrans with id=verify.first_bad_id r=verify.reason %}Hash chain BROKEN at entry {{ id }}: {{ r }}{% endblocktrans %}{% endif %}</div>{% endif %}
+<form method="get" class="filters card">
+  <div><label for="f-action">{% trans "Action starts with" %}</label><input id="f-action" name="action" value="{{ filters.action|default:'' }}"></div>
+  <div><label for="f-actor">{% trans "Actor" %}</label><input id="f-actor" name="actor" value="{{ filters.actor|default:'' }}"></div>
+  <div><label for="f-q">{% trans "Text" %}</label><input id="f-q" name="q" value="{{ filters.q|default:'' }}"></div>
+  <div><label for="f-drill">{% trans "Drills" %}</label><select id="f-drill" name="drill"><option value="">{% trans "all" %}</option><option value="0" {% if filters.drill == "0" %}selected{% endif %}>{% trans "real only" %}</option><option value="1" {% if filters.drill == "1" %}selected{% endif %}>{% trans "drills only" %}</option></select></div>
+  <div><button class="btn">{% trans "Filter" %}</button></div>
+</form>
+<div class="table-wrap card"><table class="audit">
+  <thead><tr><th scope="col">#</th><th scope="col">{% trans "Time (UTC)" %}</th><th scope="col">{% trans "Actor" %}</th><th scope="col">{% trans "Action" %}</th><th scope="col">{% trans "Target" %}</th><th scope="col">{% trans "Details" %}</th></tr></thead>
+  <tbody>{% for a in page %}<tr>
+    <td class="small muted">{{ a.id }}</td>
+    <td class="small">{{ a.created_at|date:"Y-m-d H:i:s" }}</td>
+    <td class="small">{{ a.actor_repr|default:"system" }}{% if a.ip_address %}<div class="muted">{{ a.ip_address }}</div>{% endif %}</td>
+    <td><code>{{ a.action }}</code>{% if a.drill %} <span class="badge badge-warn">{% trans "drill" %}</span>{% endif %}{% if instance and a.event_repr %}<div class="small muted">{{ a.event_repr }}</div>{% endif %}</td>
+    <td class="small">{{ a.target_repr }}</td>
+    <td class="small">{{ a.message }}{% if a.changes %}<details><summary>{% trans "changes" %}</summary><pre>{{ a.changes|pprint }}</pre></details>{% endif %}{% if a.scope %}<div class="muted">{{ a.scope }}</div>{% endif %}</td>
+  </tr>{% empty %}<tr><td colspan="6" class="muted">{% trans "No entries." %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% include "portal/_pager.html" %}
+{% endblock %}

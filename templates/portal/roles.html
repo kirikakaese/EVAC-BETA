@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Roles" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Roles" %}</h1>
+  {% if can_edit %}<div class="actions"><a class="btn btn-primary" href="{% url 'portal:role_create' event.slug %}">{% trans "New role" %}</a></div>{% endif %}
+</div>
+<p class="muted">{% trans "Roles are sets of permissions. When you give someone a role you can limit it to a venue, zone or room, e.g. 'may control screens in Hall B only'." %}</p>
+<div class="grid grid-2">
+{% for r in rows %}
+<section class="card">
+  <div class="split"><h2>{{ r.role.name }}{% if r.role.builtin %} <span class="badge">{% trans "built-in" %}</span>{% endif %}</h2>
+    {% if can_edit %}<a class="btn btn-sm" href="{% url 'portal:role_edit' event.slug r.role.key %}">{% trans "Edit" %}</a>{% endif %}</div>
+  <p class="small muted">{{ r.role.description }}</p>
+  <p class="small">{% blocktrans count n=r.count %}{{ n }} assignment{% plural %}{{ n }} assignments{% endblocktrans %}
+    {% if r.role.require_2fa %}<span class="badge badge-ok">{% trans "2FA required" %}</span>{% endif %}
+    {% if r.sensitive and not r.role.require_2fa %}<span class="badge badge-warn">{% trans "alarm-relevant without 2FA requirement" %}</span>{% endif %}</p>
+  <details><summary>{% blocktrans count n=r.effective|length %}{{ n }} permission{% plural %}{{ n }} permissions{% endblocktrans %}</summary>
+    <p class="small"><code>{{ r.role.permissions|join:" " }}</code></p>
+    <ul class="small plain cols">{% for p in r.effective %}<li><code>{{ p }}</code></li>{% endfor %}</ul></details>
+</section>
+{% endfor %}
+</div>
+{% endblock %}

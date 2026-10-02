@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Search" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if q %}{% blocktrans %}Results for “{{ q }}”{% endblocktrans %}{% else %}{% trans "Search" %}{% endif %}</h1></div>
+{% if q %}
+<div class="grid grid-3">
+  <section class="card"><h2>{% trans "Events" %}</h2>{% for e in results.events %}<p><a href="{% url 'portal:event_dashboard' e.slug %}">{{ e.name }}</a></p>{% empty %}<p class="muted">{% trans "Nothing found." %}</p>{% endfor %}</section>
+  <section class="card"><h2>{% trans "Venues" %}</h2>{% for v in results.venues %}<p>{{ v.name }}</p>{% empty %}<p class="muted">{% trans "Nothing found." %}</p>{% endfor %}</section>
+  <section class="card"><h2>{% trans "Documentation" %}</h2>{% for r in results.docs %}<p><a href="{% url 'portal:docs_page' r.doc.slug %}{% if r.anchor %}#{{ r.anchor }}{% endif %}">{{ r.title }}{% if r.heading %} › {{ r.heading }}{% endif %}</a></p>{% empty %}<p class="muted">{% trans "Nothing found." %}</p>{% endfor %}</section>
+</div>
+{% endif %}
+{% endblock %}
