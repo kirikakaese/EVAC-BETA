@@ -6,6 +6,12 @@ released.
 
 ## [Unreleased]
 
+### Changed
+
+- The sibling project PET was renamed to **DIAL — DECT & IP Administration Layer**; brief, roadmap, ADRs,
+  docs and UI texts now say DIAL (phase 4 is the DIAL extension, `extensions/dial`, `X-DIAL-*` headers,
+  `dial_` tokens).
+
 ### Added
 
 - Early-access gate (`EVAC_EARLY_ACCESS_PASSWORD`): a shared password in front of the whole instance,

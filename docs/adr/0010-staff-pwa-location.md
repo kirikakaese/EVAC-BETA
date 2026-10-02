@@ -6,7 +6,7 @@
 ## Decision
 
 The staff PWA (brief §12) is **part of the portal** (`apps/portal`, service worker and manifest served
-by Django like PET's PWA shell), not a separate `pwa/` app. Staff pages are regular server-rendered pages
+by Django like DIAL's PWA shell), not a separate `pwa/` app. Staff pages are regular server-rendered pages
 with HTMX, plus small offline-queue scripts for counters and acknowledgements. The `pwa/` directory from
 the brief layout is therefore not created.
 

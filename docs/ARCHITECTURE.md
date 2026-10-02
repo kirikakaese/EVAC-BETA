@@ -18,7 +18,7 @@ flowchart TB
     Worker[worker: Celery] --> Redis
     Worker --> PG
     Beat[beat: Celery beat] --> Redis
-    Worker -->|signed deliveries| Out[Webhook receivers, later: ntfy, Matrix, PET, ...]
+    Worker -->|signed deliveries| Out[Webhook receivers, later: ntfy, Matrix, DIAL, ...]
     Screens[Screens - phase 1] -.->|WS/SSE| Channels
     Node[Venue node - phase 3, ADR-0002] -.->|HTTPS outbound| Web
 ```

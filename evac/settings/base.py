@@ -34,7 +34,7 @@ env = environ.Env(
     EVAC_INVITATION_TTL_HOURS=(int, 168),
     EVAC_WEBHOOK_TIMEOUT=(int, 5),
     EVAC_OUTBOX_MAX_ATTEMPTS=(int, 8),
-    # OpenID Connect login (same approach as PET)
+    # OpenID Connect login (same approach as DIAL)
     EVAC_OIDC_ENABLED=(bool, False),
     EVAC_OIDC_ISSUER=(str, ""),
     EVAC_OIDC_CLIENT_ID=(str, ""),
