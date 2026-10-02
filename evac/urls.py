@@ -13,6 +13,8 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerSplitView
 
+from apps.core.early_access import gate as early_access_gate
+
 # Swagger UI / ReDoc load their bundles from a CDN (online only; the schema itself at /api/schema/ works
 # offline). Their responses get a CSP that allows exactly that CDN.
 DOCS_CSP = {
@@ -40,6 +42,7 @@ class RedocView(_CdnCsp, SpectacularRedocView):
 
 
 urlpatterns = [
+    path("early-access/", early_access_gate, name="early_access"),
     path("admin/", admin.site.urls),
     path("accounts/", include("apps.accounts.urls", namespace="accounts")),
     path("api/v1/", include("apps.api.urls", namespace="api")),

@@ -25,6 +25,9 @@ env = environ.Env(
     EVAC_REALTIME_URL=(str, ""),
     EVAC_SECRETS_KEYS=(list, []),
     EVAC_SEED_DEMO=(bool, False),
+    EVAC_EARLY_ACCESS_PASSWORD=(str, ""),
+    EVAC_EARLY_ACCESS_DAYS=(int, 30),
+    EVAC_EARLY_ACCESS_MESSAGE=(str, ""),
     EVAC_DISABLED_PLUGINS=(list, []),
     EVAC_LOGIN_MAX_FAILURES=(int, 5),
     EVAC_LOGIN_LOCKOUT_MINUTES=(int, 15),
@@ -120,6 +123,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.RateLimitMiddleware",
+    "apps.core.early_access.EarlyAccessMiddleware",
     "apps.core.middleware.FirstRunMiddleware",
     "apps.core.middleware.CurrentEventMiddleware",
 ]
@@ -271,7 +275,12 @@ SPECTACULAR_SETTINGS = {
 # (rotation). Generate with ``python manage.py evac_genkey``. Empty = derived from SECRET_KEY (dev only;
 # prod settings refuse to start without explicit keys).
 EVAC_SECRETS_KEYS = env("EVAC_SECRETS_KEYS")
-EVAC_RATE_LIMITS = {"login": 20, "twofactor": 20, "setup": 10, "webhook": 600, "invite": 20}
+EVAC_RATE_LIMITS = {"login": 20, "twofactor": 20, "setup": 10, "webhook": 600, "invite": 20, "early_access": 10}
+# Early-access gate (docs/adr/0012-early-access-gate.md): a shared password in front of the whole site while
+# a public server is not ready for everyone. Empty = off. Changing the password locks everybody out again.
+EVAC_EARLY_ACCESS_PASSWORD = env("EVAC_EARLY_ACCESS_PASSWORD")
+EVAC_EARLY_ACCESS_DAYS = env("EVAC_EARLY_ACCESS_DAYS")
+EVAC_EARLY_ACCESS_MESSAGE = env("EVAC_EARLY_ACCESS_MESSAGE")
 EVAC_LOGIN_MAX_FAILURES = env("EVAC_LOGIN_MAX_FAILURES")
 EVAC_LOGIN_LOCKOUT_MINUTES = env("EVAC_LOGIN_LOCKOUT_MINUTES")
 EVAC_INVITATION_TTL_HOURS = env("EVAC_INVITATION_TTL_HOURS")

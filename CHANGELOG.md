@@ -6,6 +6,11 @@ released.
 
 ## [Unreleased]
 
+### Added
+
+- Early-access gate (`EVAC_EARLY_ACCESS_PASSWORD`): a shared password in front of the whole instance,
+  incl. the first-run wizard and WebSockets, for running on the public domain before launch (ADR-0012).
+
 ### Added — Phase 0 (foundation)
 
 - Project scaffold mirroring PET: `evac/` settings (base/dev/prod/test), ASGI with Channels, Celery + beat.

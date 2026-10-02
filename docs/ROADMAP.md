@@ -40,6 +40,7 @@ green. (Verified by `apps/portal/tests/test_portal.py::test_first_run_wizard` an
 | 0.2.6 | Outbox | durable jobs with idempotency keys, backoff, dead-letter, beat drain, purge | ✅ |
 | 0.2.7 | Realtime layer | Channels WebSocket per event, SSE fallback, long-poll fallback, resumable sequence numbers | ✅ (ADR-0008) |
 | 0.2.8 | Observability | `/healthz`, `/readyz`, `/metrics` (Prometheus text, optional token), JSON logs (`LOG_FORMAT=json`) | ✅ (Sentry hook: documented, optional) |
+| 0.2.10 | Early-access gate | shared password in front of everything (pages, API, WebSockets, wizard); probes, signed webhooks and service tokens exempt; password change invalidates cookies (ADR-0012) | ✅ |
 | 0.2.9 | Rate limiting + CSP | per-IP limits on login/2FA/setup/webhooks; strict CSP with nonce | ✅ |
 
 ### Epic 0.3 — Accounts
