@@ -6,8 +6,8 @@ agent, so the public server only opens SSH, HTTP and HTTPS.
 
 ```
 Internet ──443──► Caddy (HTTPS, automatic Let's Encrypt certificates)
-                    ├─ evac.example.org → EVAC web 127.0.0.1:8100, /ws/ → EVAC channels 127.0.0.1:8101
-                    └─ dial.example.org → DIAL web 127.0.0.1:8200
+                    ├─ evac.pm → EVAC web 127.0.0.1:8100, /ws/ → EVAC channels 127.0.0.1:8101
+                    └─ dial.pm → DIAL web 127.0.0.1:8200
 /opt/evac   docker compose: web, channels, worker, beat, PostgreSQL, Redis
 /opt/dial   docker compose: web, worker, beat, LDAP (localhost only), PostgreSQL, Redis
 ```
@@ -21,13 +21,15 @@ Internet ──443──► Caddy (HTTPS, automatic Let's Encrypt certificates)
 | `Caddyfile` | `/etc/caddy/Caddyfile` |
 | `backup.sh`, `evac-dial-backup.service`, `evac-dial-backup.timer` | nightly backups |
 
-Replace `evac.example.org`, `dial.example.org` and `admin@example.org` everywhere with your domains and
-your e-mail address (Let's Encrypt sends certificate warnings there).
+Domains: **evac.pm** and **dial.pm**. Only `admin@example.org` in the `Caddyfile` still needs your
+e-mail address (Let's Encrypt sends certificate expiry warnings there).
 
 ## 1. DNS
 
-Create two A records (and AAAA if the server has IPv6) pointing at the server:
-`evac.example.org` and `dial.example.org`. Wait until `dig +short evac.example.org` shows the server IP.
+At your domain registrar, point both domains at the server: an **A record for `evac.pm`** and one for
+**`dial.pm`** (the bare domain, `@`) with the server's IPv4 address, plus AAAA records if the server has
+IPv6. Wait until `dig +short evac.pm` and `dig +short dial.pm` show the server IP - Caddy can only get
+certificates after that.
 
 ## 2. Prepare the server (once)
 
@@ -84,14 +86,14 @@ docker compose exec web python manage.py createsuperuser   # your DIAL admin acc
 
 ```sh
 cp /opt/evac/deploy/server/Caddyfile /etc/caddy/Caddyfile
-nano /etc/caddy/Caddyfile          # your domains and e-mail
+nano /etc/caddy/Caddyfile          # your e-mail address in the first block
 caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 ```
 
-Open `https://evac.example.org`: the early-access page appears. Enter `EVAC_EARLY_ACCESS_PASSWORD`, then
+Open `https://evac.pm`: the early-access page appears. Enter `EVAC_EARLY_ACCESS_PASSWORD`, then
 the setup wizard asks for `EVAC_SETUP_TOKEN` and creates your admin account. Set up two-factor
-authentication right after (Account → Security) - admin roles need it. `https://dial.example.org` asks
+authentication right after (Account → Security) - admin roles need it. `https://dial.pm` asks
 for `DIAL_EARLY_ACCESS_PASSWORD`, then log in with the account from step 4.
 
 ## 6. Backups

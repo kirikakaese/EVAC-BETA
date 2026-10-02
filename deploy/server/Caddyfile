@@ -1,10 +1,10 @@
-# /etc/caddy/Caddyfile - replace evac.example.org / dial.example.org with your domains.
+# /etc/caddy/Caddyfile for evac.pm and dial.pm. Set the e-mail below (Let's Encrypt expiry warnings).
 # Caddy obtains and renews the Let's Encrypt certificates on its own (ports 80 and 443 must be open).
 {
 	email admin@example.org
 }
 
-evac.example.org {
+evac.pm {
 	encode zstd gzip
 	# WebSockets (live updates, later the screens) go to the channels service
 	reverse_proxy /ws/* 127.0.0.1:8101
@@ -12,7 +12,7 @@ evac.example.org {
 	header Strict-Transport-Security "max-age=31536000"
 }
 
-dial.example.org {
+dial.pm {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:8200
 	header Strict-Transport-Security "max-age=31536000"
