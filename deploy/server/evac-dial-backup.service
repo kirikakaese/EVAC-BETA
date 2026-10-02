@@ -1,0 +1,7 @@
+[Unit]
+Description=Backup EVAC and DIAL (databases, media, .env)
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/evac/deploy/server/backup.sh

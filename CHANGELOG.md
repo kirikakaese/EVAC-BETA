@@ -6,6 +6,12 @@ released.
 
 ## [Unreleased]
 
+### Added — production server bundle
+
+- `deploy/server/`: run EVAC and DIAL on one server behind Caddy (automatic HTTPS): bootstrap script
+  (Docker, Caddy, ufw, unattended upgrades), compose overrides binding both apps to localhost and keeping
+  DIAL's Asterisk off the public server, production `.env` values, nightly backup timer, step-by-step README.
+
 ### Changed
 
 - The sibling project PET was renamed to **DIAL — DECT & IP Administration Layer**; brief, roadmap, ADRs,
