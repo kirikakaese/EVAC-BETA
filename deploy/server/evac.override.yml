@@ -1,0 +1,10 @@
+# EVAC on the shared production server. Copy to /opt/evac/docker-compose.override.yml.
+# Binds the web and WebSocket services to localhost so only Caddy can reach them (Docker-published ports
+# bypass ufw). Needs Docker Compose >= 2.24 for the !override tag.
+services:
+  web:
+    ports: !override
+      - "127.0.0.1:8100:8000"
+  channels:
+    ports: !override
+      - "127.0.0.1:8101:8001"

@@ -1,0 +1,19 @@
+# /etc/caddy/Caddyfile for evac.pm and dial.pm. The e-mail receives Let's Encrypt expiry warnings.
+# Caddy obtains and renews the Let's Encrypt certificates on its own (ports 80 and 443 must be open).
+{
+	email mail@kirikajung.de
+}
+
+evac.pm {
+	encode zstd gzip
+	# WebSockets (live updates, later the screens) go to the channels service
+	reverse_proxy /ws/* 127.0.0.1:8101
+	reverse_proxy 127.0.0.1:8100
+	header Strict-Transport-Security "max-age=31536000"
+}
+
+dial.pm {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8200
+	header Strict-Transport-Security "max-age=31536000"
+}

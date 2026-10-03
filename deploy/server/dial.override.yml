@@ -1,0 +1,15 @@
+# DIAL on the shared production server. Copy to /opt/dial/docker-compose.override.yml.
+# - web only on localhost (Caddy in front)
+# - the LDAP phonebook only on localhost until a venue needs it from outside
+# - the Asterisk container does not start here: venues run their own PBX and connect through the venue
+#   agent. Start it later with `docker compose --profile pbx up -d` after hardening (see README).
+# Needs Docker Compose >= 2.24 for the !override tag.
+services:
+  web:
+    ports: !override
+      - "127.0.0.1:8200:8000"
+  ldap:
+    ports: !override
+      - "127.0.0.1:3890:3890"
+  asterisk:
+    profiles: ["pbx"]

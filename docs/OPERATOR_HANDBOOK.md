@@ -34,6 +34,13 @@ Generate keys: `docker compose run --rm web python manage.py evac_genkey` (put i
 `EVAC_SECRETS_KEYS`). **Back up this key with the database** — without it stored secrets (extension
 credentials, TOTP seeds) cannot be decrypted.
 
+### One server for EVAC and DIAL (production)
+
+`deploy/server/` contains a complete setup for running EVAC and DIAL side by side on one fresh
+Debian/Ubuntu server: bootstrap script (Docker, Caddy, firewall), compose overrides binding both apps to
+localhost, a Caddyfile with automatic HTTPS, production `.env` values and nightly backups. Follow
+`deploy/server/README.md`.
+
 ### Behind a reverse proxy (production)
 
 Terminate TLS in Caddy or nginx. Route `/ws/` to `channels:8001` (WebSocket upgrade), everything else to
