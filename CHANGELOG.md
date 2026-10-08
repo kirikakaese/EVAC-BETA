@@ -12,6 +12,11 @@ released.
   (Docker, Caddy, ufw, unattended upgrades), compose overrides binding both apps to localhost and keeping
   DIAL's Asterisk off the public server, production `.env` values, nightly backup timer, step-by-step README.
 
+### Added — GitHub Codespaces
+
+- `.devcontainer/`: one-click EVAC in the browser (SQLite, no Redis, demo data, port 8000 private to the
+  codespace owner). Dev setting `EVAC_TRUST_PROXY_HEADERS` trusts the Codespaces proxy headers.
+
 ### Changed
 
 - The sibling project PET was renamed to **DIAL — DECT & IP Administration Layer**; brief, roadmap, ADRs,
