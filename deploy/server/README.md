@@ -21,15 +21,16 @@ Internet ──443──► Caddy (HTTPS, automatic Let's Encrypt certificates)
 | `Caddyfile` | `/etc/caddy/Caddyfile` |
 | `backup.sh`, `evac-dial-backup.service`, `evac-dial-backup.timer` | nightly backups |
 
-Domains: **evac.pm** and **dial.pm**. Let's Encrypt certificate expiry warnings go to
+Domains: **evac.pm** and **dial.pm** (`www.evac.pm` and `www.dial.pm` redirect to them). Let's Encrypt certificate expiry warnings go to
 `mail@kirikajung.de` (set in the `Caddyfile`).
 
 ## 1. DNS
 
 At your domain registrar, point both domains at the server: an **A record for `evac.pm`** and one for
 **`dial.pm`** (the bare domain, `@`) with the server's IPv4 address, plus AAAA records if the server has
-IPv6. Wait until `dig +short evac.pm` and `dig +short dial.pm` show the server IP - Caddy can only get
-certificates after that.
+IPv6. Add the same records for **`www`** on both domains: `www.evac.pm` and `www.dial.pm` redirect to the
+bare domains. Wait until `dig +short evac.pm`, `dig +short www.evac.pm`, `dig +short dial.pm` and
+`dig +short www.dial.pm` show the server IP - Caddy can only get certificates after that.
 
 ## 2. Prepare the server (once)
 

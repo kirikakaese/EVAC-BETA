@@ -17,3 +17,12 @@ dial.pm {
 	reverse_proxy 127.0.0.1:8200
 	header Strict-Transport-Security "max-age=31536000"
 }
+
+# www.evac.pm and www.dial.pm forward permanently to the bare domains (needs a DNS record for www too)
+www.evac.pm {
+	redir https://evac.pm{uri} permanent
+}
+
+www.dial.pm {
+	redir https://dial.pm{uri} permanent
+}
