@@ -17,6 +17,13 @@ make lint typecheck a11y openapi-check attribution
 `REDIS_URL=` (empty) switches dev to the local-memory cache and the in-memory channel layer. With Redis and
 PostgreSQL running, use `DATABASE_URL=postgres://…` and `REDIS_URL=redis://…`.
 
+## Try it in the browser (GitHub Codespaces)
+
+**Code → Codespaces → Create codespace** on the repository page starts EVAC with SQLite, no Redis and the
+demo data; port 8000 opens by itself (log in as `admin@evac.local` / `evac-demo-admin`). The setup lives in
+`.devcontainer/` (see its README). `EVAC_TRUST_PROXY_HEADERS=1` (dev settings only) makes Django trust the
+Codespaces proxy's `X-Forwarded-Proto`/`-Host`, so CSRF checks and passkeys see the browser's HTTPS URL.
+
 ## Layout
 
 | Path | Contents |

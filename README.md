@@ -25,6 +25,11 @@ OpenAPI, the `evac` CLI, realtime stream, in-portal documentation and a demo see
 > standards. It complements — and never replaces — the legally required systems and procedures of your
 > venue. Design and operate it as if lives depended on it anyway: redundancy, drills, tests.
 
+## Try it in the browser
+
+On GitHub: **Code → Codespaces → Create codespace on main**. EVAC starts with demo data in a few minutes,
+no server needed (log in as `admin@evac.local` / `evac-demo-admin`). See `.devcontainer/README.md`.
+
 ## Quick start (Docker Compose)
 
 ```sh
