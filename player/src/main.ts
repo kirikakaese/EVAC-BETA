@@ -7,6 +7,7 @@ import { fetchConfig, pairingStatus, startPairing, Unauthorized, type PairStart,
 import { Clock } from "./clock";
 import { Connection, type Message, type Transport } from "./connection";
 import { Display } from "./display";
+import { applyTheme, fetchTheme } from "./theme";
 import { readEnv, t, wsUrl, type PlayerEnv } from "./env";
 import { installErrorHandlers, recordError, report } from "./report";
 import { getConfig, getToken, setConfig, setToken } from "./storage";
@@ -80,6 +81,7 @@ export class Player {
       recordError(String(err));
       this.config = cached;
     }
+    await this.loadTheme(token);
     if (this.config) this.display.idle(this.config);
     else this.display.message(t(this.env, "no_server"), t(this.env, "retrying"));
     this.conn = new Connection({
@@ -103,6 +105,7 @@ export class Player {
           setConfig(this.config);
           this.lastSync = Date.now();
           this.conn?.setHeartbeat(this.config.settings.heartbeat_seconds);
+          await this.loadTheme(token);
           if (this.slide === "idle") this.display.idle(this.config);
         } catch (err) {
           if (err instanceof Unauthorized) this.unpair();
@@ -122,6 +125,11 @@ export class Player {
       default:
         break;
     }
+  }
+
+  private async loadTheme(token: string): Promise<void> {
+    const theme = await fetchTheme(this.env.api, token);
+    if (theme) await applyTheme(theme, token).catch((e) => recordError(String(e)));
   }
 
   private unpair(): void {

@@ -25,6 +25,10 @@ EMAIL_URL=consolemail://
 ENV
 fi
 
+# ffmpeg converts uploaded videos; without it EVAC keeps them as uploaded
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg || true
+fi
 make dev
 .venv/bin/python manage.py migrate --noinput
 .venv/bin/python manage.py evac_seed_demo

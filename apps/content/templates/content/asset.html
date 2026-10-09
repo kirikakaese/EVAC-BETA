@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ asset.name }}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:index' event.slug %}">{% trans "Design & assets" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'content:assets' event.slug %}">{% trans "Files" %}</a> <span aria-hidden="true">›</span> {{ asset.name }}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ asset.name }} {% if asset.status != "ready" %}<span class="badge {% if asset.status == 'failed' %}badge-err{% else %}badge-processing{% endif %}">{{ asset.get_status_display }}</span>{% endif %}</h1></div>
+{% if asset.note %}<p class="alert alert-warning" role="status">{{ asset.note }}</p>{% endif %}
+<div class="grid grid-2 align-start">
+  <section class="card"><h2>{% trans "Preview" %}</h2>
+    {% if asset.kind == "image" or asset.kind == "svg" %}<img class="asset-preview" src="{{ preview }}" alt="{{ asset.alt_text }}">
+    {% elif asset.kind == "video" %}<video class="asset-preview" src="{{ preview }}"{% if poster %} poster="{{ poster }}"{% endif %} controls preload="metadata"></video>
+    {% elif asset.kind == "audio" %}<audio src="{{ preview }}" controls preload="metadata"></audio>
+    {% else %}<p><a href="{{ preview }}">{% trans "Open file" %}</a></p>{% endif %}
+    <dl class="kv">
+      <dt>{% trans "Type" %}</dt><dd>{{ asset.get_kind_display }} · {{ asset.mime }}</dd>
+      <dt>{% trans "Original" %}</dt><dd>{{ asset.original_name }} · {{ asset.size|filesizeformat }}</dd>
+      {% if asset.width %}<dt>{% trans "Size" %}</dt><dd>{{ asset.width }} × {{ asset.height }} px</dd>{% endif %}
+      {% if asset.duration %}<dt>{% trans "Duration" %}</dt><dd>{{ asset.duration|floatformat:1 }} s</dd>{% endif %}
+      <dt>{% trans "Versions" %}</dt><dd>{% for v in variants %}<a href="{{ v.url }}">{{ v.name }}</a> <span class="muted small">{{ v.size|filesizeformat }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+      <dt>{% trans "Used in" %}</dt><dd>{% for u in usage %}{{ u }}{% if not forloop.last %}, {% endif %}{% empty %}–{% endfor %}</dd>
+      <dt>{% trans "Uploaded" %}</dt><dd>{{ asset.created_at }}{% if asset.uploaded_by %} · {{ asset.uploaded_by }}{% endif %}</dd>
+    </dl></section>
+  {% if form %}<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "Details" %}</h2>{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Save" %}</button></form>{% endif %}
+</div>
+{% if writable %}<div class="actions">
+  <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="reprocess"><button class="btn">{% trans "Process again" %}</button></form>
+  <form method="post" class="inline" data-confirm="{% trans 'Delete this file?' %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="btn btn-danger">{% trans "Delete file" %}</button></form>
+</div>{% endif %}
+{% endblock %}

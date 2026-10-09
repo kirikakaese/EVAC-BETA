@@ -60,3 +60,15 @@ describe("report and qr", () => {
     expect(svg.querySelector("path")?.getAttribute("d")?.length).toBeGreaterThan(100);
   });
 });
+
+import { parseFontFaces } from "../src/theme";
+
+describe("theme", () => {
+  it("parses the @font-face rules sent by the server", () => {
+    const css = '@font-face{font-family:"evac-abc";src:url("/player/api/content/files/aa/font.woff2") format("woff2");' +
+      "font-weight:100 900;font-style:italic;font-display:swap;unicode-range:U+0000-00FF;}" +
+      '@font-face{font-family:"x";font-style:normal;}';
+    expect(parseFontFaces(css)).toEqual([{ family: "evac-abc", url: "/player/api/content/files/aa/font.woff2",
+                                           weight: "100 900", style: "italic", unicodeRange: "U+0000-00FF" }]);
+  });
+});

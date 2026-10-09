@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Fonts" %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}">{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:index' event.slug %}">{% trans "Design & assets" %}</a> <span aria-hidden="true">›</span> {% trans "Fonts" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Fonts" %}</h1></div>
+<p class="muted">{% trans "Fonts are served by EVAC itself, so screens work without internet." %}</p>
+{% for f in families %}
+<section class="card"><h2>{{ f.name }} {% if f.builtin %}<span class="badge badge-info">{% trans "built in" %}</span>{% elif not f.event_id %}<span class="badge badge-info">{% trans "shared" %}</span>{% endif %}</h2>
+  <p class="font-sample font-{{ f.pk.hex }}">{% trans "Exit → Hall B · Doors open 18:30 · ÄÖÜ äöü ß 0123456789" %}</p>
+  <ul class="plain small">{% for ff in f.files.all %}<li>{{ ff.weight_label }} · {{ ff.style }}{% if ff.is_variable %} · {% trans "variable" %} ({% for a in ff.axes %}{{ a.tag }} {{ a.min }}–{{ a.max }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}{% if ff.unicode_range %} · {% trans "Latin subset" %}{% endif %} · {{ ff.size|filesizeformat }}</li>{% endfor %}</ul>
+  {% if f.licence %}<p class="small muted">{{ f.licence|linebreaksbr }}</p>{% endif %}
+  {% if can_edit and not f.builtin and f.event_id == event.pk %}<form method="post" action="{% url 'content:font_delete' event.slug f.pk %}" data-confirm="{% trans 'Delete this font family?' %}">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% blocktrans with n=f.name %}Delete {{ n }}{% endblocktrans %}</button></form>{% endif %}
+</section>
+{% endfor %}
+{% if form %}<form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}<h2>{% trans "Upload a font" %}</h2>{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Upload" %}</button></form>{% endif %}
+{% endblock %}

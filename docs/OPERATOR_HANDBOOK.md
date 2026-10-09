@@ -133,6 +133,23 @@ The wizard cannot be re-run once an account exists.
 - Kiosk browsers should start `/player/` in full screen with autoplay allowed (Chromium:
   `--kiosk --autoplay-policy=no-user-gesture-required`); a Raspberry Pi recipe follows in `deploy/kiosk/`.
 
+## 5b. Design & assets
+
+- **Themes** (*Design & assets → Themes*): colours for dark and light mode, fonts, text sizes, spacing, corner
+  radius, shadows, background (colour, gradient, image), logo and slide transitions. A theme can inherit
+  from another; ticked *inherited* fields come from the parent. *Use for this event's screens* switches every
+  screen of the event at once. If two people edit the same theme, the second save is refused with a notice.
+- **Fonts**: upload WOFF2, WOFF, TTF or OTF (variable fonts included). *Keep Latin characters only* makes
+  files much smaller (arrows and symbols stay). Note the licence. Atkinson Hyperlegible (made for
+  legibility, recommended for safety screens) and Inter are built in.
+- **Files**: images, SVG, video, audio, PDF and Lottie. EVAC creates optimised versions (WebP/AVIF images,
+  MP4 and WebM video with poster, loudness-normalised audio), removes photo metadata such as GPS positions
+  and cleans SVGs. Large videos convert in the background (worker). Give images an *alternative text*.
+- Files are only visible to members of the event and its screens, never public by URL. The instance-wide
+  **shared library** (instance admins: tick *Add to the shared library* when uploading) is visible to every
+  event.
+- *Settings → Screen content*: maximum upload size (default 512 MB), largest image edge, AVIF, VP9.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

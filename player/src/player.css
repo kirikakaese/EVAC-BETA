@@ -1,21 +1,28 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 /* Player styles. Large type for reading from a distance; high contrast; no animation when reduced motion. */
 :root {
-  --bg: #0b0d12;
-  --fg: #f4f6fb;
-  --muted: #aab3c5;
-  --accent: #4f8cff;
-  --font: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* theme tokens (--evac-*) are set by the server's theme; these are the fallbacks */
+  --bg: var(--evac-color-background, #0b0d12);
+  --fg: var(--evac-color-text, #f4f6fb);
+  --muted: var(--evac-color-muted, #aab3c5);
+  --accent: var(--evac-color-primary, #4f8cff);
+  --font: var(--evac-font-body, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --font-heading: var(--evac-font-heading, var(--font));
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--font); overflow: hidden; }
+body { background: var(--evac-background, var(--bg)); letter-spacing: var(--evac-letter-spacing, normal); }
 html.obs, html.obs body { background: transparent; cursor: none; }
 html.obs * { cursor: none; }
 #player { position: fixed; inset: 0; }
 .view { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
         gap: 2vh; padding: 4vmin; text-align: center; }
-h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: 700; letter-spacing: -.01em; }
+h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac-heading-weight, 700);
+     font-family: var(--font-heading); letter-spacing: -.01em; }
+.idle .event-name { color: var(--evac-color-accent, var(--fg)); }
+.idle::before { content: ""; position: absolute; top: 4vmin; left: 4vmin; width: 22vmin; height: 10vmin;
+                background: var(--evac-logo, none) left top / contain no-repeat; }
 .pairing-box { display: flex; align-items: center; gap: 5vmin; flex-wrap: wrap; justify-content: center; }
 .code { margin: 0; font-size: clamp(3rem, 15vmin, 14rem); font-weight: 800; letter-spacing: .08em;
         font-variant-numeric: tabular-nums; font-family: ui-monospace, "DejaVu Sans Mono", monospace; }

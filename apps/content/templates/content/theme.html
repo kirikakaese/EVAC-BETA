@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ theme.name }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><style nonce="{{ csp_nonce }}">{{ preview_css|safe }}</style>{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:index' event.slug %}">{% trans "Design & assets" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'content:themes' event.slug %}">{% trans "Themes" %}</a> <span aria-hidden="true">›</span> {{ theme.name }}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ theme.name }}{% if is_default %} <span class="badge badge-ok">{% trans "used by screens" %}</span>{% endif %}</h1>
+  {% if writable and not is_default %}<div class="actions"><form method="post">{% csrf_token %}<input type="hidden" name="action" value="default"><button class="btn btn-primary">{% trans "Use for this event's screens" %}</button></form></div>{% endif %}</div>
+<div class="grid grid-2 align-start">
+  <section class="card sticky"><h2>{% trans "Preview" %}</h2>{% include "content/_preview.html" %}
+    <p class="small muted">{% blocktrans with v=theme.version %}Version {{ v }}{% endblocktrans %}{% if theme.updated_by %} · {{ theme.updated_by }}{% endif %} · {{ theme.updated_at }}</p></section>
+  {% if writable %}
+  <form method="post" class="card" novalidate>{% csrf_token %}<input type="hidden" name="version" value="{{ theme.version }}">
+    <h2>{% trans "Theme" %}</h2>{% include "portal/_form.html" with form=meta %}
+    <h2>{% trans "Design tokens" %}</h2>
+    <p class="small muted">{% trans "Ticked “inherited” values come from the parent theme or the EVAC defaults." %}</p>
+    {% include "portal/_form.html" with form=tokens_form %}
+    <button class="btn btn-primary">{% trans "Save theme" %}</button></form>
+  {% else %}<section class="card"><h2>{% trans "Design tokens" %}</h2><p class="muted">{% trans "You can view this theme but not change it." %}</p></section>{% endif %}
+</div>
+{% if writable %}<form method="post" class="card" data-confirm="{% trans 'Delete this theme?' %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="btn btn-danger">{% trans "Delete theme" %}</button></form>{% endif %}
+{% endblock %}
