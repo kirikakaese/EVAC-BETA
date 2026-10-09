@@ -37,4 +37,10 @@ for (const b of BUNDLES) {
     failed = true;
   }
 }
+// the service worker is registered as a classic script: an import or export would stop it from installing
+const swText = readFileSync(new URL("../../static/player/sw.js", import.meta.url), "utf8");
+if (/^\s*(import|export)\b/m.test(swText)) {
+  console.error("static/player/sw.js must not contain import/export (classic service worker)");
+  failed = true;
+}
 if (failed) process.exit(1);

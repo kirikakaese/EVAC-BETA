@@ -17,9 +17,12 @@ released.
 
 ### Fixed
 
-- Offline boot: the player now shows the last known content immediately and refreshes in the background;
-  theme fonts and images load cache-first with a timeout. A hanging network (dropped packets instead of
-  refused connections) could keep a restarted screen on "Starting…" for up to a minute (found by `make e2e`).
+- Offline restart of a freshly set-up screen: the service worker now caches the player's script and styles when
+  it installs. They were loaded before the worker took control on the first visit, so a screen that lost
+  network and power before its first online reload stayed on "Starting…" (found by `make e2e`; the build now
+  also fails if the worker bundle contains `import`/`export`).
+- Offline boot: the player shows the last known content immediately and refreshes in the background; theme
+  fonts and images load cache-first with a timeout, so a hanging network cannot keep a screen blank.
 
 ### Added — screen operations (Phase 1, part 6)
 
