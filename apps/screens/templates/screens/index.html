@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Screens" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if group %}{% blocktrans with g=group.name %}Screens in {{ g }}{% endblocktrans %}{% else %}{% trans "Screens" %}{% endif %}</h1>
+  <div class="actions">{% if can_pair %}<a class="btn btn-primary" href="{% url 'screens:pair' event.slug %}">{% trans "Pair a screen" %}</a>{% endif %}
+    <a class="btn" href="{% url 'screens:groups' event.slug %}">{% trans "Screen groups" %}</a></div></div>
+<div class="grid stats-grid">
+  <div class="card stat-card"><div class="stat ok">{{ counts.online }}</div><div class="stat-label">{% trans "online" %}</div></div>
+  <div class="card stat-card"><div class="stat warn">{{ counts.stale }}</div><div class="stat-label">{% trans "stale" %}</div></div>
+  <div class="card stat-card"><div class="stat err">{{ counts.offline }}</div><div class="stat-label">{% trans "offline" %}</div></div>
+  <div class="card stat-card"><div class="stat">{{ counts.unpaired|add:counts.revoked }}</div><div class="stat-label">{% trans "not paired" %}</div></div>
+</div>
+{% if groups %}<nav class="card" aria-label="{% trans 'Filter by group' %}"><p class="small">{% trans "Group:" %}
+  <a href="{% url 'screens:index' event.slug %}"{% if not group %} aria-current="page"{% endif %}>{% trans "all" %}</a>{% for g in groups %} · <a href="?group={{ g.pk }}"{% if group.pk == g.pk %} aria-current="page"{% endif %}>{{ g.name }}</a>{% endfor %}</p></nav>{% endif %}
+<section class="card"><h2>{% trans "All screens" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Location" %}</th><th scope="col">{% trans "Last heartbeat" %}</th><th scope="col">{% trans "Version" %}</th></tr></thead>
+<tbody>{% for s in screens %}<tr><td><a href="{% url 'screens:detail' event.slug s.pk %}">{{ s.name }}</a>{% for t in s.tags %} <span class="badge">{{ t }}</span>{% endfor %}</td>
+  <td>{% include "screens/_health.html" %}</td>
+  <td class="small">{{ s.venue|default:"–" }}{% if s.zone %} · {{ s.zone }}{% endif %}{% if s.room %} · {{ s.room }}{% endif %}</td>
+  <td class="small">{% if s.last_seen_at %}<time datetime="{{ s.last_seen_at|date:'c' }}">{% blocktrans with t=s.last_seen_at|timesince %}{{ t }} ago{% endblocktrans %}</time>{% else %}–{% endif %}</td>
+  <td class="small">{{ s.reported.version|default:"–" }}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% if can_pair %}{% trans "No screens yet. Open /player/ on a screen, then pair it here with the code it shows." %}{% else %}{% trans "No screens yet." %}{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

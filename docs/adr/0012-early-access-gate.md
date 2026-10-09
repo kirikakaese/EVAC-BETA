@@ -41,6 +41,6 @@ An application-level gate, configured by environment variables, identical in EVA
 
 ## Consequences
 
-- Screens paired in phase 1 authenticate with device tokens; the player endpoints will be exempted the same
-  way as service-token requests.
+- Screens authenticate with device tokens: `/player/` and the screen WebSocket `/ws/screen/` are exempt
+  from the gate (ADR-0013), like `/prov/` for phones in DIAL.
 - DIAL implements the same contract (variable names prefixed `DIAL_`).

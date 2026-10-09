@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'screens:index' event.slug %}">{% trans "Screens" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'screens:groups' event.slug %}">{% trans "Groups" %}</a> <span aria-hidden="true">›</span> {{ group.name }}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ group.name }}</h1></div>
+{% if group.description %}<p>{{ group.description }}</p>{% endif %}
+<section class="card"><h2>{% trans "Screens" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Status" %}</th></tr></thead>
+<tbody>{% for s in screens %}<tr><td><a href="{% url 'screens:detail' event.slug s.pk %}">{{ s.name }}</a></td><td>{% include "screens/_health.html" %}</td></tr>
+{% empty %}<tr><td colspan="2" class="muted">{% trans "No screens in this group." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if form %}<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "Settings" %}</h2>
+  {% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Save" %}</button></form>
+<form method="post" class="card" data-confirm="{% trans 'Delete this group? Its screens stay.' %}">{% csrf_token %}<input type="hidden" name="delete" value="1"><button class="btn btn-danger">{% trans "Delete group" %}</button></form>{% endif %}
+{% endblock %}

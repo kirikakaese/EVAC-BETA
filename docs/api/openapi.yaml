@@ -736,6 +736,383 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/events/{event_slug}/screen-groups/:
+    get:
+      operationId: events_screen_groups_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedScreenGroupList'
+          description: ''
+    post:
+      operationId: events_screen_groups_create
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScreenGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScreenGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScreenGroupRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenGroup'
+          description: ''
+  /api/v1/events/{event_slug}/screen-groups/{id}/:
+    get:
+      operationId: events_screen_groups_retrieve
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this screen group.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenGroup'
+          description: ''
+    patch:
+      operationId: events_screen_groups_partial_update
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this screen group.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScreenGroupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScreenGroupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScreenGroupRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenGroup'
+          description: ''
+    delete:
+      operationId: events_screen_groups_destroy
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this screen group.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/{event_slug}/screens/:
+    get:
+      operationId: events_screens_list
+      description: Screens of an event. New screens are created by pairing (``POST
+        …/pair/``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedScreenList'
+          description: ''
+  /api/v1/events/{event_slug}/screens/{id}/:
+    get:
+      operationId: events_screens_retrieve
+      description: Screens of an event. New screens are created by pairing (``POST
+        …/pair/``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this screen.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Screen'
+          description: ''
+    patch:
+      operationId: events_screens_partial_update
+      description: Screens of an event. New screens are created by pairing (``POST
+        …/pair/``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this screen.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScreenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScreenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScreenRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Screen'
+          description: ''
+    delete:
+      operationId: events_screens_destroy
+      description: Screens of an event. New screens are created by pairing (``POST
+        …/pair/``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this screen.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/{event_slug}/screens/{id}/revoke/:
+    post:
+      operationId: events_screens_revoke_create
+      description: 'Revoke the device token: the screen stops and must be paired again.'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this screen.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Screen'
+          description: ''
+  /api/v1/events/{event_slug}/screens/pair/:
+    post:
+      operationId: events_screens_pair_create
+      description: 'Claim the pairing code shown on a screen: creates the screen (or
+        re-pairs ``screen``).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PairRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Screen'
+          description: ''
   /api/v1/events/{slug}/:
     get:
       operationId: events_retrieve
@@ -2085,6 +2462,14 @@ components:
       required:
       - building
       - name
+    KindEnum:
+      enum:
+      - manual
+      - dynamic
+      type: string
+      description: |-
+        * `manual` - Manual
+        * `dynamic` - Dynamic
     Membership:
       type: object
       properties:
@@ -2301,6 +2686,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Room'
+    PaginatedScreenGroupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScreenGroup'
+    PaginatedScreenList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Screen'
     PaginatedTokenList:
       type: object
       required:
@@ -2370,6 +2801,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Zone'
+    PairRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 12
+        name:
+          type: string
+          maxLength: 200
+        screen:
+          type: string
+          format: uuid
+          description: Re-pair this existing screen instead of creating one.
+        tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+      required:
+      - code
     PatchedBuildingRequest:
       type: object
       properties:
@@ -2525,6 +2978,70 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
+    PatchedScreenGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        match_tags:
+          title: Tags
+          description: 'Dynamic: screens with any of these tags.'
+        match_venues:
+          type: array
+          items:
+            type: string
+            format: uuid
+        match_zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        match_rooms:
+          type: array
+          items:
+            type: string
+            format: uuid
+    PatchedScreenRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        tags: {}
+        venue:
+          type: string
+          format: uuid
+          nullable: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        position_x:
+          type: number
+          format: double
+          nullable: true
+        position_y:
+          type: number
+          format: double
+          nullable: true
     PatchedVenueRequest:
       type: object
       properties:
@@ -2729,6 +3246,172 @@ components:
       required:
       - name
       - venue
+    Screen:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        tags: {}
+        venue:
+          type: string
+          format: uuid
+          nullable: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        position_x:
+          type: number
+          format: double
+          nullable: true
+        position_y:
+          type: number
+          format: double
+          nullable: true
+        paired:
+          type: boolean
+          readOnly: true
+        paired_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        revoked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reported:
+          readOnly: true
+        health:
+          type: string
+          readOnly: true
+        token_prefix:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - health
+      - id
+      - last_seen_at
+      - name
+      - paired
+      - paired_at
+      - reported
+      - revoked_at
+      - token_prefix
+      - updated_at
+    ScreenGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        match_tags:
+          title: Tags
+          description: 'Dynamic: screens with any of these tags.'
+        match_venues:
+          type: array
+          items:
+            type: string
+            format: uuid
+        match_zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        match_rooms:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - screens
+      - updated_at
+    ScreenGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        match_tags:
+          title: Tags
+          description: 'Dynamic: screens with any of these tags.'
+        match_venues:
+          type: array
+          items:
+            type: string
+            format: uuid
+        match_zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        match_rooms:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - name
     StateEnum:
       enum:
       - draft

@@ -112,6 +112,21 @@ The wizard cannot be re-run once an account exists.
 - **Settings** are typed and inherited: instance → venue → event → screen group → screen. Pages show
   whether a value is *overridden here* or *inherited*.
 
+## 5a. Screens
+
+- **Pair**: open `<your EVAC>/player/` in the screen's browser (kiosk mode, TV browser, Raspberry Pi). It shows
+  a six-character code and a QR code. Under *Screens → Pair a screen* type the code (or scan the QR with your
+  phone), give the screen a name, a place (venue, zone, room), groups and tags. The screen receives its own
+  device token and connects. Codes are valid for 30 minutes.
+- **Re-pair** (new hardware, next event): *Screen → Re-pair to a new device*; the old device stops working.
+  **Revoke token** stops a lost or stolen device at once.
+- **Health**: the screen list shows *online* (heartbeat within three intervals), *stale* and *offline*
+  (after *Settings → Screens → Offline after*, default 60 s). Going offline notifies everyone who manages the
+  screen (switchable) and sends the `screen.offline` webhook.
+- **Groups**: manual groups list screens; dynamic groups also take every screen with a tag or in a venue,
+  zone or room. Roles can be limited to a screen group ("may run the foyer screens only").
+- `/player/` works behind the early-access password: screens use their device token instead.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Screen groups" %}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'screens:index' event.slug %}">{% trans "Screens" %}</a> <span aria-hidden="true">›</span> {% trans "Groups" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Screen groups" %}</h1></div>
+<section class="card"><div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Group" %}</th><th scope="col">{% trans "Kind" %}</th><th scope="col">{% trans "Screens" %}</th></tr></thead>
+<tbody>{% for g in groups %}<tr><td><a href="{% url 'screens:group' event.slug g.pk %}">{{ g.name }}</a></td><td>{{ g.get_kind_display }}</td><td>{{ g.screen_count }}</td></tr>
+{% empty %}<tr><td colspan="3" class="muted">{% trans "No groups yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if form %}<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "New group" %}</h2>
+  {% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Create group" %}</button></form>{% endif %}
+{% endblock %}

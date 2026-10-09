@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Pair a screen" %}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'screens:index' event.slug %}">{% trans "Screens" %}</a> <span aria-hidden="true">›</span> {% trans "Pair" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Pair a screen" %}</h1></div>
+<div class="grid grid-2">
+  <form method="post" class="card" novalidate>{% csrf_token %}
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary">{% trans "Pair screen" %}</button></form>
+  <section class="card"><h2>{% trans "How it works" %}</h2>
+    <ol>
+      <li>{% blocktrans %}Open <code>/player/</code> of this EVAC in the browser of the screen (kiosk mode, TV browser, Raspberry Pi).{% endblocktrans %}</li>
+      <li>{% trans "The screen shows a six-character code and a QR code." %}</li>
+      <li>{% trans "Type the code here, or scan the QR code with your phone." %}</li>
+      <li>{% trans "The screen receives its own device token and connects. You can revoke it at any time." %}</li>
+    </ol></section>
+</div>
+{% endblock %}

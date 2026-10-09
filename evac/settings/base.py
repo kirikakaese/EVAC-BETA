@@ -80,6 +80,7 @@ EVAC_CORE_APPS = [
     "apps.portal",
 ]
 EVAC_BUILTIN_PLUGINS = [
+    "apps.screens",
     "extensions.webhooks",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
@@ -237,6 +238,8 @@ CELERY_BEAT_SCHEDULE = {
                                            "schedule": 60.0},
     "accounts-purge-expired-invitations": {"task": "apps.accounts.tasks.purge_expired_invitations",
                                            "schedule": 86400.0},
+    "screens-sweep-health": {"task": "apps.screens.tasks.sweep_health", "schedule": 15.0},
+    "screens-purge-pairing-requests": {"task": "apps.screens.tasks.purge_pairing_requests", "schedule": 3600.0},
 }
 
 # --------------------------------------------------------------------------- REST framework
@@ -275,7 +278,8 @@ SPECTACULAR_SETTINGS = {
 # (rotation). Generate with ``python manage.py evac_genkey``. Empty = derived from SECRET_KEY (dev only;
 # prod settings refuse to start without explicit keys).
 EVAC_SECRETS_KEYS = env("EVAC_SECRETS_KEYS")
-EVAC_RATE_LIMITS = {"login": 20, "twofactor": 20, "setup": 10, "webhook": 600, "invite": 20, "early_access": 10}
+EVAC_RATE_LIMITS = {"login": 20, "twofactor": 20, "setup": 10, "webhook": 600, "invite": 20, "early_access": 10,
+                    "pairing": 300}
 # Early-access gate (docs/adr/0012-early-access-gate.md): a shared password in front of the whole site while
 # a public server is not ready for everyone. Empty = off. Changing the password locks everybody out again.
 EVAC_EARLY_ACCESS_PASSWORD = env("EVAC_EARLY_ACCESS_PASSWORD")

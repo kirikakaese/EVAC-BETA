@@ -17,7 +17,7 @@ Tokens are stored hashed, can expire, can be bound to one event and never exceed
 rights. Modules: `events`, `venues`, `audit`, … (each endpoint declares its module). A token minted in a
 two-factor verified session may use *sensitive* permissions; other tokens may not.
 
-## Endpoints (phase 0)
+## Endpoints
 
 | Method & path | Purpose | Permission |
 |---|---|---|
@@ -36,6 +36,24 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `/tokens/` | your tokens | authenticated |
 | `GET /extensions/[?event=<slug>]` | extensions and status | instance admin / `extensions.manage` |
 | `POST /extensions/<key>/<id>/webhook/` | inbound webhooks (HMAC) | signature |
+| `/events/<slug>/screens/` | list/get/update/delete screens; `health` is `online`/`stale`/`offline`/`unpaired`/`revoked` | `screens.view` / `screens.manage` (scoped), token scope `screens` |
+| `POST /events/<slug>/screens/pair/` | claim a pairing code `{code, name?, screen?, tags?}` (`screen` = re-pair) | `screens.pair` |
+| `POST /events/<slug>/screens/<id>/revoke/` | revoke the device token | `screens.manage` |
+| `/events/<slug>/screen-groups/` | manual and dynamic screen groups | `screens.view` / `screens.manage` |
+
+### Screen player API
+
+Used by `/player/`, authenticated with the per-screen device token (`Authorization: Screen evacscreen_…`):
+
+| Method & path | Purpose |
+|---|---|
+| `POST /player/api/pair/` | ask for a pairing code → `{id, code, secret, expires_in, pair_url}` (no auth, rate limited) |
+| `POST /player/api/pair/<id>/` | poll with header `X-Pairing-Secret` → `pending` / `expired` / once `paired` with `token` |
+| `GET /player/api/config/` | screen, event, settings, server time, last message sequence |
+| `POST /player/api/heartbeat/` | `{"data": {version, resolution, orientation, uptime, slide, errors, …}}` → server time |
+| `GET /player/api/stream/` | SSE of messages for this screen (`Last-Event-ID` / `?since=`) |
+| `GET /player/api/poll/?since=` | long-poll fallback |
+| WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages, `revoked` |
 
 ## Webhooks out
 

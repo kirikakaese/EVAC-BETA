@@ -46,6 +46,7 @@ RATE_LIMITED_PATHS = {
     "/invite/": "invite",
     "/api/v1/extensions/": "webhook",
     "/early-access/": "early_access",
+    "/player/api/pair/": "pairing",
 }
 
 
@@ -70,7 +71,7 @@ class RateLimitMiddleware(MiddlewareMixin):
 
 
 FIRST_RUN_EXEMPT = ("/setup/", "/early-access/", "/static/", "/media/", "/healthz", "/readyz", "/metrics",
-                    "/api/schema/", "/favicon.ico", "/docs/")
+                    "/api/schema/", "/favicon.ico", "/docs/", "/player/")
 
 
 class FirstRunMiddleware(MiddlewareMixin):
