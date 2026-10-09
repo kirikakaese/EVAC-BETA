@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Staff" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% blocktrans with e=event.name %}Staff · {{ e }}{% endblocktrans %}</h1></div>
+<div class="staff-status small">
+  <span class="live-status" data-live-url="{% url 'core:sse' event.slug %}" data-poll-url="{% url 'core:poll' event.slug %}" data-live-ws="{{ realtime_ws_base }}/ws/e/{{ event.slug }}/"><span data-live-status data-label-websocket="{% trans 'Live' %}" data-label-sse="{% trans 'Live' %}" data-label-polling="{% trans 'Live (polling)' %}" data-label-reconnecting="{% trans 'Reconnecting…' %}" data-label-offline="{% trans 'Offline' %}">{% trans "Connecting…" %}</span></span>
+  <span class="sync-state" data-sync role="status" data-label-synced="{% trans 'All actions sent' %}" data-label-offline="{% trans 'Offline – actions are kept and sent later' %}" data-label-waiting="{% trans '{n} action(s) waiting to be sent' %}"></span>
+</div>
+<ul class="sync-list small" data-sync-list aria-label="{% trans 'Actions waiting to be sent' %}"></ul>
+
+
+<section class="card" data-push data-key="{{ vapid_key }}" data-subscribe-url="{% url 'core:push_subscribe' %}" data-unsubscribe-url="{% url 'core:push_unsubscribe' %}"
+  data-label-on="{% trans 'Notifications are on for this device.' %}" data-label-off="{% trans 'Notifications are off for this device.' %}"
+  data-label-denied="{% trans 'This browser blocks notifications from EVAC. Allow them in the site settings.' %}"
+  data-label-unsupported="{% trans 'This browser cannot receive push notifications. On iPhone, add EVAC to the home screen first.' %}">
+  <h2>{% trans "This device" %}</h2>
+  <p data-push-label>{% trans "Checking notifications…" %}</p>
+  <div class="form-actions">
+    <button type="button" class="btn btn-primary" data-action="push-enable" data-push-when="off" hidden>{% trans "Switch on notifications" %}</button>
+    <button type="button" class="btn" data-action="push-disable" data-push-when="on" hidden>{% trans "Switch off" %}</button>
+    <form method="post" action="{% url 'core:push_test' %}" class="inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-ghost">{% trans "Send a test" %}</button></form>
+  </div>
+  <p class="small muted">{% blocktrans count n=devices %}{{ n }} device of yours receives notifications.{% plural %}{{ n }} devices of yours receive notifications.{% endblocktrans %}
+  {% trans "Install EVAC from the browser menu (“Add to home screen”) to use it like an app." %}</p>
+</section>
+
+{% for card in cards %}{% with ctx=card.ctx spec=card.spec %}{% include spec.template %}{% endwith %}{% endfor %}
+
+<section class="card"><h2>{% trans "Latest notifications" %}</h2>
+<ul class="plain staff-notifications">{% for n in notifications %}<li class="{% if not n.read_at %}unread{% endif %}"><span class="badge badge-{{ n.level }}">{{ n.get_level_display }}</span> <strong>{{ n.title }}</strong> <span class="small muted">{{ n.created_at|date:"D H:i" }}</span>{% if n.body %}<div class="small">{{ n.body|truncatechars:160 }}</div>{% endif %}</li>
+{% empty %}<li class="muted">{% trans "Nothing yet." %}</li>{% endfor %}</ul>
+<a class="btn btn-sm" href="{% url 'core:notifications' %}">{% trans "All notifications" %}</a></section>
+{% endblock %}
+{% block scripts %}
+<div class="alert-overlay" data-alert-overlay hidden role="alertdialog" aria-modal="true" aria-labelledby="alert-title" aria-describedby="alert-body">
+  <div class="alert-box"><p class="alert-kicker">{% trans "Alert" %}</p>
+    <h2 id="alert-title" data-alert-title></h2><p id="alert-body" data-alert-body></p>
+    <div class="alert-actions"><a class="btn" data-alert-link hidden href="#">{% trans "Details" %}</a>
+    <button type="button" class="btn btn-primary" data-alert-ack>{% trans "Got it" %}</button></div></div>
+</div>
+{% endblock %}

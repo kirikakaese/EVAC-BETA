@@ -71,6 +71,7 @@ again without removing the package.
 | `ExtensionSpec` | `r.extension` | Settings → Extensions page, secrets, test, inbound webhooks, purge, custom views |
 | `EventHook` | `r.event_hook` | your data in event export/import/clone |
 | outbox handler | `r.outbox_handler(kind, fn)` | durable outgoing deliveries |
+| staff card | `r.staff_card(StaffCardSpec(key, title, template, context))` | a card on the staff page (PWA); `context(request, event)` returns the template context or `None` to hide it (ADR-0021) |
 | program source | `r.program_source(fn)` | `fn(event, target, start, end) -> {"entries", "messages", "overlays"}`: extra content in every screen's program (announcements; evacuation in phase 3) |
 | webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |

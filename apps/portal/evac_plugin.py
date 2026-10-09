@@ -16,3 +16,5 @@ def register(r: Registry) -> None:
     ]:
         r.nav(NavEntry(module="core", label=str(label), url_name=url, permission="admin", section="admin",
                        order=order, global_=True, active=active))
+    r.nav(NavEntry(module="core", label=str(_("Staff app")), url_name="portal:staff", permission="events.view",
+                   section="event", order=12, active=("portal:staff",)))

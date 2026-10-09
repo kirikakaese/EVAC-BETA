@@ -6,6 +6,17 @@ released.
 
 ## [Unreleased]
 
+### Added — staff app and Web Push (Phase 2, part 3)
+
+- Staff app (PWA, ADR-0021): installable (`/manifest.webmanifest`, `/sw.js`), staff page per event with on-air
+  announcements, approvals and quick send, full-screen alerts with sound for urgent and emergency announcements,
+  and an offline queue that sends actions taken without network when the connection is back.
+- Web Push: every in-app notification also reaches the user's subscribed phones and browsers (VAPID and RFC 8291
+  encryption implemented with `cryptography`, no new dependency; checked against the RFC test vector). Push keys
+  are created automatically; `EVAC_VAPID_SUBJECT` sets the contact address.
+- Plugin API: `r.staff_card(StaffCardSpec(...))` for cards on the staff page.
+- `make e2e` runs a staff app test on a phone-sized screen (install, offline approval, emergency alert).
+
 ### Added — announcement channels (Phase 2, part 2)
 
 - Extensions for e-mail, ntfy, Matrix, Telegram and Mastodon (ADR-0020, docs/extensions/notify.md): settings and

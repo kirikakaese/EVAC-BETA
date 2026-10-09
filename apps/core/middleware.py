@@ -80,6 +80,7 @@ class RateLimitMiddleware(MiddlewareMixin):
 
 
 FIRST_RUN_EXEMPT = ("/setup/", "/early-access/", "/static/", "/media/", "/healthz", "/readyz", "/metrics",
+                    "/manifest.webmanifest", "/sw.js", "/offline/",
                     "/api/schema/", "/favicon.ico", "/docs/", "/player/")
 
 

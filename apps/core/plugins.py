@@ -173,6 +173,19 @@ class NotificationChannelSpec:
 
 
 @dataclass(frozen=True)
+class StaffCardSpec:
+    """A card on the staff page (PWA, ADR-0021). ``context(request, event) -> dict | None`` returns the template
+    context, or None to hide the card for this user; ``template`` renders it (one ``<section class="card">``)."""
+
+    key: str
+    title: str
+    template: str
+    context: Callable[[Any, Any], Mapping[str, Any] | None]
+    module: str = "core"
+    order: int = 100
+
+
+@dataclass(frozen=True)
 class EvacTriggerSpec:
     """A source that can raise an evacuation/alarm state change (consumed by the Phase 3 module)."""
 

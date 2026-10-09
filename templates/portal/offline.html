@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Offline" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "You are offline" %}</h1></div>
+<section class="card"><p>{% trans "This page is not available without network. The staff page you opened last still works offline; actions you take there are sent when the connection is back." %}</p>
+<p><a class="btn btn-primary" href="{% url 'portal:staff_start' %}">{% trans "Open the staff page" %}</a></p>
+<p class="small muted" data-sync role="status" data-label-synced="{% trans 'No actions waiting.' %}" data-label-offline="{% trans 'No actions waiting.' %}" data-label-waiting="{% trans '{n} action(s) waiting to be sent.' %}"></p></section>
+{% endblock %}

@@ -822,3 +822,24 @@ pre.logs { max-height: 22rem; overflow: auto; font-size: .78rem; background: var
 .feed-item h2 { margin: .25rem 0 .5rem; }
 .channel-texts { margin-top: .75rem; }
 .channel-texts summary { cursor: pointer; font-weight: 600; }
+
+/* staff PWA ----------------------------------------------------------------- */
+.staff-status { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin-bottom: 1rem; }
+.sync-state[data-state="waiting"], .sync-state[data-state="offline"] { color: var(--warn); font-weight: 600; }
+.sync-state[data-state="waiting"]::before, .sync-state[data-state="offline"]::before { content: "! "; }
+.sync-state[data-state="synced"]::before { content: "\2713 "; color: var(--ok); }
+.sync-list:empty { display: none; }
+.alert-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 1rem;
+  background: #991b1b; color: #fff; }  /* fixed dark red: white text stays readable in both themes (8:1) */
+[data-push-when][hidden] { display: none; }
+.alert-overlay[hidden] { display: none; }
+.alert-box { max-width: 40rem; text-align: center; }
+.alert-kicker { text-transform: uppercase; letter-spacing: .15em; font-weight: 800; margin: 0; }
+.alert-box h2 { font-size: clamp(1.8rem, 7vw, 3.2rem); margin: .5rem 0 1rem; color: #fff; }
+.alert-box p { font-size: 1.15rem; }
+.alert-actions { display: flex; gap: .75rem; justify-content: center; margin-top: 1.5rem; }
+.alert-actions .btn { font-size: 1.1rem; padding: .7rem 1.4rem; }
+.staff-notifications li { padding: .45rem 0; border-bottom: 1px solid var(--border); }
+.staff-notifications li:last-child { border-bottom: 0; }
+.staff-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.staff-actions form { display: inline; }

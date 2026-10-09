@@ -30,6 +30,7 @@ from .plugins import (
     ProgramSource,
     ScopeKind,
     SettingsNamespace,
+    StaffCardSpec,
     WebhookEventSpec,
     WebhookSink,
     WidgetSpec,
@@ -67,6 +68,7 @@ class Registry:
         self.outbox_handlers: dict[str, OutboxHandler] = {}
         self.webhook_sinks: list[WebhookSink] = []
         self.program_sources: list[ProgramSource] = []
+        self.staff_cards: dict[str, StaffCardSpec] = {}
         self.websocket_routes: list[Any] = []
         self.api_routes: list[tuple[str, Any, str]] = []
 
@@ -173,6 +175,10 @@ class Registry:
     def program_source(self, fn: ProgramSource) -> None:
         """Contribute entries/overlays to every screen's program (see ``plugins.ProgramSource``)."""
         self.program_sources.append(fn)
+
+    def staff_card(self, spec: StaffCardSpec) -> None:
+        """A card on the staff page (PWA)."""
+        self._add(self.staff_cards, spec.key, spec, "staff card")
 
     def websocket_route(self, route: Any) -> None:
         self.websocket_routes.append(route)

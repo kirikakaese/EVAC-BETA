@@ -12,6 +12,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.feedgenerator import Rss201rev2Feed
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_POST
@@ -181,6 +182,9 @@ def _action(fn, done: str):
             _fail(request, err)
         except PermissionDenied as err:
             messages.error(request, str(err) or _("Not allowed."))
+        nxt = request.POST.get("next", "")
+        if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+            return redirect(nxt)  # e.g. back to the staff page
         return redirect("announcements:detail", slug, ann.pk)
     return view
 

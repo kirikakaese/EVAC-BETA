@@ -96,3 +96,59 @@ def notification_read(request, pk):
 def notifications_read_all(request):
     Notification.objects.filter(user=request.user, read_at__isnull=True).update(read_at=timezone.now())
     return redirect("core:notifications")
+
+
+# ------------------------------------------------------------------ Web Push (staff PWA)
+@login_required
+@require_POST
+def push_subscribe(request):
+    """Body: ``PushSubscription.toJSON()`` of the browser."""
+    import json
+
+    from . import webpush
+
+    try:
+        data = json.loads(request.body or b"{}")
+        webpush.subscribe(request.user, data if isinstance(data, dict) else {},
+                          request.headers.get("User-Agent", ""))
+    except (ValueError, TypeError) as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def push_unsubscribe(request):
+    import json
+
+    from .models import PushSubscription
+
+    try:
+        endpoint = str(json.loads(request.body or b"{}").get("endpoint", ""))
+    except (ValueError, AttributeError):
+        endpoint = ""
+    deleted, _rows = PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
+    return JsonResponse({"ok": True, "deleted": deleted})
+
+
+@login_required
+@require_POST
+def push_test(request):
+    """Send a test notification to the user's own devices (bell + Web Push)."""
+    from django.contrib import messages
+    from django.utils.translation import gettext as _
+
+    from .models import PushSubscription
+    from .notify import notify
+
+    n = PushSubscription.objects.filter(user=request.user).count()
+    notify([request.user], _("Test notification"), body=_("Notifications reach this device."), level="info")
+    if n:
+        messages.success(request, _("Test sent to %(n)s device(s).") % {"n": n})
+    else:
+        messages.warning(request, _("No device has notifications switched on yet."))
+    nxt = request.POST.get("next", "")
+    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        return redirect(nxt)
+    return redirect("core:notifications")
+

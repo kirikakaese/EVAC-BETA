@@ -12,6 +12,9 @@ urlpatterns = [
     path("notifications/", views.notifications, name="notifications"),
     path("notifications/read-all/", views.notifications_read_all, name="notifications_read_all"),
     path("notifications/<int:pk>/read/", views.notification_read, name="notification_read"),
+    path("push/subscribe/", views.push_subscribe, name="push_subscribe"),
+    path("push/unsubscribe/", views.push_unsubscribe, name="push_unsubscribe"),
+    path("push/test/", views.push_test, name="push_test"),
     path("sse/e/<slug:slug>/", rt.sse, name="sse"),
     path("poll/e/<slug:slug>/", rt.poll, name="poll"),
 ]

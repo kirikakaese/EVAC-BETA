@@ -8,6 +8,7 @@ from apps.core.plugins import (
     PermissionSpec,
     PluginManifest,
     SettingsNamespace,
+    StaffCardSpec,
     WebhookEventSpec,
 )
 from apps.core.registry import Registry
@@ -69,6 +70,10 @@ def register(r: Registry) -> None:
         r.notification_channel(NotificationChannelSpec(key=key, name=str(name), send=send, module=module,
                                                        description=str(desc)))
     r.outbox_handler("announcements.deliver", services.deliver)
+    from . import staff
+
+    r.staff_card(StaffCardSpec(key="announcements", title=str(_("Announcements")), module="announcements",
+                               template="announcements/_staff_card.html", context=staff.card, order=20))
     r.program_source(services.program_source)
     for key, desc in [
         ("announcement.published", "An announcement was published (once per occurrence)."),

@@ -206,3 +206,177 @@
     }
   }
 })();
+
+// Staff PWA (ADR-0021): service worker, Web Push switch, offline action queue, full-screen alerts.
+// Strings come from data-* attributes of the elements involved.
+(function () {
+  function csrf() {
+    try { return JSON.parse(document.body.getAttribute("hx-headers") || "{}")["X-CSRFToken"] || ""; } catch (e) { return ""; }
+  }
+  function postJSON(url, data) {
+    return fetch(url, { method: "POST", credentials: "same-origin", body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrf() } });
+  }
+
+  // service worker (scope /); the screen player registers its own below /player/
+  if ("serviceWorker" in navigator && location.pathname.indexOf("/player/") !== 0) {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () { /* not fatal */ });
+  }
+
+  // ---- Web Push: <div data-push data-key="…" data-subscribe-url data-unsubscribe-url data-label-on/off/denied/unsupported>
+  const push = document.querySelector("[data-push]");
+  function b64ToBytes(s) {
+    const pad = "=".repeat((4 - (s.length % 4)) % 4);
+    const raw = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from(raw, function (c) { return c.charCodeAt(0); });
+  }
+  function pushState(state) {
+    if (!push) return;
+    push.dataset.state = state;
+    const label = push.querySelector("[data-push-label]");
+    if (label) label.textContent = push.getAttribute("data-label-" + state) || state;
+    push.querySelectorAll("[data-push-when]").forEach(function (el) {
+      el.hidden = el.getAttribute("data-push-when").split(" ").indexOf(state) === -1;
+    });
+  }
+  function refreshPush() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      return pushState("unsupported");
+    }
+    if (Notification.permission === "denied") return pushState("denied");
+    navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); })
+      .then(function (sub) { pushState(sub ? "on" : "off"); })
+      .catch(function () { pushState("off"); });
+  }
+  if (push) {
+    refreshPush();
+    document.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-action='push-enable'], [data-action='push-disable']");
+      if (!btn) return;
+      e.preventDefault();
+      navigator.serviceWorker.ready.then(function (reg) {
+        if (btn.getAttribute("data-action") === "push-enable") {
+          return Notification.requestPermission().then(function (perm) {
+            if (perm !== "granted") return;
+            return reg.pushManager.subscribe({ userVisibleOnly: true,
+              applicationServerKey: b64ToBytes(push.getAttribute("data-key")) })
+              .then(function (sub) { return postJSON(push.getAttribute("data-subscribe-url"), sub.toJSON()); });
+          });
+        }
+        return reg.pushManager.getSubscription().then(function (sub) {
+          if (!sub) return;
+          return postJSON(push.getAttribute("data-unsubscribe-url"), { endpoint: sub.endpoint })
+            .then(function () { return sub.unsubscribe(); });
+        });
+      }).then(refreshPush, refreshPush);
+    });
+  }
+
+  // ---- offline queue: <form data-offline data-offline-label="Approve “x”"> is stored when the device is
+  // offline and sent when it is back. [data-sync] shows the state (data-label-synced / -waiting with {n}).
+  const KEY = "evac.offline-queue";
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
+  function save(q) { try { localStorage.setItem(KEY, JSON.stringify(q)); } catch (e) { /* storage full or blocked */ } }
+  function showSync() {
+    const el = document.querySelector("[data-sync]");
+    if (!el) return;
+    const q = load();
+    el.dataset.state = q.length ? "waiting" : (navigator.onLine ? "synced" : "offline");
+    const tpl = el.getAttribute("data-label-" + el.dataset.state) || "";
+    el.textContent = tpl.replace("{n}", String(q.length));
+    const list = document.querySelector("[data-sync-list]");
+    if (list) {
+      list.replaceChildren.apply(list, q.map(function (item) {
+        const li = document.createElement("li");
+        li.textContent = item.label;
+        return li;
+      }));
+    }
+  }
+  let flushing = false;
+  function flush() {
+    const q = load();
+    if (!q.length || !navigator.onLine || flushing) return showSync();
+    flushing = true;
+    const item = q[0];
+    fetch(item.action, { method: "POST", credentials: "same-origin", body: new URLSearchParams(item.body),
+      headers: { "X-CSRFToken": csrf(), "X-EVAC-Queued": "1" }, redirect: "follow" })
+      .then(function (r) {
+        if (r.ok || r.status === 400 || r.status === 403 || r.status === 404) {
+          // done, or refused for good (the server's message shows on the next page load)
+          const rest = load().filter(function (x) { return x.id !== item.id; });
+          save(rest);
+        }
+      })
+      .catch(function () { /* still offline */ })
+      .then(function () { flushing = false; showSync(); if (load().length && navigator.onLine) setTimeout(flush, 500); });
+  }
+  document.addEventListener("submit", function (e) {
+    const form = e.target;
+    if (!form.hasAttribute || !form.hasAttribute("data-offline") || navigator.onLine) return;
+    e.preventDefault();
+    const data = {};
+    new FormData(form, e.submitter || undefined).forEach(function (v, k) { if (typeof v === "string") data[k] = v; });
+    const q = load();
+    q.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2), action: form.action, body: data,
+      label: form.getAttribute("data-offline-label") || form.action, at: new Date().toISOString() });
+    save(q);
+    showSync();
+  }, true);
+  window.addEventListener("online", flush);
+  window.addEventListener("offline", showSync);
+  showSync();
+  flush();
+
+  // ---- alerts: <div data-alert-overlay data-label-ack="…"> shows urgent messages full screen with sound.
+  const overlay = document.querySelector("[data-alert-overlay]");
+  function tone() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.5, 1.0, 1.5].forEach(function (t, i) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.value = i % 2 ? 660 : 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+        gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.4);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + t);
+        osc.stop(ctx.currentTime + t + 0.45);
+      });
+      setTimeout(function () { ctx.close(); }, 2500);
+    } catch (e) { /* no audio */ }
+    if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 800]);
+  }
+  let lastAlert = "";
+  function alertShow(title, body, url) {
+    if (!overlay) return;
+    const key = title + "|" + body;
+    if (key === lastAlert && !overlay.hidden) return;  // the same alert via the live stream and Web Push
+    lastAlert = key;
+    overlay.querySelector("[data-alert-title]").textContent = title || "";
+    overlay.querySelector("[data-alert-body]").textContent = body || "";
+    const link = overlay.querySelector("[data-alert-link]");
+    if (link) { link.hidden = !url; if (url) link.setAttribute("href", url); }
+    overlay.hidden = false;
+    const ack = overlay.querySelector("[data-alert-ack]");
+    if (ack) ack.focus();
+    tone();
+  }
+  if (overlay) {
+    overlay.querySelector("[data-alert-ack]").addEventListener("click", function () { overlay.hidden = true; });
+    document.addEventListener("evac:message", function (e) {
+      const m = e.detail || {};
+      if (m.type === "announcement.live" && m.data && m.data.alert) alertShow(m.data.title, m.data.text, m.data.url);
+    });
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", function (e) {
+        const m = (e.data && e.data.message) || {};
+        if (e.data && e.data.type === "push" && m.level === "err" && document.visibilityState === "visible") {
+          alertShow(m.title, m.body, m.url);
+        }
+      });
+    }
+  }
+})();

@@ -231,6 +231,25 @@ failed, with recipients and retries).
 - Sound on screens follows the screen's display settings (sound on/off, volume).
 - Webhooks: `announcement.published` (per occurrence), `announcement.pending`, `announcement.cancelled`.
 
+## 5e. Staff app (PWA)
+
+Staff open **Staff app** in the event menu (`/e/<event>/staff/`) on their phone and install it with the
+browser's *Add to home screen*. The page shows
+
+- **This device**: *Switch on notifications* subscribes the phone to Web Push. Every notification of the bell
+  (approvals, announcements to staff, later alarms) then also arrives as a phone notification; emergencies stay
+  on screen until dismissed. *Send a test* checks it. Requires HTTPS; on iPhone the app must be on the home
+  screen first.
+- **Announcements**: what is on air, announcements waiting for your approval with *Approve* / *Reject*, and quick
+  send from templates.
+- **Alerts**: while the page is open, urgent and emergency announcements cover the screen with a tone and
+  vibration until *Got it*.
+- **Offline**: the page works without network. Approvals and other actions taken offline are kept on the phone
+  ("1 action waiting to be sent") and sent automatically when the connection is back.
+
+Set `EVAC_VAPID_SUBJECT` (e.g. `mailto:ops@example.org`) so push services can reach you; the push keys are
+created automatically.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.
