@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: public.ecr.aws/docker/library/postgres:16  # official image; avoids Docker Hub pull limits
         env:
           POSTGRES_USER: evac
           POSTGRES_PASSWORD: evac
@@ -40,7 +40,7 @@ jobs:
           --health-timeout 3s
           --health-retries 12
       redis:
-        image: redis:7
+        image: public.ecr.aws/docker/library/redis:7
         ports: ["6379:6379"]
     steps:
       - uses: actions/checkout@v4
