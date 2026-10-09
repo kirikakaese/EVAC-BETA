@@ -306,14 +306,16 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
     an instance admin. Add new pages here so the a11y test covers them.
     """
     e = f"/e/{event_slug}"
-    member = [f"{e}/", f"{e}/venues/", "/", "/about/", "/docs/", "/docs/operator-handbook/", "/search/?q=event",
+    member = [f"{e}/", f"{e}/venues/", f"{e}/screens/", f"{e}/screens/groups/",
+              "/", "/about/", "/docs/", "/docs/operator-handbook/", "/search/?q=event",
               "/accounts/profile/", "/accounts/security/", "/accounts/security/totp/", "/accounts/tokens/",
               "/notifications/"]
     if venue_slug:
         member.append(f"{e}/venues/{venue_slug}/")
     admin = member + [
         f"{e}/settings/", f"{e}/members/", f"{e}/roles/", f"{e}/settings/modules/", f"{e}/settings/s/general/",
-        f"{e}/settings/tokens/", f"{e}/audit/", f"{e}/settings/extensions/", f"{e}/settings/extensions/webhooks/",
+        f"{e}/settings/tokens/", f"{e}/audit/", f"{e}/screens/pair/", f"{e}/settings/s/screens/",
+        f"{e}/settings/extensions/", f"{e}/settings/extensions/webhooks/",
         "/settings/extensions/", "/settings/extensions/webhooks/", "/settings/modules/", "/settings/general/",
         "/settings/general/general/", "/settings/audit/", "/settings/users/", "/events/new/", "/events/import/",
         "/accounts/privacy/delete/",

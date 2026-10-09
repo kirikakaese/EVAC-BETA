@@ -28,7 +28,9 @@ seclog = logging.getLogger("evac.security")
 
 COOKIE = "evac_early_access"
 SALT = "evac.early_access"
-EXEMPT_PREFIXES = ("/early-access/", "/static/", "/healthz", "/readyz", "/metrics", "/favicon.ico")
+#: screens (``/player/`` and its WebSocket) authenticate with device tokens and cannot type the password
+EXEMPT_PREFIXES = ("/early-access/", "/static/", "/healthz", "/readyz", "/metrics", "/favicon.ico", "/player/")
+WS_EXEMPT_PATHS = ("/ws/screen/",)
 WEBHOOK_PATH = re.compile(r"^/api/v1/extensions/[\w-]+/[0-9a-f-]{36}/webhook/$")
 
 
@@ -116,7 +118,7 @@ class EarlyAccessASGIMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "websocket" and enabled():
+        if scope["type"] == "websocket" and enabled() and scope.get("path") not in WS_EXEMPT_PATHS:
             from http.cookies import SimpleCookie
 
             raw = b"; ".join(v for k, v in scope.get("headers", []) if k == b"cookie").decode("latin-1")

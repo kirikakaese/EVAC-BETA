@@ -6,6 +6,24 @@ released.
 
 ## [Unreleased]
 
+### Security
+
+- API: the nested event endpoints (`/events/<slug>/roles/`, `members/`, `modules/`, `audit/`) did not check
+  the scopes of service tokens; a read-only token of a user with the right permissions could change roles.
+  They now enforce token scopes like every other endpoint (regression test added).
+
+### Added — screens (Phase 1, part 1: pairing, groups, health)
+
+- New `screens` module: screens with venue/zone/room, tags and position; manual and dynamic screen groups
+  (scope kind `screen_group`); pairing with a six-character code and QR (`/screens/pair/?code=…`), per-screen
+  device tokens (`evacscreen_…`, hashed, revocable, re-pair to new hardware).
+- Player device API under `/player/api/` (pairing, config, heartbeat, SSE, long-poll) and WebSocket
+  `/ws/screen/` (token in the first message); exempt from the early-access gate (ADR-0013).
+- Health: heartbeat reports (version, resolution, uptime, slide, errors, …), online/stale/offline with a
+  configurable threshold, beat task that emits `screen.offline` / `screen.online` webhooks and notifies screen
+  managers. Portal pages for screens, pairing and groups; REST API `/events/<slug>/screens/` and
+  `/screen-groups/`. Plugins can mount urlconfs at the site root (`ROOT_MOUNTS`).
+
 ### Added — production server bundle
 
 - `deploy/server/`: run EVAC and DIAL on one server behind Caddy (automatic HTTPS): bootstrap script

@@ -2,7 +2,8 @@
 """Root URL configuration.
 
 Module UIs: an installed app with ``urls.py`` declaring ``PORTAL_MOUNT = True`` is mounted at
-``/e/<slug>/<app label>/`` under its own namespace (same convention as DIAL).
+``/e/<slug>/<app label>/`` under its own namespace (same convention as DIAL). ``ROOT_MOUNTS = [(prefix,
+urlconf, namespace), ...]`` mounts further urlconfs at the site root (e.g. the screen player at ``/player/``).
 """
 from importlib import import_module
 
@@ -61,6 +62,8 @@ for _cfg in django_apps.get_app_configs():
         if exc.name != f"{_cfg.name}.urls":
             raise
         continue
+    for _prefix, _urlconf, _namespace in getattr(_mod, "ROOT_MOUNTS", ()):
+        urlpatterns.append(path(_prefix, include(_urlconf, namespace=_namespace)))
     if getattr(_mod, "PORTAL_MOUNT", False):
         urlpatterns.append(path(f"e/<slug:slug>/{_cfg.label}/", include(f"{_cfg.name}.urls", namespace=_cfg.label)))
 

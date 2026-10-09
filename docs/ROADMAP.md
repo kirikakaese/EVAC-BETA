@@ -87,10 +87,15 @@ green. (Verified by `apps/portal/tests/test_portal.py::test_first_run_wizard` an
 
 ---
 
-## Phase 1 — Screens core ⬜
+## Phase 1 — Screens core 🟡
 
 **Gate:** pair a screen, design a slide with an uploaded font, publish, override, unplug the network: the
 screen keeps playing.
+
+**Progress:** server side of 1.1.2 (pairing, device tokens) and 1.1.3 (WebSocket/SSE/long-poll, heartbeat
+reports), 1.2.1 (screens, manual/dynamic groups, tags, scope kind) and 1.2.4 (health states, offline alerts
+to webhooks and notifications) are done (ADR-0013). Next: the player app (1.1.1, 1.1.4), then the design
+system.
 
 ### Epic 1.1 — Player (`player/`, TypeScript, < 300 kB gz) [§5.1]
 | ID | Ticket | Acceptance criteria |

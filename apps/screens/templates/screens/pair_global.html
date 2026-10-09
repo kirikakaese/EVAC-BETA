@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Pair a screen" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Pair a screen" %}</h1></div>
+<section class="card">{% if events %}<h2>{% trans "For which event?" %}</h2>
+  <ul class="plain">{% for e in events %}<li><a class="btn" href="{% url 'screens:pair' e.slug %}?code={{ code }}">{{ e.name }}</a></li>{% endfor %}</ul>
+{% else %}<p>{% trans "You cannot pair screens in any event. Ask an organiser for the permission to pair screens." %}</p>{% endif %}</section>
+{% endblock %}
