@@ -97,7 +97,10 @@ screen keeps playing.
 tags, scope kind), 1.2.4 (health states, offline alerts to webhooks and notifications), ADR-0013.
 Partly: 1.1.4 (service worker app cache + last config; the IndexedDB content bundle comes with layouts),
 1.1.5 (clock offset; synchronised slide changes come with playlists), 1.2.3 (identify, reload, revoke,
-re-pair). Next: the design system (1.3.1–1.3.3), then layouts, renderer and widgets.
+re-pair). Design system done: 1.3.1 (themes, tokens → CSS custom properties, inheritance), 1.3.2 (fonts,
+variable axes, subsetting, built-in Atkinson Hyperlegible + Inter), 1.3.3 (asset library with transcoding;
+usage tracking covers themes until layouts exist) — ADR-0014. Next: layouts, shared renderer and widgets
+(1.1.6, 1.3.4–1.3.7, 1.4), with the Lit editor (ADR-0009).
 
 ### Epic 1.1 — Player (`player/`, TypeScript, < 300 kB gz) [§5.1]
 | ID | Ticket | Acceptance criteria |

@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Themes" %}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:index' event.slug %}">{% trans "Design & assets" %}</a> <span aria-hidden="true">›</span> {% trans "Themes" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Themes" %}</h1></div>
+<section class="card"><div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Theme" %}</th><th scope="col">{% trans "Inherits from" %}</th><th scope="col">{% trans "Library" %}</th><th scope="col">{% trans "Used by screens" %}</th></tr></thead>
+<tbody>{% for t in themes %}<tr><td><a href="{% url 'content:theme' event.slug t.pk %}">{{ t.name }}</a> <span class="muted small">{{ t.key }}</span></td><td>{{ t.parent|default:_("EVAC defaults") }}</td>
+  <td>{% if t.event_id %}{% trans "this event" %}{% else %}<span class="badge badge-info">{% trans "shared" %}</span>{% endif %}</td>
+  <td>{% if current and current.pk == t.pk %}<span class="badge badge-ok">{% trans "yes" %}</span>{% else %}–{% endif %}</td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "No themes yet. Screens use the EVAC default theme." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if form %}<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "New theme" %}</h2>{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Create theme" %}</button></form>{% endif %}
+{% endblock %}

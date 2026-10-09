@@ -40,6 +40,9 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `POST /events/<slug>/screens/pair/` | claim a pairing code `{code, name?, screen?, tags?}` (`screen` = re-pair) | `screens.pair` |
 | `POST /events/<slug>/screens/<id>/revoke/` | revoke the device token | `screens.manage` |
 | `/events/<slug>/screen-groups/` | manual and dynamic screen groups | `screens.view` / `screens.manage` |
+| `/events/<slug>/themes/` | themes; `tokens` (only values set here), `resolved`, `version` (send it back on `PATCH` to detect concurrent edits) | `content.view` / `content.edit`, token scope `content` |
+| `/events/<slug>/fonts/` | font families; `POST` multipart `upload` (+ `name`, `category`, `licence`, `subset`) | `content.view` / `content.edit` |
+| `/events/<slug>/assets/` | asset library (`?kind=image`); `POST` multipart `upload` (+ `name`, `folder`); `urls` per variant | `content.view` / `content.edit` |
 
 ### Screen player API
 
@@ -53,6 +56,8 @@ Used by `/player/`, authenticated with the per-screen device token (`Authorizati
 | `POST /player/api/heartbeat/` | `{"data": {version, resolution, orientation, uptime, slide, errors, …}}` → server time |
 | `GET /player/api/stream/` | SSE of messages for this screen (`Last-Event-ID` / `?since=`) |
 | `GET /player/api/poll/?since=` | long-poll fallback |
+| `GET /player/api/content/theme/` | resolved theme: tokens, CSS variables, `@font-face` rules of the fonts it uses |
+| `GET /player/api/content/files/<sha>/<name>` | asset and font files of the screen's event or the shared library |
 | WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages, `revoked` |
 
 ## Webhooks out

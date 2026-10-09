@@ -10,6 +10,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# ffmpeg converts uploaded video and audio for screens (H.264/VP9, loudness-normalised AAC); ~80 MB.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 # Runtime dependencies straight from pyproject.toml (layer-cached; the app runs from /app via manage.py).
 COPY pyproject.toml ./
 RUN python -c "import tomllib; d = tomllib.load(open('pyproject.toml', 'rb'))['project']; print('\n'.join(d['dependencies']))" > /tmp/requirements.txt \

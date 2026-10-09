@@ -277,6 +277,181 @@ paths:
               schema:
                 $ref: '#/components/schemas/Event'
           description: ''
+  /api/v1/events/{event_slug}/assets/:
+    get:
+      operationId: events_assets_list
+      description: Asset library. ``POST`` multipart with ``upload`` creates an asset
+        (identical files are reused, 200).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAssetList'
+          description: ''
+    post:
+      operationId: events_assets_create
+      description: Asset library. ``POST`` multipart with ``upload`` creates an asset
+        (identical files are reused, 200).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssetRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+          description: ''
+  /api/v1/events/{event_slug}/assets/{id}/:
+    get:
+      operationId: events_assets_retrieve
+      description: Asset library. ``POST`` multipart with ``upload`` creates an asset
+        (identical files are reused, 200).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this asset.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+          description: ''
+    patch:
+      operationId: events_assets_partial_update
+      description: Asset library. ``POST`` multipart with ``upload`` creates an asset
+        (identical files are reused, 200).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this asset.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssetRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+          description: ''
+    delete:
+      operationId: events_assets_destroy
+      description: Asset library. ``POST`` multipart with ``upload`` creates an asset
+        (identical files are reused, 200).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this asset.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/events/{event_slug}/audit/:
     get:
       operationId: events_audit_list
@@ -367,6 +542,145 @@ paths:
               schema:
                 $ref: '#/components/schemas/Audit'
           description: ''
+  /api/v1/events/{event_slug}/fonts/:
+    get:
+      operationId: events_fonts_list
+      description: |-
+        Font families. ``POST`` multipart with ``upload`` (font file), optional ``name``, ``category``,
+        ``licence``, ``subset``; uploading a family name that exists adds the file to it.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFontFamilyList'
+          description: ''
+    post:
+      operationId: events_fonts_create
+      description: |-
+        Font families. ``POST`` multipart with ``upload`` (font file), optional ``name``, ``category``,
+        ``licence``, ``subset``; uploading a family name that exists adds the file to it.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FontFamilyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FontFamilyRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FontFamilyRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FontFamily'
+          description: ''
+  /api/v1/events/{event_slug}/fonts/{id}/:
+    get:
+      operationId: events_fonts_retrieve
+      description: |-
+        Font families. ``POST`` multipart with ``upload`` (font file), optional ``name``, ``category``,
+        ``licence``, ``subset``; uploading a family name that exists adds the file to it.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this font family.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FontFamily'
+          description: ''
+    delete:
+      operationId: events_fonts_destroy
+      description: |-
+        Font families. ``POST`` multipart with ``upload`` (font file), optional ``name``, ``category``,
+        ``licence``, ``subset``; uploading a family name that exists adds the file to it.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this font family.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/events/{event_slug}/members/:
     get:
       operationId: events_members_list
@@ -1113,6 +1427,182 @@ paths:
               schema:
                 $ref: '#/components/schemas/Screen'
           description: ''
+  /api/v1/events/{event_slug}/themes/:
+    get:
+      operationId: events_themes_list
+      description: Themes (design tokens). ``PATCH`` with ``version`` fails with 409-like
+        400 when it changed meanwhile.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedThemeList'
+          description: ''
+    post:
+      operationId: events_themes_create
+      description: Themes (design tokens). ``PATCH`` with ``version`` fails with 409-like
+        400 when it changed meanwhile.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThemeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ThemeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ThemeRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Theme'
+          description: ''
+  /api/v1/events/{event_slug}/themes/{id}/:
+    get:
+      operationId: events_themes_retrieve
+      description: Themes (design tokens). ``PATCH`` with ``version`` fails with 409-like
+        400 when it changed meanwhile.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this theme.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Theme'
+          description: ''
+    patch:
+      operationId: events_themes_partial_update
+      description: Themes (design tokens). ``PATCH`` with ``version`` fails with 409-like
+        400 when it changed meanwhile.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this theme.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedThemeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedThemeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedThemeRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Theme'
+          description: ''
+    delete:
+      operationId: events_themes_destroy
+      description: Themes (design tokens). ``PATCH`` with ``version`` fails with 409-like
+        400 when it changed meanwhile.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this theme.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/events/{slug}/:
     get:
       operationId: events_retrieve
@@ -2138,6 +2628,121 @@ paths:
           description: No response body
 components:
   schemas:
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        alt_text:
+          type: string
+          title: Alternative text
+          description: Describes the content for people who cannot see it.
+          maxLength: 300
+        credit:
+          type: string
+          title: Credit / licence
+          maxLength: 300
+        tags: {}
+        folder:
+          type: string
+          format: uuid
+          nullable: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/AssetKindEnum'
+          readOnly: true
+        mime:
+          type: string
+          readOnly: true
+        size:
+          type: integer
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        duration:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        urls:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - duration
+      - height
+      - id
+      - kind
+      - mime
+      - note
+      - size
+      - status
+      - urls
+      - width
+    AssetKindEnum:
+      enum:
+      - image
+      - svg
+      - video
+      - audio
+      - pdf
+      - lottie
+      type: string
+      description: |-
+        * `image` - image
+        * `svg` - SVG
+        * `video` - video
+        * `audio` - audio
+        * `pdf` - PDF
+        * `lottie` - Lottie animation
+    AssetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        alt_text:
+          type: string
+          title: Alternative text
+          description: Describes the content for people who cannot see it.
+          maxLength: 300
+        credit:
+          type: string
+          title: Credit / licence
+          maxLength: 300
+        tags: {}
+        folder:
+          type: string
+          format: uuid
+          nullable: true
+        upload:
+          type: string
+          format: binary
+          writeOnly: true
     AssignRoleRequest:
       type: object
       properties:
@@ -2278,6 +2883,18 @@ components:
       required:
       - name
       - venue
+    CategoryEnum:
+      enum:
+      - sans
+      - serif
+      - mono
+      - display
+      type: string
+      description: |-
+        * `sans` - Sans serif
+        * `serif` - Serif
+        * `mono` - Monospace
+        * `display` - Display
     CloneRequest:
       type: object
       properties:
@@ -2462,14 +3079,135 @@ components:
       required:
       - building
       - name
-    KindEnum:
-      enum:
-      - manual
-      - dynamic
-      type: string
-      description: |-
-        * `manual` - Manual
-        * `dynamic` - Dynamic
+    FontFamily:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        fallback:
+          type: string
+          title: Fallback fonts
+          description: CSS font stack used while the font loads or for missing glyphs.
+          maxLength: 300
+        licence:
+          type: string
+          title: Licence note
+          description: Where the font comes from and under which licence it may be
+            used.
+        builtin:
+          type: boolean
+          readOnly: true
+        stack:
+          type: string
+          readOnly: true
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FontFile'
+          readOnly: true
+      required:
+      - builtin
+      - files
+      - id
+      - stack
+    FontFamilyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        fallback:
+          type: string
+          title: Fallback fonts
+          description: CSS font stack used while the font loads or for missing glyphs.
+          maxLength: 300
+        licence:
+          type: string
+          title: Licence note
+          description: Where the font comes from and under which licence it may be
+            used.
+        upload:
+          type: string
+          format: binary
+          writeOnly: true
+        subset:
+          type: boolean
+          writeOnly: true
+          default: false
+    FontFile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        weight_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        weight_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        style:
+          $ref: '#/components/schemas/StyleEnum'
+        axes: {}
+        unicode_range:
+          type: string
+          maxLength: 500
+        size:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        original_name:
+          type: string
+          maxLength: 200
+        url:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - url
+    FontFileRequest:
+      type: object
+      properties:
+        weight_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        weight_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        style:
+          $ref: '#/components/schemas/StyleEnum'
+        axes: {}
+        unicode_range:
+          type: string
+          maxLength: 500
+        size:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        original_name:
+          type: string
+          maxLength: 200
     Membership:
       type: object
       properties:
@@ -2525,6 +3263,29 @@ components:
       - key
       - name
       - required
+    PaginatedAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Asset'
     PaginatedAuditList:
       type: object
       required:
@@ -2617,6 +3378,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Floor'
+    PaginatedFontFamilyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FontFamily'
     PaginatedMembershipList:
       type: object
       required:
@@ -2732,6 +3516,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Screen'
+    PaginatedThemeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Theme'
     PaginatedTokenList:
       type: object
       required:
@@ -2823,6 +3630,31 @@ components:
             maxLength: 40
       required:
       - code
+    PatchedAssetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        alt_text:
+          type: string
+          title: Alternative text
+          description: Describes the content for people who cannot see it.
+          maxLength: 300
+        credit:
+          type: string
+          title: Credit / licence
+          maxLength: 300
+        tags: {}
+        folder:
+          type: string
+          format: uuid
+          nullable: true
+        upload:
+          type: string
+          format: binary
+          writeOnly: true
     PatchedBuildingRequest:
       type: object
       properties:
@@ -2988,7 +3820,7 @@ components:
         description:
           type: string
         kind:
-          $ref: '#/components/schemas/KindEnum'
+          $ref: '#/components/schemas/ScreenGroupKindEnum'
         match_tags:
           title: Tags
           description: 'Dynamic: screens with any of these tags.'
@@ -3042,6 +3874,26 @@ components:
           type: number
           format: double
           nullable: true
+    PatchedThemeRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        parent:
+          type: string
+          format: uuid
+          nullable: true
+          description: Tokens not set here are inherited from this theme.
+        tokens: {}
     PatchedVenueRequest:
       type: object
       properties:
@@ -3343,7 +4195,7 @@ components:
         description:
           type: string
         kind:
-          $ref: '#/components/schemas/KindEnum'
+          $ref: '#/components/schemas/ScreenGroupKindEnum'
         match_tags:
           title: Tags
           description: 'Dynamic: screens with any of these tags.'
@@ -3381,6 +4233,14 @@ components:
       - name
       - screens
       - updated_at
+    ScreenGroupKindEnum:
+      enum:
+      - manual
+      - dynamic
+      type: string
+      description: |-
+        * `manual` - Manual
+        * `dynamic` - Dynamic
     ScreenGroupRequest:
       type: object
       properties:
@@ -3391,7 +4251,7 @@ components:
         description:
           type: string
         kind:
-          $ref: '#/components/schemas/KindEnum'
+          $ref: '#/components/schemas/ScreenGroupKindEnum'
         match_tags:
           title: Tags
           description: 'Dynamic: screens with any of these tags.'
@@ -3426,6 +4286,91 @@ components:
         * `live` - Live
         * `teardown` - Teardown
         * `archived` - Archived
+    StatusEnum:
+      enum:
+      - processing
+      - ready
+      - failed
+      type: string
+      description: |-
+        * `processing` - processing
+        * `ready` - ready
+        * `failed` - failed
+    StyleEnum:
+      enum:
+      - normal
+      - italic
+      type: string
+      description: |-
+        * `normal` - normal
+        * `italic` - italic
+    Theme:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        key:
+          type: string
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        parent:
+          type: string
+          format: uuid
+          nullable: true
+          description: Tokens not set here are inherited from this theme.
+        tokens: {}
+        resolved:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        version:
+          type: integer
+          readOnly: true
+        shared:
+          type: boolean
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - key
+      - name
+      - resolved
+      - shared
+      - updated_at
+      - version
+    ThemeRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        parent:
+          type: string
+          format: uuid
+          nullable: true
+          description: Tokens not set here are inherited from this theme.
+        tokens: {}
+      required:
+      - key
+      - name
     Token:
       type: object
       properties:

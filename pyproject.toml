@@ -30,6 +30,9 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "uvicorn-worker>=0.2",
     "whitenoise>=6.6",
+    "Pillow>=11.2",
+    "fonttools[woff]>=4.53",
+    "defusedxml>=0.7",
 ]
 
 [project.optional-dependencies]

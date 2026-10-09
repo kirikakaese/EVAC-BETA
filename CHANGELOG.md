@@ -24,6 +24,20 @@ released.
   managers. Portal pages for screens, pairing and groups; REST API `/events/<slug>/screens/` and
   `/screen-groups/`. Plugins can mount urlconfs at the site root (`ROOT_MOUNTS`).
 
+### Added — design system (Phase 1, part 3: themes, fonts, asset library)
+
+- New `content` module (*Design & assets*, depends on `screens`): themes with design tokens (dark/light
+  palettes, fonts, type scale, spacing, radius, shadow, background colour/gradient/image, logo, transitions),
+  inheritance, live preview, optimistic locking and "use for this event's screens" (ADR-0014).
+- Fonts: WOFF2/WOFF/TTF/OTF upload incl. variable fonts, optional Latin subsetting, stored as WOFF2, licence
+  note; built in: Atkinson Hyperlegible and Inter (SIL OFL 1.1).
+- Asset library: images, SVG, video, audio, PDF, Lottie; content-hashed storage with de-duplication, folders,
+  tags, alt text, credits, usage; derivatives in the worker (thumbnail, WebP, AVIF; MP4/H.264 + WebM/VP9 +
+  poster; loudness-normalised AAC); EXIF rotation and metadata removal; SVG sanitising; access-checked file
+  serving (no public media URLs); shared instance library.
+- Player applies the event theme and its fonts and keeps them for offline use.
+- Docker image includes ffmpeg; new dependencies Pillow (explicit), fontTools, defusedxml.
+
 ### Added — screen player (Phase 1, part 2)
 
 - `/player/`: TypeScript player (Vite build in `static/player/`, 12.5 kB gzipped, CI checks the committed

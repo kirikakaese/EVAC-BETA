@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Design & assets" %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><style nonce="{{ csp_nonce }}">{{ preview_css|safe }}</style>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Design & assets" %}</h1></div>
+<div class="grid grid-3">
+  <a class="card card-link stat-card" href="{% url 'content:themes' event.slug %}"><div class="stat">{{ counts.themes }}</div><div class="stat-label">{% trans "Themes" %}</div></a>
+  <a class="card card-link stat-card" href="{% url 'content:fonts' event.slug %}"><div class="stat">{{ counts.fonts }}</div><div class="stat-label">{% trans "Font families" %}</div></a>
+  <a class="card card-link stat-card" href="{% url 'content:assets' event.slug %}"><div class="stat">{{ counts.assets }}</div><div class="stat-label">{% trans "Files" %}</div></a>
+</div>
+<section class="card"><h2>{% trans "Screens use" %}: {% if theme %}<a href="{% url 'content:theme' event.slug theme.pk %}">{{ theme.name }}</a>{% else %}{% trans "the EVAC default theme" %}{% endif %}</h2>
+  {% include "content/_preview.html" %}</section>
+{% endblock %}

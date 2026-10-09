@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Files" %}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:index' event.slug %}">{% trans "Design & assets" %}</a> <span aria-hidden="true">›</span> {% trans "Files" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if folder %}{{ folder }}{% else %}{% trans "Files" %}{% endif %}</h1></div>
+<form method="get" class="card filters" role="search">
+  <div><label for="q">{% trans "Search" %}</label><input id="q" name="q" value="{{ q }}"></div>
+  <div><label for="kind">{% trans "Type" %}</label><select id="kind" name="kind"><option value="">{% trans "all" %}</option>{% for v, l in kinds %}<option value="{{ v }}"{% if kind == v %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div><label for="folder-filter">{% trans "Folder" %}</label><select id="folder-filter" name="folder"><option value="">{% trans "all" %}</option>{% for f in folders %}<option value="{{ f.pk }}"{% if folder.pk == f.pk %} selected{% endif %}>{{ f }}</option>{% endfor %}</select></div>
+  <div><label for="tag">{% trans "Tag" %}</label><input id="tag" name="tag" value="{{ tag }}"></div>
+  <button class="btn">{% trans "Filter" %}</button></form>
+<ul class="asset-grid">{% for a in assets %}<li class="card asset-tile"><a href="{% url 'content:asset' event.slug a.pk %}">
+  {% if a.variants.thumb %}<img src="{% url 'content_files:file' a.sha256 a.variants.thumb.file %}" alt="{{ a.alt_text }}" loading="lazy" width="240" height="160">{% elif a.kind == "svg" %}<img src="{% url 'content_files:file' a.sha256 a.variants.original.file %}" alt="{{ a.alt_text }}" loading="lazy" width="240" height="160">{% else %}<span class="asset-icon" aria-hidden="true">{{ a.get_kind_display }}</span>{% endif %}
+  <span class="asset-name">{{ a.name }}</span></a>
+  <span class="small muted">{{ a.get_kind_display }} · {{ a.size|filesizeformat }}{% if not a.event_id %} · {% trans "shared" %}{% endif %}</span>
+  {% if a.status != "ready" %}<span class="badge {% if a.status == 'failed' %}badge-err{% else %}badge-processing{% endif %}">{{ a.get_status_display }}</span>{% endif %}</li>
+{% empty %}<li class="card muted">{% trans "No files yet." %}</li>{% endfor %}</ul>
+{% if can_edit %}<div class="grid grid-2">
+  <form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}<h2>{% trans "Upload files" %}</h2>{% include "portal/_form.html" with form=upload %}<button class="btn btn-primary">{% trans "Upload" %}</button></form>
+  <form method="post" class="card" novalidate>{% csrf_token %}<input type="hidden" name="action" value="folder"><h2>{% trans "Folders" %}</h2>{% include "portal/_form.html" with form=folder_form %}<button class="btn">{% trans "Create folder" %}</button></form>
+</div>{% endif %}
+{% endblock %}
