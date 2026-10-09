@@ -843,3 +843,12 @@ pre.logs { max-height: 22rem; overflow: auto; font-size: .78rem; background: var
 .staff-notifications li:last-child { border-bottom: 0; }
 .staff-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .staff-actions form { display: inline; }
+
+/* data feeds: explorer ------------------------------------------------------- */
+.tree { list-style: none; margin: 0; padding-left: 1.1rem; border-left: 1px dashed var(--border); }
+.tree-root { padding-left: 0; border-left: 0; max-height: 32rem; overflow: auto; }
+.tree li { margin: .15rem 0; }
+.tree summary { cursor: pointer; }
+.tree-key { font-weight: 600; }
+.tree-path { font-size: .75rem; color: var(--fg-muted); }
+.tree-value { font-family: ui-monospace, monospace; font-size: .85rem; }

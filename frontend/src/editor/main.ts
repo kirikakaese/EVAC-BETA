@@ -9,7 +9,8 @@ import { directive, Directive, type ElementPart, type PartInfo, PartType } from 
 
 import { pageNonce } from "../renderer/code";
 import { frameStyle, renderLayout, type RenderedLayout } from "../renderer/render";
-import type { AssetEntry, ElementStyle, LayoutData, LayoutElement, RenderContext } from "../renderer/types";
+import { MemoryStore } from "../renderer/data";
+import type { AssetEntry, ElementStyle, LayoutData, LayoutElement, RenderContext, WidgetData } from "../renderer/types";
 import {
   align, type AlignMode, clone, createElement, duplicate, guidesFor, History, r2, reorder, resize, snapMove,
 } from "./model";
@@ -26,11 +27,15 @@ interface EditorConfig {
   canPublish: boolean;
   canCode: boolean;
   types: string[];
+  /** offered by other modules (custom widgets: list and their current rows) */
+  choices?: { dataWidgets?: { value: string; label: string; visual: string }[];
+              widgetData?: Record<string, WidgetData> };
 }
 
 const TYPE_LABELS: Record<string, string> = {
   text: "Text", richtext: "Rich text", image: "Image", slideshow: "Slideshow", video: "Video", audio: "Audio",
   shape: "Shape", qr: "QR code", clock: "Clock", countdown: "Countdown", date: "Date", code: "Code",
+  data: "Data widget",
 };
 const TOKENS = ["primary", "accent", "text", "muted", "surface", "background", "success", "warning", "danger"];
 const TOKEN_LABELS: Record<string, string> = {
@@ -234,7 +239,8 @@ export class LayoutEditor extends LitElement {
   // ---------------------------------------------------------------- canvas
   private get ctx(): RenderContext {
     return { vars: this.cfg.vars, now: () => Date.now(), timezone: this.cfg.timezone, assets: this.cfg.assets,
-             fonts: this.cfg.fonts, editing: true, nonce: pageNonce() };
+             fonts: this.cfg.fonts, editing: true, nonce: pageNonce(),
+             data: new MemoryStore(this.cfg.choices?.widgetData ?? {}) };
   }
 
   updated(): void {
@@ -555,6 +561,13 @@ export class LayoutEditor extends LitElement {
                            ["iso", "ISO"]], (v) => this.setProp("format", v));
       case "code":
         return this.codeFields(p);
+      case "data": {
+        const widgets = this.cfg.choices?.dataWidgets ?? [];
+        return html`${this.choice("Widget", String(p.widget ?? ""),
+            [["", widgets.length ? "Choose…" : "No custom widgets yet (Data & widgets)"],
+             ...widgets.map((w): [string, string] => [w.value, w.label])], (v) => this.setProp("widget", v))}
+          ${text("Heading (empty: the widget's)", "title", 1)}`;
+      }
       default:
         return html``;
     }

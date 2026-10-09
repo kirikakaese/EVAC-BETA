@@ -11,6 +11,8 @@ import { cachedBundle, clearBundle, defaultLayout, fetchBundle, prefetch, type B
 import { cachedProgram, clearProgram, fetchProgram } from "./program";
 import { nextOverlayChange, OverlayLayer, SPEECH_DELAY_MS } from "./overlays";
 import { prefetchSpeech, Speaker } from "./speech";
+import { MemoryStore } from "../renderer/data";
+import { cachedWidgetData, clearWidgetData, refreshWidgetData } from "./widgetdata";
 import { nextChange, slideAt, type Program, type Slide } from "../program/engine";
 import { pageNonce } from "../renderer/code";
 import type { LayoutData } from "../renderer/types";
@@ -32,6 +34,8 @@ function stage(name: string): void {
 const MAX_WAIT_MS = 60_000;
 /** fetch the program again this often to extend its horizon (it covers several days) */
 const PROGRAM_REFRESH_MS = 3_600_000;
+/** custom widget rows: refetched this often besides "data.changed" pushes */
+const WIDGET_DATA_REFRESH_MS = 300_000;
 /** housekeeping: display state, daily reload, memory, stalled timers */
 const TICK_MS = 15_000;
 
@@ -39,6 +43,8 @@ export class Player {
   readonly clock = new Clock();
   private display: Display;
   private speaker = new Speaker();
+  private widgetData = new MemoryStore(cachedWidgetData());
+  private dataRefresher: ReturnType<typeof setInterval> | null = null;
   private overlays = new OverlayLayer(this.speaker);
   private conn: Connection | null = null;
   private config: ScreenConfig | null = null;
@@ -142,6 +148,8 @@ export class Player {
     this.show();
     stage("play: online");
     this.refresher = setInterval(() => void this.loadProgram(token).then(() => this.show()), PROGRAM_REFRESH_MS);
+    void this.loadWidgetData(token);
+    this.dataRefresher = setInterval(() => void this.loadWidgetData(token), WIDGET_DATA_REFRESH_MS);
     this.housekeeping = setInterval(() => this.tick(), TICK_MS);
     this.conn = new Connection({
       api: this.env.api, ws: wsUrl(this.env), token, clock: this.clock,
@@ -198,6 +206,9 @@ export class Player {
         }
         break;
       }
+      case "data.changed":
+        await this.loadWidgetData(token);
+        break;
       case "reload":
         safeReload("requested by staff", { force: true });
         break;
@@ -250,6 +261,15 @@ export class Player {
     const speech = [...(this.program?.entries ?? []), ...(this.program?.overlays ?? [])]
       .map((x) => x.speech).filter((u): u is string => !!u);
     if (speech.length) void prefetchSpeech(speech);
+  }
+
+  /** Custom widget rows: "data" elements redraw themselves when the store changes. */
+  private async loadWidgetData(token: string): Promise<void> {
+    try {
+      await refreshWidgetData(this.env.api, token, this.widgetData);
+    } catch (err) {
+      if (err instanceof Unauthorized) this.unpair();
+    }
   }
 
   private vars(): Record<string, unknown> {
@@ -322,7 +342,7 @@ export class Player {
       this.display.layout(data, {
         vars: this.vars(), now: () => this.clock.now(), timezone: cfg.event.timezone, assets: this.bundle.assets,
         fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches, audio,
-        nonce: pageNonce(),
+        nonce: pageNonce(), data: this.widgetData,
         onError: (id, err) => recordError(`${id}: ${String(err)}`),
         onLog: (id, message) => log("info", `${id}: ${message}`),
       }, variables);
@@ -375,7 +395,10 @@ export class Player {
     this.housekeeping = null;
     if (this.timer) clearTimeout(this.timer);
     if (this.refresher) clearInterval(this.refresher);
-    this.timer = this.refresher = null;
+    if (this.dataRefresher) clearInterval(this.dataRefresher);
+    this.timer = this.refresher = this.dataRefresher = null;
+    clearWidgetData();
+    this.widgetData.set({});
     clearProgram();
     this.program = null;
     this.shown = "";

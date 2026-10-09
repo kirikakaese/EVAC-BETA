@@ -6,6 +6,16 @@ released.
 
 ## [Unreleased]
 
+### Added — custom widgets (Phase 2, part 5)
+
+- Data & widgets (ADR-0023): feeds from JSON, RSS/Atom, iCal and CSV URLs or built-in data sources, fetched on the
+  server with SSRF protection, ETags and a kept last good snapshot; a widget builder with a clickable data tree,
+  JSONPath item and field mapping and a live preview; visuals text, list, table, cards, counter, gauge, ticker and
+  bars.
+- Layout element *Data widget*; screens cache widget data offline and refresh when a feed changes.
+- Plugin API: `r.editor_choices(key, fn, module=)`; data sources with `fetch(event)` (`announcements.on_air`,
+  `event.info`). Instance setting *Allow feeds from private networks*.
+
 ### Added — spoken announcements (Phase 2, part 4)
 
 - Offline speech (ADR-0022): levels can be *read aloud on screens* (urgent and emergency by default). When such an

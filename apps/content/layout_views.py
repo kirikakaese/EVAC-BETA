@@ -27,6 +27,7 @@ from .models import Asset, Layout, LayoutVersion, owner_q
 
 #: every string the editor shows (frontend/src/editor uses them as keys; a test keeps both in sync)
 EDITOR_STRINGS = [
+    "Data widget", "Widget",
     "Add", "Text", "Rich text", "Image", "Slideshow", "Video", "Audio", "Shape", "QR code", "Clock", "Countdown",
     "Date", "Layers", "Properties", "Layout", "Width", "Height", "Background", "Background image", "None",
     "Undo", "Redo", "Delete", "Duplicate", "Bring forward", "Send backward", "Save", "Saving…", "Saved",
@@ -147,7 +148,17 @@ def editor_config(request, event, obj: Layout) -> dict:
         "canPublish": _perm(request, event, "content.publish"),
         "canCode": services.may_write_code(request.user, event, request),
         "types": list(layout_format.ELEMENT_TYPES),
+        "choices": editor_choices(event),
     }
+
+
+def editor_choices(event) -> dict:
+    """Choices other modules offer to the editor (custom widgets for "data" elements, ...)."""
+    from apps.core import modules
+    from apps.core.registry import registry
+
+    return {key: fn(event) for key, (module, fn) in registry.ensure_loaded().editor_choices_.items()
+            if module == "core" or modules.is_enabled(module, event)}
 
 
 EDITOR_DIR = Path(settings.BASE_DIR) / "static" / "editor"

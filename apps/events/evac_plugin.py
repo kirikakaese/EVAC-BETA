@@ -1,13 +1,23 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import NavEntry, PermissionSpec, PluginManifest
+from apps.core.plugins import DataSourceSpec, NavEntry, PermissionSpec, PluginManifest
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="events", name="Events", version="0.1.0", kind="core")
 
 
+def _event_info(event) -> dict:
+    """Data source "event.info" for custom widgets."""
+    return {"name": event.name, "slug": event.slug, "state": event.state, "description": event.description,
+            "start": event.start_date.isoformat() if event.start_date else None,
+            "end": event.end_date.isoformat() if event.end_date else None, "timezone": event.timezone,
+            "venues": [{"name": v.name} for v in event.venues.all()]}
+
+
 def register(r: Registry) -> None:
+    r.data_source(DataSourceSpec(key="event.info", name=str(_("Event details")), fetch=_event_info,
+                                 description=str(_("Name, dates, state, description and venues of the event."))))
     r.permissions_([
         PermissionSpec("events.view", str(_("See the event"))),
         PermissionSpec("events.manage", str(_("Edit event details, branding and lifecycle"))),

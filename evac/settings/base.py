@@ -87,6 +87,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.content",
     "apps.playlists",
     "apps.announcements",
+    "apps.widgets",
     "extensions.webhooks",
     "extensions.notify",
 ]
@@ -249,6 +250,7 @@ CELERY_BEAT_SCHEDULE = {
     "screens-purge-pairing-requests": {"task": "apps.screens.tasks.purge_pairing_requests", "schedule": 3600.0},
     "content-publish-due-layouts": {"task": "apps.content.tasks.publish_due_layouts", "schedule": 30.0},
     "announcements-publish-due": {"task": "apps.announcements.tasks.publish_due", "schedule": 15.0},
+    "widgets-fetch-due": {"task": "apps.widgets.tasks.fetch_due", "schedule": 30.0},
 }
 
 # --------------------------------------------------------------------------- REST framework

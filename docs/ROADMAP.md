@@ -182,7 +182,7 @@ declared data kinds, `content.code` permission, audit with hashes).
 | 2.6 | `apps/notify` channel adapters | screens, public feed, Web Push (VAPID), ntfy, e-mail, Matrix, Telegram, Mastodon, webhook; per-channel text; outbox delivery report — ✅ (Web Push with 2.8, ADR-0021) |
 | 2.7 | ✅ Offline TTS (Piper, optional download) | pre-render + cache (ADR-0022) |
 | 2.8 | ✅ Staff PWA basics | installable, alarm reception, announcements send/approve, offline queue; Web Push (ADR-0021) |
-| 2.9 | Custom widget builder (no-code) | HTTP JSON, RSS, iCal, MQTT, CSV sources; JSONPath mapping; visuals |
+| 2.9 | ✅ Custom widget builder (no-code) | HTTP JSON, RSS, iCal, CSV sources and data sources; JSONPath mapping; visuals (ADR-0023); MQTT moved to phase 6 |
 | 2.10 | `.evacpack` import/export (signed) | layouts, themes, widget configs, screen packs; gallery |
 
 ## Phase 3 — Venue + evacuation ⬜
