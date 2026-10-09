@@ -68,9 +68,13 @@ check: lint typecheck test openapi-check attribution
 	SECRET_KEY=x EVAC_ALLOW_INSECURE=1 DATABASE_URL=sqlite:///build.sqlite3 $(MANAGE) check --settings=evac.settings.prod --deploy
 	rm -f build.sqlite3
 
-# Placeholders until the screen player exists (Phase 1) and the evacuation module (Phase 3); see docs/ROADMAP.md
-e2e load chaos:
-	@echo "'make $@' arrives with the player (phase 1) and evacuation (phase 3) - see docs/ROADMAP.md"; exit 1
+# Browser end-to-end tests (Phase 1 acceptance): throw-away server + demo data; needs `npm ci` and a Chromium
+e2e:
+	sh scripts/e2e.sh
+
+# Placeholders until the evacuation module (Phase 3); see docs/ROADMAP.md
+chaos load:
+	@echo "'make $@' arrives with evacuation (phase 3) - see docs/ROADMAP.md"; exit 1
 
 # --- Docker Compose ---------------------------------------------------------
 up:

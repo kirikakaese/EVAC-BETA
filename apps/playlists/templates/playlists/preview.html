@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% load i18n static %}
 {% block title %}{% trans "Preview" %}{% endblock %}
 {% block head %}{% if config %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><link rel="stylesheet" href="{% static 'editor/preview.css' %}?v={{ editor_version }}">
-{{ config|json_script:"preview-config" }}<script type="module" src="{% static 'editor/preview.js' %}?v={{ editor_version }}"></script>{% endif %}{% endblock %}
+{{ config|json_script:"preview-config" }}<script type="module" nonce="{{ csp_nonce }}" src="{% static 'editor/preview.js' %}?v={{ editor_version }}"></script>{% endif %}{% endblock %}
 {% block content %}
 <div class="page-header"><h1>{% trans "Preview a screen" %}</h1></div>
 {% include "playlists/_tabs.html" with tab="preview" %}

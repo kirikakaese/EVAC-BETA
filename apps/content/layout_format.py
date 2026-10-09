@@ -41,7 +41,16 @@ ELEMENT_TYPES = {
     "countdown": {"target": {"type": "string", "maxLength": 200}, "finished": {"type": "string", "maxLength": 300},
                   "format": {"enum": ["auto", "hms", "ms", "days"]}},
     "date": {"format": {"enum": ["long", "short", "weekday", "iso"]}, "timezone": {"type": "string", "maxLength": 64}},
+    # code mode (ADR-0018): runs in a sandboxed frame without network; only the data listed in "data" is sent in
+    "code": {"html": {"type": "string", "maxLength": 50_000}, "css": {"type": "string", "maxLength": 50_000},
+             "js": {"type": "string", "maxLength": 100_000},
+             "data": {"type": "array", "uniqueItems": True, "maxItems": 4,
+                      "items": {"enum": ["event", "screen", "time", "assets"]}},
+             "assets": {"type": "array", "items": UUID, "maxItems": 20}},
 }
+
+#: what a code element's frame may receive (the "data" property), see apps/content/docs and ADR-0018
+CODE_DATA = ("event", "screen", "time", "assets")
 
 STYLE = {
     "type": "object", "additionalProperties": False,
@@ -175,6 +184,23 @@ def asset_ids(data: dict[str, Any]) -> set[str]:
             out.add(props["asset"])
         out.update(a for a in props.get("assets", []) if a)
     return out
+
+
+def code_parts(data: dict[str, Any] | None) -> dict[str, tuple]:
+    """The code of every code element: ``{element id: (html, css, js, data, assets)}``."""
+    out = {}
+    for el in (data or {}).get("elements", []):
+        if el.get("type") == "code":
+            p = el.get("props") or {}
+            out[el["id"]] = (p.get("html", ""), p.get("css", ""), p.get("js", ""), tuple(p.get("data", [])),
+                             tuple(p.get("assets", [])))
+    return out
+
+
+def code_changed(old: dict[str, Any] | None, new: dict[str, Any] | None) -> bool:
+    """True when code was added or changed (removing code elements is not a code change)."""
+    before = code_parts(old)
+    return any(before.get(k) != v for k, v in code_parts(new).items())
 
 
 def font_ids(data: dict[str, Any]) -> set[str]:

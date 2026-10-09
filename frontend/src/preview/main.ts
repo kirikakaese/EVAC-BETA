@@ -3,6 +3,7 @@
 // Reads its data from <script id="preview-config" type="application/json">; time runs on from that moment.
 import "./preview.css";
 
+import { pageNonce } from "../renderer/code";
 import { renderLayout } from "../renderer/render";
 import type { AssetEntry, LayoutData } from "../renderer/types";
 
@@ -19,7 +20,7 @@ export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
   host.classList.add("evac-preview-host");
   renderLayout(host, cfg.layout, {
     vars: cfg.vars, now: () => cfg.at + (Date.now() - started), timezone: cfg.timezone, assets: cfg.assets,
-    fonts: cfg.fonts, reducedMotion: true,
+    fonts: cfg.fonts, reducedMotion: true, nonce: pageNonce(),
   });
 }
 

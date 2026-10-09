@@ -7,6 +7,7 @@ import "./editor.css";
 import { html, LitElement, nothing, type TemplateResult } from "lit";
 import { directive, Directive, type ElementPart, type PartInfo, PartType } from "lit/directive.js";
 
+import { pageNonce } from "../renderer/code";
 import { frameStyle, renderLayout, type RenderedLayout } from "../renderer/render";
 import type { AssetEntry, ElementStyle, LayoutData, LayoutElement, RenderContext } from "../renderer/types";
 import {
@@ -23,12 +24,13 @@ interface EditorConfig {
   timezone: string;
   urls: { save: string; publish: string; back: string; assets: string };
   canPublish: boolean;
+  canCode: boolean;
   types: string[];
 }
 
 const TYPE_LABELS: Record<string, string> = {
   text: "Text", richtext: "Rich text", image: "Image", slideshow: "Slideshow", video: "Video", audio: "Audio",
-  shape: "Shape", qr: "QR code", clock: "Clock", countdown: "Countdown", date: "Date",
+  shape: "Shape", qr: "QR code", clock: "Clock", countdown: "Countdown", date: "Date", code: "Code",
 };
 const TOKENS = ["primary", "accent", "text", "muted", "surface", "background", "success", "warning", "danger"];
 const TOKEN_LABELS: Record<string, string> = {
@@ -232,7 +234,7 @@ export class LayoutEditor extends LitElement {
   // ---------------------------------------------------------------- canvas
   private get ctx(): RenderContext {
     return { vars: this.cfg.vars, now: () => Date.now(), timezone: this.cfg.timezone, assets: this.cfg.assets,
-             fonts: this.cfg.fonts, editing: true };
+             fonts: this.cfg.fonts, editing: true, nonce: pageNonce() };
   }
 
   updated(): void {
@@ -341,7 +343,7 @@ export class LayoutEditor extends LitElement {
       <div class="ed-body">
         <aside class="ed-side ed-left" aria-label=${this.t("Layers")}>
           <h2 class="ed-h">${this.t("Add")}</h2>
-          <div class="ed-add">${(this.cfg.types ?? []).map((type) => html`
+          <div class="ed-add">${(this.cfg.types ?? []).filter((type) => type !== "code" || this.cfg.canCode).map((type) => html`
             <button class="btn btn-sm" @click=${() => this.add(type)}>${this.t(TYPE_LABELS[type] ?? type)}</button>`)}</div>
           <h2 class="ed-h">${this.t("Layers")}</h2>
           <ol class="ed-layers">${[...this.elements].reverse().map((el) => html`
@@ -551,9 +553,37 @@ export class LayoutEditor extends LitElement {
       case "date":
         return this.choice("Format", String(p.format ?? "long"), [["long", "Long"], ["short", "Short"], ["weekday", "Weekday"],
                            ["iso", "ISO"]], (v) => this.setProp("format", v));
+      case "code":
+        return this.codeFields(p);
       default:
         return html``;
     }
+  }
+
+  private codeFields(p: Record<string, unknown>): TemplateResult {
+    const can = this.cfg.canCode;
+    const code = (label: string, key: string, rows: number) => this.field(label, html`<textarea class="ed-code" rows=${rows}
+      spellcheck="false" ?readonly=${!can} .value=${String(p[key] ?? "")}
+      @change=${(e: Event) => this.setProp(key, (e.target as HTMLTextAreaElement).value)}></textarea>`);
+    const data = new Set((p.data as string[]) ?? []);
+    const toggle = (kind: string) => (v: boolean) => {
+      const next = new Set(data);
+      if (v) next.add(kind); else next.delete(kind);
+      this.setProp("data", ["event", "screen", "time", "assets"].filter((k) => next.has(k)));
+    };
+    const chosen = new Set((p.assets as string[]) ?? []);
+    return html`${can ? nothing : html`<p class="small muted">${this.t("Only people allowed to write code can change this element.")}</p>`}
+      ${code("HTML", "html", 5)}${code("CSS", "css", 5)}${code("JavaScript", "js", 8)}
+      <p class="small muted">${this.t("Code runs in a sandbox without network. Read data with evac.data and evac.onData(fn); evac.now() is the server time.")}</p>
+      <fieldset class="ed-group" ?disabled=${!can}><legend>${this.t("Data for the code")}</legend>
+        ${this.check("Event", data.has("event"), toggle("event"))}${this.check("Screen", data.has("screen"), toggle("screen"))}
+        ${this.check("Time", data.has("time"), toggle("time"))}${this.check("Files", data.has("assets"), toggle("assets"))}
+        ${data.has("assets") ? html`<div class="ed-list">${Object.values(this.cfg.assets).map((a) => this.check(a.name,
+          chosen.has(a.id), (v) => {
+            const next = new Set(chosen);
+            if (v) next.add(a.id); else next.delete(a.id);
+            this.setProp("assets", [...next].slice(0, 20));
+          }))}</div>` : nothing}</fieldset>`;
   }
 
   private layoutPanel(): TemplateResult {

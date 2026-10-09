@@ -19,6 +19,7 @@ from apps.content import tokens as tok
 from apps.content.layout_views import editor_version
 from apps.content.models import Asset, Layout, owner_q
 from apps.core import modules
+from apps.core.middleware import allow_code_frames
 from apps.events import rbac
 from apps.portal.shortcuts import event_view
 from apps.screens.models import Screen
@@ -334,7 +335,7 @@ def preview(request, slug, *, event):
         ctx.update(screen=screen, at=at, now_on=_label(found, names, event), steps=steps, timeline=timeline,
                    segments=segments,
                    config=_preview_config(event, program, found, vars_, t))
-    return _render(request, "playlists/preview.html", ctx)
+    return allow_code_frames(_render(request, "playlists/preview.html", ctx))
 
 
 def _preview_config(event, program, found, vars_, t) -> dict | None:

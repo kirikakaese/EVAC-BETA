@@ -17,17 +17,26 @@ const THEME_URL = "content/theme/";
 const URL_IN_CSS = /url\("([^"]+)"\)/g;
 
 async function cached(url: string, token: string): Promise<Response | null> {
+  // fonts and theme images are content-addressed (the URL changes with the file): the cache is always right,
+  // and a hanging network must never hold up the screen
   const cache = await caches.open(CACHE).catch(() => null);
+  const hit = await cache?.match(url).catch(() => undefined);
+  if (hit) return hit;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10_000);
   try {
-    const res = await fetch(url, { headers: { Authorization: `Screen ${token}` }, credentials: "omit" });
+    const res = await fetch(url, { headers: { Authorization: `Screen ${token}` }, credentials: "omit",
+                                   signal: ctrl.signal });
     if (res.ok) {
       await cache?.put(url, res.clone());
       return res;
     }
   } catch {
-    /* offline: fall back to the cache */
+    /* offline or timed out */
+  } finally {
+    clearTimeout(timer);
   }
-  return (await cache?.match(url)) ?? null;
+  return null;
 }
 
 export async function fetchTheme(api: string, token: string): Promise<ThemePayload | null> {

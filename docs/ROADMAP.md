@@ -87,10 +87,15 @@ green. (Verified by `apps/portal/tests/test_portal.py::test_first_run_wizard` an
 
 ---
 
-## Phase 1 — Screens core 🟡
+## Phase 1 — Screens core ✅
 
 **Gate:** pair a screen, design a slide with an uploaded font, publish, override, unplug the network: the
-screen keeps playing.
+screen keeps playing. **Passed**: `make e2e` (`frontend/e2e/phase1.mjs`, CI job *browser end-to-end*) drives the
+real UI through exactly this, plus a code element that tries to escape its sandbox.
+
+**Carried over:** responsive anchors for one layout on very different aspect ratios (rest of 1.3.4), iframe/PDF
+widgets (1.4.2), the no-code widget builder and data widgets (phase 2 with data sources), ISO 7010 pictograms and
+the evacuation self-test (phase 3).
 
 **Progress:** done: 1.1.1 (player shell, Vite build, size check in CI), 1.1.2 (pairing, device tokens),
 1.1.3 (WebSocket/SSE/long-poll, heartbeat reports), 1.1.8 (OBS mode), 1.2.1 (screens, manual/dynamic groups,
@@ -111,8 +116,9 @@ shared clock, measured < 10 ms between two screens on one machine). Screen opera
 (display settings per event/group/screen; the per-screen default playlist is a schedule rule without days or
 times), 1.2.3 (screenshots, logs, test pattern, clear cache, identify, reload, re-pair, revoke; the evacuation
 self-test comes with phase 3), 1.1.7 (render fallback, reload guard, crash detection, memory/daily reload),
-1.1.9 (Raspberry Pi kiosk recipe + pi-gen stage), 1.5.4 (wizard pairs the first screen, welcome slide). Next:
-code mode (1.3.6), then the phase 1 acceptance run.
+1.1.9 (Raspberry Pi kiosk recipe + pi-gen stage), 1.5.4 (wizard pairs the first screen, welcome slide). Code
+mode done (ADR-0018): 1.3.6 (sandboxed srcdoc frame, per-frame CSP without network, postMessage data API with
+declared data kinds, `content.code` permission, audit with hashes).
 
 ### Epic 1.1 — Player (`player/`, TypeScript, < 300 kB gz) [§5.1]
 | ID | Ticket | Acceptance criteria |

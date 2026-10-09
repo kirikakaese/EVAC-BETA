@@ -6,6 +6,24 @@ released.
 
 ## [Unreleased]
 
+### Added — code mode and the phase 1 acceptance run (Phase 1, part 7: phase 1 complete)
+
+- Code elements in layouts (ADR-0018): your own HTML, CSS and JavaScript in a sandboxed frame without network,
+  with a small data API (`evac.data`, `evac.onData`, `evac.now`, `evac.log`) for the data kinds the element
+  declares; works offline. New permission `content.code`; code changes are audit-logged with hashes.
+- `make e2e` and a CI job run the phase 1 acceptance gate in a real browser: pair a screen, upload a font,
+  design and publish a slide with a code element, push and cancel an override, stop the server, reload offline;
+  the code element's escape attempts (page, storage, network) must fail.
+
+### Fixed
+
+- Offline restart of a freshly set-up screen: the service worker now caches the player's script and styles when
+  it installs. They were loaded before the worker took control on the first visit, so a screen that lost
+  network and power before its first online reload stayed on "Starting…" (found by `make e2e`; the build now
+  also fails if the worker bundle contains `import`/`export`).
+- Offline boot: the player shows the last known content immediately and refreshes in the background; theme
+  fonts and images load cache-first with a timeout, so a hanging network cannot keep a screen blank.
+
 ### Added — screen operations (Phase 1, part 6)
 
 - Display settings per event, screen group and screen (ADR-0017): rotation, overscan, content scale, keystone,

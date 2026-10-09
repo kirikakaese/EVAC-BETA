@@ -2,13 +2,25 @@
 // Service worker of the player (scope /player/): keeps the app shell available without a server.
 // The page is fetched network-first (updates arrive), its assets cache-first (they are versioned with ?v=),
 // the device API is never cached.
+import { shellAssets } from "./shell";
+
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
-const CACHE = "evac-player-v2";
+const CACHE = "evac-player-v3";
+
+/** Cache the page and everything it loads. The first visit loads them before this worker controls the page,
+ *  so without this an offline restart would find the page but not its script. */
+async function cacheShell(): Promise<void> {
+  const cache = await caches.open(CACHE);
+  const res = await fetch("/player/", { cache: "no-store", credentials: "omit" });
+  if (!res.ok) return;
+  await cache.put("/player/", res.clone());
+  await Promise.all(shellAssets(await res.text()).map((u) => cache.add(u).catch(() => undefined)));
+}
 
 sw.addEventListener("install", (e) => {
   const event = e as ExtendableEvent;
-  event.waitUntil(caches.open(CACHE).then((c) => c.add("/player/")).catch(() => undefined));
+  event.waitUntil(cacheShell().catch(() => undefined));
   void sw.skipWaiting();
 });
 

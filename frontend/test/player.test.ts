@@ -72,3 +72,14 @@ describe("theme", () => {
                                            weight: "100 900", style: "italic", unicodeRange: "U+0000-00FF" }]);
   });
 });
+
+describe("service worker shell", () => {
+  it("finds the versioned static files of the player page", async () => {
+    const { shellAssets } = await import("../src/player/shell");
+    const html = `<link rel="stylesheet" href="/static/player/player.css?v=abc"><link rel="icon" href="/static/icons/favicon.svg">
+      <script type="module" nonce="n" src="/static/player/player.js?v=abc&amp;x=1"></script>
+      <script src="https://elsewhere.example/x.js"></script><a href="/static/player/player.css?v=abc">dup</a>`;
+    expect(shellAssets(html)).toEqual(["/static/player/player.css?v=abc", "/static/icons/favicon.svg",
+                                       "/static/player/player.js?v=abc&x=1"]);
+  });
+});

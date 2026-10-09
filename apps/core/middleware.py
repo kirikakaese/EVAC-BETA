@@ -39,6 +39,15 @@ class ContentSecurityPolicyMiddleware(MiddlewareMixin):
         return response
 
 
+def allow_code_frames(response):
+    """Pages that render layouts with code elements: scripts carrying the page's nonce may run. The sandboxed
+    code frames (``srcdoc``) inherit this policy and add their own, stricter one (ADR-0018)."""
+    policy = dict(getattr(response, "evac_csp", settings.EVAC_CSP) or settings.EVAC_CSP)
+    policy["script-src"] = [*policy.get("script-src", ["'self'"]), "'nonce'"]
+    response.evac_csp = policy
+    return response
+
+
 RATE_LIMITED_PATHS = {
     "/accounts/login/": "login",
     "/accounts/2fa/": "twofactor",

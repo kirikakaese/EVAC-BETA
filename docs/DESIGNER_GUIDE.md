@@ -79,6 +79,31 @@ layout or playlist at once. *Preview* shows any screen at any time with the same
 
 A widget that fails (missing file, wrong input) shows nothing on a public screen; the editor outlines it.
 
+## Code mode
+
+The **Code** element (permission *Write code elements*, `content.code`) runs your own HTML, CSS and JavaScript
+in a sandbox: it cannot reach the network, the page or the screen's storage, and cannot navigate the screen. Use
+the three fields (a `<script>` tag or `style=""` attribute inside the HTML does not run). Tick what the code
+may read:
+
+| Data | In the code |
+|---|---|
+| Event | `evac.data.event.name`, `evac.data.event.slug` |
+| Screen | `evac.data.screen.name`, `.zone`, `.room`, `.venue`, `.tags`, `.groups` |
+| Time | `evac.now()` — the server-synchronised time (ms), and `evac.data.timezone` |
+| Files | `evac.data.assets[id].urls.webp` (and `original`, `mp4`, …) for the files you pick |
+
+```js
+evac.onData((d) => {                       // called when the data arrives (and when it changes)
+  document.getElementById("t").textContent = `${d.event.name} · ${new Date(evac.now()).toLocaleTimeString()}`;
+});
+evac.log("started");                       // shows up in the screen's log (Screens → Fetch logs)
+```
+
+Theme colours are available as CSS variables (`var(--evac-color-accent)`). Errors in the code are reported to
+the screen's log; the rest of the slide keeps working. People without the permission can move or delete code
+elements but not change their code.
+
 ## Template variables
 
 Text, rich text and QR content may contain variables:
@@ -98,5 +123,5 @@ Variables are inserted as plain text, so they can never inject markup.
 ## Still to come in phase 1
 
 Responsive constraints (anchors) for one layout on very different
-aspect ratios; raw code mode (sandboxed HTML/CSS/JS); the no-code widget builder and data widgets; ISO 7010
-pictograms (with the evacuation phase); `.evacpack` import/export.
+aspect ratios; the no-code widget builder and data widgets; ISO 7010 pictograms (with the evacuation phase);
+`.evacpack` import/export.
