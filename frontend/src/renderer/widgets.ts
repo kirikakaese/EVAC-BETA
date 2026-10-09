@@ -2,6 +2,7 @@
 // Built-in widgets as custom elements (the widget contract of brief §5.5; extensions register their own).
 // Every widget renders inside an error boundary: a failing widget shows nothing on a public screen (and an
 // outline in the editor) - never a broken or blank screen.
+import { codeDocument, themeVariables, type CodeProps } from "./code";
 import { qrSvg } from "./qr";
 import { render as renderTemplate } from "./template";
 import type { AssetEntry, LayoutElement, RenderContext } from "./types";
@@ -313,10 +314,71 @@ class CountdownWidget extends EvacWidget {
   }
 }
 
+/** Code mode: the element's own HTML/CSS/JS in a sandboxed frame; data only through postMessage. */
+class CodeWidget extends EvacWidget {
+  private frame: HTMLIFrameElement | null = null;
+  private onMessage = (e: MessageEvent): void => {
+    if (!this.frame || e.source !== this.frame.contentWindow || typeof e.data !== "object" || !e.data) return;
+    const msg = e.data as { type?: string; message?: unknown };
+    if (msg.type === "evac:ready") this.send();
+    else if (msg.type === "evac:error") this.ctx.onError?.(this.el.id, new Error(String(msg.message).slice(0, 300)));
+    else if (msg.type === "evac:log") this.ctx.onLog?.(this.el.id, String(msg.message).slice(0, 500));
+  };
+
+  draw(): void {
+    const nonce = this.ctx.nonce ?? "";
+    if (!nonce) return this.placeholder("Code (not available on this page)");
+    const props = this.props as CodeProps;
+    const frame = document.createElement("iframe");
+    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("referrerpolicy", "no-referrer");
+    frame.setAttribute("allow", "autoplay");
+    frame.setAttribute("title", this.el.name || "Code");
+    frame.setAttribute("tabindex", "-1");
+    frame.className = "evac-code-frame";
+    frame.srcdoc = codeDocument(props, nonce, location.origin, themeVariables(this));
+    this.frame = frame;
+    window.addEventListener("message", this.onMessage);
+    this.replaceChildren(frame);
+    if ((props.data ?? []).includes("time")) this.every(10_000, () => this.send());
+  }
+
+  /** Only the kinds of data the element asked for (and that the server let it ask for). */
+  private send(): void {
+    const kinds = new Set((this.props as CodeProps).data ?? []);
+    const vars = this.ctx.vars as { event?: unknown; screen?: unknown };
+    const data: Record<string, unknown> = {};
+    if (kinds.has("event")) data.event = vars.event ?? null;
+    if (kinds.has("screen")) data.screen = vars.screen ?? null;
+    if (kinds.has("time")) {
+      data.now = this.ctx.now();
+      data.timezone = this.ctx.timezone ?? "";
+    }
+    if (kinds.has("assets")) {
+      const assets: Record<string, unknown> = {};
+      for (const id of (this.props as CodeProps).assets ?? []) {
+        const a = this.ctx.assets[id];
+        if (!a) continue;
+        const urls: Record<string, string> = {};
+        for (const [k, u] of Object.entries(a.urls)) urls[k] = new URL(u, location.href).href;
+        assets[id] = { name: a.name, kind: a.kind, alt: a.alt, width: a.width, height: a.height, urls };
+      }
+      data.assets = assets;
+    }
+    this.frame?.contentWindow?.postMessage({ type: "evac:data", data: JSON.parse(JSON.stringify(data)) }, "*");
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener("message", this.onMessage);
+    this.frame = null;
+    super.disconnectedCallback();
+  }
+}
+
 export const WIDGETS: Record<string, CustomElementConstructor> = {
   text: TextWidget, richtext: RichTextWidget, image: ImageWidget, slideshow: SlideshowWidget, video: VideoWidget,
   audio: AudioWidget, shape: ShapeWidget, qr: QrWidget, clock: ClockWidget, countdown: CountdownWidget,
-  date: DateWidget,
+  date: DateWidget, code: CodeWidget,
 };
 
 export function defineWidgets(registry: CustomElementRegistry = customElements): void {

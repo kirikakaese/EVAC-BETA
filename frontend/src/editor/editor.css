@@ -49,3 +49,5 @@ evac-layout-editor { display: flex; flex-direction: column; gap: .5rem; height: 
 .ed-list { max-height: 12rem; overflow: auto; }
 @media (max-width: 1100px) { .ed-body { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; }
   evac-layout-editor { height: auto; } }
+.ed-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78rem; white-space: pre;
+           tab-size: 2; }

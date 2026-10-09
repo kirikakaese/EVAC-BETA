@@ -52,7 +52,11 @@ export interface RenderContext {
   /** editor: show placeholders and error outlines instead of hiding problems */
   editing?: boolean;
   reducedMotion?: boolean;
+  /** CSP nonce of the page: code elements need it (their sandboxed frame inherits the page policy) */
+  nonce?: string;
   /** screen audio settings: off mutes every media widget */
   audio?: { enabled: boolean; volume: number };
   onError?: (elementId: string, error: unknown) => void;
+  /** messages from code elements (evac.log) */
+  onLog?: (elementId: string, message: string) => void;
 }

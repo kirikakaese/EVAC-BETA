@@ -19,6 +19,7 @@ def register(r: Registry) -> None:
         PermissionSpec("content.view", str(_("See themes, fonts and assets"))),
         PermissionSpec("content.edit", str(_("Upload assets and fonts, edit themes and layouts"))),
         PermissionSpec("content.publish", str(_("Publish layouts to screens"))),
+        PermissionSpec("content.code", str(_("Write code elements (HTML, CSS and JavaScript in a sandbox)"))),
     ])
     for key, name, desc in [
         ("text", _("Text"), _("Text with template variables, auto-fit, line clamp and ticker")),
@@ -32,6 +33,7 @@ def register(r: Registry) -> None:
         ("clock", _("Clock"), _("Digital clock in the event time zone")),
         ("countdown", _("Countdown"), _("Counts down to a time")),
         ("date", _("Date"), _("Today's date")),
+        ("code", _("Code"), _("Your own HTML, CSS and JavaScript in a sandbox (needs content.code)")),
     ]:
         r.widget(WidgetSpec(key=key, name=str(name), description=str(desc), module="content",
                             element=f"evac-{key}", script="player/player.js"))

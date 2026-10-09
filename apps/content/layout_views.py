@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from apps.core.middleware import allow_code_frames
 from apps.events import rbac
 from apps.portal.shortcuts import event_view
 
@@ -45,6 +46,10 @@ EDITOR_STRINGS = [
     "Template variables: {{ event.name }}, {{ screen.name }}, {{ screen.zone }}, {{ now|time }}",
     "Seconds on screen (playlists)", "Upload files", "Long", "Short", "Weekday", "ISO", "Automatic",
     "Hours:minutes:seconds", "Minutes:seconds", "Days", "Rendering error", "Element",
+    "Code", "HTML", "CSS", "JavaScript", "Data for the code", "Event", "Screen", "Time", "Files",
+    "Only people allowed to write code can change this element.",
+    ("Code runs in a sandbox without network. Read data with evac.data and evac.onData(fn); evac.now() is the "
+     "server time."),
 ]
 
 
@@ -140,6 +145,7 @@ def editor_config(request, event, obj: Layout) -> dict:
                  "back": reverse("content:layout", args=[event.slug, obj.pk]),
                  "assets": reverse("content:assets", args=[event.slug])},
         "canPublish": _perm(request, event, "content.publish"),
+        "canCode": services.may_write_code(request.user, event, request),
         "types": list(layout_format.ELEMENT_TYPES),
     }
 
@@ -166,10 +172,10 @@ def editor_strings() -> dict[str, str]:
 def layout_edit(request, slug, pk, *, event):
     obj = _layout(event, pk)
     other = services.mark_editing(obj, request.user)
-    return render(request, "content/layout_edit.html", {
+    return allow_code_frames(render(request, "content/layout_edit.html", {
         "event": event, "layout": obj, "config": editor_config(request, event, obj), "other_editor": other,
         "strings": editor_strings(), "editor_version": editor_version(),
-    })
+    }))
 
 
 def _json(request) -> dict:

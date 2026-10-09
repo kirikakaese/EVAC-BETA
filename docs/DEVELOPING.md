@@ -73,7 +73,11 @@ from apps.portal.shortcuts import event_view         # @event_view("venues.view"
 - Property tests with Hypothesis for pure logic (hash chain, permission evaluation).
 - `apps/core/tests/test_a11y.py` renders every page of `apps.core.a11y.smoke_urls()` as anonymous, member
   and admin and fails on any finding. Add new pages to that list.
-- E2E (Playwright), load and chaos suites arrive with the player (phase 1) and evacuation (phase 3).
+- Frontend: vitest (`cd frontend && npm test`); the playlist engine shares test vectors with pytest
+  (`frontend/test/fixtures/program-vectors.json`).
+- Browser E2E: `make e2e` runs `frontend/e2e/*.mjs` with `playwright-core` against a throw-away server with demo
+  data (`scripts/e2e.sh`); it uses a local Chromium (`E2E_CHROMIUM=/path/to/chrome`) and never downloads one.
+  Screenshots land in `e2e-output/`. Load and chaos suites arrive with evacuation (phase 3).
 
 ## Adding a module
 

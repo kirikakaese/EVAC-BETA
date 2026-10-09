@@ -380,6 +380,38 @@ def _check_refs(event, data: dict) -> list[str]:
 
 
 @transaction.atomic
+def may_write_code(actor, event, request=None) -> bool:
+    """Code elements (HTML/CSS/JS) need ``content.code``; system actions (actor None) may."""
+    if actor is None:
+        return True
+    if event is None:
+        return bool(getattr(actor, "is_superuser", False))
+    from apps.events import rbac
+
+    return rbac.has_perm(actor, event, "content.code", request=request)
+
+
+def _check_code(event, old, new, actor, request) -> None:
+    from . import layout_format as lf
+
+    if lf.code_changed(old, new) and not may_write_code(actor, event, request):
+        raise ValidationError(_("Only people allowed to write code (permission content.code) may add or change "
+                                "code elements."))
+
+
+def _log_code(layout, old, new, actor, request) -> None:
+    import hashlib
+
+    from . import layout_format as lf
+
+    if lf.code_changed(old, new):
+        parts = lf.code_parts(new)
+        log(action="layout.code_changed", actor=actor, target=layout, event=layout.event, request=request,
+            message=f"Code in layout {layout.name} changed",
+            changes={k: {"sha256": hashlib.sha256("\x00".join(v[:3]).encode()).hexdigest()[:16],
+                         "bytes": sum(len(x) for x in v[:3]), "data": list(v[3])} for k, v in parts.items()})
+
+
 def create_layout(event, *, name: str, key: str, actor, request=None, width: int = 1920, height: int = 1080,
                   starter: bool = True, data: dict | None = None):
     from . import layout_format as lf
@@ -390,11 +422,13 @@ def create_layout(event, *, name: str, key: str, actor, request=None, width: int
     errors = lf.validate(data) + _check_refs(event, data)
     if errors:
         raise ValidationError(errors)
+    _check_code(event, None, data, actor, request)
     layout = Layout.objects.create(event=event, name=name, key=key, data=data, updated_by=actor,
                                    is_default=event is not None and not Layout.objects.filter(event=event).exists())
     layout.versions.create(number=1, data=data, created_by=actor, note="created")
     log(action="layout.created", actor=actor, target=layout, event=event, request=request,
         message=f"Layout {name} created")
+    _log_code(layout, None, data, actor, request)
     return layout
 
 
@@ -413,6 +447,8 @@ def save_layout(layout, data: dict, *, actor, request=None, expected_version: in
         raise ValidationError(errors)
     if data == layout.data:
         return layout
+    _check_code(layout.event, layout.data, data, actor, request)
+    old = layout.data
     layout.data = data
     layout.version = (current or layout.version) + 1
     layout.updated_by = actor
@@ -420,6 +456,7 @@ def save_layout(layout, data: dict, *, actor, request=None, expected_version: in
     layout.versions.create(number=layout.version, data=data, created_by=actor, note=note[:200])
     log(action="layout.saved", actor=actor, target=layout, event=layout.event, request=request,
         message=f"Layout {layout.name} saved (version {layout.version})")
+    _log_code(layout, old, data, actor, request)
     return layout
 
 

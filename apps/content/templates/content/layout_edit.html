@@ -2,7 +2,7 @@
 {% block title %}{% blocktrans with n=layout.name %}Edit {{ n }}{% endblocktrans %}{% endblock %}
 {% block head %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><link rel="stylesheet" href="{% static 'editor/editor.css' %}?v={{ editor_version }}">
 {{ config|json_script:"editor-config" }}{{ strings|json_script:"editor-strings" }}
-<script type="module" src="{% static 'editor/editor.js' %}?v={{ editor_version }}"></script>{% endblock %}
+<script type="module" nonce="{{ csp_nonce }}" src="{% static 'editor/editor.js' %}?v={{ editor_version }}"></script>{% endblock %}
 {% block main_class %}page-editor{% endblock %}
 {% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:layouts' event.slug %}">{% trans "Layouts" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'content:layout' event.slug layout.pk %}">{{ layout.name }}</a> <span aria-hidden="true">›</span> {% trans "Editor" %}</p>{% endblock %}
 {% block content %}

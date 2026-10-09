@@ -10,6 +10,7 @@ import { Display } from "./display";
 import { cachedBundle, clearBundle, defaultLayout, fetchBundle, prefetch, type Bundle } from "./content";
 import { cachedProgram, clearProgram, fetchProgram } from "./program";
 import { nextChange, slideAt, type Program, type Slide } from "../program/engine";
+import { pageNonce } from "../renderer/code";
 import type { LayoutData } from "../renderer/types";
 import { applyTheme, fetchTheme } from "./theme";
 import { readEnv, t, wsUrl, type PlayerEnv } from "./env";
@@ -20,6 +21,11 @@ import { applyRoot, applyState, displayState, localHHMM, type DisplaySettings } 
 import { getConfig, getToken, setConfig, setToken } from "./storage";
 
 const PAIR_POLL_MS = 3000;
+
+/** Where the start-up got to (``<html data-boot>``): visible in remote screenshots' DOM and in tests. */
+function stage(name: string): void {
+  document.documentElement.dataset.boot = name;
+}
 /** re-evaluate at least this often (item validity, clock corrections) */
 const MAX_WAIT_MS = 60_000;
 /** fetch the program again this often to extend its horizon (it covers several days) */
@@ -53,6 +59,7 @@ export class Player {
   }
 
   async boot(): Promise<void> {
+    stage("boot");
     this.recovered = bootCheck();
     log("info", `player ${this.env.version} started (${navigator.userAgent})`);
     if (this.recovered) log("warn", this.recovered);
@@ -97,6 +104,21 @@ export class Player {
   // ---------------------------------------------------------------- playing
   private async play(token: string): Promise<void> {
     const cached = getConfig<ScreenConfig>();
+    // offline first: show the last known state at once; the network refreshes it in the background (a hanging
+    // network must never keep a screen blank)
+    stage(cached ? "play: cached config" : "play: no cached config");
+    if (cached) {
+      this.config = cached;
+      this.bundle = cachedBundle();
+      this.program = cachedProgram();
+      this.applySettings();
+      if (this.bundle) {
+        void applyTheme({ ...this.bundle.theme, fonts_css: this.bundle.fonts_css }, token)
+          .catch((e) => recordError(String(e)));
+      }
+      this.show();
+      stage("play: shown from cache");
+    }
     try {
       const sent = Date.now();
       this.config = await fetchConfig(this.env.api, token);
@@ -109,11 +131,12 @@ export class Player {
       this.config = cached;
     }
     this.applySettings();
-    this.bundle = cachedBundle();
-    this.program = cachedProgram();
+    this.bundle = this.bundle ?? cachedBundle();
+    this.program = this.program ?? cachedProgram();
     await this.loadContent(token);
     await this.loadProgram(token);
     this.show();
+    stage("play: online");
     this.refresher = setInterval(() => void this.loadProgram(token).then(() => this.show()), PROGRAM_REFRESH_MS);
     this.housekeeping = setInterval(() => this.tick(), TICK_MS);
     this.conn = new Connection({
@@ -282,7 +305,9 @@ export class Player {
       this.display.layout(data, {
         vars: this.vars(), now: () => this.clock.now(), timezone: cfg.event.timezone, assets: this.bundle.assets,
         fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches, audio,
+        nonce: pageNonce(),
         onError: (id, err) => recordError(`${id}: ${String(err)}`),
+        onLog: (id, message) => log("info", `${id}: ${message}`),
       }, variables);
     } catch (err) {
       if (data) recordError(`render failed, showing the idle slide: ${String(err)}`);

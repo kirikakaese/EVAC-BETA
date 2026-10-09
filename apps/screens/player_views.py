@@ -12,6 +12,8 @@ from django.shortcuts import render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_safe
 
+from apps.core.middleware import allow_code_frames
+
 PLAYER_DIR = Path(settings.BASE_DIR) / "static" / "player"
 BUNDLE = ("player.js", "player.css", "sw.js")
 
@@ -49,7 +51,7 @@ def index(request):
     }
     resp = render(request, "screens/player.html", {"env": env, "bundle_version": bundle_version()})
     resp["Cache-Control"] = "no-cache"
-    return resp
+    return allow_code_frames(resp)
 
 
 @require_safe

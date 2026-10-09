@@ -56,6 +56,14 @@ const DEFAULTS: Record<string, Partial<LayoutElement>> = {
                                                                    tabularNumbers: true },
                props: { target: "", format: "auto", finished: "Now!" } },
   date: { frame: { x: 5, y: 5, w: 40, h: 8 }, style: { fontSize: 4 }, props: { format: "long" } },
+  code: { frame: { x: 10, y: 10, w: 40, h: 30 },
+          props: { html: '<div class="box"><span id="t"></span></div>',
+                   css: ".box { display: grid; place-items: center; height: 100%; font-size: 12vh; "
+                        + "color: var(--evac-color-accent, #ffd400); }",
+                   js: 'evac.onData(() => {\n  const t = document.getElementById("t");\n'
+                       + '  const tick = () => { t.textContent = new Date(evac.now()).toLocaleTimeString(); };\n'
+                       + '  tick();\n  setInterval(tick, 1000);\n});',
+                   data: ["time"] } },
 };
 
 export function createElement(type: string, existing: LayoutElement[], name: string): LayoutElement {

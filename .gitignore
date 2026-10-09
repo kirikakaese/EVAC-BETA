@@ -36,3 +36,4 @@ node_modules/
 .vscode/
 *.swp
 dump.rdb
+e2e-output/
