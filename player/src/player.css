@@ -1,0 +1,33 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Player styles. Large type for reading from a distance; high contrast; no animation when reduced motion. */
+:root {
+  --bg: #0b0d12;
+  --fg: #f4f6fb;
+  --muted: #aab3c5;
+  --accent: #4f8cff;
+  --font: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--font); overflow: hidden; }
+html.obs, html.obs body { background: transparent; cursor: none; }
+html.obs * { cursor: none; }
+#player { position: fixed; inset: 0; }
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 2vh; padding: 4vmin; text-align: center; }
+h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: 700; letter-spacing: -.01em; }
+.pairing-box { display: flex; align-items: center; gap: 5vmin; flex-wrap: wrap; justify-content: center; }
+.code { margin: 0; font-size: clamp(3rem, 15vmin, 14rem); font-weight: 800; letter-spacing: .08em;
+        font-variant-numeric: tabular-nums; font-family: ui-monospace, "DejaVu Sans Mono", monospace; }
+.qr { width: clamp(8rem, 28vmin, 22rem); height: auto; border-radius: 1vmin; }
+.steps { margin: 0; padding-left: 1.4em; text-align: left; font-size: clamp(1rem, 2.6vmin, 2rem); color: var(--muted); }
+.url { margin: 0; color: var(--muted); font-size: clamp(.8rem, 1.8vmin, 1.4rem); word-break: break-all; }
+.waiting { margin: 0; color: var(--accent); font-size: clamp(.9rem, 2vmin, 1.6rem); }
+.idle .clock { margin: 0; font-size: clamp(4rem, 22vmin, 20rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.idle .date { margin: 0; font-size: clamp(1.2rem, 4vmin, 3.5rem); color: var(--muted); }
+.message p { color: var(--muted); font-size: clamp(1rem, 3vmin, 2.5rem); margin: 0; }
+.identify { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, .85); border: 2vmin solid #ffd400; z-index: 10; text-align: center; padding: 4vmin; }
+.identify-name { margin: 0; font-size: clamp(3rem, 14vmin, 12rem); font-weight: 800; color: #ffd400; }
+.identify-detail { margin: 0; font-size: clamp(1rem, 4vmin, 3rem); color: var(--fg); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

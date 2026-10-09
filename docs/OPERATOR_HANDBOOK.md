@@ -126,6 +126,12 @@ The wizard cannot be re-run once an account exists.
 - **Groups**: manual groups list screens; dynamic groups also take every screen with a tag or in a venue,
   zone or room. Roles can be limited to a screen group ("may run the foyer screens only").
 - `/player/` works behind the early-access password: screens use their device token instead.
+- **Identify** flashes the screen's name on the screen for 10 seconds; **Reload player** reloads it.
+- The player keeps its app and the last configuration offline: after a power cut without network it
+  starts again and shows the last known content. `/player/?mode=obs` has a transparent background and no
+  cursor, for OBS browser sources and video mixers.
+- Kiosk browsers should start `/player/` in full screen with autoplay allowed (Chromium:
+  `--kiosk --autoplay-policy=no-user-gesture-required`); a Raspberry Pi recipe follows in `deploy/kiosk/`.
 
 ## 6. Extensions
 

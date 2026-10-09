@@ -249,6 +249,18 @@ def revoke(screen: Screen, *, actor, request=None) -> None:
     webhooks.emit("screen.revoked", {"screen": str(screen.pk), "name": screen.name}, event=screen.event)
 
 
+#: remote commands staff can send to a running player (more follow with remote management)
+COMMANDS = {"identify": {"seconds": 10}, "reload": {}}
+
+
+def command(screen: Screen, name: str, *, actor, request=None) -> None:
+    if name not in COMMANDS:
+        raise ValidationError(f"unknown command {name!r}")
+    channel.send(screen, name, dict(COMMANDS[name]))
+    log(action="screen.command", actor=actor, target=screen, event=screen.event, request=request,
+        message=f"{name} sent to {screen.name}", scope={"screen": str(screen.pk)})
+
+
 def delete_screen(screen: Screen, *, actor, request=None) -> None:
     channel.send(screen, "revoked", {})
     log(action="screen.deleted", actor=actor, target=screen, event=screen.event, request=request,

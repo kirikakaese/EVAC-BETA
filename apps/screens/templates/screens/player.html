@@ -1,0 +1,18 @@
+{% load i18n static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b0d12">
+  <title>{% trans "EVAC screen" %}</title>
+  <link rel="stylesheet" href="{% static 'player/player.css' %}?v={{ bundle_version }}">
+  <link rel="icon" type="image/svg+xml" href="{% static 'icons/favicon.svg' %}">
+  {{ env|json_script:"player-env" }}
+  <script type="module" src="{% static 'player/player.js' %}?v={{ bundle_version }}"></script>
+</head>
+<body>
+  <div id="player" aria-live="polite"><main class="view"><h1>{% trans "Starting…" %}</h1>
+    <noscript><p>{% trans "The EVAC player needs JavaScript." %}</p></noscript></main></div>
+</body>
+</html>

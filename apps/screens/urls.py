@@ -16,4 +16,5 @@ urlpatterns = [
     path("<uuid:pk>/", views.detail, name="detail"),
     path("<uuid:pk>/revoke/", views.revoke, name="revoke"),
     path("<uuid:pk>/delete/", views.delete, name="delete"),
+    path("<uuid:pk>/command/<slug:name>/", views.command, name="command"),
 ]

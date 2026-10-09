@@ -24,6 +24,16 @@ released.
   managers. Portal pages for screens, pairing and groups; REST API `/events/<slug>/screens/` and
   `/screen-groups/`. Plugins can mount urlconfs at the site root (`ROOT_MOUNTS`).
 
+### Added — screen player (Phase 1, part 2)
+
+- `/player/`: TypeScript player (Vite build in `static/player/`, 12.5 kB gzipped, CI checks the committed
+  bundle and the 300 kB budget): pairing view with code and QR, WebSocket → SSE → long-poll with resume and
+  backoff, heartbeats with health report, NTP-like clock offset, idle slide with event clock, identify
+  overlay, reload, automatic re-pairing when the token is revoked, OBS mode (`?mode=obs`).
+- Offline: a service worker keeps the app shell; the last configuration is kept on the device, so a screen
+  restarts without network.
+- Remote commands *Identify* and *Reload player* on the screen page (permission `screens.control`, audit-logged).
+
 ### Added — production server bundle
 
 - `deploy/server/`: run EVAC and DIAL on one server behind Caddy (automatic HTTPS): bootstrap script

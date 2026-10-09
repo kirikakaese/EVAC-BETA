@@ -16,6 +16,10 @@
       <dt>{% trans "Groups" %}</dt><dd>{% for g in groups %}<a href="{% url 'screens:group' event.slug g.pk %}">{{ g.name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}–{% endfor %}</dd>
     </dl>
     {% if screen.reported.errors %}<h3>{% trans "Recent errors" %}</h3><ul class="small">{% for e in screen.reported.errors %}<li><code>{{ e }}</code></li>{% endfor %}</ul>{% endif %}
+    {% if can_control and screen.is_paired %}<div class="actions">
+      <form method="post" action="{% url 'screens:command' event.slug screen.pk 'identify' %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Identify" %}</button></form>
+      <form method="post" action="{% url 'screens:command' event.slug screen.pk 'reload' %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Reload player" %}</button></form>
+    </div>{% endif %}
     {% if can_manage %}<div class="actions">
       {% if can_pair %}<a class="btn" href="{% url 'screens:pair' event.slug %}?screen={{ screen.pk }}">{% trans "Re-pair to a new device" %}</a>{% endif %}
       {% if screen.is_paired %}<form method="post" action="{% url 'screens:revoke' event.slug screen.pk %}" class="inline" data-confirm="{% trans 'Revoke the device token? The screen stops showing content until it is paired again.' %}">{% csrf_token %}<button class="btn btn-danger">{% trans "Revoke token" %}</button></form>{% endif %}
