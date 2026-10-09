@@ -104,6 +104,7 @@ def detail(request, slug, pk, *, event):
     return render(request, "screens/detail.html", {
         "event": event, "screen": screen, "form": form, "can_manage": can_manage, "groups": screen.groups(),
         "can_pair": rbac.has_perm(request.user, event, "screens.pair", request=request),
+        "can_control": rbac.has_perm(request.user, event, "screens.control", obj=screen, request=request),
     })
 
 
@@ -113,6 +114,18 @@ def revoke(request, slug, pk, *, event):
     screen = _screen(request, event, pk, "screens.manage")
     services.revoke(screen, actor=request.user, request=request)
     messages.success(request, _("Device token revoked. The screen stops showing content and must be paired again."))
+    return redirect("screens:detail", slug, screen.pk)
+
+
+@require_POST
+@event_view("screens.control", module="screens")
+def command(request, slug, pk, name, *, event):
+    screen = _screen(request, event, pk, "screens.control")
+    try:
+        services.command(screen, name, actor=request.user, request=request)
+    except ValidationError:
+        raise PermissionDenied from None
+    messages.success(request, _("Sent to the screen."))
     return redirect("screens:detail", slug, screen.pk)
 
 

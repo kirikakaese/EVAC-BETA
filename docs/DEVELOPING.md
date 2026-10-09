@@ -24,6 +24,14 @@ demo data; port 8000 opens by itself (log in as `admin@evac.local` / `evac-demo-
 `.devcontainer/` (see its README). `EVAC_TRUST_PROXY_HEADERS=1` (dev settings only) makes Django trust the
 Codespaces proxy's `X-Forwarded-Proto`/`-Host`, so CSRF checks and passkeys see the browser's HTTPS URL.
 
+## Screen player (`player/`)
+
+TypeScript + Vite, built into `static/player/` (`player.js`, `player.css`, `sw.js`), which is **committed** so
+that EVAC runs without Node. After changing `player/src/` run `make player` (Node 22: `npm ci`, unit tests with
+Vitest, type check, build, size budget of 300 kB gzipped) and commit the result; CI rebuilds and fails if the
+committed bundle differs. Django serves the page at `/player/` (`apps/screens/player_views.py`) with the UI
+strings and settings in a JSON block, and the service worker at `/player/sw.js` (scope `/player/`).
+
 ## Layout
 
 | Path | Contents |

@@ -304,3 +304,29 @@ def test_tasks(event):
     from apps.screens import tasks
 
     assert tasks.sweep_health() == 0 and tasks.purge_pairing_requests() == 0
+
+
+@pytest.mark.django_db
+def test_player_page_and_service_worker(client, admin, event):
+    r = client.get("/player/")
+    page = r.content.decode()
+    assert r.status_code == 200 and 'id="player-env"' in page and "/static/player/player.js?v=" in page
+    assert "Pair this screen" in page and "script-src 'self'" in r["Content-Security-Policy"]
+    assert audit_url(client, "/player/") == []
+    sw = client.get("/player/sw.js")
+    assert sw.status_code == 200 and sw["Service-Worker-Allowed"] == "/player/"
+    assert b"evac-player" in sw.content
+
+
+@pytest.mark.django_db
+def test_remote_commands(client, admin, event, paired, user, role):
+    screen, token = paired
+    login_2fa(client, admin)
+    assert client.post(f"/e/demo/screens/{screen.pk}/command/identify/").status_code == 302
+    assert client.post(f"/e/demo/screens/{screen.pk}/command/selfdestruct/").status_code == 403
+    msgs = device(token).get("/player/api/poll/?since=0&wait=0").json()["messages"]
+    assert [m["type"] for m in msgs][-1] == "identify"
+    assert AuditLog.objects.filter(action="screen.command").count() == 1
+    event_services.assign_role(event, user, role("viewer"))
+    client.force_login(user)
+    assert client.post(f"/e/demo/screens/{screen.pk}/command/reload/").status_code == 403

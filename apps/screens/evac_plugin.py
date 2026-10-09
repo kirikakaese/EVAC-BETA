@@ -33,6 +33,7 @@ def register(r: Registry) -> None:
         PermissionSpec("screens.manage", str(_("Edit, move, revoke and delete screens and screen groups")),
                        scopes=SCOPES),
         PermissionSpec("screens.pair", str(_("Pair new screens"))),
+        PermissionSpec("screens.control", str(_("Identify, reload and control screens remotely")), scopes=SCOPES),
     ])
     r.scope_kind(ScopeKind(key="screen_group", label=str(_("Screen group")), choices=_group_choices,
                            module="screens"))
