@@ -85,6 +85,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.playlists",
     "apps.announcements",
     "extensions.webhooks",
+    "extensions.notify",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
 

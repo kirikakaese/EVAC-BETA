@@ -122,6 +122,8 @@ class Announcement(TimeStampedModel):
                                            verbose_name=_("screen groups"))
     screens = models.ManyToManyField("screens.Screen", blank=True, related_name="+", verbose_name=_("screens"))
     channels = models.JSONField(_("channels"), default=list, blank=True)
+    #: optional text per channel key (shorter for social media, ...); empty: the default text
+    channel_texts = models.JSONField(default=dict, blank=True)
     # timing
     starts_at = models.DateTimeField(_("send at"), default=timezone.now)
     ends_at = models.DateTimeField(_("show until"), null=True, blank=True,

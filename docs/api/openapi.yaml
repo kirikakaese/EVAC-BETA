@@ -3913,6 +3913,7 @@ components:
             type: string
             format: uuid
         channels: {}
+        channel_texts: {}
         starts_at:
           type: string
           format: date-time
@@ -4015,6 +4016,7 @@ components:
             type: string
             format: uuid
         channels: {}
+        channel_texts: {}
         starts_at:
           type: string
           format: date-time
@@ -5761,6 +5763,7 @@ components:
             type: string
             format: uuid
         channels: {}
+        channel_texts: {}
         starts_at:
           type: string
           format: date-time

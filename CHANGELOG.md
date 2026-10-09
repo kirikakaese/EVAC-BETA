@@ -6,6 +6,17 @@ released.
 
 ## [Unreleased]
 
+### Added — announcement channels (Phase 2, part 2)
+
+- Extensions for e-mail, ntfy, Matrix, Telegram and Mastodon (ADR-0020, docs/extensions/notify.md): settings and
+  encrypted tokens per instance or event, *Test connection*, and a channel in the announcement composer where
+  the extension is on. Priorities follow the announcement level (ntfy priority, silent Telegram messages for
+  info, high importance e-mails for urgent and emergency).
+- Own text per channel (`channel_texts` in the API) with the channel's length limit (Mastodon 500 characters).
+- Delivery report: refusals (4xx) fail at once and are logged on the extension; network errors, rate limits and
+  server errors are retried by the outbox. Matrix and Mastodon deliveries are idempotent.
+- Plugin API: `NotificationChannelSpec.available(event)` and `max_length`.
+
 ### Added — announcements (Phase 2, part 1)
 
 - Announcements module (ADR-0019): write once, deliver to screens, the public feed, staff notifications and

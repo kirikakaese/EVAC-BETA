@@ -820,3 +820,5 @@ pre.logs { max-height: 22rem; overflow: auto; font-size: .78rem; background: var
 .announcement-preview .ann-level-name { margin: 0; font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
 .announcement-preview .ann-title { font-size: 1.5rem; font-weight: 800; margin: .25rem 0 .5rem; }
 .feed-item h2 { margin: .25rem 0 .5rem; }
+.channel-texts { margin-top: .75rem; }
+.channel-texts summary { cursor: pointer; font-weight: 600; }

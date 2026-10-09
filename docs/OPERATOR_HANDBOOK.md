@@ -203,8 +203,10 @@ every screen shows. Highest wins:
 ## 5d. Announcements
 
 *Announcements* (module *Announcements*) are written once and go out through the channels you tick: **screens**,
-the **public feed**, **staff notifications** (the bell) and **webhooks**; more channels (e-mail, push, chat)
-follow. Each occurrence and channel is a row in the announcement's **delivery report** (delivered, skipped,
+the **public feed**, **staff notifications** (the bell), **webhooks**, and - once set up under *Settings →
+Extensions* - **e-mail**, **ntfy**, **Matrix**, **Telegram** and **Mastodon** (see
+[Announcement channels](extensions/notify.md)). Under *Own text per channel* you can write a shorter text for
+chat and social media. Each occurrence and channel is a row in the announcement's **delivery report** (delivered, skipped,
 failed, with recipients and retries).
 
 - **Levels** decide how an announcement looks on screens and whether it sounds: *Info* scrolls in a ticker,

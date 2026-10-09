@@ -99,8 +99,8 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = ["id", "level", "template", "variables", "title", "body", "short", "all_screens", *M2M,
-                  "channels", "starts_at", "ends_at", "recurrence", "recurrence_until", "status", "decision_note",
-                  "published_at", "deliveries", "send", "created_at"]
+                  "channels", "channel_texts", "starts_at", "ends_at", "recurrence", "recurrence_until", "status",
+                  "decision_note", "published_at", "deliveries", "send", "created_at"]
         read_only_fields = ["id", "status", "decision_note", "published_at", "deliveries", "created_at"]
         extra_kwargs = {"title": {"required": False}, "starts_at": {"required": False}}
 
@@ -113,6 +113,11 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     def validate_variables(self, value):
         if not isinstance(value, dict):
             raise serializers.ValidationError("An object of names and texts.")
+        return value
+
+    def validate_channel_texts(self, value):
+        if not isinstance(value, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in value.items()):
+            raise serializers.ValidationError("An object of channel keys and texts.")
         return value
 
     def validate_channels(self, value):

@@ -12,6 +12,7 @@ from .models import Announcement, Level, Template
 
 LOCAL = {"type": "datetime-local"}
 VAR_PREFIX = "var_"
+TEXT_PREFIX = "text_"
 TARGETS = ("venues", "zones", "rooms", "screen_groups", "screens")
 
 
@@ -64,6 +65,18 @@ class AnnouncementForm(forms.ModelForm):
                 initial=(self.instance.variables or {}).get(name, ""),
                 help_text=_("Fills {{%(n)s}} in the texts.") % {"n": name})
         self.template_obj = template
+        from apps.core.registry import registry
+
+        specs = registry.ensure_loaded().notification_channels
+        for key in services.available_channels(event):
+            spec = specs[key]
+            if spec.max_length:
+                self.fields[TEXT_PREFIX + key] = forms.CharField(
+                    label=_("Text for %(c)s") % {"c": spec.name}, max_length=spec.max_length, required=False,
+                    initial=(self.instance.channel_texts or {}).get(key, ""),
+                    widget=forms.Textarea(attrs={"rows": 2}),
+                    help_text=_("Optional, at most %(n)s characters. Empty: title and text.") % {
+                        "n": spec.max_length})
 
     def _template(self):
         pk = self.data.get(self.add_prefix("template")) if self.is_bound else (
@@ -83,6 +96,9 @@ class AnnouncementForm(forms.ModelForm):
 
     def target_fields(self):
         return [self[n] for n in ("all_screens", *TARGETS)]
+
+    def channel_text_fields(self):
+        return [self[name] for name in self.fields if name.startswith(TEXT_PREFIX)]
 
     def timing_fields(self):
         return [self[n] for n in ("starts_at", "ends_at", "recurrence", "recurrence_until")]
@@ -107,6 +123,8 @@ class AnnouncementForm(forms.ModelForm):
         ann.body = services.render_text(ann.body, variables, self.event)
         ann.short = services.render_text(ann.short, variables, self.event)[:160]
         ann.channels = list(self.cleaned_data["channels"])
+        ann.channel_texts = {name[len(TEXT_PREFIX):]: self.cleaned_data[name].strip() for name in self.fields
+                             if name.startswith(TEXT_PREFIX) and self.cleaned_data.get(name, "").strip()}
         ann.starts_at = self.cleaned_data["starts_at"]
         m2m = {n: list(self.cleaned_data.get(n) or []) for n in TARGETS}
         if ann.all_screens:

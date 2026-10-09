@@ -151,6 +151,14 @@ def _validate(ann: Announcement) -> None:
         raise ValidationError(_("Unknown channel: %(c)s") % {"c": ", ".join(unknown)})
     if not ann.channels:
         raise ValidationError(_("Choose at least one channel."))
+    specs = registry.ensure_loaded().notification_channels
+    for key, text in (ann.channel_texts or {}).items():
+        spec = specs.get(key)
+        if spec is None or not isinstance(text, str):
+            raise ValidationError(_("Unknown channel: %(c)s") % {"c": key})
+        if spec.max_length and len(text) > spec.max_length:
+            raise ValidationError(_("The text for %(c)s is too long (at most %(n)s characters).")
+                                  % {"c": spec.name, "n": spec.max_length})
 
 
 def save_draft(ann: Announcement, *, actor, request=None, m2m: dict | None = None) -> Announcement:
@@ -474,9 +482,21 @@ def available_channels(event) -> dict[str, str]:
     """Channels this event can use: built-ins plus registered ones whose module is on."""
     out = {}
     for key, spec in registry.ensure_loaded().notification_channels.items():
-        if spec.module == "core" or modules.is_enabled(spec.module, event):
-            out[key] = spec.name
+        if spec.module != "core" and not modules.is_enabled(spec.module, event):
+            continue
+        if spec.available is not None and not spec.available(event):
+            continue
+        out[key] = spec.name
     return out
+
+
+def text_for(ann: Announcement, channel: str, limit: int = 0) -> str:
+    """The text for one channel: its own text if written, else title and text; cut to ``limit`` characters."""
+    own = (ann.channel_texts or {}).get(channel, "").strip()
+    text = own or (ann.title if not ann.body or ann.body == ann.title else f"{ann.title}\n\n{ann.body}")
+    if limit and len(text) > limit:
+        text = text[:limit - 1].rstrip() + "…"
+    return text
 
 
 def publish(ann: Announcement, *, occurrence: dt.datetime) -> list[Delivery]:
