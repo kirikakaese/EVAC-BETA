@@ -75,7 +75,7 @@ Open EVAC in a browser. Until the first account exists every page redirects to t
    set `EVAC_SETUP_TOKEN` and enter it here.
 2. **Venue** — where it happens (can be skipped; venues are reusable across events).
 3. **Event** — name, short name (used in URLs: `/e/<short name>/`), time zone, dates.
-4. **First screen** — available with the screens module (phase 1).
+4. **First screen** — follows later in phase 1.
 
 The wizard cannot be re-run once an account exists.
 
@@ -149,9 +149,40 @@ The wizard cannot be re-run once an account exists.
   **shared library** (instance admins: tick *Add to the shared library* when uploading) is visible to every
   event.
 - **Layouts** are designed in the layout editor (see the [Designer Guide](DESIGNER_GUIDE.md)); screens show
-  the published version of the event's default layout and keep it, with all its files, for offline playback.
+  published layouts (through playlists, schedules and overrides, see 5c; without them the event's default
+  layout) and keep them, with all their files, for offline playback.
   Publishing can be scheduled (needs the beat service).
 - *Settings → Screen content*: maximum upload size (default 512 MB), largest image edge, AVIF, VP9.
+
+## 5c. Playback: playlists, schedules and overrides
+
+*Playback* (modules *Playlists*, *Schedules*, *Live overrides*; each can be switched off per event) decides what
+every screen shows. Highest wins:
+
+1. evacuation (phase 3, always highest),
+2. **emergency** override (permission `playlists.emergency`, two-factor verified session),
+3. **live** override,
+4. **urgent** override,
+5. **schedules** (when two overlap, the higher *priority* 0–99 wins),
+6. the **default playlist**, otherwise the default layout.
+
+- **On screens now** lists every paired screen with what it shows and why, and the active overrides with a
+  *Cancel* button each.
+- **Playlists** play layouts in turn (in order, shuffled or weighted), each for its own duration, the layout's
+  duration or the playlist default. Items can be limited to screens with a tag, to a condition
+  (`screen.zone == "North"`), to a time window, be paused or be another playlist (nesting). Make one playlist
+  the event's default.
+- **Schedules**: "Stage screens 18:00–20:00 → Concert playlist": a playlist or layout for all screens, screen
+  groups or single screens, on weekdays and/or a date range, in the event time zone; a slot ending before it
+  starts runs past midnight. The **calendar** shows per screen group what wins when in a week.
+- **Overrides**: push a message, layout or playlist to all screens, groups or single screens, now or later,
+  for 5 minutes to 4 hours, until a time or until cancelled. Screens switch within a second. Operators limited
+  to a screen group (role scope) can only push to that group.
+- **Preview** shows any screen at any moment (also in the future): the slide rendered as on the screen, the
+  list of entries that apply and which one wins, the next 24 hours and the next slides.
+- Screens receive their program for seven days and change slides by themselves with the server clock, so all
+  screens of a group change at the same moment and keep playing (and following schedules) without network.
+- Webhooks: `override.started`, `override.cancelled`.
 
 ## 6. Extensions
 

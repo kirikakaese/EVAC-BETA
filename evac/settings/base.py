@@ -82,6 +82,7 @@ EVAC_CORE_APPS = [
 EVAC_BUILTIN_PLUGINS = [
     "apps.screens",
     "apps.content",
+    "apps.playlists",
     "extensions.webhooks",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))

@@ -1109,6 +1109,378 @@ paths:
                 items:
                   $ref: '#/components/schemas/ModuleState'
           description: ''
+  /api/v1/events/{event_slug}/now-playing/:
+    get:
+      operationId: events_now_playing_list
+      description: 'What every paired screen shows right now (source: override, schedule
+        or default).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNowPlayingList'
+          description: ''
+  /api/v1/events/{event_slug}/overrides/:
+    get:
+      operationId: events_overrides_list
+      description: |-
+        Live overrides. Create pushes at once (or at ``starts_at``); ``expires_at`` empty = until cancelled.
+        ``POST …/cancel/`` ends it. Levels: ``urgent`` < ``override`` < ``emergency`` (needs
+        ``playlists.emergency``, a sensitive permission).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOverrideList'
+          description: ''
+    post:
+      operationId: events_overrides_create
+      description: |-
+        Live overrides. Create pushes at once (or at ``starts_at``); ``expires_at`` empty = until cancelled.
+        ``POST …/cancel/`` ends it. Levels: ``urgent`` < ``override`` < ``emergency`` (needs
+        ``playlists.emergency``, a sensitive permission).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OverrideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OverrideRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Override'
+          description: ''
+  /api/v1/events/{event_slug}/overrides/{id}/:
+    get:
+      operationId: events_overrides_retrieve
+      description: |-
+        Live overrides. Create pushes at once (or at ``starts_at``); ``expires_at`` empty = until cancelled.
+        ``POST …/cancel/`` ends it. Levels: ``urgent`` < ``override`` < ``emergency`` (needs
+        ``playlists.emergency``, a sensitive permission).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this override.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Override'
+          description: ''
+  /api/v1/events/{event_slug}/overrides/{id}/cancel/:
+    post:
+      operationId: events_overrides_cancel_create
+      description: |-
+        Live overrides. Create pushes at once (or at ``starts_at``); ``expires_at`` empty = until cancelled.
+        ``POST …/cancel/`` ends it. Levels: ``urgent`` < ``override`` < ``emergency`` (needs
+        ``playlists.emergency``, a sensitive permission).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this override.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Override'
+          description: ''
+  /api/v1/events/{event_slug}/playlists/:
+    get:
+      operationId: events_playlists_list
+      description: Playlists. ``items`` (in order) replaces all items when sent; nested
+        playlists use ``child``.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlaylistList'
+          description: ''
+    post:
+      operationId: events_playlists_create
+      description: Playlists. ``items`` (in order) replaces all items when sent; nested
+        playlists use ``child``.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaylistRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlaylistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlaylistRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+          description: ''
+  /api/v1/events/{event_slug}/playlists/{id}/:
+    get:
+      operationId: events_playlists_retrieve
+      description: Playlists. ``items`` (in order) replaces all items when sent; nested
+        playlists use ``child``.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this playlist.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+          description: ''
+    patch:
+      operationId: events_playlists_partial_update
+      description: Playlists. ``items`` (in order) replaces all items when sent; nested
+        playlists use ``child``.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this playlist.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaylistRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaylistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlaylistRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+          description: ''
+    delete:
+      operationId: events_playlists_destroy
+      description: Playlists. ``items`` (in order) replaces all items when sent; nested
+        playlists use ``child``.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this playlist.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/events/{event_slug}/roles/:
     get:
       operationId: events_roles_list
@@ -1265,6 +1637,182 @@ paths:
         name: key
         schema:
           type: string
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/{event_slug}/schedules/:
+    get:
+      operationId: events_schedules_list
+      description: 'Schedule rules: content (playlist or layout), screens and time
+        slots (event time zone).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedScheduleList'
+          description: ''
+    post:
+      operationId: events_schedules_create
+      description: 'Schedule rules: content (playlist or layout), screens and time
+        slots (event time zone).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+  /api/v1/events/{event_slug}/schedules/{id}/:
+    get:
+      operationId: events_schedules_retrieve
+      description: 'Schedule rules: content (playlist or layout), screens and time
+        slots (event time zone).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule rule.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+    patch:
+      operationId: events_schedules_partial_update
+      description: 'Schedule rules: content (playlist or layout), screens and time
+        slots (event time zone).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule rule.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+    delete:
+      operationId: events_schedules_destroy
+      description: 'Schedule rules: content (playlist or layout), screens and time
+        slots (event time zone).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule rule.
         required: true
       tags:
       - events
@@ -3432,6 +3980,100 @@ components:
         original_name:
           type: string
           maxLength: 200
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        layout:
+          type: string
+          format: uuid
+          nullable: true
+        child:
+          type: string
+          format: uuid
+          nullable: true
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Seconds
+          description: 'Empty: the layout''s own duration or the playlist default.'
+        weight:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 'Weighted playlists: 3 means three times as often as 1.'
+        tags:
+          title: Only on screens tagged
+        condition:
+          type: string
+          title: Show only if
+          description: e.g. screen.zone == "North" or not screen.room
+          maxLength: 300
+        valid_from:
+          type: string
+          format: date-time
+          nullable: true
+          title: From
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+          title: Until
+        enabled:
+          type: boolean
+      required:
+      - id
+    ItemRequest:
+      type: object
+      properties:
+        layout:
+          type: string
+          format: uuid
+          nullable: true
+        child:
+          type: string
+          format: uuid
+          nullable: true
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          title: Seconds
+          description: 'Empty: the layout''s own duration or the playlist default.'
+        weight:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 'Weighted playlists: 3 means three times as often as 1.'
+        tags:
+          title: Only on screens tagged
+        condition:
+          type: string
+          title: Show only if
+          description: e.g. screen.zone == "North" or not screen.room
+          maxLength: 300
+        valid_from:
+          type: string
+          format: date-time
+          nullable: true
+          title: From
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+          title: Until
+        enabled:
+          type: boolean
     Layout:
       type: object
       properties:
@@ -3499,6 +4141,16 @@ components:
         data: {}
       required:
       - name
+    LevelEnum:
+      enum:
+      - urgent
+      - override
+      - emergency
+      type: string
+      description: |-
+        * `urgent` - Urgent (above schedules)
+        * `override` - Live override
+        * `emergency` - Emergency (above everything except evacuation)
     Membership:
       type: object
       properties:
@@ -3523,6 +4175,16 @@ components:
       - created_at
       - id
       - user
+    ModeEnum:
+      enum:
+      - ordered
+      - shuffle
+      - weighted
+      type: string
+      description: |-
+        * `ordered` - In order
+        * `shuffle` - Shuffled (same order on every screen)
+        * `weighted` - Weighted (items with more weight come more often)
     ModuleState:
       type: object
       properties:
@@ -3554,6 +4216,145 @@ components:
       - key
       - name
       - required
+    NowPlaying:
+      type: object
+      properties:
+        screen:
+          type: string
+          format: uuid
+        name:
+          type: string
+        source:
+          type: string
+          nullable: true
+        entry:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        layout:
+          type: string
+          nullable: true
+        until:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - entry
+      - layout
+      - name
+      - screen
+      - source
+      - title
+      - until
+    Override:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        message:
+          type: string
+          description: Shown in large letters when no layout or playlist is chosen.
+        layout:
+          type: string
+          format: uuid
+          nullable: true
+        playlist:
+          type: string
+          format: uuid
+          nullable: true
+        all_screens:
+          type: boolean
+        groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        starts_at:
+          type: string
+          format: date-time
+          title: Starts
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Ends
+          description: 'Empty: until cancelled.'
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        state:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - cancelled_at
+      - created_at
+      - id
+      - state
+      - title
+    OverrideRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        message:
+          type: string
+          description: Shown in large letters when no layout or playlist is chosen.
+        layout:
+          type: string
+          format: uuid
+          nullable: true
+        playlist:
+          type: string
+          format: uuid
+          nullable: true
+        all_screens:
+          type: boolean
+        groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        starts_at:
+          type: string
+          format: date-time
+          title: Starts
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Ends
+          description: 'Empty: until cancelled.'
+      required:
+      - title
     PaginatedAssetList:
       type: object
       required:
@@ -3738,6 +4539,75 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Membership'
+    PaginatedNowPlayingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NowPlaying'
+    PaginatedOverrideList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Override'
+    PaginatedPlaylistList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Playlist'
     PaginatedRoleList:
       type: object
       required:
@@ -3784,6 +4654,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Room'
+    PaginatedScheduleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Schedule'
     PaginatedScreenGroupList:
       type: object
       required:
@@ -4084,6 +4977,34 @@ components:
         event:
           type: boolean
           nullable: true
+    PatchedPlaylistRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          title: Order
+        default_duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Seconds per slide
+          description: Used when neither the item nor the layout sets a duration.
+        is_default:
+          type: boolean
+          title: Default playlist of the event
+          description: Plays when no schedule or override applies.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemRequest'
     PatchedRoleRequest:
       type: object
       properties:
@@ -4144,6 +5065,65 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
+    PatchedScheduleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        enabled:
+          type: boolean
+        priority:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0-99. When schedules overlap, the higher number wins.
+        playlist:
+          type: string
+          format: uuid
+          nullable: true
+        layout:
+          type: string
+          format: uuid
+          nullable: true
+        all_screens:
+          type: boolean
+        groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        weekdays:
+          description: 'Empty: every day. 0 = Monday … 6 = Sunday.'
+        start_time:
+          type: string
+          format: time
+          nullable: true
+          title: From
+          description: 'Empty: from midnight.'
+        end_time:
+          type: string
+          format: time
+          nullable: true
+          title: Until
+          description: 'Empty: until midnight. Earlier than the start runs past midnight.'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          title: First day
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          title: Last day
     PatchedScreenGroupRequest:
       type: object
       properties:
@@ -4284,6 +5264,75 @@ components:
           type: string
           minLength: 1
           maxLength: 7
+    Playlist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          title: Order
+        default_duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Seconds per slide
+          description: Used when neither the item nor the layout sets a duration.
+        is_default:
+          type: boolean
+          title: Default playlist of the event
+          description: Plays when no schedule or override applies.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - name
+      - updated_at
+    PlaylistRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          title: Order
+        default_duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Seconds per slide
+          description: Used when neither the item nor the layout sets a duration.
+        is_default:
+          type: boolean
+          title: Default playlist of the event
+          description: Plays when no schedule or override applies.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemRequest'
+      required:
+      - name
     PublishRequest:
       type: object
       properties:
@@ -4439,6 +5488,137 @@ components:
       required:
       - name
       - venue
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        enabled:
+          type: boolean
+        priority:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0-99. When schedules overlap, the higher number wins.
+        playlist:
+          type: string
+          format: uuid
+          nullable: true
+        layout:
+          type: string
+          format: uuid
+          nullable: true
+        all_screens:
+          type: boolean
+        groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        weekdays:
+          description: 'Empty: every day. 0 = Monday … 6 = Sunday.'
+        start_time:
+          type: string
+          format: time
+          nullable: true
+          title: From
+          description: 'Empty: from midnight.'
+        end_time:
+          type: string
+          format: time
+          nullable: true
+          title: Until
+          description: 'Empty: until midnight. Earlier than the start runs past midnight.'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          title: First day
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          title: Last day
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - name
+      - updated_at
+    ScheduleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        enabled:
+          type: boolean
+        priority:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0-99. When schedules overlap, the higher number wins.
+        playlist:
+          type: string
+          format: uuid
+          nullable: true
+        layout:
+          type: string
+          format: uuid
+          nullable: true
+        all_screens:
+          type: boolean
+        groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        weekdays:
+          description: 'Empty: every day. 0 = Monday … 6 = Sunday.'
+        start_time:
+          type: string
+          format: time
+          nullable: true
+          title: From
+          description: 'Empty: from midnight.'
+        end_time:
+          type: string
+          format: time
+          nullable: true
+          title: Until
+          description: 'Empty: until midnight. Earlier than the start runs past midnight.'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          title: First day
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          title: Last day
+      required:
+      - name
     Screen:
       type: object
       properties:

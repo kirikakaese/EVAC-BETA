@@ -150,7 +150,7 @@ EDITOR_DIR = Path(settings.BASE_DIR) / "static" / "editor"
 @lru_cache(maxsize=1)
 def editor_version() -> str:
     h = hashlib.sha256()
-    for name in ("editor.js", "editor.css"):
+    for name in ("editor.js", "editor.css", "preview.js", "preview.css"):
         p = EDITOR_DIR / name
         if p.exists():
             h.update(p.read_bytes())

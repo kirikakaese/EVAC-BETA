@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Playlists" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Playlists" %}</h1></div>
+{% include "playlists/_tabs.html" with tab="playlists" %}
+<section class="card"><div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Playlist" %}</th><th scope="col">{% trans "Order" %}</th><th scope="col" class="num">{% trans "Items" %}</th><th scope="col">{% trans "Default" %}</th></tr></thead>
+<tbody>{% for p in playlists %}<tr><td><a href="{% url 'playlists:playlist' event.slug p.pk %}">{{ p.name }}</a>{% if p.description %}<br><span class="small muted">{{ p.description|truncatechars:90 }}</span>{% endif %}</td>
+  <td class="small">{{ p.get_mode_display }}</td><td class="num">{{ p.items.all|length }}</td>
+  <td>{% if p.is_default %}<span class="badge badge-ok">{% trans "default" %}</span>{% else %}–{% endif %}</td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "No playlists yet. A playlist shows layouts in turn; make one the default and every screen plays it when no schedule or override applies." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if form %}<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "New playlist" %}</h2>{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Create playlist" %}</button></form>{% endif %}
+{% endblock %}

@@ -1,0 +1,1485 @@
+{
+ "program": {
+  "entries": [
+   {
+    "id": "override:o1",
+    "source": "override",
+    "name": "Doors",
+    "priority": 300,
+    "content": {
+     "message": "o1"
+    },
+    "windows": [
+     [
+      1780007200000,
+      1780007800000
+     ]
+    ]
+   },
+   {
+    "id": "override:o2",
+    "source": "override",
+    "name": "Urgent",
+    "priority": 200,
+    "content": {
+     "layout": "L4"
+    },
+    "windows": [
+     [
+      1780007140000,
+      null
+     ]
+    ]
+   },
+   {
+    "id": "schedule:s1",
+    "source": "schedule",
+    "name": "Concert",
+    "priority": 100,
+    "content": {
+     "playlist": "P2"
+    },
+    "windows": [
+     [
+      1780003600000,
+      1780010800000
+     ],
+     [
+      1780090000000,
+      1780097200000
+     ]
+    ]
+   },
+   {
+    "id": "schedule:s2",
+    "source": "schedule",
+    "name": "Concert VIP",
+    "priority": 105,
+    "content": {
+     "playlist": "PEMPTY"
+    },
+    "windows": [
+     [
+      1780003600000,
+      1780010800000
+     ]
+    ]
+   },
+   {
+    "id": "schedule:s3",
+    "source": "schedule",
+    "name": "Unpublished",
+    "priority": 150,
+    "content": {
+     "layout": "LX"
+    },
+    "windows": [
+     [
+      1780000000000,
+      1780108000000
+     ]
+    ]
+   },
+   {
+    "id": "default",
+    "source": "default",
+    "name": "Loop",
+    "priority": 0,
+    "content": {
+     "playlist": "P1"
+    },
+    "windows": [
+     [
+      null,
+      null
+     ]
+    ]
+   }
+  ],
+  "playlists": {
+   "P1": {
+    "mode": "ordered",
+    "default": 10000,
+    "items": [
+     {
+      "id": "i1",
+      "layout": "L1",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "i2",
+      "layout": "L2",
+      "duration": 5000,
+      "weight": 1,
+      "tags": [
+       "stage"
+      ],
+      "when": "",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "i3",
+      "playlist": "P3",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "i4",
+      "layout": "L3",
+      "duration": 7000,
+      "weight": 1,
+      "tags": [],
+      "when": "screen.zone == \"North\"",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "i5",
+      "layout": "L1",
+      "duration": 3000,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": 1780108000000,
+      "until": null
+     },
+     {
+      "id": "i6",
+      "playlist": "P1",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     }
+    ]
+   },
+   "P2": {
+    "mode": "shuffle",
+    "default": 8000,
+    "items": [
+     {
+      "id": "s1",
+      "layout": "L1",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "s2",
+      "layout": "L2",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "s3",
+      "layout": "L3",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "s4",
+      "layout": "L4",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     }
+    ]
+   },
+   "P3": {
+    "mode": "weighted",
+    "default": 4000,
+    "items": [
+     {
+      "id": "w1",
+      "layout": "L2",
+      "duration": null,
+      "weight": 3,
+      "tags": [],
+      "when": "",
+      "from": null,
+      "until": null
+     },
+     {
+      "id": "w2",
+      "layout": "L3",
+      "duration": null,
+      "weight": 1,
+      "tags": [],
+      "when": "not screen.room",
+      "from": null,
+      "until": null
+     }
+    ]
+   },
+   "PEMPTY": {
+    "mode": "ordered",
+    "default": 8000,
+    "items": [
+     {
+      "id": "e1",
+      "layout": "L1",
+      "duration": null,
+      "weight": 1,
+      "tags": [
+       "vip"
+      ],
+      "when": "",
+      "from": null,
+      "until": null
+     }
+    ]
+   }
+  },
+  "layouts": {
+   "L1": 12000,
+   "L2": null,
+   "L3": null,
+   "L4": null
+  },
+  "messages": {
+   "o1": {
+    "format": 1,
+    "width": 1920,
+    "height": 1080,
+    "elements": []
+   }
+  }
+ },
+ "contexts": {
+  "plain": {
+   "event": {
+    "name": "Demo"
+   },
+   "screen": {
+    "name": "A",
+    "zone": "",
+    "room": "",
+    "tags": [],
+    "groups": []
+   }
+  },
+  "north_stage": {
+   "event": {
+    "name": "Demo"
+   },
+   "screen": {
+    "name": "B",
+    "zone": "North",
+    "room": "Hall",
+    "tags": [
+     "stage"
+    ],
+    "groups": []
+   }
+  }
+ },
+ "cases": [
+  {
+   "ctx": "plain",
+   "t": 1780000000000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 2,
+    "count": 5,
+    "start": 1780000000000,
+    "end": 1780000004000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000004000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000000000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 2,
+    "count": 5,
+    "start": 1780000000000,
+    "end": 1780000004000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000004000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000000001,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 2,
+    "count": 5,
+    "start": 1780000000000,
+    "end": 1780000004000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000004000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000000001,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 2,
+    "count": 5,
+    "start": 1780000000000,
+    "end": 1780000004000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000004000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000011999,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 5,
+    "start": 1780000008000,
+    "end": 1780000012000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000012000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000011999,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 5,
+    "start": 1780000008000,
+    "end": 1780000012000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000012000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000012000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 5,
+    "start": 1780000012000,
+    "end": 1780000024000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780000024000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000012000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 5,
+    "start": 1780000012000,
+    "end": 1780000024000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780000024000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000025000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 1,
+    "count": 5,
+    "start": 1780000024000,
+    "end": 1780000028000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000028000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000025000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 1,
+    "count": 5,
+    "start": 1780000024000,
+    "end": 1780000028000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000028000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000041000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 5,
+    "start": 1780000040000,
+    "end": 1780000052000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780000052000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000041000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 5,
+    "start": 1780000040000,
+    "end": 1780000052000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780000052000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000123456,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 5,
+    "start": 1780000120000,
+    "end": 1780000124000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000124000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780000123456,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 5,
+    "start": 1780000120000,
+    "end": 1780000124000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000124000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003600000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003600000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003607999,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003607999,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003608000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 1,
+    "count": 4,
+    "start": 1780003608000,
+    "end": 1780003620000,
+    "layout": "L1",
+    "item": "s1"
+   },
+   "next": 1780003620000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003608000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 1,
+    "count": 4,
+    "start": 1780003608000,
+    "end": 1780003620000,
+    "layout": "L1",
+    "item": "s1"
+   },
+   "next": 1780003620000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003640000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003636000,
+    "end": 1780003644000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003644000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003640000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003636000,
+    "end": 1780003644000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003644000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003700000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 3,
+    "count": 4,
+    "start": 1780003700000,
+    "end": 1780003708000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003708000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780003700000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 3,
+    "count": 4,
+    "start": 1780003700000,
+    "end": 1780003708000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003708000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007140000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": 1780007200000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007140000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 1,
+    "count": 4,
+    "start": 1780007140000,
+    "end": 1780007148000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780007148000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007200000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007200000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007799999,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007799999,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007800000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": 1780010800000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780007800000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 2,
+    "count": 4,
+    "start": 1780007792000,
+    "end": 1780007804000,
+    "layout": "L1",
+    "item": "s1"
+   },
+   "next": 1780007804000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780090033000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": 1780097200000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780090033000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 3,
+    "count": 4,
+    "start": 1780090028000,
+    "end": 1780090036000,
+    "layout": "L3",
+    "item": "s3"
+   },
+   "next": 1780090036000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780111600000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": null
+  },
+  {
+   "ctx": "plain",
+   "t": 1780111600000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 6,
+    "start": 1780111598000,
+    "end": 1780111602000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780111602000
+  },
+  {
+   "ctx": "plain",
+   "t": 1780111615000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": null
+  },
+  {
+   "ctx": "plain",
+   "t": 1780111615000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 6,
+    "start": 1780111605000,
+    "end": 1780111617000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780111617000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000000000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 1,
+    "count": 6,
+    "start": 1779999996000,
+    "end": 1780000001000,
+    "layout": "L2",
+    "item": "i2"
+   },
+   "next": 1780000001000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000000000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 1,
+    "count": 6,
+    "start": 1779999996000,
+    "end": 1780000001000,
+    "layout": "L2",
+    "item": "i2"
+   },
+   "next": 1780000001000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000000001,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 1,
+    "count": 6,
+    "start": 1779999996000,
+    "end": 1780000001000,
+    "layout": "L2",
+    "item": "i2"
+   },
+   "next": 1780000001000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000000001,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 1,
+    "count": 6,
+    "start": 1779999996000,
+    "end": 1780000001000,
+    "layout": "L2",
+    "item": "i2"
+   },
+   "next": 1780000001000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000011999,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 6,
+    "start": 1780000009000,
+    "end": 1780000013000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000013000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000011999,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 6,
+    "start": 1780000009000,
+    "end": 1780000013000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000013000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000012000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 6,
+    "start": 1780000009000,
+    "end": 1780000013000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000013000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000012000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 4,
+    "count": 6,
+    "start": 1780000009000,
+    "end": 1780000013000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000013000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000025000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 6,
+    "start": 1780000020000,
+    "end": 1780000032000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780000032000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000025000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 6,
+    "start": 1780000020000,
+    "end": 1780000032000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780000032000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000041000,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 3,
+    "count": 6,
+    "start": 1780000041000,
+    "end": 1780000045000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000045000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000041000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 3,
+    "count": 6,
+    "start": 1780000041000,
+    "end": 1780000045000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780000045000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000123456,
+   "variant": "all",
+   "slide": {
+    "entry": "default",
+    "index": 5,
+    "count": 6,
+    "start": 1780000121000,
+    "end": 1780000128000,
+    "layout": "L3",
+    "item": "i4"
+   },
+   "next": 1780000128000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780000123456,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 5,
+    "count": 6,
+    "start": 1780000121000,
+    "end": 1780000128000,
+    "layout": "L3",
+    "item": "i4"
+   },
+   "next": 1780000128000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003600000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003600000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003607999,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003607999,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003600000,
+    "end": 1780003608000,
+    "layout": "L2",
+    "item": "s2"
+   },
+   "next": 1780003608000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003608000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 1,
+    "count": 4,
+    "start": 1780003608000,
+    "end": 1780003620000,
+    "layout": "L1",
+    "item": "s1"
+   },
+   "next": 1780003620000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003608000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 1,
+    "count": 4,
+    "start": 1780003608000,
+    "end": 1780003620000,
+    "layout": "L1",
+    "item": "s1"
+   },
+   "next": 1780003620000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003640000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003636000,
+    "end": 1780003644000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003644000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003640000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 0,
+    "count": 4,
+    "start": 1780003636000,
+    "end": 1780003644000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003644000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003700000,
+   "variant": "all",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 3,
+    "count": 4,
+    "start": 1780003700000,
+    "end": 1780003708000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003708000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780003700000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 3,
+    "count": 4,
+    "start": 1780003700000,
+    "end": 1780003708000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780003708000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007140000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": 1780007200000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007140000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 1,
+    "count": 4,
+    "start": 1780007140000,
+    "end": 1780007148000,
+    "layout": "L4",
+    "item": "s4"
+   },
+   "next": 1780007148000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007200000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007200000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007799999,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007799999,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "override:o1",
+    "index": 0,
+    "count": 1,
+    "start": 1780007200000,
+    "end": 1780007800000,
+    "message": "o1"
+   },
+   "next": 1780007800000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007800000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": 1780010800000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780007800000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 2,
+    "count": 4,
+    "start": 1780007792000,
+    "end": 1780007804000,
+    "layout": "L1",
+    "item": "s1"
+   },
+   "next": 1780007804000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780090033000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": 1780097200000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780090033000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "schedule:s1",
+    "index": 3,
+    "count": 4,
+    "start": 1780090028000,
+    "end": 1780090036000,
+    "layout": "L3",
+    "item": "s3"
+   },
+   "next": 1780090036000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780111600000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": null
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780111600000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 0,
+    "count": 7,
+    "start": 1780111593000,
+    "end": 1780111605000,
+    "layout": "L1",
+    "item": "i1"
+   },
+   "next": 1780111605000
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780111615000,
+   "variant": "all",
+   "slide": {
+    "entry": "override:o2",
+    "index": 0,
+    "count": 1,
+    "start": 1780007140000,
+    "end": null,
+    "layout": "L4"
+   },
+   "next": null
+  },
+  {
+   "ctx": "north_stage",
+   "t": 1780111615000,
+   "variant": "no-urgent",
+   "slide": {
+    "entry": "default",
+    "index": 3,
+    "count": 7,
+    "start": 1780111614000,
+    "end": 1780111618000,
+    "layout": "L2",
+    "item": "w1"
+   },
+   "next": 1780111618000
+  }
+ ],
+ "units": {
+  "fnv": {
+   "": 2166136261,
+   "a": 3826002220,
+   "P2:0": 3309598485,
+   "P2:17": 2898611183,
+   "8c0e8a5e-1f6f-4b4e-9d43-2c1f0f6b2a77:3": 1308507324
+  },
+  "shuffle": {
+   "1": [
+    2,
+    4,
+    5,
+    7,
+    0,
+    6,
+    3,
+    1
+   ],
+   "42": [
+    4,
+    6,
+    5,
+    7,
+    1,
+    3,
+    2,
+    0
+   ],
+   "4294967295": [
+    5,
+    2,
+    6,
+    1,
+    4,
+    3,
+    0,
+    7
+   ],
+   "2166136261": [
+    2,
+    0,
+    4,
+    5,
+    3,
+    1,
+    6,
+    7
+   ]
+  },
+  "weighted": [
+   "a",
+   "c",
+   "a",
+   "b",
+   "c",
+   "a"
+  ]
+ }
+}

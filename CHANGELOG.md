@@ -6,6 +6,21 @@ released.
 
 ## [Unreleased]
 
+### Added — playlists, schedules and live overrides (Phase 1, part 5)
+
+- Modules *Playlists*, *Schedules* and *Live overrides* under **Playback** (ADR-0016): ordered, shuffled
+  and weighted playlists with per-item durations, tag/condition/time filters and nesting; a default playlist
+  per event; schedule rules (weekdays, times across midnight, date ranges, priorities, groups or single
+  screens) with a week calendar; overrides (message, layout or playlist; urgent, live or emergency level;
+  start later, expiry or until cancelled; scoped to the operator's screen groups) with one-click cancel.
+- "On screens now" dashboard and a preview of any screen at any time (rendered slide, why it wins, next 24
+  hours, next slides).
+- Screens get a 7-day program (`/player/api/playlists/program/`) and resolve it themselves with the
+  synchronised clock: slide changes are simultaneous on all screens and continue offline; overrides arrive in
+  well under a second (`program.changed`).
+- REST API: `/events/<slug>/playlists/`, `schedules/`, `overrides/` (`…/cancel/`), `now-playing/`; webhooks
+  `override.started`, `override.cancelled`; permissions `playlists.view|edit|override|emergency`.
+
 ### Added — layouts, renderer, widgets and the layout editor (Phase 1, part 4)
 
 - Layouts (format v1, validated JSON) with versions on every save, publish now or scheduled, publish any

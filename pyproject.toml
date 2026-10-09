@@ -100,5 +100,6 @@ files = [
     "apps/core/hashchain.py",
     "apps/core/settings_schema.py",
     "apps/events/permissions.py",
+    "apps/playlists/engine.py",
 ]
 strict = true
