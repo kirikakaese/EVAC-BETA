@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Announcement templates" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Announcement templates" %}</h1>
+{% if can_manage %}<div class="actions"><a class="btn btn-primary" href="{% url 'announcements:template_new' event.slug %}">{% trans "New template" %}</a></div>{% endif %}</div>
+{% include "announcements/_tabs.html" with tab="templates" %}
+<section class="card"><div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Template" %}</th><th scope="col">{% trans "Level" %}</th><th scope="col">{% trans "Text" %}</th><th scope="col">{% trans "Full-screen layout" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+<tbody>{% for t in templates %}<tr><td><strong>{{ t.name }}</strong>{% if t.builtin %} <span class="badge">{% trans "built-in" %}</span>{% endif %}</td>
+<td>{% if t.level %}{% include "announcements/_level.html" with level=t.level %}{% else %}–{% endif %}</td>
+<td class="small">{{ t.title }}<br><span class="muted">{{ t.body|truncatechars:90 }}</span></td><td class="small">{{ t.layout|default:"–" }}</td>
+<td class="nowrap">{% if can_compose %}<a class="btn btn-sm btn-primary" href="{% url 'announcements:new' event.slug %}?template={{ t.pk }}">{% blocktrans with n=t.name %}Use {{ n }}{% endblocktrans %}</a>{% endif %}
+{% if can_manage %}<a class="btn btn-sm" href="{% url 'announcements:template' event.slug t.pk %}">{% blocktrans with n=t.name %}Edit {{ n }}{% endblocktrans %}</a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% trans "No templates yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

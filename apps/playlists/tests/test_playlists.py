@@ -139,10 +139,13 @@ def test_program_priorities_and_player_endpoint(client, admin, event, layouts, p
     on = services.now_playing(screen)
     assert on["source"] == "default" and on["count"] == 2  # the unpublished draft is skipped
 
-    # modules switched off: schedules/overrides vanish from the program; playlists off -> no program
+    # modules switched off: schedules/overrides vanish; with playlists off only the default layout remains
     modules.set_event(event, "overrides", False, user=admin)
     assert all(e["source"] != "override" for e in services.screen_program(screen)["entries"])
     modules.set_event(event, "playlists", False, user=admin)
+    resp = client.get("/player/api/playlists/program/", HTTP_AUTHORIZATION=f"Screen {token}")
+    assert [e["content"] for e in resp.json()["program"]["entries"]] == [{"layout": str(welcome.pk)}]
+    modules.set_event(event, "content", False, user=admin)
     resp = client.get("/player/api/playlists/program/", HTTP_AUTHORIZATION=f"Screen {token}")
     assert resp.json() == {"program": None}
     assert client.get("/player/api/playlists/program/").status_code == 401

@@ -83,6 +83,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.screens",
     "apps.content",
     "apps.playlists",
+    "apps.announcements",
     "extensions.webhooks",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
@@ -243,6 +244,7 @@ CELERY_BEAT_SCHEDULE = {
     "screens-sweep-health": {"task": "apps.screens.tasks.sweep_health", "schedule": 15.0},
     "screens-purge-pairing-requests": {"task": "apps.screens.tasks.purge_pairing_requests", "schedule": 3600.0},
     "content-publish-due-layouts": {"task": "apps.content.tasks.publish_due_layouts", "schedule": 30.0},
+    "announcements-publish-due": {"task": "apps.announcements.tasks.publish_due", "schedule": 15.0},
 }
 
 # --------------------------------------------------------------------------- REST framework

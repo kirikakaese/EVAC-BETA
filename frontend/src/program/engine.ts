@@ -26,6 +26,8 @@ export interface Program {
   playlists: Record<string, PlaylistData>;
   layouts: Record<string, number | null>;
   messages?: Record<string, unknown>;
+  /** announcement banners, tickers and cards (see player/overlays.ts) */
+  overlays?: import("../player/overlays").Overlay[];
   horizon?: number;
 }
 

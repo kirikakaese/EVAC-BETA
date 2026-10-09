@@ -200,6 +200,35 @@ every screen shows. Highest wins:
   screens of a group change at the same moment and keep playing (and following schedules) without network.
 - Webhooks: `override.started`, `override.cancelled`.
 
+## 5d. Announcements
+
+*Announcements* (module *Announcements*) are written once and go out through the channels you tick: **screens**,
+the **public feed**, **staff notifications** (the bell) and **webhooks**; more channels (e-mail, push, chat)
+follow. Each occurrence and channel is a row in the announcement's **delivery report** (delivered, skipped,
+failed, with recipients and retries).
+
+- **Levels** decide how an announcement looks on screens and whether it sounds: *Info* scrolls in a ticker,
+  *Important* is a banner with a chime, *Urgent* a card with a gong, repeated every 10 minutes, *Emergency*
+  takes over the whole screen with an alert tone. Change colours, display, sound, display time, repetition and
+  default channels under *Announcements → Levels*. Full-screen levels sit between live and urgent overrides;
+  emergency announcements are above live overrides, only evacuation is higher.
+- **Templates** hold reusable texts with blanks such as `{{desk}}`; *Quick start from a template* asks only for
+  the blanks. Built in: lost child, doors open soon, severe weather warning, keep exits clear, lost and found.
+  A template can use a layout for its full-screen look (`{{ announcement.title }}`, `{{ announcement.text }}`).
+- **Where**: everywhere, or chosen venues, zones, rooms, screen groups or screens. Staff limited to a zone or a
+  screen group (role scope) can only address those.
+- **When**: now or at a time, until a time (empty: the level's display time, or until cancelled when the level
+  repeats), once, daily or weekly until a day. Screens know scheduled announcements in advance and show them on
+  time without network.
+- **Approval**: the helpdesk role may write drafts; they wait under *Waiting for approval* until someone else
+  with the approve permission (control room, orga) approves or rejects them with a note. Tick *Every announcement
+  needs approval* under *Settings → Announcements* to require it for everyone, or per level. Emergency
+  announcements never wait, need the emergency permission and a two-factor verified session.
+- **Public feed**: switch it on under *Settings → Announcements*; published announcements sent to the feed
+  channel appear at `/public/<event>/announcements/` with RSS (`rss.xml`) and JSON Feed (`feed.json`).
+- Sound on screens follows the screen's display settings (sound on/off, volume).
+- Webhooks: `announcement.published` (per occurrence), `announcement.pending`, `announcement.cancelled`.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

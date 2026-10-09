@@ -64,13 +64,14 @@ again without removing the package.
 | `SettingsNamespace` | `r.settings_namespace` | typed settings with inheritance and generated forms |
 | `ScopeKind` | `r.scope_kind` | objects role assignments can be scoped to |
 | `DataSourceSpec`, `WidgetSpec` | `r.data_source`, `r.widget` | screen content (consumed from phase 1) |
-| `NotificationChannelSpec` | `r.notification_channel` | announcement channels (phase 2) |
+| `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (ADR-0019) |
 | `EvacTriggerSpec` | `r.evac_trigger` | alarm trigger sources (phase 3) |
 | `WebhookEventSpec` | `r.webhook_event` | outbound event types (`apps.core.webhooks.emit`) |
 | `CliCommandSpec` | `r.cli_command` | `evac <name>` sub-commands |
 | `ExtensionSpec` | `r.extension` | Settings → Extensions page, secrets, test, inbound webhooks, purge, custom views |
 | `EventHook` | `r.event_hook` | your data in event export/import/clone |
 | outbox handler | `r.outbox_handler(kind, fn)` | durable outgoing deliveries |
+| program source | `r.program_source(fn)` | `fn(event, target, start, end) -> {"entries", "messages", "overlays"}`: extra content in every screen's program (announcements; evacuation in phase 3) |
 | webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 

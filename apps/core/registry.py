@@ -27,6 +27,7 @@ from .plugins import (
     OutboxHandler,
     PermissionSpec,
     PluginManifest,
+    ProgramSource,
     ScopeKind,
     SettingsNamespace,
     WebhookEventSpec,
@@ -65,6 +66,7 @@ class Registry:
         self.event_hooks: list[EventHook] = []
         self.outbox_handlers: dict[str, OutboxHandler] = {}
         self.webhook_sinks: list[WebhookSink] = []
+        self.program_sources: list[ProgramSource] = []
         self.websocket_routes: list[Any] = []
         self.api_routes: list[tuple[str, Any, str]] = []
 
@@ -167,6 +169,10 @@ class Registry:
 
     def webhook_sink(self, sink: WebhookSink) -> None:
         self.webhook_sinks.append(sink)
+
+    def program_source(self, fn: ProgramSource) -> None:
+        """Contribute entries/overlays to every screen's program (see ``plugins.ProgramSource``)."""
+        self.program_sources.append(fn)
 
     def websocket_route(self, route: Any) -> None:
         self.websocket_routes.append(route)

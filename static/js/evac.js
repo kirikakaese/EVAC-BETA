@@ -114,7 +114,16 @@
   // Colour swatches: <span class="swatch" data-color="#22c55e"> (no inline styles under the CSP)
   document.querySelectorAll("[data-color]").forEach(function (el) {
     const c = el.getAttribute("data-color");
-    if (/^#[0-9a-fA-F]{6}$/.test(c)) el.style.backgroundColor = c;
+    if (!/^#[0-9a-fA-F]{6}$/.test(c)) return;
+    el.style.backgroundColor = c;
+    // data-contrast: text in black or white, whichever has the higher contrast on that colour
+    if (el.hasAttribute("data-contrast")) {
+      const lum = [1, 3, 5].map(function (i) {
+        const v = parseInt(c.slice(i, i + 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      el.style.color = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2] > 0.179 ? "#000" : "#fff";
+    }
   });
 
   // Hold-to-confirm for safety actions: <button data-hold="1500" data-hold-label="Keep holding…">.

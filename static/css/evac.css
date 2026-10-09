@@ -355,7 +355,7 @@ td.empty, .table-wrap .empty { text-align: center; }
   display: inline-flex; align-items: center; gap: .3rem; padding: .05rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 600;
   background: var(--bg-elev2); border: 1px solid var(--border-strong); color: var(--fg); line-height: 1.5; white-space: nowrap; vertical-align: middle;
 }
-.badge-ok, .badge-enabled, .badge-active, .badge-subscribed, .badge-live, .badge-up, .badge-ready, .badge-delivered, .badge-done {
+.badge-ok, .badge-enabled, .badge-active, .badge-subscribed, .badge-live, .badge-up, .badge-ready, .badge-delivered, .badge-done, .badge-sent {
   color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); background: color-mix(in srgb, var(--ok) 12%, transparent);
 }
 .badge-warn, .badge-setup, .badge-teardown, .badge-requested, .badge-pending, .badge-registration, .badge-processing, .badge-new-pin {
@@ -364,12 +364,12 @@ td.empty, .table-wrap .empty { text-align: center; }
 .badge-err, .badge-error, .badge-rejected, .badge-suspended, .badge-down, .badge-offline, .badge-failed, .badge-dead, .badge-critical {
   color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, transparent); background: color-mix(in srgb, var(--err) 12%, transparent);
 }
-.badge-info, .badge-draft, .badge-new {
+.badge-info, .badge-draft, .badge-new, .badge-scheduled {
   color: var(--info); border-color: color-mix(in srgb, var(--info) 45%, transparent); background: color-mix(in srgb, var(--info) 12%, transparent);
 }
-.badge-muted, .badge-off, .badge-disabled, .badge-archived, .badge-expired, .badge-deleted, .badge-unsubscribed { color: var(--fg-muted); }
+.badge-muted, .badge-off, .badge-disabled, .badge-archived, .badge-expired, .badge-deleted, .badge-unsubscribed, .badge-cancelled, .badge-ended, .badge-skipped { color: var(--fg-muted); }
 /* status is never conveyed by colour alone: ok/warn/err badges carry a glyph (rendered via CSS so templates stay untouched) */
-.badge-ok::before, .badge-enabled::before, .badge-active::before, .badge-subscribed::before, .badge-live::before, .badge-up::before, .badge-ready::before, .badge-delivered::before, .badge-done::before { content: "\2713"; }
+.badge-ok::before, .badge-enabled::before, .badge-active::before, .badge-subscribed::before, .badge-live::before, .badge-up::before, .badge-ready::before, .badge-delivered::before, .badge-done::before, .badge-sent::before { content: "\2713"; }
 .badge-warn::before, .badge-setup::before, .badge-teardown::before, .badge-requested::before, .badge-pending::before, .badge-registration::before, .badge-processing::before, .badge-new-pin::before { content: "!"; }
 .badge-err::before, .badge-error::before, .badge-rejected::before, .badge-suspended::before, .badge-down::before, .badge-offline::before, .badge-failed::before, .badge-dead::before, .badge-critical::before { content: "\2715"; }
 .badge::before { font-weight: 800; line-height: 1; }
@@ -809,3 +809,14 @@ figure.screenshot { margin: 0 0 var(--space-3); }
 figure.screenshot img { width: 100%; height: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #000; }
 pre.logs { max-height: 22rem; overflow: auto; font-size: .78rem; background: var(--bg-elev2); padding: var(--space-3);
   border-radius: var(--radius-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* announcements -------------------------------------------------------------- */
+.chip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.level-chip { display: inline-flex; align-items: center; gap: .35rem; font-weight: 600; white-space: nowrap; }
+.compose-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); align-items: start; }
+.compose-grid > .alert, .compose-grid > .form-actions { grid-column: 1 / -1; }
+.compose-grid fieldset.vars { border: 1px dashed var(--border-strong); border-radius: var(--radius, .5rem); padding: .5rem 1rem; margin-top: 1rem; }
+.announcement-preview { color: #fff; border-radius: .6rem; padding: 1rem 1.25rem; margin-bottom: 1rem; background: var(--primary); }
+.announcement-preview .ann-level-name { margin: 0; font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.announcement-preview .ann-title { font-size: 1.5rem; font-weight: 800; margin: .25rem 0 .5rem; }
+.feed-item h2 { margin: .25rem 0 .5rem; }

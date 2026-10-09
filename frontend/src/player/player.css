@@ -61,3 +61,26 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
 .evac-capture-dot { position: fixed; left: 0; top: 0; width: 1px; height: 1px; opacity: .01; pointer-events: none;
                     background: #000; z-index: 100; }
 .evac-capture-dot.on { background: #fff; }
+/* announcement overlays (banner, ticker, card) */
+.ann-layer { position: absolute; inset: var(--evac-overscan, 0); z-index: 15; pointer-events: none; font-family: var(--evac-font-body, system-ui, sans-serif); }
+.ann-banner, .ann-ticker { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 2.5vmin;
+  min-height: 9vmin; padding: 1.5vmin 3vmin; background: var(--ann-bg); color: var(--ann-fg); font-size: clamp(1rem, 4.2vmin, 4rem);
+  font-weight: 600; box-shadow: 0 -1vmin 3vmin rgba(0,0,0,.35); animation: ann-in .5s ease-out; }
+.ann-layer.has-bottom .ann-banner { bottom: 9vmin; }
+.ann-level { flex: none; text-transform: uppercase; letter-spacing: .12em; font-size: .62em; font-weight: 800; padding: .25em .7em;
+  border: .12em solid currentColor; border-radius: 99em; }
+.ann-banner .ann-text { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+.ann-ticker { overflow: hidden; white-space: nowrap; }
+.ann-ticker .ann-level { position: relative; z-index: 1; background: var(--ann-bg); }
+.ann-track { display: flex; gap: 6vmin; animation: ann-scroll var(--ann-duration, 20s) linear infinite; }
+.ann-track span { flex: none; }
+.ann-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(80%, 150vmin); max-height: 80%; overflow: hidden;
+  padding: 4vmin 5vmin; border-radius: 3vmin; background: var(--ann-bg); color: var(--ann-fg); box-shadow: 0 2vmin 8vmin rgba(0,0,0,.55);
+  animation: ann-pop .45s ease-out; }
+.ann-card .ann-level { display: inline-block; font-size: clamp(.8rem, 2.6vmin, 2.4rem); }
+.ann-card .ann-title { margin: 2vmin 0 1.5vmin; font-size: clamp(2rem, 8vmin, 8rem); line-height: 1.1; }
+.ann-card .ann-text { margin: 0; font-size: clamp(1.2rem, 4.2vmin, 4rem); line-height: 1.35; }
+@keyframes ann-scroll { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 3vmin)); } }
+@keyframes ann-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes ann-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%); } }
+@media (prefers-reduced-motion: reduce) { .ann-banner, .ann-card { animation: none; } .ann-track { animation-duration: calc(var(--ann-duration, 20s) * 2); } }
