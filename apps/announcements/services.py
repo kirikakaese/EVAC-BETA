@@ -510,6 +510,7 @@ def publish(ann: Announcement, *, occurrence: dt.datetime) -> list[Delivery]:
         log(action="announcement.published", actor=ann.decided_by, target=ann, event=ann.event,
             message=f"Announcement {ann.title} published",
             changes={"level": ann.level.key, "channels": ann.channels, "target": ann.target_label()})
+    _publish_live(ann, occurrence)
     deliveries = []
     for channel_key in ann.channels:
         d, created = Delivery.objects.get_or_create(announcement=ann, channel=channel_key, occurrence=occurrence)
@@ -518,6 +519,16 @@ def publish(ann: Announcement, *, occurrence: dt.datetime) -> list[Delivery]:
                            key=f"announcement:{d.pk}")
         deliveries.append(d)
     return deliveries
+
+
+def _publish_live(ann: Announcement, occurrence: dt.datetime) -> None:
+    """Tell open staff pages (realtime stream); urgent and emergency levels raise the full-screen alert there."""
+    from apps.core import realtime
+
+    data = {"id": str(ann.pk), "title": ann.title, "text": ann.text, "level": ann.level.key,
+            "alert": ann.level.emergency or ann.level.rank >= 30, "url": _url(ann),
+            "occurrence": occurrence.isoformat()}
+    transaction.on_commit(lambda: realtime.publish(ann.event, "announcement.live", data))
 
 
 def deliver(job) -> None:

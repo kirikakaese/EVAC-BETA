@@ -8,6 +8,9 @@
   {% if current_event %}<style nonce="{{ csp_nonce }}">:root{--primary:{{ current_event.primary_color }};--accent:{{ current_event.accent_color }};}</style>{% endif %}
   <meta name="color-scheme" content="dark light">
   <link rel="icon" type="image/svg+xml" href="{% static 'icons/favicon.svg' %}?v={{ ASSET_VERSION }}">
+  <link rel="manifest" href="{% url 'portal:manifest' %}">
+  <link rel="apple-touch-icon" href="{% static 'icons/evac-192.png' %}">
+  <meta name="theme-color" content="#15803d">
   <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false}'>
   <script src="{% static 'vendor/htmx.min.js' %}?v={{ ASSET_VERSION }}" defer></script>
   {% block head %}{% endblock %}

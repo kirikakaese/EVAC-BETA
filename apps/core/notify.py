@@ -8,6 +8,12 @@ from .models import Notification
 def notify(users, title: str, *, body: str = "", url: str = "", level: str = "info", event=None) -> int:
     rows = [Notification(user=u, title=title[:200], body=body, url=url, level=level, event=event) for u in users]
     Notification.objects.bulk_create(rows)
+    if rows:
+        from django.db import transaction
+
+        from .webpush import fan_out
+
+        transaction.on_commit(lambda: fan_out(rows))  # Web Push to the users' subscribed browsers (staff PWA)
     return len(rows)
 
 

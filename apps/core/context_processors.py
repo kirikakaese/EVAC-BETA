@@ -13,7 +13,7 @@ from . import modules
 from .notify import unread_count
 from .registry import registry
 
-VERSIONED_ASSETS = ("css/evac.css", "js/evac.js", "js/webauthn.js", "vendor/htmx.min.js")
+VERSIONED_ASSETS = ("css/evac.css", "js/evac.js", "js/webauthn.js", "vendor/htmx.min.js", "js/staff-sw.js")
 
 
 @lru_cache(maxsize=1)

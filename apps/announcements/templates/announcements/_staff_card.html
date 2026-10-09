@@ -1,0 +1,15 @@
+{% load i18n %}<section class="card staff-announcements"><h2>{% trans "Announcements" %}</h2>
+{% if ctx.live %}<h3>{% trans "On air" %}</h3><ul class="plain">{% for a in ctx.live %}<li>{% include "announcements/_level.html" with level=a.level %} <a href="{% url 'announcements:detail' event.slug a.pk %}">{{ a.title }}</a></li>{% endfor %}</ul>{% endif %}
+{% if ctx.pending %}<h3>{% trans "Waiting for your approval" %} <span class="badge badge-pending">{{ ctx.pending|length }}</span></h3>
+<ul class="plain">{% for a in ctx.pending %}<li class="staff-approval">
+  <p>{% include "announcements/_level.html" with level=a.level %} <a href="{% url 'announcements:detail' event.slug a.pk %}"><strong>{{ a.title }}</strong></a> <span class="small muted">{% blocktrans with u=a.created_by %}by {{ u }}{% endblocktrans %} · {{ a.target_label }}</span></p>
+  {% if a.body %}<p class="small">{{ a.body|truncatechars:200 }}</p>{% endif %}
+  <div class="staff-actions">
+    <form method="post" action="{% url 'announcements:approve' event.slug a.pk %}" data-offline data-offline-label="{% blocktrans with t=a.title %}Approve “{{ t }}”{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-primary">{% blocktrans with t=a.title|truncatechars:30 %}Approve “{{ t }}”{% endblocktrans %}</button></form>
+    <form method="post" action="{% url 'announcements:reject' event.slug a.pk %}" data-offline data-offline-label="{% blocktrans with t=a.title %}Reject “{{ t }}”{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-danger">{% trans "Reject" %}</button></form>
+  </div></li>{% endfor %}</ul>{% endif %}
+{% if ctx.mine_pending %}<p class="small muted">{% blocktrans count n=ctx.mine_pending %}{{ n }} of your announcements waits for approval.{% plural %}{{ n }} of your announcements wait for approval.{% endblocktrans %}</p>{% endif %}
+{% if not ctx.live and not ctx.pending %}<p class="muted">{% trans "Nothing on air, nothing to approve." %}</p>{% endif %}
+{% if ctx.can_compose %}<h3>{% trans "Send" %}</h3><ul class="chip-list">{% for t in ctx.templates %}<li><a class="btn btn-sm" href="{% url 'announcements:new' event.slug %}?template={{ t.pk }}">{% if t.level %}<span class="swatch" data-color="{{ t.level.colour }}" aria-hidden="true"></span> {% endif %}{{ t.name }}</a></li>{% endfor %}
+<li><a class="btn btn-sm btn-primary" href="{% url 'announcements:new' event.slug %}">{% trans "New announcement" %}</a></li></ul>{% endif %}
+</section>

@@ -3,11 +3,16 @@ from django.urls import path
 
 from apps.accounts import views as account_views
 
-from . import admin_views, docs, views
+from . import admin_views, docs, staff, views
 
 app_name = "portal"
 urlpatterns = [
     path("", views.home, name="home"),
+    path("manifest.webmanifest", staff.manifest, name="manifest"),
+    path("sw.js", staff.service_worker, name="service_worker"),
+    path("offline/", staff.offline, name="offline"),
+    path("staff/", staff.staff_start, name="staff_start"),
+    path("e/<slug:slug>/staff/", staff.staff, name="staff"),
     path("setup/", views.setup, name="setup"),
     path("about/", views.about, name="about"),
     path("search/", views.search, name="search"),

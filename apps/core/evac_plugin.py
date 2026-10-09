@@ -9,6 +9,9 @@ manifest = PluginManifest(key="core", name="EVAC core", version="0.1.0", kind="c
 
 
 def register(r: Registry) -> None:
+    from . import webpush
+
+    r.outbox_handler(webpush.JOB_KIND, webpush.handle_job)
     r.module(ModuleSpec(key="core", name=str(_("Core")), required=True, order=0,
                         description=str(_("Accounts, events, roles, audit log, settings and the plugin framework."))))
     r.permissions_([

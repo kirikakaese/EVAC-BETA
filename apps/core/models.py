@@ -214,3 +214,33 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class VapidKey(models.Model):
+    """The instance's VAPID key pair for Web Push (one row, created on first use; private key encrypted)."""
+
+    private_key_encrypted = models.TextField()
+    public_key = models.CharField(max_length=100)  # base64url, uncompressed P-256 point (what browsers need)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"VAPID {self.public_key[:12]}…"
+
+
+class PushSubscription(models.Model):
+    """A browser (staff PWA) that receives Web Push notifications for its user."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="push_subscriptions")
+    endpoint = models.URLField(max_length=800, unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=100)
+    user_agent = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    failures = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user} @ {self.endpoint.split('/')[2]}"
