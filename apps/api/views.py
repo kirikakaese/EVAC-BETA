@@ -32,7 +32,7 @@ from apps.venues import access as venue_access
 from apps.venues.models import Building, Floor, Room, Venue, Zone
 
 from . import serializers as s
-from .permissions import EventPermission, IsSuperuser
+from .permissions import EventPermission, HasScope, IsSuperuser
 
 
 @extend_schema(responses={200: dict}, auth=[])
@@ -187,7 +187,7 @@ class EventViewSet(viewsets.ModelViewSet):
 class RoleViewSet(EventScopedMixin, viewsets.ModelViewSet):
     serializer_class = s.RoleSerializer
     scope_module = "events"
-    permission_classes = [IsAuthenticated, EventPermission]
+    permission_classes = [IsAuthenticated, HasScope, EventPermission]
     event_permissions = {"GET": "events.members", "default": "events.roles"}
     lookup_field = "key"
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
@@ -220,7 +220,7 @@ class MemberViewSet(EventScopedMixin, mixins.ListModelMixin, mixins.RetrieveMode
                     viewsets.GenericViewSet):
     serializer_class = s.MembershipSerializer
     scope_module = "events"
-    permission_classes = [IsAuthenticated, EventPermission]
+    permission_classes = [IsAuthenticated, HasScope, EventPermission]
     event_permissions = {"default": "events.members"}
 
     def get_queryset(self):
@@ -263,7 +263,7 @@ class MemberViewSet(EventScopedMixin, mixins.ListModelMixin, mixins.RetrieveMode
 @extend_schema(parameters=[OpenApiParameter("id", str, OpenApiParameter.PATH, description="Module key")])
 class ModuleViewSet(EventScopedMixin, viewsets.ViewSet):
     scope_module = "events"
-    permission_classes = [IsAuthenticated, EventPermission]
+    permission_classes = [IsAuthenticated, HasScope, EventPermission]
     event_permissions = {"GET": "events.view", "default": "modules.manage"}
     serializer_class = s.ModuleStateSerializer
 
@@ -292,7 +292,7 @@ class ModuleViewSet(EventScopedMixin, viewsets.ViewSet):
 class AuditViewSet(EventScopedMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = s.AuditSerializer
     scope_module = "audit"
-    permission_classes = [IsAuthenticated, EventPermission]
+    permission_classes = [IsAuthenticated, HasScope, EventPermission]
     event_permissions = {"default": "audit.view"}
     filterset_fields = ["action", "drill", "target_type", "target_id"]
     search_fields = ["message", "actor_repr", "target_repr"]

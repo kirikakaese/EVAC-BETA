@@ -54,6 +54,18 @@ def test_scopes(member, event):
 
 
 @pytest.mark.django_db
+def test_scopes_apply_to_event_subresources(admin, event):
+    """Regression: the nested event viewsets (roles, members, modules, audit) honour token scopes too."""
+    ro = bearer(admin, ["events:read"], two_factor=True)
+    assert ro.get("/api/v1/events/demo/roles/").status_code == 200
+    assert ro.post("/api/v1/events/demo/roles/", {"key": "x", "name": "X", "permissions": ["*"]},
+                   format="json").status_code == 403
+    assert ro.patch("/api/v1/events/demo/modules/venues/", {"event": False}, format="json").status_code == 403
+    assert ro.get("/api/v1/events/demo/audit/").status_code == 403
+    assert bearer(admin, ["audit:read"], two_factor=True).get("/api/v1/events/demo/audit/").status_code == 200
+
+
+@pytest.mark.django_db
 def test_events_visibility_and_update(member, orga, other, event):
     assert [e["slug"] for e in bearer(member).get("/api/v1/events/").json()["results"]] == ["demo"]
     assert bearer(other).get("/api/v1/events/").json()["results"] == []
