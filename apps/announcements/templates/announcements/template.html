@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if tpl.name %}{{ tpl.name }}{% else %}{% trans "New template" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if tpl.name %}{% blocktrans with n=tpl.name %}Template “{{ n }}”{% endblocktrans %}{% else %}{% trans "New template" %}{% endif %}</h1></div>
+{% include "announcements/_tabs.html" with tab="templates" %}
+<form method="post" class="card" novalidate>{% csrf_token %}{% include "portal/_form.html" with form=form %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button>
+{% if is_saved %}<button class="btn btn-danger" name="action" value="delete" data-confirm="{% trans 'Delete this template?' %}">{% trans "Delete" %}</button>{% endif %}
+<a class="btn btn-ghost" href="{% url 'announcements:templates' event.slug %}">{% trans "Back" %}</a></div></form>
+{% endblock %}

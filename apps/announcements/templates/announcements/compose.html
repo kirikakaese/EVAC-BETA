@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if ann.title %}{{ ann.title }}{% else %}{% trans "New announcement" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if ann.title %}{% blocktrans with t=ann.title %}Edit “{{ t }}”{% endblocktrans %}{% else %}{% trans "New announcement" %}{% endif %}</h1></div>
+{% include "announcements/_tabs.html" with tab="index" %}
+<form method="post" novalidate class="compose-grid">{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-error" role="alert">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+<section class="card"><h2>{% trans "Message" %}</h2>
+{% if template %}<p class="small muted">{% blocktrans with n=template.name %}From the template “{{ n }}”.{% endblocktrans %}</p>{% endif %}
+{% include "portal/_form.html" with form=form form_fields=form.main_fields bare=True %}
+{% if form.variable_fields %}<fieldset class="vars"><legend>{% trans "Fill in" %}</legend>
+{% include "portal/_form.html" with form=form form_fields=form.variable_fields bare=True %}</fieldset>{% endif %}
+</section>
+<section class="card"><h2>{% trans "Where" %}</h2>
+{% include "portal/_form.html" with form=form form_fields=form.target_fields bare=True %}
+{% include "portal/_field.html" with field=form.channels %}</section>
+<section class="card"><h2>{% trans "When" %}</h2>
+{% include "portal/_form.html" with form=form form_fields=form.timing_fields bare=True %}</section>
+<section class="card"><h2>{% trans "Levels" %}</h2>
+<ul class="plain small">{% for lv in levels %}<li>{% include "announcements/_level.html" with level=lv %} — {{ lv.get_display_display }}{% if lv.sound != "none" %}, {{ lv.get_sound_display|lower }}{% endif %}{% if lv.repeat_every_minutes %}, {% blocktrans with m=lv.repeat_every_minutes %}every {{ m }} min{% endblocktrans %}{% endif %}{% if lv.emergency %} <span class="badge badge-err">{% trans "no approval, two-factor" %}</span>{% elif lv.requires_approval %} <span class="badge badge-pending">{% trans "needs approval" %}</span>{% endif %}</li>{% endfor %}</ul></section>
+<div class="form-actions"><button class="btn btn-primary" name="action" value="send">{% trans "Send" %}</button>
+<button class="btn" name="action" value="draft">{% trans "Save draft" %}</button>
+<a class="btn btn-ghost" href="{% if ann.title %}{% url 'announcements:detail' event.slug ann.pk %}{% else %}{% url 'announcements:index' event.slug %}{% endif %}">{% trans "Back" %}</a></div>
+</form>
+{% endblock %}

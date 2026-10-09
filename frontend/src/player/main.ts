@@ -9,6 +9,7 @@ import { Connection, type Message, type Transport } from "./connection";
 import { Display } from "./display";
 import { cachedBundle, clearBundle, defaultLayout, fetchBundle, prefetch, type Bundle } from "./content";
 import { cachedProgram, clearProgram, fetchProgram } from "./program";
+import { nextOverlayChange, OverlayLayer } from "./overlays";
 import { nextChange, slideAt, type Program, type Slide } from "../program/engine";
 import { pageNonce } from "../renderer/code";
 import type { LayoutData } from "../renderer/types";
@@ -36,6 +37,7 @@ const TICK_MS = 15_000;
 export class Player {
   readonly clock = new Clock();
   private display: Display;
+  private overlays = new OverlayLayer();
   private conn: Connection | null = null;
   private config: ScreenConfig | null = null;
   private transport: Transport = "connecting";
@@ -282,8 +284,9 @@ export class Player {
           this.slide = `${layout.key} v${layout.version} (${slide.entry} ${slide.index + 1}/${slide.count})`;
         }
       }
-      const next = nextChange(this.program, now, slide);
-      const wait = Math.max(5, Math.min(MAX_WAIT_MS, (next ?? now + MAX_WAIT_MS) - now));
+      const next = [nextChange(this.program, now, slide), nextOverlayChange(this.program.overlays, now)]
+        .filter((n): n is number => n !== null);
+      const wait = Math.max(5, Math.min(MAX_WAIT_MS, (next.length ? Math.min(...next) : now + MAX_WAIT_MS) - now));
       this.timer = setTimeout(() => this.show(), wait);
     } else {
       const layout = defaultLayout(this.bundle);
@@ -294,12 +297,15 @@ export class Player {
         this.slide = `${layout.key} v${layout.version}`;
       }
     }
+    const audio = { enabled: cfg.display?.audio !== false, volume: cfg.display?.volume ?? 100 };
+    // a full-screen announcement (or, later, an evacuation) hides the overlays
+    const takeover = !!slide && (slide.entry.startsWith("announcement:") || slide.entry.startsWith("evacuation"));
+    this.overlays.update(this.program?.overlays, now, { hidden: takeover, audio });
     if (key === this.shown) return;
     if (this.reloadAtNextSlide && this.shown && safeReload(this.reloadAtNextSlide)) return;
     this.reloadAtNextSlide = "";
     this.shown = key;
     log("info", `showing ${this.slide}`);
-    const audio = { enabled: cfg.display?.audio !== false, volume: cfg.display?.volume ?? 100 };
     try {
       if (!data || !this.bundle) throw new Error("nothing to show");
       this.display.layout(data, {
@@ -314,6 +320,7 @@ export class Player {
       this.slide = "idle";
       this.display.idle(cfg);
     }
+    this.overlays.attach(this.root);
   }
 
   /** Rotation, overscan, scale, keystone and the dim/sleep overlay from the display settings. */

@@ -168,18 +168,18 @@ declared data kinds, `content.code` permission, audit with hashes).
 
 ---
 
-## Phase 2 — Announcements ⬜
+## Phase 2 — Announcements 🚧
 
 **Gate:** one announcement reaches screens + 3 channels with a delivery report; approval flow tested.
 
 | ID | Ticket | Acceptance criteria |
 |---|---|---|
-| 2.1 | Priority levels (configurable) [§6] | display style, sound, min display time, repetition, default channels |
-| 2.2 | Templates with variables + optional layout | English built-ins |
-| 2.3 | Scheduling incl. relative to program items | |
-| 2.4 | Targeting (venues, zones, rooms, groups, screens, audiences) | scoped permissions respected |
-| 2.5 | Approval workflow | draft → approve/edit/reject; emergency bypass for permitted roles |
-| 2.6 | `apps/notify` channel adapters | screens, public feed, Web Push (VAPID), ntfy, e-mail, Matrix, Telegram, Mastodon, webhook; per-channel text; outbox delivery report |
+| 2.1 | ✅ Priority levels (configurable) [§6] | display style, sound, min display time, repetition, default channels |
+| 2.2 | ✅ Templates with variables + optional layout | English built-ins |
+| 2.3 | Scheduling incl. relative to program items | start/end, daily/weekly ✅; relative to program items open |
+| 2.4 | Targeting (venues, zones, rooms, groups, screens, audiences) | scoped permissions respected; places ✅, audiences open |
+| 2.5 | ✅ Approval workflow | draft → approve/edit/reject; emergency bypass for permitted roles |
+| 2.6 | `apps/notify` channel adapters | screens, public feed, Web Push (VAPID), ntfy, e-mail, Matrix, Telegram, Mastodon, webhook; per-channel text; outbox delivery report — screens, feed, staff, webhook and the delivery report ✅ (part 1) |
 | 2.7 | Offline TTS (Piper, optional download) | pre-render + cache |
 | 2.8 | Staff PWA basics | installable, alarm reception, announcements send/approve, offline queue |
 | 2.9 | Custom widget builder (no-code) | HTTP JSON, RSS, iCal, MQTT, CSV sources; JSONPath mapping; visuals |

@@ -277,6 +277,465 @@ paths:
               schema:
                 $ref: '#/components/schemas/Event'
           description: ''
+  /api/v1/events/{event_slug}/announcement-levels/:
+    get:
+      operationId: events_announcement_levels_list
+      description: Priority levels of the event (edited in the portal).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLevelList'
+          description: ''
+  /api/v1/events/{event_slug}/announcement-levels/{id}/:
+    get:
+      operationId: events_announcement_levels_retrieve
+      description: Priority levels of the event (edited in the portal).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this level.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Level'
+          description: ''
+  /api/v1/events/{event_slug}/announcement-templates/:
+    get:
+      operationId: events_announcement_templates_list
+      description: Announcement templates; ``variables`` lists the names a template
+        asks for.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTemplateList'
+          description: ''
+  /api/v1/events/{event_slug}/announcement-templates/{id}/:
+    get:
+      operationId: events_announcement_templates_retrieve
+      description: Announcement templates; ``variables`` lists the names a template
+        asks for.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this template.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+          description: ''
+  /api/v1/events/{event_slug}/announcements/:
+    get:
+      operationId: events_announcements_list
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - draft
+          - ended
+          - live
+          - pending
+          - rejected
+          - scheduled
+        description: |-
+          * `draft` - Draft
+          * `pending` - Waiting for approval
+          * `scheduled` - Scheduled
+          * `live` - Published
+          * `rejected` - Rejected
+          * `cancelled` - Cancelled
+          * `ended` - Ended
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAnnouncementList'
+          description: ''
+    post:
+      operationId: events_announcements_create
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/events/{event_slug}/announcements/{id}/:
+    get:
+      operationId: events_announcements_retrieve
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this announcement.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+    patch:
+      operationId: events_announcements_partial_update
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this announcement.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnouncementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnouncementRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/events/{event_slug}/announcements/{id}/approve/:
+    post:
+      operationId: events_announcements_approve_create
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this announcement.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/events/{event_slug}/announcements/{id}/cancel/:
+    post:
+      operationId: events_announcements_cancel_create
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this announcement.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/events/{event_slug}/announcements/{id}/reject/:
+    post:
+      operationId: events_announcements_reject_create
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this announcement.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/events/{event_slug}/announcements/{id}/submit/:
+    post:
+      operationId: events_announcements_submit_create
+      description: |-
+        Announcements. Create writes a draft (``send: true`` submits it at once); with a ``template`` its texts
+        are filled from ``variables``. ``POST …/submit/``, ``…/approve/``, ``…/reject/``, ``…/cancel/``.
+        ``deliveries`` is the delivery report (one row per channel and occurrence).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this announcement.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
   /api/v1/events/{event_slug}/assets/:
     get:
       operationId: events_assets_list
@@ -3400,6 +3859,208 @@ paths:
           description: No response body
 components:
   schemas:
+    Announcement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        level:
+          type: string
+        template:
+          type: string
+          format: uuid
+          nullable: true
+        variables: {}
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+          title: Text
+        short:
+          type: string
+          title: Short text (SMS, ticker)
+          description: 'Empty: the title.'
+          maxLength: 160
+        all_screens:
+          type: boolean
+          title: Everywhere
+        venues:
+          type: array
+          items:
+            type: string
+            format: uuid
+        zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        rooms:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screen_groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        channels: {}
+        starts_at:
+          type: string
+          format: date-time
+          title: Send at
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Show until
+          description: 'Empty: the level''s display time (or until cancelled when
+            it repeats).'
+        recurrence:
+          title: Repeat
+          oneOf:
+          - $ref: '#/components/schemas/RecurrenceEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        recurrence_until:
+          type: string
+          format: date
+          nullable: true
+          title: Repeat until
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AnnouncementStatusEnum'
+          readOnly: true
+        decision_note:
+          type: string
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        deliveries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Delivery'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - decision_note
+      - deliveries
+      - id
+      - level
+      - published_at
+      - status
+    AnnouncementRequest:
+      type: object
+      properties:
+        level:
+          type: string
+          minLength: 1
+        template:
+          type: string
+          format: uuid
+          nullable: true
+        variables: {}
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          title: Text
+        short:
+          type: string
+          title: Short text (SMS, ticker)
+          description: 'Empty: the title.'
+          maxLength: 160
+        all_screens:
+          type: boolean
+          title: Everywhere
+        venues:
+          type: array
+          items:
+            type: string
+            format: uuid
+        zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        rooms:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screen_groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        channels: {}
+        starts_at:
+          type: string
+          format: date-time
+          title: Send at
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Show until
+          description: 'Empty: the level''s display time (or until cancelled when
+            it repeats).'
+        recurrence:
+          title: Repeat
+          oneOf:
+          - $ref: '#/components/schemas/RecurrenceEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        recurrence_until:
+          type: string
+          format: date
+          nullable: true
+          title: Repeat until
+        send:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: Submit at once (published or into the approval queue).
+      required:
+      - level
+    AnnouncementStatusEnum:
+      enum:
+      - draft
+      - pending
+      - scheduled
+      - live
+      - rejected
+      - cancelled
+      - ended
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `pending` - Waiting for approval
+        * `scheduled` - Scheduled
+        * `live` - Published
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
+        * `ended` - Ended
     Asset:
       type: object
       properties:
@@ -3449,7 +4110,7 @@ components:
           nullable: true
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+          - $ref: '#/components/schemas/AssetStatusEnum'
           readOnly: true
         note:
           type: string
@@ -3515,6 +4176,16 @@ components:
           type: string
           format: binary
           writeOnly: true
+    AssetStatusEnum:
+      enum:
+      - processing
+      - ready
+      - failed
+      type: string
+      description: |-
+        * `processing` - processing
+        * `ready` - ready
+        * `failed` - failed
     AssignRoleRequest:
       type: object
       properties:
@@ -3609,6 +4280,9 @@ components:
       - hash
       - id
       - prev_hash
+    BlankEnum:
+      enum:
+      - ''
     Building:
       type: object
       properties:
@@ -3685,6 +4359,71 @@ components:
           default: false
       required:
       - name
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        channel:
+          type: string
+          readOnly: true
+        occurrence:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/DeliveryStatusEnum'
+          readOnly: true
+        recipients:
+          type: integer
+          readOnly: true
+        detail:
+          type: string
+          readOnly: true
+        attempts:
+          type: integer
+          readOnly: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - attempts
+      - channel
+      - detail
+      - id
+      - occurrence
+      - recipients
+      - sent_at
+      - status
+    DeliveryStatusEnum:
+      enum:
+      - pending
+      - sent
+      - failed
+      - skipped
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `sent` - Delivered
+        * `failed` - Failed
+        * `skipped` - Skipped
+    DisplayEnum:
+      enum:
+      - banner
+      - ticker
+      - card
+      - takeover
+      type: string
+      description: |-
+        * `banner` - Banner along the bottom
+        * `ticker` - Scrolling ticker
+        * `card` - Card over the content
+        * `takeover` - Full screen
     Event:
       type: object
       properties:
@@ -4141,6 +4880,70 @@ components:
         data: {}
       required:
       - name
+    Level:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        key:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          readOnly: true
+        rank:
+          type: integer
+          readOnly: true
+          description: Higher ranks win when several announcements show.
+        colour:
+          type: string
+          readOnly: true
+        display:
+          allOf:
+          - $ref: '#/components/schemas/DisplayEnum'
+          readOnly: true
+          title: On screens
+        sound:
+          allOf:
+          - $ref: '#/components/schemas/SoundEnum'
+          readOnly: true
+        min_display_seconds:
+          type: integer
+          readOnly: true
+          title: Show for at least (seconds)
+        repeat_every_minutes:
+          type: integer
+          readOnly: true
+          title: Repeat every (minutes)
+          description: '0: show once. Otherwise again until it ends.'
+        default_channels:
+          readOnly: true
+        requires_approval:
+          type: boolean
+          readOnly: true
+          title: Always needs approval
+        emergency:
+          type: boolean
+          readOnly: true
+          title: Emergency level
+          description: Needs the emergency permission (two-factor session), skips
+            approval and takes over screens above live overrides.
+      required:
+      - colour
+      - default_channels
+      - display
+      - emergency
+      - id
+      - key
+      - min_display_seconds
+      - name
+      - rank
+      - repeat_every_minutes
+      - requires_approval
+      - sound
     LevelEnum:
       enum:
       - urgent
@@ -4355,6 +5158,29 @@ components:
           description: 'Empty: until cancelled.'
       required:
       - title
+    PaginatedAnnouncementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Announcement'
     PaginatedAssetList:
       type: object
       required:
@@ -4516,6 +5342,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Layout'
+    PaginatedLevelList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Level'
     PaginatedMembershipList:
       type: object
       required:
@@ -4723,6 +5572,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Screen'
+    PaginatedTemplateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
     PaginatedThemeList:
       type: object
       required:
@@ -4837,6 +5709,84 @@ components:
             maxLength: 40
       required:
       - code
+    PatchedAnnouncementRequest:
+      type: object
+      properties:
+        level:
+          type: string
+          minLength: 1
+        template:
+          type: string
+          format: uuid
+          nullable: true
+        variables: {}
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          title: Text
+        short:
+          type: string
+          title: Short text (SMS, ticker)
+          description: 'Empty: the title.'
+          maxLength: 160
+        all_screens:
+          type: boolean
+          title: Everywhere
+        venues:
+          type: array
+          items:
+            type: string
+            format: uuid
+        zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+        rooms:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screen_groups:
+          type: array
+          items:
+            type: string
+            format: uuid
+        screens:
+          type: array
+          items:
+            type: string
+            format: uuid
+        channels: {}
+        starts_at:
+          type: string
+          format: date-time
+          title: Send at
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Show until
+          description: 'Empty: the level''s display time (or until cancelled when
+            it repeats).'
+        recurrence:
+          title: Repeat
+          oneOf:
+          - $ref: '#/components/schemas/RecurrenceEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        recurrence_until:
+          type: string
+          format: date
+          nullable: true
+          title: Repeat until
+        send:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: Submit at once (published or into the approval queue).
     PatchedAssetRequest:
       type: object
       properties:
@@ -5340,6 +6290,15 @@ components:
           type: string
           format: date-time
           description: Schedule instead of publishing now.
+    RecurrenceEnum:
+      enum:
+      - daily
+      - weekly
+      type: string
+      description: |-
+        * `` - Once
+        * `daily` - Every day
+        * `weekly` - Every week
     Role:
       type: object
       properties:
@@ -5793,6 +6752,18 @@ components:
             format: uuid
       required:
       - name
+    SoundEnum:
+      enum:
+      - none
+      - chime
+      - gong
+      - alert
+      type: string
+      description: |-
+        * `none` - No sound
+        * `chime` - Chime
+        * `gong` - Gong
+        * `alert` - Alert tone
     StateEnum:
       enum:
       - draft
@@ -5807,16 +6778,6 @@ components:
         * `live` - Live
         * `teardown` - Teardown
         * `archived` - Archived
-    StatusEnum:
-      enum:
-      - processing
-      - ready
-      - failed
-      type: string
-      description: |-
-        * `processing` - processing
-        * `ready` - ready
-        * `failed` - failed
     StyleEnum:
       enum:
       - normal
@@ -5825,6 +6786,43 @@ components:
       description: |-
         * `normal` - normal
         * `italic` - italic
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        level:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+          title: Text
+        short:
+          type: string
+          readOnly: true
+          title: Short text (SMS, ticker)
+        variables:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - body
+      - id
+      - level
+      - name
+      - short
+      - title
+      - variables
     Theme:
       type: object
       properties:

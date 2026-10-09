@@ -23,16 +23,22 @@ export E2E_CHROMIUM="${E2E_CHROMIUM:-}"
 cd "$ROOT"
 "$E2E_PYTHON" manage.py migrate -v0
 "$E2E_PYTHON" manage.py evac_seed_demo >/dev/null
-"$E2E_PYTHON" manage.py runserver "127.0.0.1:$PORT" --noreload >"$WORK/server.log" 2>&1 &
-export E2E_SERVER_PID=$!
+start_server() {
+  "$E2E_PYTHON" manage.py runserver "127.0.0.1:$PORT" --noreload >>"$WORK/server.log" 2>&1 &
+  E2E_SERVER_PID=$!
+  export E2E_SERVER_PID
+  i=0
+  until curl -fs -o /dev/null "http://127.0.0.1:$PORT/healthz"; do
+    i=$((i + 1)); [ "$i" -gt 60 ] && { cat "$WORK/server.log"; exit 1; }; sleep 1
+  done
+}
+E2E_SERVER_PID=""
 trap 'kill "$E2E_SERVER_PID" 2>/dev/null || true; rm -rf "$WORK"' EXIT
-i=0
-until curl -fs -o /dev/null "http://127.0.0.1:$PORT/healthz"; do
-  i=$((i + 1)); [ "$i" -gt 60 ] && { cat "$WORK/server.log"; exit 1; }; sleep 1
-done
 status=0
 for test in frontend/e2e/*.mjs; do
   echo "== $test"
+  # every test gets a running server (phase 1 stops it to test offline playback); the database is shared
+  curl -fs -o /dev/null "http://127.0.0.1:$PORT/healthz" || start_server
   (cd frontend && node "../$test") || status=1
 done
 exit $status

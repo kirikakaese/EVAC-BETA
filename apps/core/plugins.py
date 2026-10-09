@@ -212,6 +212,10 @@ class EventHook:
 
 OutboxHandler = Callable[[Any], None]
 WebhookSink = Callable[[str, Mapping[str, Any], Any], None]
+#: ``fn(event, target, start, end) -> {"entries": [...], "messages": {...}, "overlays": [...]}``: extra content for
+#: a screen's program (announcements, evacuation). ``target`` describes the screen or screen group asking, times
+#: are aware datetimes; entries use the format of ``apps/playlists/engine.py``.
+ProgramSource = Callable[[Any, Any, Any, Any], Mapping[str, Any]]
 
 
 @dataclass(frozen=True)

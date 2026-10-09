@@ -1,0 +1,5 @@
+{% load i18n %}<nav class="tabs" aria-label="{% trans "Announcements" %}">
+<a href="{% url 'announcements:index' event.slug %}"{% if tab == "index" %} aria-current="page"{% endif %}>{% trans "Announcements" %}</a>
+<a href="{% url 'announcements:templates' event.slug %}"{% if tab == "templates" %} aria-current="page"{% endif %}>{% trans "Templates" %}</a>
+<a href="{% url 'announcements:levels' event.slug %}"{% if tab == "levels" %} aria-current="page"{% endif %}>{% trans "Levels" %}</a>
+</nav>

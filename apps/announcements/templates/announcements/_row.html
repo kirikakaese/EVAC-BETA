@@ -1,0 +1,5 @@
+{% load i18n %}<tr><td><a href="{% url 'announcements:detail' event.slug a.pk %}"><strong>{{ a.title }}</strong></a>{% if a.short %}<br><span class="small muted">{{ a.short|truncatechars:80 }}</span>{% endif %}</td>
+  <td>{% include "announcements/_level.html" with level=a.level %}</td>
+  <td>{% include "announcements/_status.html" %}</td>
+  <td class="small">{% if a.status == "scheduled" %}<time datetime="{{ a.starts_at|date:'c' }}">{{ a.starts_at|date:"D j M H:i" }}</time>{% elif a.published_at %}<time datetime="{{ a.published_at|date:'c' }}">{{ a.published_at|date:"D j M H:i" }}</time>{% else %}{{ a.updated_at|date:"D j M H:i" }}{% endif %}{% if a.recurrence %} · {{ a.get_recurrence_display }}{% endif %}</td>
+  <td class="small">{{ a.created_by|default:"–" }}</td></tr>

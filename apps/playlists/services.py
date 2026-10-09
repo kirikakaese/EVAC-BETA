@@ -15,6 +15,7 @@ from django.utils.translation import gettext as _
 
 from apps.core import modules, webhooks
 from apps.core.audit import log
+from apps.core.registry import registry
 
 from . import engine
 from .models import PRIORITY_DEFAULT, Override, Playlist, PlaylistItem, ScheduleRule
@@ -148,7 +149,8 @@ def message_layout(ov: Override, width: int = 1920, height: int = 1080) -> dict[
 
 
 def _default_entry(event) -> dict[str, Any] | None:
-    pl = Playlist.objects.filter(event=event, is_default=True).first()
+    pl = (Playlist.objects.filter(event=event, is_default=True).first()
+          if modules.is_enabled("playlists", event) else None)
     if pl is not None:
         return {"id": "default", "source": "default", "name": pl.name, "priority": PRIORITY_DEFAULT,
                 "content": {"playlist": str(pl.pk)}, "windows": [[None, None]]}
@@ -195,16 +197,24 @@ def build_program(event, target: Target, *, now: dt.datetime | None = None, days
     default = _default_entry(event)
     if default is not None:
         entries.append(default)
+    overlays: list[dict[str, Any]] = []
+    for source in registry.ensure_loaded().program_sources:  # announcements, evacuation, ...
+        extra = source(event, target, start, end) or {}
+        entries.extend(extra.get("entries", []))
+        messages.update(extra.get("messages", {}))
+        overlays.extend(extra.get("overlays", []))
     roots = {e["content"]["playlist"] for e in entries if "playlist" in e["content"]}
     program = {"entries": entries, "playlists": _collect_playlists(event, roots),
-               "layouts": _published_layouts(event), "messages": messages,
+               "layouts": _published_layouts(event), "messages": messages, "overlays": overlays,
                "horizon": _ms(end), "timezone": event.timezone}
     program["version"] = hashlib.sha256(json.dumps(program, sort_keys=True).encode()).hexdigest()[:16]
     return program
 
 
 def screen_program(screen, now=None) -> dict[str, Any] | None:
-    if not modules.is_enabled("playlists", screen.event):
+    """The screen's program. With the playlists module off it still carries the default layout and what other
+    modules contribute (announcements), so those reach screens too."""
+    if not modules.is_enabled("content", screen.event):
         return None
     return build_program(screen.event, Target(screen=screen), now=now)
 

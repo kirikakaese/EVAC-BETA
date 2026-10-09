@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ ann.title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ ann.title }} {% include "announcements/_status.html" with a=ann %}</h1>
+<div class="actions">{% if can_edit %}<a class="btn" href="{% url 'announcements:edit' event.slug ann.pk %}">{% trans "Edit" %}</a>
+<form method="post" action="{% url 'announcements:submit' event.slug ann.pk %}" class="inline">{% csrf_token %}<button class="btn btn-primary">{% trans "Send" %}</button></form>{% endif %}
+{% if can_cancel %}<form method="post" action="{% url 'announcements:cancel' event.slug ann.pk %}" class="inline">{% csrf_token %}<button class="btn btn-danger" data-confirm="{% trans 'Cancel this announcement everywhere?' %}">{% trans "Cancel announcement" %}</button></form>{% endif %}</div></div>
+{% include "announcements/_tabs.html" with tab="index" %}
+{% if can_approve %}<form method="post" class="card approval" action="{% url 'announcements:approve' event.slug ann.pk %}">{% csrf_token %}
+<h2>{% trans "Decide" %}</h2><p class="small muted">{% blocktrans with u=ann.created_by %}{{ u }} asks to send this announcement.{% endblocktrans %}</p>
+{% include "portal/_form.html" with form=decision_form %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Approve and send" %}</button>
+<button class="btn btn-danger" formaction="{% url 'announcements:reject' event.slug ann.pk %}">{% trans "Reject" %}</button></div></form>{% endif %}
+<div class="grid-2">
+<section class="card"><h2>{% trans "Message" %}</h2>
+<div class="announcement-preview" data-color="{{ ann.level.colour }}" data-contrast><p class="ann-level-name">{{ ann.level.name }}</p>
+<p class="ann-title">{{ ann.title }}</p>{% if ann.body %}<p>{{ ann.body|linebreaksbr }}</p>{% endif %}</div>
+<dl class="kv small"><dt>{% trans "Short text" %}</dt><dd>{{ ann.short_text }}</dd>
+{% if ann.decision_note %}<dt>{% trans "Note" %}</dt><dd>{{ ann.decision_note }}</dd>{% endif %}</dl></section>
+<section class="card"><h2>{% trans "Details" %}</h2><dl class="kv small">
+<dt>{% trans "Where" %}</dt><dd>{{ ann.target_label }}</dd>
+<dt>{% trans "Channels" %}</dt><dd>{{ channel_names|join:", " }}</dd>
+<dt>{% trans "Send at" %}</dt><dd><time datetime="{{ ann.starts_at|date:'c' }}">{{ ann.starts_at|date:"D j M Y H:i" }}</time></dd>
+<dt>{% trans "Until" %}</dt><dd>{% if ann.ends_at %}{{ ann.ends_at|date:"D j M Y H:i" }}{% elif ann.level.repeat_every_minutes %}{% trans "until cancelled" %}{% else %}{% blocktrans with s=ann.level.min_display_seconds %}{{ s }} seconds on screens{% endblocktrans %}{% endif %}</dd>
+{% if ann.recurrence %}<dt>{% trans "Repeats" %}</dt><dd>{{ ann.get_recurrence_display }}{% if ann.recurrence_until %} {% blocktrans with d=ann.recurrence_until|date:"j M Y" %}until {{ d }}{% endblocktrans %}{% endif %}</dd>{% endif %}
+<dt>{% trans "Written by" %}</dt><dd>{{ ann.created_by|default:"–" }}</dd>
+{% if ann.decided_by %}<dt>{% trans "Decided by" %}</dt><dd>{{ ann.decided_by }} · {{ ann.decided_at|date:"D H:i" }}</dd>{% endif %}
+</dl>
+{% if windows %}<h3>{% trans "On screens (next 24 hours)" %}</h3><ul class="plain small">{% for w in windows %}<li>{{ w.0|date:"D H:i:s" }} – {% if w.1 %}{{ w.1|date:"H:i:s" }}{% else %}{% trans "until cancelled" %}{% endif %}</li>{% endfor %}</ul>{% endif %}
+</section></div>
+<section class="card"><h2>{% trans "Delivery report" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Channel" %}</th><th scope="col">{% trans "Occurrence" %}</th><th scope="col">{% trans "State" %}</th><th scope="col">{% trans "Recipients" %}</th><th scope="col">{% trans "Detail" %}</th><th scope="col">{% trans "Attempts" %}</th><th scope="col">{% trans "Sent" %}</th></tr></thead>
+<tbody>{% for d in deliveries %}<tr><td>{{ d.channel_name }}</td><td class="small">{{ d.occurrence|date:"D j M H:i" }}</td><td><span class="badge badge-{{ d.status }}">{{ d.get_status_display }}</span></td><td>{{ d.recipients }}</td><td class="small">{{ d.detail|default:"–" }}</td><td>{{ d.attempts }}</td><td class="small">{{ d.sent_at|date:"H:i:s"|default:"–" }}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "Nothing sent yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if can_edit %}<form method="post" action="{% url 'announcements:delete' event.slug ann.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Delete this draft?' %}">{% trans "Delete draft" %}</button></form>{% endif %}
+{% endblock %}

@@ -6,6 +6,33 @@ released.
 
 ## [Unreleased]
 
+### Added — announcements (Phase 2, part 1)
+
+- Announcements module (ADR-0019): write once, deliver to screens, the public feed, staff notifications and
+  webhooks, with a delivery report per channel and occurrence (sent through the outbox, with retries).
+- Configurable priority levels per event (built in: info ticker, important banner with chime, urgent card with
+  gong repeated every 10 minutes, emergency full screen with alert tone), English templates with `{{variables}}`
+  and an optional full-screen layout, scheduling (start, end, daily/weekly until a day), targeting of venues,
+  zones, rooms, screen groups and screens within the sender's role scopes.
+- Approval workflow: drafts, approval queue, four-eyes approve/reject with a note, cancel; emergency
+  announcements need the new sensitive permission `announcements.emergency` and skip approval. Notifications to
+  approvers and authors; webhook events `announcement.pending`, `announcement.published`, `announcement.cancelled`.
+- Screens: banners, tickers and cards drawn over the running content, full-screen announcements as program
+  entries above live overrides (emergency) or above urgent overrides; sounds synthesised in the player. They are
+  part of the screen's seven-day program, so they appear and disappear on time without network.
+- Public feed page with RSS and JSON Feed (off by default; *Settings → Announcements*).
+- REST API: `/api/v1/events/<slug>/announcements/` (create, edit drafts, `submit`, `approve`, `reject`,
+  `cancel`), `…/announcement-levels/`, `…/announcement-templates/`; token scope `announcements`.
+- Plugin API: `r.program_source(fn)` adds entries, messages and overlays to every screen's program.
+- `make e2e` also runs the phase 2 gate in a browser (`frontend/e2e/phase2.mjs`): a helpdesk announcement goes
+  through approval and reaches a screen (banner) plus feed, staff and webhook channels with a delivery report;
+  an urgent card and an emergency takeover appear and disappear on the screen.
+
+### Changed
+
+- The screen program no longer needs the playlists module: with playlists switched off, screens show the
+  default layout plus announcements; only switching off *Content* empties it.
+
 ### Added — code mode and the phase 1 acceptance run (Phase 1, part 7: phase 1 complete)
 
 - Code elements in layouts (ADR-0018): your own HTML, CSS and JavaScript in a sandboxed frame without network,

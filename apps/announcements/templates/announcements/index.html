@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Announcements" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Announcements" %}</h1>
+  <div class="actions">{% if feed_on %}<a class="btn btn-ghost" href="{% url 'announcements_public:feed' event.slug %}">{% trans "Public feed" %}</a>{% endif %}
+  {% if can_compose %}<a class="btn btn-primary" href="{% url 'announcements:new' event.slug %}">{% trans "New announcement" %}</a>{% endif %}</div></div>
+{% include "announcements/_tabs.html" with tab="index" %}
+{% if can_compose and templates %}<section class="card"><h2>{% trans "Quick start from a template" %}</h2>
+<ul class="chip-list">{% for t in templates %}<li><a class="btn btn-sm" href="{% url 'announcements:new' event.slug %}?template={{ t.pk }}">{% if t.level %}<span class="swatch" data-color="{{ t.level.colour }}" aria-hidden="true"></span> {% endif %}{{ t.name }}</a></li>{% endfor %}</ul></section>{% endif %}
+{% if pending %}<section class="card"><h2>{% trans "Waiting for approval" %} <span class="badge badge-pending">{{ pending|length }}</span></h2>
+{% if not can_approve %}<p class="small muted">{% trans "Someone with the approve permission decides." %}</p>{% endif %}
+{% include "announcements/_table.html" with rows=pending %}</section>{% endif %}
+<section class="card"><h2>{% trans "On air and scheduled" %}</h2>
+{% trans "Nothing announced right now." as empty %}{% include "announcements/_table.html" with rows=active empty=empty %}</section>
+{% if drafts %}<section class="card"><h2>{% trans "Your drafts" %}</h2>{% include "announcements/_table.html" with rows=drafts %}</section>{% endif %}
+<section class="card"><h2>{% trans "History" %}</h2>
+{% trans "None yet." as empty %}{% include "announcements/_table.html" with rows=history empty=empty %}</section>
+{% endblock %}

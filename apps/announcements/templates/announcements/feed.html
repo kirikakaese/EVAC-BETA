@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<link rel="alternate" type="application/rss+xml" title="{{ title }}" href="{% url 'announcements_public:feed_rss' event.slug %}">
+<link rel="alternate" type="application/feed+json" title="{{ title }}" href="{% url 'announcements_public:feed_json' event.slug %}">
+<meta http-equiv="refresh" content="60">{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ title }}</h1>
+<div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'announcements_public:feed_rss' event.slug %}">RSS</a> <a class="btn btn-ghost btn-sm" href="{% url 'announcements_public:feed_json' event.slug %}">JSON</a></div></div>
+{% for a in items %}<article class="card feed-item" id="a-{{ a.pk }}"><p class="small">{% include "announcements/_level.html" with level=a.level %} · <time datetime="{{ a.published_at|date:'c' }}">{{ a.published_at|date:"D j M H:i" }}</time>{% if a.status == "ended" %} · <span class="badge badge-ended">{% trans "ended" %}</span>{% endif %}</p>
+<h2>{{ a.title }}</h2>{% if a.body %}<p>{{ a.body|linebreaksbr }}</p>{% endif %}</article>
+{% empty %}<p class="card muted">{% trans "No announcements right now." %}</p>{% endfor %}
+{% endblock %}
