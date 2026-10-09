@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if rule %}{{ rule.name }}{% else %}{% trans "New schedule" %}{% endif %}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'playlists:index' event.slug %}">{% trans "Playback" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'playlists:schedules' event.slug %}">{% trans "Schedules" %}</a> <span aria-hidden="true">›</span> {% if rule %}{{ rule.name }}{% else %}{% trans "New" %}{% endif %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if rule %}{{ rule.name }}{% else %}{% trans "New schedule" %}{% endif %}</h1></div>
+<form method="post" class="card" novalidate>{% csrf_token %}
+<p class="small muted">{% blocktrans with tz=event.timezone %}Times are in the event time zone ({{ tz }}). A slot whose end is earlier than its start runs past midnight.{% endblocktrans %}</p>
+{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Save schedule" %}</button></form>
+{% if rule %}<form method="post" class="card" data-confirm="{% trans 'Delete this schedule?' %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="btn btn-danger">{% trans "Delete schedule" %}</button></form>{% endif %}
+{% endblock %}

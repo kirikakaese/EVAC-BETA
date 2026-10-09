@@ -43,6 +43,10 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `/events/<slug>/themes/` | themes; `tokens` (only values set here), `resolved`, `version` (send it back on `PATCH` to detect concurrent edits) | `content.view` / `content.edit`, token scope `content` |
 | `/events/<slug>/fonts/` | font families; `POST` multipart `upload` (+ `name`, `category`, `licence`, `subset`) | `content.view` / `content.edit` |
 | `/events/<slug>/layouts/` | layouts (`data` = format v1, see the Designer Guide/ADR-0015); `PATCH` with `data` saves a version (send `version` to detect concurrent edits); `POST …/<id>/publish/` (`at` to schedule) | `content.view` / `content.edit` / `content.publish` |
+| `/events/<slug>/playlists/` | playlists; `items` (ordered, `layout` or nested `child`, `duration`, `weight`, `tags`, `condition`, `valid_from/until`) replaces all items when sent | `playlists.view` / `playlists.edit`, token scope `playlists` |
+| `/events/<slug>/schedules/` | schedule rules: `playlist` or `layout`, `all_screens`/`groups`/`screens`, `weekdays` (0 = Monday), `start_time`/`end_time` (event time zone), `start_date`/`end_date`, `priority` 0–99 | `playlists.view` / `playlists.edit` |
+| `/events/<slug>/overrides/` | live overrides (`?current=1`); `POST` pushes (`title`, `level` `urgent`/`override`/`emergency`, `message` or `layout`/`playlist`, targets, `starts_at`, `expires_at` empty = until cancelled); `POST …/<id>/cancel/` | `playlists.view` / `playlists.override` (scoped), `playlists.emergency` |
+| `GET /events/<slug>/now-playing/` | what every paired screen shows now (source, entry, layout, until) | `playlists.view` |
 | `/events/<slug>/assets/` | asset library (`?kind=image`); `POST` multipart `upload` (+ `name`, `folder`); `urls` per variant | `content.view` / `content.edit` |
 
 ### Screen player API
@@ -59,8 +63,9 @@ Used by `/player/`, authenticated with the per-screen device token (`Authorizati
 | `GET /player/api/poll/?since=` | long-poll fallback |
 | `GET /player/api/content/theme/` | resolved theme: tokens, CSS variables, `@font-face` rules of the fonts it uses |
 | `GET /player/api/content/bundle/` | offline bundle: theme, fonts, published layouts, asset entries with per-screen signed URLs |
+| `GET /player/api/playlists/program/` | the screen's program for 7 days: entries with priority and time windows, playlists, layout durations, message layouts (ADR-0016) |
 | `GET /player/api/content/files/<sha>/<name>` | asset and font files of the screen's event or the shared library |
-| WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages, `revoked` |
+| WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages (`config.changed`, `program.changed`, `identify`, `reload`), `revoked` |
 
 ## Webhooks out
 

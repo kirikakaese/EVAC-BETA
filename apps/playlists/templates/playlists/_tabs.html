@@ -1,0 +1,8 @@
+{% load i18n %}<nav class="tabs" aria-label="{% trans "Playback" %}">
+<a href="{% url 'playlists:index' event.slug %}"{% if tab == "index" %} aria-current="page"{% endif %}>{% trans "On screens now" %}</a>
+<a href="{% url 'playlists:playlists' event.slug %}"{% if tab == "playlists" %} aria-current="page"{% endif %}>{% trans "Playlists" %}</a>
+  {% if schedules_on %}<a href="{% url 'playlists:schedules' event.slug %}"{% if tab == "schedules" %} aria-current="page"{% endif %}>{% trans "Schedules" %}</a>
+<a href="{% url 'playlists:calendar' event.slug %}"{% if tab == "calendar" %} aria-current="page"{% endif %}>{% trans "Calendar" %}</a>{% endif %}
+  {% if overrides_on %}<a href="{% url 'playlists:overrides' event.slug %}"{% if tab == "overrides" %} aria-current="page"{% endif %}>{% trans "Overrides" %}</a>{% endif %}
+<a href="{% url 'playlists:preview' event.slug %}"{% if tab == "preview" %} aria-current="page"{% endif %}>{% trans "Preview" %}</a>
+</nav>

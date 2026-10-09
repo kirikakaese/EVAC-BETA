@@ -103,8 +103,12 @@ usage tracking covers themes until layouts exist) — ADR-0014. Layouts done (AD
 renderer), 1.3.4 (Lit editor: canvas, elements, styling, auto-fit, animations, layers, undo/redo; responsive
 anchors still open), 1.3.5 (versions, diff summary, rollback, draft/published, scheduled publish, optimistic
 locking), 1.3.7 (template variables), 1.4.1 (widget contract as custom elements) and 1.4.2 (basic and time
-widgets; ISO 7010 pictograms move to phase 3, iframe/PDF later), 1.1.4 (offline content bundle). Next:
-playlists, scheduling and overrides (1.5), code mode (1.3.6), remote management and kiosk recipe.
+widgets; ISO 7010 pictograms move to phase 3, iframe/PDF later), 1.1.4 (offline content bundle). Playback
+done (ADR-0016): 1.5.1 (playlists: ordered/shuffled/weighted, durations, tag/condition/time filters,
+nesting), 1.5.2 (schedule rules, week calendar, preview any screen at any time), 1.5.3 (live overrides with
+levels, expiry, active list with cancel; evacuation band reserved), 1.1.5 (synchronised slide changes from the
+shared clock, measured < 10 ms between two screens on one machine). Next: code mode (1.3.6), per-screen
+settings (1.2.2), remote management (1.2.3), resilience (1.1.7), kiosk recipe (1.1.9), wizard step (1.5.4).
 
 ### Epic 1.1 — Player (`player/`, TypeScript, < 300 kB gz) [§5.1]
 | ID | Ticket | Acceptance criteria |

@@ -11,7 +11,8 @@ const BUNDLES = [
     "sw.js": BANNER("player service worker"), "player.css": CSS_BANNER("player") } },
   { dir: "editor", budget: 500, banners: {
     "editor.js": BANNER("layout editor") + "// Includes Lit (BSD-3-Clause, https://lit.dev) and uqr (MIT).\n",
-    "editor.css": CSS_BANNER("layout editor") } },
+    "editor.css": CSS_BANNER("layout editor"), "preview.js": BANNER("slide preview"),
+    "preview.css": CSS_BANNER("slide preview") } },
 ];
 let failed = false;
 for (const b of BUNDLES) {

@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Calendar" %}{% endblock %}
+{% block head %}<style nonce="{{ csp_nonce }}">{% for h, row in hours %}.cal-h{{ h }}{grid-row:{{ row }}/span 4}{% endfor %}{% for b in blocks %}#{{ b.id }}{grid-column:{{ b.col }};grid-row:{{ b.row_from }}/{{ b.row_to }}}{% endfor %}</style>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Calendar" %}</h1></div>
+{% include "playlists/_tabs.html" with tab="calendar" %}
+<form method="get" class="card filters">{% include "portal/_form.html" with form=form %}<button class="btn">{% trans "Show" %}</button>
+  <a class="btn btn-ghost" href="?{% if group %}group={{ group.pk }}&amp;{% endif %}week={{ prev|date:'Y-m-d' }}">{% trans "← Previous week" %}</a>
+  <a class="btn btn-ghost" href="?{% if group %}group={{ group.pk }}&amp;{% endif %}week={{ next|date:'Y-m-d' }}">{% trans "Next week →" %}</a></form>
+<section class="card"><h2>{% if group %}{{ group.name }}{% else %}{% trans "All screens" %}{% endif %} · {% blocktrans with d=monday|date:"j M Y" %}week of {{ d }}{% endblocktrans %}</h2>
+<p class="small muted">{% trans "What wins when, after priorities. Overrides and schedules aimed at single screens show in the preview of that screen." %}</p>
+<div class="cal" role="img" aria-label="{% trans "Week calendar" %}">
+  <div class="cal-corner"><span class="sr-only">{% trans "Time" %}</span></div>
+  {% for d in days %}<div class="cal-day{% if d.today %} cal-today{% endif %}">{{ d.date|date:"D j M" }}{% if d.today %} · {% trans "today" %}{% endif %}</div>{% endfor %}
+  {% for h, row in hours %}<div class="cal-hour cal-h{{ h }}">{{ h|stringformat:"02d" }}:00</div>{% endfor %}
+  {% for b in blocks %}<div class="cal-block cal-c{{ b.colour }} cal-src-{{ b.source }}" id="{{ b.id }}" title="{{ b.name }} · {{ b.from|date:'H:i' }}–{{ b.to|date:'H:i' }}"><strong>{{ b.name }}</strong> <span class="cal-time">{{ b.from|date:"H:i" }}–{{ b.to|date:"H:i" }}</span></div>{% endfor %}
+</div>
+<ul class="cal-legend">{% for l in legend %}<li><span class="cal-swatch cal-c{{ l.colour }}" aria-hidden="true"></span>{{ l.name }} <span class="small muted">({{ l.source }})</span></li>{% empty %}<li class="muted">{% trans "Nothing is shown in this week (no default playlist, no default layout, no schedules)." %}</li>{% endfor %}</ul>
+<details><summary>{% trans "As a list" %}</summary>
+<div class="table-wrap"><table class="small"><thead><tr><th scope="col">{% trans "Day" %}</th><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "To" %}</th><th scope="col">{% trans "Shows" %}</th></tr></thead>
+<tbody>{% for b in blocks %}<tr><td>{{ b.from|date:"D j M" }}</td><td>{{ b.from|date:"H:i" }}</td><td>{{ b.to|date:"H:i" }}</td><td>{{ b.name }}</td></tr>{% endfor %}</tbody></table></div></details>
+</section>
+{% endblock %}

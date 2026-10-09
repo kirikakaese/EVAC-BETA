@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Three bundles with stable names (Django adds ?v=<hash>): TARGET=player | sw | editor.
+// Three bundles with stable names (Django adds ?v=<hash>): TARGET=player | sw | editor | preview.
 //   player -> static/player/player.js + player.css      (screens)
 //   sw     -> static/player/sw.js                       (service worker, served at /player/sw.js)
 //   editor -> static/editor/editor.js + editor.css      (layout editor island in the portal)
+//   preview -> static/editor/preview.js + preview.css   (slide preview island in the portal)
 import { defineConfig } from "vite";
 
 const TARGETS = {
   player: { entry: "src/player/main.ts", out: "../static/player", file: "player.js", css: "player" },
   sw: { entry: "src/player/sw.ts", out: "../static/player", file: "sw.js", css: "sw" },
   editor: { entry: "src/editor/main.ts", out: "../static/editor", file: "editor.js", css: "editor" },
+  preview: { entry: "src/preview/main.ts", out: "../static/editor", file: "preview.js", css: "preview" },
 } as const;
 declare const process: { env: Record<string, string | undefined> };
 const target = TARGETS[(process.env.TARGET ?? "player") as keyof typeof TARGETS];

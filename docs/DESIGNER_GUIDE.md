@@ -47,7 +47,22 @@ current draft live; on the layout page you can publish later (scheduled), publis
 *Restore* an old version as the draft. If somebody else saved in the meantime, your save is refused with a
 notice; the editor also warns when someone else opened the layout in the last two minutes.
 
-The **default layout** of the event is what screens show until playlists and schedules arrive.
+The **default layout** of the event is what screens show when no playlist, schedule or override applies.
+
+## Playlists, schedules and overrides
+
+Under **Playback**. A **playlist** shows layouts in turn; each layout stays for the item's *seconds*, else the
+layout's *Seconds on screen (playlists)* (editor, canvas properties), else the playlist default. Order: *in
+order*, *shuffled* (the same order on every screen, new each round) or *weighted* (weight 3 = three times as
+often as 1, spread evenly). Items can be limited:
+
+- *Only on screens tagged*: `stage, foyer` — the screen needs one of these tags;
+- *Show only if*: the same conditions as in templates, e.g. `screen.zone == "North"`, `not screen.room`;
+- *From / until*: e.g. a "doors open soon" slide only in the hour before the doors open;
+- a **nested playlist** plays all its items at that position.
+
+A **schedule** shows a playlist or layout on chosen screens at chosen times; an **override** pushes a message,
+layout or playlist at once. *Preview* shows any screen at any time with the same engine the screens use.
 
 ## Widgets
 
@@ -82,6 +97,6 @@ Variables are inserted as plain text, so they can never inject markup.
 
 ## Still to come in phase 1
 
-Playlists, schedules and live overrides; responsive constraints (anchors) for one layout on very different
+Responsive constraints (anchors) for one layout on very different
 aspect ratios; raw code mode (sandboxed HTML/CSS/JS); the no-code widget builder and data widgets; ISO 7010
 pictograms (with the evacuation phase); `.evacpack` import/export.

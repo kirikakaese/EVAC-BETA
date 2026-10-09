@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% trans "Preview" %}{% endblock %}
+{% block head %}{% if config %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><link rel="stylesheet" href="{% static 'editor/preview.css' %}?v={{ editor_version }}">
+{{ config|json_script:"preview-config" }}<script type="module" src="{% static 'editor/preview.js' %}?v={{ editor_version }}"></script>{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Preview a screen" %}</h1></div>
+{% include "playlists/_tabs.html" with tab="preview" %}
+<form method="get" class="card filters">{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Show" %}</button></form>
+{% if screen %}
+<div class="grid grid-2 preview-grid">
+<section class="card"><h2>{% blocktrans with n=screen.name t=at|date:"D j M H:i" %}{{ n }} at {{ t }}{% endblocktrans %}</h2>
+  {% if config %}<div class="screen-preview" data-preview>{% trans "Rendering…" %}</div>{% else %}<p class="muted">{% trans "Nothing to show: the screen shows its idle clock." %}</p>{% endif %}
+  <p>{% include "playlists/_source.html" with src=now_on.source level=now_on.level %} <strong>{{ now_on.name }}</strong> → {{ now_on.what }}{% if now_on.count > 1 %} ({% blocktrans with i=now_on.index|add:1 n=now_on.count %}slide {{ i }} of {{ n }}{% endblocktrans %}){% endif %}{% if now_on.until %} · {% blocktrans with t=now_on.until|date:"H:i:s" %}until {{ t }}{% endblocktrans %}{% endif %}</p></section>
+<section class="card"><h2>{% trans "Why" %}</h2>
+  <ol class="why">{% for s in steps %}<li>{% if s.wins %}<span class="badge badge-ok">{% trans "wins" %}</span>{% else %}<span class="badge badge-muted">{% trans "lower" %}</span>{% endif %}
+    {% include "playlists/_source.html" with src=s.entry.source level=s.entry.level %} {{ s.entry.name }} <span class="small muted">({% blocktrans with p=s.entry.priority %}priority {{ p }}{% endblocktrans %}{% if s.until %}, {% blocktrans with t=s.until|date:"D H:i" %}until {{ t }}{% endblocktrans %}{% endif %})</span></li>
+  {% empty %}<li class="muted">{% trans "No schedule, override or default applies to this screen." %}</li>{% endfor %}</ol>
+  <p class="small muted">{% trans "Entries with nothing to show on this screen (unpublished layouts, items filtered by tag or condition) give way to the next one." %}</p></section>
+</div>
+<div class="grid grid-2 preview-grid">
+<section class="card"><h2>{% trans "Next 24 hours" %}</h2>
+<div class="table-wrap"><table class="small"><thead><tr><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "To" %}</th><th scope="col">{% trans "Source" %}</th><th scope="col">{% trans "Shows" %}</th></tr></thead>
+<tbody>{% for s in segments %}<tr><td>{{ s.from_dt|date:"D H:i" }}</td><td>{{ s.to_dt|date:"D H:i" }}</td><td>{% include "playlists/_source.html" with src=s.source %}</td><td>{{ s.name|default:"–" }}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card"><h2>{% trans "Next slides" %}</h2>
+<div class="table-wrap"><table class="small"><thead><tr><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "To" %}</th><th scope="col">{% trans "Entry" %}</th><th scope="col">{% trans "Slide" %}</th></tr></thead>
+<tbody>{% for s in timeline %}<tr><td>{{ s.from_dt|date:"H:i:s" }}</td><td>{{ s.to_dt|date:"H:i:s" }}</td><td>{{ s.name|default:"–" }}</td><td>{{ s.what }}</td></tr>{% endfor %}</tbody></table></div></section>
+</div>
+{% endif %}
+{% endblock %}

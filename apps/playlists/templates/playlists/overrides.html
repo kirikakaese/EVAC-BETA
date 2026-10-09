@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Overrides" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Live overrides" %}</h1></div>
+{% include "playlists/_tabs.html" with tab="overrides" %}
+<section class="card"><h2>{% trans "Active and upcoming" %}</h2>
+{% if current %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Override" %}</th><th scope="col">{% trans "Level" %}</th><th scope="col">{% trans "Shows" %}</th><th scope="col">{% trans "Screens" %}</th><th scope="col">{% trans "State" %}</th><th scope="col">{% trans "Ends" %}</th>{% if form %}<th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th>{% endif %}</tr></thead>
+<tbody>{% for o in current %}{% include "playlists/_override_row.html" with cancel=form %}{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "Nothing overridden right now." %}</p>{% endif %}</section>
+{% if form %}<form method="post" class="card" id="push" novalidate>{% csrf_token %}<h2>{% trans "Push an override" %}</h2>
+<p class="small muted">{% trans "Screens switch within a second. Write a message, or pick a layout or playlist." %}</p>
+{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Push to screens" %}</button></form>{% endif %}
+<section class="card"><h2>{% trans "Recent" %}</h2>
+<div class="table-wrap"><table class="small"><thead><tr><th scope="col">{% trans "Override" %}</th><th scope="col">{% trans "Level" %}</th><th scope="col">{% trans "Shows" %}</th><th scope="col">{% trans "Screens" %}</th><th scope="col">{% trans "State" %}</th><th scope="col">{% trans "Ended" %}</th></tr></thead>
+<tbody>{% for o in history %}{% include "playlists/_override_row.html" %}{% empty %}<tr><td colspan="6" class="muted">{% trans "None yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

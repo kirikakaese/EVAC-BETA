@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Playback" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Playback" %}</h1>
+  <div class="actions">{% if overrides_on and can_override %}<a class="btn btn-primary" href="{% url 'playlists:overrides' event.slug %}#push">{% trans "Push an override" %}</a>{% endif %}</div></div>
+{% include "playlists/_tabs.html" with tab="index" %}
+{% if overrides_on %}<section class="card"><h2>{% trans "Active overrides" %}</h2>
+{% if overrides %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Override" %}</th><th scope="col">{% trans "Level" %}</th><th scope="col">{% trans "Shows" %}</th><th scope="col">{% trans "Screens" %}</th><th scope="col">{% trans "State" %}</th><th scope="col">{% trans "Ends" %}</th>{% if can_override %}<th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th>{% endif %}</tr></thead>
+<tbody>{% for o in overrides %}{% include "playlists/_override_row.html" with cancel=can_override %}{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No override is active. Screens follow their schedules and the default playlist." %}</p>{% endif %}</section>{% endif %}
+<section class="card"><h2>{% trans "On screens now" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Source" %}</th><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "Slide" %}</th><th scope="col"><span class="sr-only">{% trans "Preview" %}</span></th></tr></thead>
+<tbody>{% for row in screens %}{% with s=row.screen on=row.on %}<tr><td><a href="{% url 'screens:detail' event.slug s.pk %}">{{ s.name }}</a></td>
+  <td>{% include "screens/_health.html" %}</td>
+  <td>{% include "playlists/_source.html" with src=on.source level=on.level %}</td>
+  <td class="small">{{ on.name|default:"–" }}</td>
+  <td class="small">{{ on.what }}{% if on.count > 1 %} <span class="muted">({{ on.index|add:1 }}/{{ on.count }})</span>{% endif %}</td>
+  <td><a class="btn btn-sm btn-ghost" href="{% url 'playlists:preview' event.slug %}?screen={{ s.pk }}">{% blocktrans with n=s.name %}Preview {{ n }}{% endblocktrans %}</a></td></tr>{% endwith %}
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No paired screens yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card"><h2>{% trans "How screens decide" %}</h2>
+<ol class="priority-ladder">
+  <li><strong>{% trans "Evacuation" %}</strong> — {% trans "always highest (phase 3)" %}</li>
+  <li><strong>{% trans "Emergency override" %}</strong></li>
+  <li><strong>{% trans "Live override" %}</strong></li>
+  <li><strong>{% trans "Urgent override" %}</strong></li>
+  <li><strong>{% trans "Schedules" %}</strong> — {% trans "the higher priority wins when they overlap" %}</li>
+  <li><strong>{% trans "Default playlist" %}</strong> {% trans "or the default layout" %}</li>
+</ol>
+<p class="small muted">{% trans "Screens receive their program for the next seven days and change slides by themselves, synchronised with the server clock, also without network." %}</p></section>
+{% endblock %}

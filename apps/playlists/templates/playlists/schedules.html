@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Schedules" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Schedules" %}</h1>
+  <div class="actions">{% if can_edit %}<a class="btn btn-primary" href="{% url 'playlists:schedule_new' event.slug %}">{% trans "New schedule" %}</a>{% endif %}
+  <a class="btn" href="{% url 'playlists:calendar' event.slug %}">{% trans "Calendar" %}</a></div></div>
+{% include "playlists/_tabs.html" with tab="schedules" %}
+<section class="card"><div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Schedule" %}</th><th scope="col">{% trans "Shows" %}</th><th scope="col">{% trans "Screens" %}</th><th scope="col">{% trans "When" %}</th><th scope="col" class="num">{% trans "Priority" %}</th><th scope="col">{% trans "State" %}</th></tr></thead>
+<tbody>{% for r in rules %}<tr{% if not r.enabled %} class="muted"{% endif %}><td>{% if can_edit %}<a href="{% url 'playlists:schedule' event.slug r.pk %}">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}</td>
+  <td class="small">{{ r.content_label }}</td><td class="small">{{ r.target_label }}</td>
+  <td class="small">{% if r.weekdays %}{% for d in r.weekdays %}{% for k, v in weekday_names.items %}{% if k == d %}{{ v }}{% endif %}{% endfor %}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{% trans "every day" %}{% endif %}
+    {{ r.start_time|time:"H:i"|default:"00:00" }}–{{ r.end_time|time:"H:i"|default:"24:00" }}{% if r.start_date or r.end_date %}<br>{{ r.start_date|date:"j M"|default:"…" }} – {{ r.end_date|date:"j M Y"|default:"…" }}{% endif %}</td>
+  <td class="num">{{ r.priority }}</td>
+  <td>{% if r.enabled %}<span class="badge badge-enabled">{% trans "on" %}</span>{% else %}<span class="badge badge-off">{% trans "off" %}</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No schedules. Without schedules screens play the default playlist (or the default layout)." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}
