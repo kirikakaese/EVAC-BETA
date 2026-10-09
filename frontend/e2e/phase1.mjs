@@ -123,12 +123,15 @@ await player.waitForFunction(() => !!document.querySelector(".evac-stage iframe"
 ok(true, "override cancelled, the slide is back");
 
 // 6. unplug the network (stop the server): the screen keeps playing, also after a restart of the browser tab
+const shellCached = await player.evaluate(async () => {
+  await navigator.serviceWorker.ready;
+  const src = new URL(document.querySelector("script[type=module]").src);
+  return !!(await caches.match(src.pathname + src.search));
+});
+ok(shellCached, "the player app (script) is in the offline cache");
 process.kill(Number(process.env.E2E_SERVER_PID), "SIGTERM");
 await player.waitForTimeout(6000);
 ok(!!(await player.$(".evac-stage iframe")), "server gone: the slide is still on screen");
-const afterReload = [];
-player.on("console", (m) => afterReload.push(`${m.type()}: ${m.text().slice(0, 200)}`));
-player.on("pageerror", (e) => afterReload.push(`pageerror: ${e.message}`));
 await player.reload();
 try {
   await player.waitForSelector(".evac-stage", { timeout: 15000 });
@@ -136,10 +139,7 @@ try {
   await player.screenshot({ path: `${OUT}/player-offline-failed.png` });
   console.log("player shows:", (await player.evaluate(() => document.body.innerText)).slice(0, 300));
   console.log("storage:", await player.evaluate(() => Object.keys(localStorage).join(",")));
-  console.log("sw:", await player.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length));
-  console.log("state:", await player.evaluate(() => `${document.readyState} controller=${!!navigator.serviceWorker.controller} boot=${document.documentElement.dataset.boot}`));
-  console.log("resources:", await player.evaluate(() => performance.getEntriesByType("resource").map((e) => `${e.name.replace(location.origin, "")} ${Math.round(e.responseEnd)}`).join(" | ")));
-  console.log("after reload:", afterReload.join(" || "));
+  console.log("boot stage:", await player.evaluate(() => document.documentElement.dataset.boot ?? "script did not run"));
   throw err;
 }
 await player.waitForTimeout(3000);
