@@ -260,6 +260,23 @@ browser's *Add to home screen*. The page shows
 Set `EVAC_VAPID_SUBJECT` (e.g. `mailto:ops@example.org`) so push services can reach you; the push keys are
 created automatically.
 
+## 5f. Data & widgets
+
+**Data & widgets** in the event menu shows external data on screens without code.
+
+1. **Add a feed**: a URL with JSON, RSS/Atom, iCal or CSV, or a built-in source (on-air announcements, event
+   info). EVAC fetches it on the server every few minutes (at least 60 s) and keeps the last good copy when the
+   source is down; the feed page shows the status, the last error and the data as a tree. An *Authorization
+   header* (for example `Bearer …`) is stored encrypted.
+2. **Build a widget**: choose the feed, click the list in the tree to set *Items*, then click fields for title,
+   value, time and so on. Pick a visual (text, list, table, cards, counter, gauge, ticker, bars) and options
+   (number of items, heading, unit, only upcoming items). The preview updates as you go.
+3. **Place it**: in the layout editor add a **Data widget** element and choose the widget.
+
+Screens keep the latest data offline and update when the feed changes. Feeds can only reach public addresses;
+an instance administrator can allow private networks (venue sensors) under *Settings → General → Data feeds* (instance settings).
+MQTT sources follow in phase 6.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

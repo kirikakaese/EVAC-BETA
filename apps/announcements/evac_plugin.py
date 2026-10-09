@@ -2,6 +2,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    DataSourceSpec,
     ModuleSpec,
     NavEntry,
     NotificationChannelSpec,
@@ -80,6 +81,9 @@ def register(r: Registry) -> None:
     r.staff_card(StaffCardSpec(key="announcements", title=str(_("Announcements")), module="announcements",
                                template="announcements/_staff_card.html", context=staff.card, order=20))
     r.program_source(services.program_source)
+    r.data_source(DataSourceSpec(key="announcements.on_air", name=str(_("Announcements on air")),
+                                 module="announcements", fetch=services.on_air_data, mode="push",
+                                 description=str(_("Published announcements that are not over yet."))))
     for key, desc in [
         ("announcement.published", "An announcement was published (once per occurrence)."),
         ("announcement.cancelled", "An announcement was cancelled."),

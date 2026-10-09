@@ -4,12 +4,15 @@
 import "./preview.css";
 
 import { pageNonce } from "../renderer/code";
+import { MemoryStore } from "../renderer/data";
 import { renderLayout } from "../renderer/render";
-import type { AssetEntry, LayoutData } from "../renderer/types";
+import type { AssetEntry, LayoutData, WidgetData } from "../renderer/types";
 
 interface PreviewConfig {
   layout: LayoutData; at: number; timezone: string; vars: Record<string, unknown>;
   assets: Record<string, AssetEntry>; fonts: Record<string, string>; themeVariables: Record<string, string>;
+  /** custom widget rows ("data" elements) */
+  data?: Record<string, WidgetData>;
 }
 
 export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
@@ -20,7 +23,7 @@ export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
   host.classList.add("evac-preview-host");
   renderLayout(host, cfg.layout, {
     vars: cfg.vars, now: () => cfg.at + (Date.now() - started), timezone: cfg.timezone, assets: cfg.assets,
-    fonts: cfg.fonts, reducedMotion: true, nonce: pageNonce(),
+    fonts: cfg.fonts, reducedMotion: true, nonce: pageNonce(), data: new MemoryStore(cfg.data ?? {}),
   });
 }
 

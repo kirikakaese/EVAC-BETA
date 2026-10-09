@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if is_saved %}{{ feed.name }}{% else %}{% trans "New feed" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if is_saved %}{{ feed.name }} {% include "widgets/_status.html" with f=feed %}{% else %}{% trans "New feed" %}{% endif %}</h1>
+{% if is_saved %}<div class="actions">{% if can_edit %}<form method="post" action="{% url 'widgets:feed_fetch' event.slug feed.pk %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Fetch now" %}</button></form>{% endif %}
+<a class="btn btn-primary" href="{% url 'widgets:widget_new' event.slug %}?feed={{ feed.pk }}">{% trans "Make a widget" %}</a></div>{% endif %}</div>
+<p><a href="{% url 'widgets:index' event.slug %}">← {% trans "Data & widgets" %}</a></p>
+<div class="grid grid-2">
+<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "Source" %}</h2>{% include "portal/_form.html" with form=form %}
+{% if can_edit %}<div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button></div>{% endif %}</form>
+<section class="card"><h2>{% trans "Data" %}</h2>
+{% if is_saved %}<dl class="kv small"><dt>{% trans "Last fetched" %}</dt><dd>{{ feed.last_fetch_at|date:"D j M H:i:s"|default:"–" }}</dd>
+<dt>{% trans "Last good data" %}</dt><dd>{{ feed.last_success_at|date:"D j M H:i:s"|default:"–" }}</dd>
+{% if feed.error %}<dt>{% trans "Error" %}</dt><dd>{{ feed.error }}</dd>{% endif %}</dl>{% endif %}
+{% if tree %}<p class="small muted">{% trans "Explore the data. Each value shows its path: use it for the items or the fields of a widget." %}</p>
+<ul class="tree tree-root">{% include "widgets/_tree.html" with node=tree key="$" depth=0 %}</ul>
+{% elif is_saved %}<p class="muted">{% trans "No data yet." %}</p>{% else %}<p class="muted">{% trans "Save the feed to fetch it." %}</p>{% endif %}
+</section></div>
+{% if is_saved and can_edit %}<form method="post" action="{% url 'widgets:feed_delete' event.slug feed.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Delete this feed?' %}">{% trans "Delete feed" %}</button></form>{% endif %}
+{% endblock %}

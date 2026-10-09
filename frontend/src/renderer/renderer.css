@@ -41,3 +41,37 @@ evac-clock time, evac-date time, evac-countdown span { display: block; white-spa
   .evac-stage *, .evac-stage { animation: none !important; transition: none !important; }
 }
 .evac-code-frame { width: 100%; height: 100%; border: 0; display: block; background: transparent; }
+
+/* custom widgets ("data" element, ADR-0023): sizes in em of the element's font size */
+.evac-data { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; gap: .4em; overflow: hidden; }
+.evac-data-heading { font-weight: 700; font-size: 1.15em; }
+.evac-data-body { flex: 1; min-height: 0; overflow: hidden; }
+.evac-data-stale { position: absolute; top: .2em; right: .2em; font-size: .45em; padding: .1em .5em; border-radius: 1em; background: #b45309; color: #fff; }
+.evac-data-empty { opacity: .5; }
+.evac-data-text { white-space: pre-line; }
+.evac-data-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35em; }
+.evac-data-list li { display: flex; gap: .7em; align-items: baseline; border-bottom: .04em solid color-mix(in srgb, currentColor 25%, transparent); padding-bottom: .3em; }
+.evac-data-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.evac-data-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.evac-data-sub { opacity: .75; font-size: .8em; }
+.evac-data-time { font-variant-numeric: tabular-nums; opacity: .85; white-space: nowrap; }
+.evac-data-value { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.evac-data-table { width: 100%; border-collapse: collapse; }
+.evac-data-table td { padding: .25em .4em; border-bottom: .04em solid color-mix(in srgb, currentColor 25%, transparent); }
+.evac-data-table .evac-data-value { text-align: right; }
+.evac-data-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(8em, 1fr)); gap: .5em; }
+.evac-data-card { padding: .5em .6em; border-radius: .35em; background: color-mix(in srgb, currentColor 10%, transparent); display: flex; flex-direction: column; gap: .15em; overflow: hidden; }
+.evac-data-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: .2em; }
+.evac-data-counter .evac-data-body, .evac-data-gauge .evac-data-body { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.evac-data-number { font-size: 3em; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.evac-data-gauge .evac-data-number { font-size: 1.8em; margin-top: .1em; }
+.evac-data-unit { font-size: .45em; font-weight: 600; }
+svg.evac-data-gauge { width: 90%; max-height: 55%; flex: 0 1 auto; }
+.evac-gauge-track { fill: none; stroke: color-mix(in srgb, currentColor 18%, transparent); stroke-width: 18; stroke-linecap: round; }
+.evac-gauge-fill { fill: none; stroke: var(--evac-color-primary, #22c55e); stroke-width: 18; stroke-linecap: round; }
+.evac-data-bars { display: flex; flex-direction: column; gap: .45em; }
+.evac-bar { display: grid; grid-template-columns: minmax(4em, 30%) 1fr auto; gap: .5em; align-items: center; }
+.evac-bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.evac-bar-track { height: .8em; border-radius: .4em; background: color-mix(in srgb, currentColor 15%, transparent); overflow: hidden; }
+.evac-bar-fill { display: block; height: 100%; background: var(--evac-color-primary, #22c55e); }
+.evac-bar-value { font-variant-numeric: tabular-nums; font-weight: 700; }

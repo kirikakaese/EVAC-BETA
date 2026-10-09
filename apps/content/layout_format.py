@@ -41,6 +41,8 @@ ELEMENT_TYPES = {
     "countdown": {"target": {"type": "string", "maxLength": 200}, "finished": {"type": "string", "maxLength": 300},
                   "format": {"enum": ["auto", "hms", "ms", "days"]}},
     "date": {"format": {"enum": ["long", "short", "weekday", "iso"]}, "timezone": {"type": "string", "maxLength": 64}},
+    # a custom widget of the widgets module (ADR-0023): its rows arrive separately from /player/api/widgets/data/
+    "data": {"widget": UUID, "title": {"type": "string", "maxLength": 200}},
     # code mode (ADR-0018): runs in a sandboxed frame without network; only the data listed in "data" is sent in
     "code": {"html": {"type": "string", "maxLength": 50_000}, "css": {"type": "string", "maxLength": 50_000},
              "js": {"type": "string", "maxLength": 100_000},

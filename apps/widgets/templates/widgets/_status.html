@@ -1,0 +1,1 @@
+{% load i18n %}{% if f.status == "ok" %}<span class="badge badge-ok">{% trans "OK" %}</span>{% elif f.status == "error" %}<span class="badge badge-err">{% trans "Error" %}</span>{% else %}<span class="badge badge-muted">{% trans "Not fetched yet" %}</span>{% endif %}

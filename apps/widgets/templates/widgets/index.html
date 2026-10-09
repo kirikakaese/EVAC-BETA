@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Data & widgets" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Data & widgets" %}</h1>
+{% if can_edit %}<div class="actions"><a class="btn" href="{% url 'widgets:feed_new' event.slug %}">{% trans "New feed" %}</a>{% if feeds %}<a class="btn btn-primary" href="{% url 'widgets:widget_new' event.slug %}">{% trans "New widget" %}</a>{% endif %}</div>{% endif %}</div>
+<section class="card"><h2>{% trans "Widgets" %}</h2>
+<p class="small muted">{% trans "Place a widget on a slide with the “Data widget” element in the layout editor. Screens keep the last data and show it also without network." %}</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Widget" %}</th><th scope="col">{% trans "Visual" %}</th><th scope="col">{% trans "Feed" %}</th></tr></thead>
+<tbody>{% for w in widgets %}<tr><td><a href="{% url 'widgets:widget' event.slug w.pk %}">{{ w.name }}</a></td><td>{{ w.get_visual_display }}</td><td class="small">{{ w.feed.name }}</td></tr>
+{% empty %}<tr><td colspan="3" class="muted">{% if feeds %}{% trans "No widgets yet." %}{% else %}{% trans "Add a feed first: where the data comes from." %}{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card"><h2>{% trans "Feeds" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Feed" %}</th><th scope="col">{% trans "Type" %}</th><th scope="col">{% trans "State" %}</th><th scope="col">{% trans "Last data" %}</th><th scope="col">{% trans "Widgets" %}</th></tr></thead>
+<tbody>{% for f in feeds %}<tr><td><a href="{% url 'widgets:feed' event.slug f.pk %}">{{ f.name }}</a>{% if not f.enabled %} <span class="badge badge-off">{% trans "paused" %}</span>{% endif %}<br><span class="small muted">{{ f.url|default:f.source|truncatechars:60 }}</span></td>
+<td class="small">{{ f.get_kind_display }}</td><td>{% include "widgets/_status.html" %}{% if f.error %}<br><span class="small muted">{{ f.error|truncatechars:80 }}</span>{% endif %}</td>
+<td class="small">{{ f.last_success_at|date:"D H:i"|default:"–" }}</td><td>{{ f.widgets.all|length }}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% trans "No feeds yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

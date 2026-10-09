@@ -316,6 +316,15 @@ def delete_template(template: Template, *, actor, request=None) -> None:
     template.delete()
 
 
+def on_air_data(event) -> dict[str, Any]:
+    """Data source for custom widgets: announcements on air (newest first)."""
+    qs = (Announcement.objects.filter(event=event, status=Announcement.Status.LIVE).select_related("level")
+          .order_by("-published_at")[:50])
+    return {"announcements": [{"title": a.title, "text": a.text, "short": a.short_text, "level": a.level.name,
+                               "colour": a.level.colour, "published": a.published_at.isoformat()
+                               if a.published_at else None} for a in qs]}
+
+
 # ------------------------------------------------------------------ public feed
 def feed_title(event) -> str:
     return ann_settings(event).get("feed_title") or event.name

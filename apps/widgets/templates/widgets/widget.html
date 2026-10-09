@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% if is_saved %}{{ w.name }}{% else %}{% trans "New widget" %}{% endif %}{% endblock %}
+{% block head %}{% if config %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><link rel="stylesheet" href="{% static 'editor/preview.css' %}?v={{ editor_version }}">
+{{ config|json_script:"preview-config" }}<script type="module" nonce="{{ csp_nonce }}" src="{% static 'editor/preview.js' %}?v={{ editor_version }}"></script>{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if is_saved %}{{ w.name }}{% else %}{% trans "New widget" %}{% endif %}</h1></div>
+<p><a href="{% url 'widgets:index' event.slug %}">← {% trans "Data & widgets" %}</a></p>
+<form method="post" novalidate class="compose-grid">{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-error" role="alert">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+<section class="card"><h2>{% trans "Data" %}</h2>{% include "portal/_form.html" with form=form form_fields=form.main_fields bare=True %}</section>
+<section class="card"><h2>{% trans "Fields of each item" %}</h2>
+<p class="small muted">{% trans "Paths inside one item. Leave empty what the visual does not need." %}</p>
+{% include "portal/_form.html" with form=form form_fields=form.field_paths bare=True %}</section>
+<section class="card"><h2>{% trans "Options" %}</h2>{% include "portal/_form.html" with form=form form_fields=form.option_fields bare=True %}</section>
+{% if can_edit %}<div class="form-actions"><button class="btn btn-primary">{% if is_saved %}{% trans "Save and preview" %}{% else %}{% trans "Create and preview" %}{% endif %}</button></div>{% endif %}
+</form>
+{% if is_saved %}
+<div class="grid grid-2">
+<section class="card"><h2>{% trans "Preview" %}</h2><div class="screen-preview" data-preview>{% trans "Rendering…" %}</div></section>
+<section class="card"><h2>{% blocktrans count n=rows|length %}{{ n }} item{% plural %}{{ n }} items{% endblocktrans %}</h2>
+{% if rows %}<div class="table-wrap"><table class="small"><thead><tr>{% for f in row_fields %}{% if f in w.fields %}<th scope="col">{{ f }}</th>{% endif %}{% endfor %}</tr></thead>
+<tbody>{% for r in rows %}<tr>{% for f in row_fields %}{% if f in w.fields %}<td>{% for k, v in r.items %}{% if k == f %}{{ v|default_if_none:"–"|truncatechars:60 }}{% endif %}{% endfor %}</td>{% endif %}{% endfor %}</tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No items: check the items path and the fields." %}</p>{% endif %}</section></div>
+{% if tree %}<section class="card"><h2>{% trans "Explore the feed" %}</h2><ul class="tree tree-root">{% include "widgets/_tree.html" with node=tree key="$" depth=0 %}</ul></section>{% endif %}
+{% if can_edit %}<form method="post" action="{% url 'widgets:widget_delete' event.slug w.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Delete this widget? Slides that use it show nothing there.' %}">{% trans "Delete widget" %}</button></form>{% endif %}
+{% endif %}
+{% endblock %}

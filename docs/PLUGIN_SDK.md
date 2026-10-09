@@ -63,7 +63,7 @@ again without removing the package.
 | `NavEntry` | `r.nav` | sidebar link; hidden when the module is off or the permission missing |
 | `SettingsNamespace` | `r.settings_namespace` | typed settings with inheritance and generated forms |
 | `ScopeKind` | `r.scope_kind` | objects role assignments can be scoped to |
-| `DataSourceSpec`, `WidgetSpec` | `r.data_source`, `r.widget` | screen content (consumed from phase 1) |
+| `DataSourceSpec`, `WidgetSpec` | `r.data_source`, `r.widget` | screen content; a data source with `fetch(event)` returning JSON-like data can feed custom widgets (ADR-0023) |
 | `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (raise to retry); `available(event)` hides it where it is not set up; `max_length` offers an own text per channel (ADR-0019, ADR-0020; example: `extensions/notify`) |
 | `EvacTriggerSpec` | `r.evac_trigger` | alarm trigger sources (phase 3) |
 | `WebhookEventSpec` | `r.webhook_event` | outbound event types (`apps.core.webhooks.emit`) |
@@ -73,6 +73,7 @@ again without removing the package.
 | outbox handler | `r.outbox_handler(kind, fn)` | durable outgoing deliveries |
 | staff card | `r.staff_card(StaffCardSpec(key, title, template, context))` | a card on the staff page (PWA); `context(request, event)` returns the template context or `None` to hide it (ADR-0021) |
 | program source | `r.program_source(fn)` | `fn(event, target, start, end) -> {"entries", "messages", "overlays"}`: extra content in every screen's program (announcements; evacuation in phase 3) |
+| editor choices | `r.editor_choices(key, fn, module=)` | `fn(event)` returns data the layout editor receives under `choices[key]` while the module is on (widget list for the data element) |
 | webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 

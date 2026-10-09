@@ -69,6 +69,7 @@ class Registry:
         self.webhook_sinks: list[WebhookSink] = []
         self.program_sources: list[ProgramSource] = []
         self.staff_cards: dict[str, StaffCardSpec] = {}
+        self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
         self.websocket_routes: list[Any] = []
         self.api_routes: list[tuple[str, Any, str]] = []
 
@@ -175,6 +176,11 @@ class Registry:
     def program_source(self, fn: ProgramSource) -> None:
         """Contribute entries/overlays to every screen's program (see ``plugins.ProgramSource``)."""
         self.program_sources.append(fn)
+
+    def editor_choices(self, key: str, fn: Callable[[Any], Any], *, module: str = "core") -> None:
+        """Choices for the layout editor (``config.choices[key] = fn(event)``, only while ``module`` is on), e.g.
+        the event's custom widgets for the "data" element."""
+        self._add(self.editor_choices_, key, (module, fn), "editor choices")
 
     def staff_card(self, spec: StaffCardSpec) -> None:
         """A card on the staff page (PWA)."""

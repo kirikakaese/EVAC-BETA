@@ -8,6 +8,7 @@ import { applyStyle, color } from "./style";
 import { condition } from "./template";
 import type { LayoutData, LayoutElement, RenderContext } from "./types";
 import { defineWidgets, EvacWidget } from "./widgets";
+import "./data";  // registers the "data" element (custom widgets)
 
 export interface RenderedLayout {
   stage: HTMLElement;
