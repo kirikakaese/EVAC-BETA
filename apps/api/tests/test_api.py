@@ -169,7 +169,8 @@ def test_modules_audit_registry_extensions(admin, member, event):
     assert bearer(member).get("/api/v1/audit/verify/").status_code == 403
     reg = c.get("/api/v1/registry/").json()
     assert any(p["key"] == "events.roles" and p["sensitive"] for p in reg["permissions"])
-    assert c.get("/api/v1/extensions/").json()[0]["key"] == "webhooks"
+    assert {"webhooks", "email", "ntfy", "matrix", "telegram", "mastodon"} <= {
+        x["key"] for x in c.get("/api/v1/extensions/").json()}
     assert c.get("/api/v1/extensions/?event=demo").status_code == 200
     assert bearer(member).get("/api/v1/extensions/").status_code == 403
     assert bearer(member).get("/api/v1/extensions/?event=demo").status_code == 403

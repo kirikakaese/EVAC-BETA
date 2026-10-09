@@ -64,7 +64,7 @@ again without removing the package.
 | `SettingsNamespace` | `r.settings_namespace` | typed settings with inheritance and generated forms |
 | `ScopeKind` | `r.scope_kind` | objects role assignments can be scoped to |
 | `DataSourceSpec`, `WidgetSpec` | `r.data_source`, `r.widget` | screen content (consumed from phase 1) |
-| `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (ADR-0019) |
+| `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (raise to retry); `available(event)` hides it where it is not set up; `max_length` offers an own text per channel (ADR-0019, ADR-0020; example: `extensions/notify`) |
 | `EvacTriggerSpec` | `r.evac_trigger` | alarm trigger sources (phase 3) |
 | `WebhookEventSpec` | `r.webhook_event` | outbound event types (`apps.core.webhooks.emit`) |
 | `CliCommandSpec` | `r.cli_command` | `evac <name>` sub-commands |

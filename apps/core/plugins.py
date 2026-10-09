@@ -159,11 +159,17 @@ class WidgetSpec:
 
 @dataclass(frozen=True)
 class NotificationChannelSpec:
+    """An announcement channel (ADR-0019). ``send(delivery) -> {"status", "recipients", "detail"}`` runs in the
+    outbox (raise to retry). ``available(event) -> bool`` hides it where it is not set up (e.g. an extension that
+    is off); ``max_length`` > 0 offers a shorter per-channel text in the composer."""
+
     key: str
     name: str
     send: Callable[..., Any] | None = None
     module: str = "core"
     description: str = ""
+    available: Callable[[Any], bool] | None = None
+    max_length: int = 0
 
 
 @dataclass(frozen=True)

@@ -14,7 +14,9 @@
 </section>
 <section class="card"><h2>{% trans "Where" %}</h2>
 {% include "portal/_form.html" with form=form form_fields=form.target_fields bare=True %}
-{% include "portal/_field.html" with field=form.channels %}</section>
+{% include "portal/_field.html" with field=form.channels %}
+{% if form.channel_text_fields %}<details class="channel-texts"{% for f in form.channel_text_fields %}{% if f.value %} open{% endif %}{% endfor %}><summary>{% trans "Own text per channel" %}</summary>
+{% include "portal/_form.html" with form=form form_fields=form.channel_text_fields bare=True %}</details>{% endif %}</section>
 <section class="card"><h2>{% trans "When" %}</h2>
 {% include "portal/_form.html" with form=form form_fields=form.timing_fields bare=True %}</section>
 <section class="card"><h2>{% trans "Levels" %}</h2>
