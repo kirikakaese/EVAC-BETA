@@ -6,6 +6,16 @@ released.
 
 ## [Unreleased]
 
+### Added — spoken announcements (Phase 2, part 4)
+
+- Offline speech (ADR-0022): levels can be *read aloud on screens* (urgent and emergency by default). When such an
+  announcement is approved, Piper renders it on the server (cached by voice and text, AAC via ffmpeg); screens
+  pre-fetch the file and speak it after the level's sound, also offline. *Spoken text* in the composer, a voice
+  choice in *Settings → Announcements*, and a player on the announcement page.
+- Piper is optional: `pip install -e .[tts]` or the image build argument `WITH_TTS=1` (`EVAC_WITH_TTS=1` with
+  docker compose); `manage.py evac_tts install|list|status|say` manages voices. Settings `EVAC_PIPER_BINARY`,
+  `EVAC_TTS_VOICES_DIR`.
+
 ### Added — staff app and Web Push (Phase 2, part 3)
 
 - Staff app (PWA, ADR-0021): installable (`/manifest.webmanifest`, `/sw.js`), staff page per event with on-air

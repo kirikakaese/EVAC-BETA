@@ -100,8 +100,9 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = ["id", "level", "template", "variables", "title", "body", "short", "all_screens", *M2M,
                   "channels", "channel_texts", "starts_at", "ends_at", "recurrence", "recurrence_until", "status",
-                  "decision_note", "published_at", "deliveries", "send", "created_at"]
-        read_only_fields = ["id", "status", "decision_note", "published_at", "deliveries", "created_at"]
+                  "decision_note", "published_at", "speech_status", "deliveries", "send", "created_at"]
+        read_only_fields = ["id", "status", "decision_note", "published_at", "speech_status", "deliveries",
+                            "created_at"]
         extra_kwargs = {"title": {"required": False}, "starts_at": {"required": False}}
 
     def __init__(self, *args, **kwargs):

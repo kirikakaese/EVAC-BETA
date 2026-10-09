@@ -229,6 +229,16 @@ failed, with recipients and retries).
 - **Public feed**: switch it on under *Settings → Announcements*; published announcements sent to the feed
   channel appear at `/public/<event>/announcements/` with RSS (`rss.xml`) and JSON Feed (`feed.json`).
 - Sound on screens follows the screen's display settings (sound on/off, volume).
+- **Spoken announcements** (optional, offline): levels marked *read aloud on screens* (urgent and emergency by
+  default) are spoken by screens with sound after the level's tone. The speech is generated on your server by
+  Piper when the announcement is approved, and screens keep it for offline playback; the announcement page lets
+  you listen to it. Setup:
+  1. install Piper: build the image with `EVAC_WITH_TTS=1 docker compose build` (or `pip install -e .[tts]`);
+  2. install a voice, e.g. `docker compose exec web python manage.py evac_tts install` (British English
+     "alba", from the Piper voices on Hugging Face) or any voice URL or file;
+  3. check with `evac_tts status` and `evac_tts say "Doors open in ten minutes."`.
+  Choose the voice under *Settings → Announcements*; *Spoken text* in the composer replaces the default
+  "Level. Title. Text.".
 - Webhooks: `announcement.published` (per occurrence), `announcement.pending`, `announcement.cancelled`.
 
 ## 5e. Staff app (PWA)

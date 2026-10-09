@@ -54,6 +54,10 @@ def register(r: Registry) -> None:
                 "feed_title": {
                     "type": "string", "title": "Feed title", "default": "", "maxLength": 120,
                     "description": "Empty: the event name."},
+                "tts_voice": {
+                    "type": "string", "title": "Voice for spoken announcements", "default": "", "maxLength": 100,
+                    "description": "Name of an installed Piper voice (manage.py evac_tts list). Empty: the first "
+                                   "English voice."},
             },
         },
     ))
@@ -70,6 +74,7 @@ def register(r: Registry) -> None:
         r.notification_channel(NotificationChannelSpec(key=key, name=str(name), send=send, module=module,
                                                        description=str(desc)))
     r.outbox_handler("announcements.deliver", services.deliver)
+    r.outbox_handler(services.SPEECH_JOB, services.render_speech)
     from . import staff
 
     r.staff_card(StaffCardSpec(key="announcements", title=str(_("Announcements")), module="announcements",

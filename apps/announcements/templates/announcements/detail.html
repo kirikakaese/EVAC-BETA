@@ -28,6 +28,13 @@
 </dl>
 {% if windows %}<h3>{% trans "On screens (next 24 hours)" %}</h3><ul class="plain small">{% for w in windows %}<li>{{ w.0|date:"D H:i:s" }} – {% if w.1 %}{{ w.1|date:"H:i:s" }}{% else %}{% trans "until cancelled" %}{% endif %}</li>{% endfor %}</ul>{% endif %}
 </section></div>
+{% if ann.level.speak and "screens" in ann.channels %}<section class="card"><h2>{% trans "Spoken on screens" %}</h2>
+<p class="small">{% if ann.speech_status %}<span class="badge badge-{% if ann.speech_status == 'ready' %}ok{% elif ann.speech_status == 'pending' %}pending{% elif ann.speech_status == 'failed' %}err{% else %}muted{% endif %}">{{ ann.get_speech_status_display }}</span>{% else %}<span class="badge badge-muted">{% trans "Prepared when approved" %}</span>{% endif %}
+{% if ann.speech_detail %} <span class="muted">{{ ann.speech_detail }}</span>{% endif %}</p>
+<p class="small muted">“{{ speech_text }}”</p>
+{% if ann.speech_status == "ready" %}<audio controls preload="none" src="{% url 'announcements:speech' event.slug ann.pk %}" aria-label="{% trans 'Listen to the spoken announcement' %}"></audio>{% endif %}
+{% if can_render and ann.status != "draft" and ann.status != "pending" and ann.speech_status != "pending" %}<form method="post" action="{% url 'announcements:speech_render' event.slug ann.pk %}">{% csrf_token %}<button class="btn btn-sm">{% if ann.speech_status == "ready" %}{% trans "Prepare again" %}{% else %}{% trans "Prepare spoken version" %}{% endif %}</button></form>{% endif %}
+</section>{% endif %}
 <section class="card"><h2>{% trans "Delivery report" %}</h2>
 <div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Channel" %}</th><th scope="col">{% trans "Occurrence" %}</th><th scope="col">{% trans "State" %}</th><th scope="col">{% trans "Recipients" %}</th><th scope="col">{% trans "Detail" %}</th><th scope="col">{% trans "Attempts" %}</th><th scope="col">{% trans "Sent" %}</th></tr></thead>
 <tbody>{% for d in deliveries %}<tr><td>{{ d.channel_name }}</td><td class="small">{{ d.occurrence|date:"D j M H:i" }}</td><td><span class="badge badge-{{ d.status }}">{{ d.get_status_display }}</span></td><td>{{ d.recipients }}</td><td class="small">{{ d.detail|default:"–" }}</td><td>{{ d.attempts }}</td><td class="small">{{ d.sent_at|date:"H:i:s"|default:"–" }}</td></tr>

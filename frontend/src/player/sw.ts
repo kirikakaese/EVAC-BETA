@@ -36,8 +36,8 @@ sw.addEventListener("fetch", (e) => {
   const event = e as FetchEvent;
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== sw.location.origin) return;
-  // content files are addressed by their hash: cache first, they never change
-  if (url.pathname.startsWith("/player/api/content/files/")) {
+  // content files and spoken announcements are addressed by their hash: cache first, they never change
+  if (url.pathname.startsWith("/player/api/content/files/") || url.pathname.startsWith("/player/api/announcements/speech/")) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
       const hit = await cache.match(event.request, { ignoreSearch: true });

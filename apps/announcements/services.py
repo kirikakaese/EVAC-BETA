@@ -18,6 +18,7 @@ from apps.core.registry import registry
 from .models import Announcement, Delivery, Level, Template
 
 SCREENS, FEED, WEBHOOK, STAFF = "screens", "feed", "webhook", "staff"
+SPEECH, SPEECH_MAX = "speech", 1000  # channel_texts key of the spoken text
 PREVIEW_DAYS = 7
 
 # ------------------------------------------------------------------ defaults
@@ -47,7 +48,7 @@ def ensure_defaults(event) -> None:
     if not Level.objects.filter(event=event).exists():
         Level.objects.bulk_create([
             Level(event=event, key=k, name=n, rank=r, colour=c, display=d, sound=snd, min_display_seconds=m,
-                  repeat_every_minutes=rep, default_channels=ch, emergency=em)
+                  repeat_every_minutes=rep, default_channels=ch, emergency=em, speak=k in ("urgent", "emergency"))
             for k, n, r, c, d, snd, m, rep, ch, em in DEFAULT_LEVELS])
     if not Template.objects.filter(event=event, builtin=True).exists():
         levels = {lv.key: lv for lv in Level.objects.filter(event=event)}
@@ -153,6 +154,10 @@ def _validate(ann: Announcement) -> None:
         raise ValidationError(_("Choose at least one channel."))
     specs = registry.ensure_loaded().notification_channels
     for key, text in (ann.channel_texts or {}).items():
+        if key == SPEECH:
+            if not isinstance(text, str) or len(text) > SPEECH_MAX:
+                raise ValidationError(_("The spoken text is too long (at most %(n)s characters).") % {"n": SPEECH_MAX})
+            continue
         spec = specs.get(key)
         if spec is None or not isinstance(text, str):
             raise ValidationError(_("Unknown channel: %(c)s") % {"c": key})
@@ -229,6 +234,7 @@ def _approve(ann: Announcement, *, actor, request=None, note: str = "") -> Annou
 
         notify([ann.created_by], _("Your announcement was approved"), body=ann.title, event=ann.event,
                url=_url(ann), level="ok")
+    queue_speech(ann)
     if ann.starts_at <= now:
         publish(ann, occurrence=ann.starts_at)
     else:
@@ -450,19 +456,101 @@ def program_source(event, target, start: dt.datetime, end: dt.datetime) -> dict[
         if not windows:
             continue
         key = f"announcement:{ann.pk}"
+        speech = speech_url(ann, getattr(target, "screen", None))
         if ann.level.display == Level.Display.TAKEOVER or ann.level.emergency:
             screen = getattr(target, "screen", None)
             portrait = screen is not None and (screen.reported or {}).get("orientation") == "portrait"
             out["entries"].append({"id": key, "source": "announcement", "name": ann.title,
                                    "priority": ann.level.screen_priority, "level": ann.level.key,
-                                   "content": {"message": key}, "windows": windows})
+                                   "content": {"message": key}, "windows": windows,
+                                   **({"speech": speech} if speech else {})})
             out["messages"][key] = takeover_layout(ann, *((1080, 1920) if portrait else (1920, 1080)))
         else:
             out["overlays"].append({"id": key, "style": ann.level.display, "rank": ann.level.rank,
                                     "level": ann.level.name, "colour": ann.level.colour, "sound": ann.level.sound,
                                     "title": ann.title, "text": ann.text if ann.level.display == "card"
-                                    else ann.short_text, "windows": windows})
+                                    else ann.short_text, "windows": windows,
+                                    **({"speech": speech} if speech else {})})
     return out
+
+
+# ------------------------------------------------------------------ speech (ADR-0022)
+def speech_text(ann: Announcement) -> str:
+    own = (ann.channel_texts or {}).get(SPEECH, "").strip()
+    if own:
+        return own
+    parts = [ann.level.name, ann.title] + ([ann.body] if ann.body and ann.body != ann.title else [])
+    return ". ".join(p.strip().rstrip(".") for p in parts if p.strip()) + "."
+
+
+def queue_speech(ann: Announcement) -> None:
+    """Render the spoken version ahead of time (when the level speaks and the announcement goes to screens)."""
+    from . import tts
+
+    if not ann.level.speak or SCREENS not in ann.channels:
+        return
+    usable, why = tts.status(ann_settings(ann.event).get("tts_voice", ""))
+    if not usable:
+        Announcement.objects.filter(pk=ann.pk).update(speech_status=Announcement.Speech.UNAVAILABLE, speech_detail=why)
+        ann.speech_status, ann.speech_detail = Announcement.Speech.UNAVAILABLE, why
+        return
+    Announcement.objects.filter(pk=ann.pk).update(speech_status=Announcement.Speech.PENDING, speech_detail="")
+    ann.speech_status = Announcement.Speech.PENDING
+    outbox.enqueue(SPEECH_JOB, {"announcement": str(ann.pk)}, event=ann.event, key=f"speech:{ann.pk}:{ann.updated_at}")
+
+
+SPEECH_JOB = "announcements.speech"
+
+
+def render_speech(job) -> None:
+    """Outbox handler: run Piper (minutes at most), then tell the screens."""
+    from . import tts
+
+    ann = Announcement.objects.select_related("level", "event").filter(pk=job.payload["announcement"]).first()
+    if ann is None:
+        job.result = {"skipped": "announcement gone"}
+        return
+    try:
+        name = tts.render(speech_text(ann), ann_settings(ann.event).get("tts_voice", ""))
+    except tts.SpeechError as exc:
+        Announcement.objects.filter(pk=ann.pk).update(speech_status=Announcement.Speech.FAILED,
+                                                      speech_detail=str(exc)[:300])
+        job.result = {"failed": str(exc)}
+        return
+    Announcement.objects.filter(pk=ann.pk).update(speech_status=Announcement.Speech.READY, speech_file=name,
+                                                  speech_detail="")
+    job.result = {"file": name}
+    _notify_screens(ann)
+
+
+def _speech_sig(screen_id, name: str) -> str:
+    from django.utils.crypto import salted_hmac
+
+    return salted_hmac("evac.announcements.speech", f"{screen_id}:{name}").hexdigest()[:32]
+
+
+def speech_url(ann: Announcement, screen=None) -> str:
+    """Player URL of the spoken file (signed per screen, so <audio> and the service worker can fetch it)."""
+    from django.urls import reverse
+
+    if ann.speech_status != Announcement.Speech.READY or not ann.speech_file:
+        return ""
+    url = reverse("announcements_player:speech", args=[ann.speech_file])
+    return f"{url}?s={screen.pk}.{_speech_sig(screen.pk, ann.speech_file)}" if screen is not None else url
+
+
+def screen_for_speech(value: str, name: str):
+    from django.utils.crypto import constant_time_compare
+
+    from apps.screens.models import Screen
+
+    screen_id, _sep, sig = (value or "").partition(".")
+    if not sig or not constant_time_compare(sig, _speech_sig(screen_id, name)):
+        return None
+    try:
+        return Screen.objects.paired().select_related("event").filter(pk=screen_id).first()
+    except (ValueError, ValidationError):
+        return None
 
 
 def _notify_screens(ann: Announcement) -> None:

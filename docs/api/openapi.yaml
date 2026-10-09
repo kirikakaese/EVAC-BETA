@@ -3947,6 +3947,11 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        speech_status:
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/SpeechStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         deliveries:
           type: array
           items:
@@ -3963,6 +3968,7 @@ components:
       - id
       - level
       - published_at
+      - speech_status
       - status
     AnnouncementRequest:
       type: object
@@ -6767,6 +6773,19 @@ components:
         * `chime` - Chime
         * `gong` - Gong
         * `alert` - Alert tone
+    SpeechStatusEnum:
+      enum:
+      - pending
+      - ready
+      - failed
+      - unavailable
+      type: string
+      description: |-
+        * `` - Not spoken
+        * `pending` - Being prepared
+        * `ready` - Ready
+        * `failed` - Failed
+        * `unavailable` - No voice installed
     StateEnum:
       enum:
       - draft
