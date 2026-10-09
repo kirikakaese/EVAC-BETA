@@ -194,7 +194,12 @@ jobs:
         run: |
           printf 'SECRET_KEY=ci-compose-%s\nEVAC_SECRETS_KEYS=%s\n' "$(openssl rand -hex 24)" \
             "$(python3 -c 'import base64,os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')" > .env
-          docker compose up -d --wait
+          # reuse the image built above and pull the two service images one by one (the mirror throttles bursts)
+          docker tag evac:ci evac:local
+          for svc in db redis; do
+            for i in 1 2 3 4 5; do docker compose pull -q "$svc" && break; sleep $((i * 5)); done
+          done
+          docker compose up -d --wait --pull never --no-build
           curl -fsS http://localhost:8000/healthz
           curl -fsS -o /dev/null -w "%{redirect_url}\n" http://localhost:8000/ | grep -q "/setup/"
           docker compose down -v
