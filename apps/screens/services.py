@@ -30,6 +30,7 @@ from .models import (
 REPORTED_KEYS = {
     "version": 40, "resolution": 20, "orientation": 20, "uptime": 0, "slide": 200, "errors": 0, "memory": 0,
     "last_sync": 40, "evac_ack": 40, "online": 0, "user_agent": 300, "content_version": 64,
+    "display_state": 20, "capture": 0, "recovered": 200,
 }
 
 
@@ -249,19 +250,33 @@ def revoke(screen: Screen, *, actor, request=None) -> None:
     webhooks.emit("screen.revoked", {"screen": str(screen.pk), "name": screen.name}, event=screen.event)
 
 
-#: remote commands staff can send to a running player (more follow with remote management)
-COMMANDS = {"identify": {"seconds": 10}, "reload": {}}
+#: remote commands staff can send to a running player
+COMMANDS = {
+    "identify": {"seconds": 10},
+    "reload": {},
+    "clear_cache": {},
+    "test_pattern": {"seconds": 30},
+    "screenshot": {},
+    "logs": {},
+}
 
 
 def command(screen: Screen, name: str, *, actor, request=None) -> None:
+    from . import remote
+
     if name not in COMMANDS:
         raise ValidationError(f"unknown command {name!r}")
+    if name in remote.UPLOADS:
+        remote.request_upload(screen, remote.UPLOADS[name])
     channel.send(screen, name, dict(COMMANDS[name]))
     log(action="screen.command", actor=actor, target=screen, event=screen.event, request=request,
         message=f"{name} sent to {screen.name}", scope={"screen": str(screen.pk)})
 
 
 def delete_screen(screen: Screen, *, actor, request=None) -> None:
+    from . import remote
+
+    remote.delete_files(screen)
     channel.send(screen, "revoked", {})
     log(action="screen.deleted", actor=actor, target=screen, event=screen.event, request=request,
         message=f"Screen {screen.name} deleted")

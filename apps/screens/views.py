@@ -8,6 +8,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
@@ -66,7 +67,11 @@ def index(request, slug, *, event):
 @event_view("screens.pair", module="screens")
 def pair(request, slug, *, event):
     form = forms.PairForm(request.POST or None, event=event,
-                          initial={"code": request.GET.get("code", ""), "screen": request.GET.get("screen")})
+                          initial={"code": request.GET.get("code", ""), "screen": request.GET.get("screen"),
+                                   "name": request.GET.get("name", "")})
+    nxt = request.POST.get("next") or request.GET.get("next") or ""
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        nxt = ""
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         existing = data["screen"]
@@ -81,8 +86,8 @@ def pair(request, slug, *, event):
             form.add_error("code", exc.messages[0])
         else:
             messages.success(request, _("Screen paired. It connects within a few seconds."))
-            return redirect("screens:detail", slug, screen.pk)
-    return render(request, "screens/pair.html", {"event": event, "form": form})
+            return redirect(nxt) if nxt else redirect("screens:detail", slug, screen.pk)
+    return render(request, "screens/pair.html", {"event": event, "form": form, "next": nxt})
 
 
 @event_view("screens.view", module="screens")
@@ -101,7 +106,7 @@ def detail(request, slug, pk, *, event):
             messages.success(request, _("Screen saved."))
             return redirect("screens:detail", slug, screen.pk)
     _with_health(event, [screen])
-    return render(request, "screens/detail.html", {
+    return render(request, "screens/detail.html", {**_remote_context(request, event, screen),
         "event": event, "screen": screen, "form": form, "can_manage": can_manage, "groups": screen.groups(),
         "can_pair": rbac.has_perm(request.user, event, "screens.pair", request=request),
         "can_control": rbac.has_perm(request.user, event, "screens.control", obj=screen, request=request),
@@ -126,7 +131,7 @@ def command(request, slug, pk, name, *, event):
     except ValidationError:
         raise PermissionDenied from None
     messages.success(request, _("Sent to the screen."))
-    return redirect("screens:detail", slug, screen.pk)
+    return redirect(reverse("screens:detail", args=[slug, screen.pk]) + "#remote")
 
 
 @require_POST
@@ -193,3 +198,85 @@ def pair_global(request):
     if len(events) == 1:
         return redirect(reverse("screens:pair", args=[events[0].slug]) + f"?code={code}")
     return render(request, "screens/pair_global.html", {"events": events, "code": code})
+
+
+# --------------------------------------------------------------------------- display settings
+
+def _display_page(request, event, *, level: str, obj, title: str, back: str, resolved):
+    from apps.core import settings_store
+    from apps.core.forms import SchemaForm
+
+    from . import display
+
+    stored = settings_store.raw("display", level, str(obj.pk))
+    form = SchemaForm(request.POST or None, schema=display.SCHEMA, initial_values=stored, inherit=True,
+                      resolved=resolved, level=level)
+    if request.method == "POST" and form.is_valid():
+        try:
+            settings_store.save("display", level, str(obj.pk), form.values(), user=request.user, event=event,
+                                request=request)
+        except settings_store.SettingsError as exc:
+            for err in exc.errors:
+                form.add_error(None, err)
+        else:
+            messages.success(request, _("Display settings saved. The screens apply them within seconds."))
+            return redirect(request.path)
+    return render(request, "screens/display.html", {"event": event, "form": form, "level": level, "title": title,
+                                                    "back": back, "obj": obj})
+
+
+@event_view("screens.manage", module="screens")
+def screen_display(request, slug, pk, *, event):
+    from . import display
+
+    screen = _screen(request, event, pk, "screens.manage")
+    return _display_page(request, event, level="screen", obj=screen, title=screen.name,
+                         resolved=display.resolve(screen), back=reverse("screens:detail", args=[slug, screen.pk]))
+
+
+@event_view("screens.manage", module="screens")
+def group_display(request, slug, pk, *, event):
+    from . import display
+
+    grp = get_object_or_404(ScreenGroup, event=event, pk=pk)
+    if not rbac.has_perm(request.user, event, "screens.manage", obj=grp, request=request):
+        raise PermissionDenied
+    return _display_page(request, event, level="screen_group", obj=grp, title=grp.name,
+                         resolved=display.resolve(group=grp), back=reverse("screens:group", args=[slug, grp.pk]))
+
+
+# --------------------------------------------------------------------------- remote management
+
+def _remote_context(request, event, screen) -> dict:
+    from . import display, remote
+
+    expected = display.for_screen(screen).get("expected_resolution") or ""
+    reported = (screen.reported or {}).get("resolution") or ""
+    return {"event": event, "screen": screen,
+            "can_control": rbac.has_perm(request.user, event, "screens.control", obj=screen, request=request),
+            "pending_screenshot": remote.pending(screen, "screenshot"), "pending_logs": remote.pending(screen, "logs"),
+            "has_screenshot": screen.screenshot_at is not None and remote.screenshot_path(screen).exists(),
+            "resolution_mismatch": bool(expected and reported and expected != reported), "expected": expected}
+
+
+@event_view("screens.view", module="screens")
+def remote_panel(request, slug, pk, *, event):
+    """The remote-management card (htmx polls it while a screenshot or logs are on their way)."""
+    screen = _screen(request, event, pk)
+    return render(request, "screens/_remote.html", _remote_context(request, event, screen))
+
+
+@event_view("screens.view", module="screens")
+def screenshot(request, slug, pk, *, event):
+    from django.http import FileResponse, Http404
+
+    from . import remote
+
+    screen = _screen(request, event, pk)
+    path = remote.screenshot_path(screen)
+    if not path.exists():
+        raise Http404
+    resp = FileResponse(path.open("rb"), content_type="image/jpeg")
+    resp["Cache-Control"] = "private, no-store"
+    resp["X-Content-Type-Options"] = "nosniff"
+    return resp

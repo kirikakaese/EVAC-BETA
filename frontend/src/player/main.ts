@@ -13,7 +13,10 @@ import { nextChange, slideAt, type Program, type Slide } from "../program/engine
 import type { LayoutData } from "../renderer/types";
 import { applyTheme, fetchTheme } from "./theme";
 import { readEnv, t, wsUrl, type PlayerEnv } from "./env";
-import { installErrorHandlers, recordError, report } from "./report";
+import { installErrorHandlers, log, logLines, onErrorStorm, recordError, report } from "./report";
+import { bootCheck, installLifecycle, markAlive, memoryPressure, safeReload } from "./resilience";
+import { canCapture, captureScreenshot, clearCaches, upload } from "./remote";
+import { applyRoot, applyState, displayState, localHHMM, type DisplaySettings } from "./screen-settings";
 import { getConfig, getToken, setConfig, setToken } from "./storage";
 
 const PAIR_POLL_MS = 3000;
@@ -21,6 +24,8 @@ const PAIR_POLL_MS = 3000;
 const MAX_WAIT_MS = 60_000;
 /** fetch the program again this often to extend its horizon (it covers several days) */
 const PROGRAM_REFRESH_MS = 3_600_000;
+/** housekeeping: display state, daily reload, memory, stalled timers */
+const TICK_MS = 15_000;
 
 export class Player {
   readonly clock = new Clock();
@@ -35,13 +40,22 @@ export class Player {
   private shown = "";
   private timer: ReturnType<typeof setTimeout> | null = null;
   private refresher: ReturnType<typeof setInterval> | null = null;
+  private housekeeping: ReturnType<typeof setInterval> | null = null;
+  private displayState = "on";
+  private recovered = "";
+  private lastTick = Date.now();
+  private reloadAtNextSlide = "";
+  private lastDailyReload = "";
 
-  constructor(private env: PlayerEnv, root: HTMLElement) {
+  constructor(private env: PlayerEnv, private root: HTMLElement) {
     this.display = new Display(root, this.clock);
     if (env.mode === "obs") document.documentElement.classList.add("obs");
   }
 
   async boot(): Promise<void> {
+    this.recovered = bootCheck();
+    log("info", `player ${this.env.version} started (${navigator.userAgent})`);
+    if (this.recovered) log("warn", this.recovered);
     const token = getToken();
     if (!token) return this.pair();
     return this.play(token);
@@ -94,19 +108,25 @@ export class Player {
       recordError(String(err));
       this.config = cached;
     }
+    this.applySettings();
     this.bundle = cachedBundle();
     this.program = cachedProgram();
     await this.loadContent(token);
     await this.loadProgram(token);
     this.show();
     this.refresher = setInterval(() => void this.loadProgram(token).then(() => this.show()), PROGRAM_REFRESH_MS);
+    this.housekeeping = setInterval(() => this.tick(), TICK_MS);
     this.conn = new Connection({
       api: this.env.api, ws: wsUrl(this.env), token, clock: this.clock,
       heartbeatSeconds: this.config?.settings.heartbeat_seconds ?? 10, since: this.config?.seq ?? 0,
       report: () => report({ version: this.env.version, slide: this.slide, lastSync: this.lastSync,
-                             online: this.transport !== "offline" }),
+                             online: this.transport !== "offline", displayState: this.displayState,
+                             capture: canCapture(), recovered: this.recovered }),
       onMessage: (m) => void this.handle(m, token),
-      onTransport: (tr) => { this.transport = tr; },
+      onTransport: (tr) => {
+        if (tr !== this.transport) log("info", `connection: ${tr}`);
+        this.transport = tr;
+      },
       onUnauthorized: () => this.unpair(),
       onSync: (at) => { this.lastSync = at; },
     });
@@ -114,6 +134,7 @@ export class Player {
   }
 
   private async handle(msg: Message, token: string): Promise<void> {
+    log("info", `message: ${msg.type}`);
     switch (msg.type) {
       case "config.changed":
         try {
@@ -121,6 +142,7 @@ export class Player {
           setConfig(this.config);
           this.lastSync = Date.now();
           this.conn?.setHeartbeat(this.config.settings.heartbeat_seconds);
+          this.applySettings();
           const before = `${this.bundle?.version}/${this.program?.version}`;
           await this.loadContent(token);
           await this.loadProgram(token);
@@ -150,7 +172,29 @@ export class Player {
         break;
       }
       case "reload":
-        location.reload();
+        safeReload("requested by staff", { force: true });
+        break;
+      case "clear_cache":
+        await clearCaches();
+        safeReload("cache cleared by staff", { force: true });
+        break;
+      case "test_pattern": {
+        const name = this.config?.screen.name ?? "";
+        const res = `${Math.round(innerWidth * devicePixelRatio)}×${Math.round(innerHeight * devicePixelRatio)}`;
+        this.display.testPattern(name, [`${res} · DPR ${devicePixelRatio}`, `${this.env.version} · ${this.transport}`],
+                                 Number(msg.data.seconds) || 30);
+        break;
+      }
+      case "screenshot":
+        try {
+          await upload(this.env.api, token, "screenshot", await captureScreenshot());
+        } catch (err) {
+          recordError(`screenshot: ${String(err)}`);
+          await upload(this.env.api, token, "screenshot", { error: String(err).slice(0, 280) }).catch(() => undefined);
+        }
+        break;
+      case "logs":
+        await upload(this.env.api, token, "logs", { lines: logLines() }).catch((e) => recordError(String(e)));
         break;
       default:
         break;
@@ -228,20 +272,64 @@ export class Player {
       }
     }
     if (key === this.shown) return;
+    if (this.reloadAtNextSlide && this.shown && safeReload(this.reloadAtNextSlide)) return;
+    this.reloadAtNextSlide = "";
     this.shown = key;
-    if (data && this.bundle) {
+    log("info", `showing ${this.slide}`);
+    const audio = { enabled: cfg.display?.audio !== false, volume: cfg.display?.volume ?? 100 };
+    try {
+      if (!data || !this.bundle) throw new Error("nothing to show");
       this.display.layout(data, {
         vars: this.vars(), now: () => this.clock.now(), timezone: cfg.event.timezone, assets: this.bundle.assets,
-        fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+        fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches, audio,
         onError: (id, err) => recordError(`${id}: ${String(err)}`),
       }, variables);
-    } else {
+    } catch (err) {
+      if (data) recordError(`render failed, showing the idle slide: ${String(err)}`);
       this.slide = "idle";
       this.display.idle(cfg);
     }
   }
 
+  /** Rotation, overscan, scale, keystone and the dim/sleep overlay from the display settings. */
+  private applySettings(): void {
+    const s: DisplaySettings = this.config?.display ?? {};
+    applyRoot(this.root, s);
+    this.updateDisplayState();
+  }
+
+  private updateDisplayState(): void {
+    const s: DisplaySettings = this.config?.display ?? {};
+    const state = displayState(s, localHHMM(this.clock.now(), this.config?.event.timezone));
+    if (state !== this.displayState) log("info", `display ${state}`);
+    this.displayState = state;
+    applyState(state, s);
+  }
+
+  /** Every 15 s: dim/sleep, daily reload, memory pressure, and catching up after the tab was frozen. */
+  private tick(): void {
+    const now = Date.now();
+    const stalled = now - this.lastTick > TICK_MS * 3;
+    this.lastTick = now;
+    markAlive(now);
+    this.updateDisplayState();
+    if (stalled) {
+      log("warn", "timers were stalled; resynchronising");
+      this.shown = "";
+      this.show();
+    }
+    const daily = this.config?.display?.daily_reload;
+    const hhmm = localHHMM(this.clock.now(), this.config?.event.timezone);
+    if (daily && hhmm === daily && this.lastDailyReload !== hhmm && performance.now() > 3_600_000) {
+      this.lastDailyReload = hhmm;
+      this.reloadAtNextSlide = "daily reload";
+    }
+    if (memoryPressure() && !this.reloadAtNextSlide) this.reloadAtNextSlide = "memory pressure";
+  }
+
   private unpair(): void {
+    if (this.housekeeping) clearInterval(this.housekeeping);
+    this.housekeeping = null;
     if (this.timer) clearTimeout(this.timer);
     if (this.refresher) clearInterval(this.refresher);
     this.timer = this.refresher = null;
@@ -264,6 +352,8 @@ function registerServiceWorker(): void {
 
 if (typeof document !== "undefined" && document.getElementById("player")) {
   installErrorHandlers();
+  installLifecycle();
+  onErrorStorm(() => safeReload("50 errors within a minute"));
   registerServiceWorker();
   const env = readEnv();
   void new Player(env, document.getElementById("player") as HTMLElement).boot();

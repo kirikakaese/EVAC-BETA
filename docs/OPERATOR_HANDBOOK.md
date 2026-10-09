@@ -75,7 +75,8 @@ Open EVAC in a browser. Until the first account exists every page redirects to t
    set `EVAC_SETUP_TOKEN` and enter it here.
 2. **Venue** — where it happens (can be skipped; venues are reusable across events).
 3. **Event** — name, short name (used in URLs: `/e/<short name>/`), time zone, dates.
-4. **First screen** — follows later in phase 1.
+4. **First screen** — open `/player/` on a display and type the code it shows; the screen pairs and shows a
+   welcome slide (skip with *Later*).
 
 The wizard cannot be re-run once an account exists.
 
@@ -126,12 +127,27 @@ The wizard cannot be re-run once an account exists.
 - **Groups**: manual groups list screens; dynamic groups also take every screen with a tag or in a venue,
   zone or room. Roles can be limited to a screen group ("may run the foyer screens only").
 - `/player/` works behind the early-access password: screens use their device token instead.
-- **Identify** flashes the screen's name on the screen for 10 seconds; **Reload player** reloads it.
+- **Display settings** (*Screen → Display settings*, *Screen group → Display settings*, or per event under
+  *Event settings → Display*): rotation, overscan, content scale, keystone, expected resolution (the screen page
+  warns on a mismatch), dim and "screen off" times, sound and volume, the daily reload time and the evacuation
+  role (used in phase 3). Values inherit instance → event → screen groups (in name order) → screen. Use portrait
+  layouts on screens rotated by 90°.
+- **Remote management** (*Screen → Remote management*): **Take screenshot** (a real capture of the screen; kiosks
+  set up with `deploy/kiosk` allow it, other browsers report why not), **Fetch logs** (the player's last 300
+  log lines), **Identify** (name for 10 s), **Test pattern** (colour bars, grid and circle for 30 s, to check
+  overscan and colours), **Reload player**, **Clear cache and reload** (downloads everything again; the
+  pairing stays).
+- **Self-healing**: the player reloads itself when it gets into trouble (many errors, little memory, the daily
+  reload time) but never more than three times in ten minutes, reports an unclean restart, and keeps showing
+  content in the meantime.
 - The player keeps its app and the last configuration offline: after a power cut without network it
   starts again and shows the last known content. `/player/?mode=obs` has a transparent background and no
   cursor, for OBS browser sources and video mixers.
-- Kiosk browsers should start `/player/` in full screen with autoplay allowed (Chromium:
-  `--kiosk --autoplay-policy=no-user-gesture-required`); a Raspberry Pi recipe follows in `deploy/kiosk/`.
+- **Raspberry Pi kiosk**: `deploy/kiosk/` turns a Pi 4/5 into a screen that boots into the player, restarts a
+  hung browser and survives power cuts (`sudo sh provision.sh https://<your EVAC>/player/`; see its README, also
+  for building an SD-card image for many screens). Other kiosk browsers should start `/player/` in full
+  screen with autoplay allowed (Chromium: `--kiosk --autoplay-policy=no-user-gesture-required
+  --auto-accept-this-tab-capture`).
 
 ## 5b. Design & assets
 

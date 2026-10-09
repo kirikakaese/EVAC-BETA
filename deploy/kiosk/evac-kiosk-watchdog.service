@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[Unit]
+Description=EVAC kiosk watchdog (restarts a hung browser)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/evac-kiosk/evac-kiosk-watchdog.sh

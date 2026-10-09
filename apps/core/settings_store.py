@@ -31,7 +31,9 @@ def namespace(key: str):
     return ns
 
 
-def chain(*, venue=None, event=None, screen_group=None, screen=None) -> list[tuple[str, str]]:
+def chain(*, venue=None, event=None, screen_group=None, screen_groups=(), screen=None) -> list[tuple[str, str]]:
+    """Scope levels from the most general to the most specific. ``screen_groups`` (a screen's groups, in
+    order) are applied one after the other, so a later group wins over an earlier one."""
     out = [("instance", "")]
     if venue is not None:
         out.append(("venue", str(venue.pk)))
@@ -39,6 +41,7 @@ def chain(*, venue=None, event=None, screen_group=None, screen=None) -> list[tup
         out.append(("event", str(event.pk)))
     if screen_group is not None:
         out.append(("screen_group", str(screen_group.pk)))
+    out.extend(("screen_group", str(g.pk)) for g in screen_groups)
     if screen is not None:
         out.append(("screen", str(screen.pk)))
     return out

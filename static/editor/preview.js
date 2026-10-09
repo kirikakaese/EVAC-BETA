@@ -143,7 +143,7 @@ const st = [0, 1], B = [1, 0], D = [2, 3], O = [3, 2], it = {
   M: B,
   Q: D,
   H: O
-}, rt = /^\d*$/, ot = /^[A-Z0-9 $%*+./:-]*$/, S = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", N = 1, k = 40, R = 3, at = 3, v = 40, ct = 10, T = [
+}, rt = /^\d*$/, ot = /^[A-Z0-9 $%*+./:-]*$/, x = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", N = 1, k = 40, R = 3, at = 3, v = 40, ct = 10, T = [
   // Version: (note that index 0 is for padding, and is set to an illegal value)
   // 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
   [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
@@ -469,10 +469,10 @@ function mt(n) {
   const t = [];
   let e;
   for (e = 0; e + 2 <= n.length; e += 2) {
-    let s = S.indexOf(n.charAt(e)) * 45;
-    s += S.indexOf(n.charAt(e + 1)), w(s, 11, t);
+    let s = x.indexOf(n.charAt(e)) * 45;
+    s += x.indexOf(n.charAt(e + 1)), w(s, 11, t);
   }
-  return e < n.length && w(S.indexOf(n.charAt(e)), 6, t), new F(dt, n.length, t);
+  return e < n.length && w(x.indexOf(n.charAt(e)), 6, t), new F(dt, n.length, t);
 }
 function pt(n) {
   return n === "" ? [] : H(n) ? [ft(n)] : q(n) ? [mt(n)] : [L(wt(n))];
@@ -618,17 +618,17 @@ function Mt(n, t = 1) {
     n.types.unshift(Array.from({ length: s }, (o) => i)), n.types.push(Array.from({ length: s }, (o) => i));
   return n;
 }
-const x = "http://www.w3.org/2000/svg";
+const S = "http://www.w3.org/2000/svg";
 function Ct(n, t = document) {
-  const { data: e, size: s } = vt(n, { ecc: "M", border: 2 }), i = t.createElementNS(x, "svg");
+  const { data: e, size: s } = vt(n, { ecc: "M", border: 2 }), i = t.createElementNS(S, "svg");
   i.setAttribute("viewBox", `0 0 ${s} ${s}`), i.setAttribute("shape-rendering", "crispEdges"), i.setAttribute("class", "qr");
-  const r = t.createElementNS(x, "rect");
+  const r = t.createElementNS(S, "rect");
   r.setAttribute("width", String(s)), r.setAttribute("height", String(s)), r.setAttribute("fill", "#fff"), i.appendChild(r);
   let o = "";
   e.forEach((c, l) => c.forEach((u, h) => {
     u && (o += `M${h} ${l}h1v1h-1z`);
   }));
-  const a = t.createElementNS(x, "path");
+  const a = t.createElementNS(S, "path");
   return a.setAttribute("d", o), a.setAttribute("fill", "#000"), i.appendChild(a), i;
 }
 class m extends HTMLElement {
@@ -680,7 +680,7 @@ function At(n, t) {
   }
   t.style.fontSize = `${i}px`;
 }
-class St extends m {
+class xt extends m {
   draw() {
     const t = document.createElement("div");
     t.className = "evac-text";
@@ -700,7 +700,7 @@ class St extends m {
     });
   }
 }
-class xt extends m {
+class St extends m {
   draw() {
     const t = document.createElement("div");
     t.className = "evac-richtext";
@@ -760,7 +760,7 @@ class $t extends m {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Video");
     const e = document.createElement("video");
-    e.muted = this.props.muted !== !1, e.loop = this.props.loop !== !1, e.playsInline = !0, e.preload = "auto", e.style.objectFit = String(this.props.fit ?? "cover"), t.urls.poster && (e.poster = t.urls.poster);
+    e.muted = this.props.muted !== !1 || this.ctx.audio?.enabled === !1, e.volume = Math.max(0, Math.min(1, (this.ctx.audio?.volume ?? 100) / 100)), e.loop = this.props.loop !== !1, e.playsInline = !0, e.preload = "auto", e.style.objectFit = String(this.props.fit ?? "cover"), t.urls.poster && (e.poster = t.urls.poster);
     for (const s of ["webm", "mp4", "original"]) {
       if (!t.urls[s]) continue;
       const i = document.createElement("source");
@@ -776,7 +776,7 @@ class Nt extends m {
     if (!t) return this.placeholder("Audio");
     if (this.ctx.editing) return this.placeholder(`♪ ${t.name}`);
     const e = document.createElement("audio");
-    e.src = t.urls.audio ?? t.urls.original, e.loop = this.props.loop !== !1, e.autoplay = !0, this.replaceChildren(e);
+    e.src = t.urls.audio ?? t.urls.original, e.loop = this.props.loop !== !1, e.muted = this.ctx.audio?.enabled === !1, e.volume = Math.max(0, Math.min(1, (this.ctx.audio?.volume ?? 100) / 100)), e.autoplay = !0, this.replaceChildren(e);
   }
 }
 class kt extends m {
@@ -834,8 +834,8 @@ class Ot extends m {
   }
 }
 const Tt = {
-  text: St,
-  richtext: xt,
+  text: xt,
+  richtext: St,
   image: Pt,
   slideshow: zt,
   video: $t,

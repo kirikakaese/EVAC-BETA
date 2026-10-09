@@ -128,6 +128,29 @@ def starter(width: int = 1920, height: int = 1080) -> dict[str, Any]:
     ]}
 
 
+def welcome(width: int = 1920, height: int = 1080) -> dict[str, Any]:
+    """The slide a freshly paired screen shows when its event has no layouts yet (setup wizard, 1.5.4)."""
+    center = {"textAlign": "center"}
+    return {"format": FORMAT, "width": width, "height": height, "background": {"color": "token:background"},
+            "elements": [
+        {"id": "kicker", "type": "text", "name": "Kicker", "frame": {"x": 6, "y": 16, "w": 88, "h": 8},
+         "style": {**center, "fontSize": 4.5, "fontWeight": 700, "color": "token:accent", "letterSpacing": 0.15,
+                   "textTransform": "uppercase"}, "props": {"text": "Welcome to", "autofit": True}},
+        {"id": "title", "type": "text", "name": "Event name", "frame": {"x": 6, "y": 25, "w": 88, "h": 22},
+         "style": {**center, "fontFamily": "token:heading", "fontSize": 13, "fontWeight": 800},
+         "props": {"text": "{{ event.name }}", "autofit": True, "clamp": 2}},
+        {"id": "ready", "type": "text", "name": "Screen", "frame": {"x": 6, "y": 52, "w": 88, "h": 8},
+         "style": {**center, "fontSize": 4, "color": "token:muted"},
+         "props": {"text": "{{ screen.name }} is ready.", "autofit": True}},
+        {"id": "hint", "type": "text", "name": "Hint", "frame": {"x": 12, "y": 61, "w": 76, "h": 10},
+         "style": {**center, "fontSize": 3, "color": "token:muted"},
+         "props": {"text": "Design slides under Design & assets → Layouts, and choose what plays under Playback.",
+                   "autofit": True}},
+        {"id": "clock", "type": "clock", "name": "Clock", "frame": {"x": 35, "y": 76, "w": 30, "h": 14},
+         "style": {**center, "fontSize": 10, "tabularNumbers": True}, "props": {"format": "HH:mm"}},
+    ]}
+
+
 def validate(data: Any) -> list[str]:
     errors = []
     validator = jsonschema.Draft202012Validator(SCHEMA)

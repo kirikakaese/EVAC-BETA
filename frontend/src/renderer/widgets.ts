@@ -196,7 +196,8 @@ class VideoWidget extends EvacWidget {
     const a = this.asset(this.props.asset);
     if (!a) return this.placeholder("Video");
     const v = document.createElement("video");
-    v.muted = this.props.muted !== false;
+    v.muted = this.props.muted !== false || this.ctx.audio?.enabled === false;
+    v.volume = Math.max(0, Math.min(1, (this.ctx.audio?.volume ?? 100) / 100));
     v.loop = this.props.loop !== false;
     v.playsInline = true;
     v.preload = "auto";
@@ -225,6 +226,8 @@ class AudioWidget extends EvacWidget {
     const audio = document.createElement("audio");
     audio.src = a.urls.audio ?? a.urls.original;
     audio.loop = this.props.loop !== false;
+    audio.muted = this.ctx.audio?.enabled === false;
+    audio.volume = Math.max(0, Math.min(1, (this.ctx.audio?.volume ?? 100) / 100));
     audio.autoplay = true;
     this.replaceChildren(audio);
   }

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth import login
@@ -109,10 +110,20 @@ def setup(request):
         return render(request, "portal/setup.html", {"step": step, "form": form, "steps": SETUP_STEPS,
                                                      "venue": venue})
     if step == "screen":
+        event = Event.objects.filter(slug=request.session.get("evac_setup_event", "")).first()
+        # the screens module is optional: pairing is only offered when it is installed and on for the event
+        can_pair = event is not None and modules.is_enabled("screens", event)
         if request.method == "POST":
             request.session["evac_setup_step"] = "done"
+            code = (request.POST.get("code") or "").strip()
+            if can_pair and code and "skip" not in request.POST:
+                done = reverse("portal:setup") + "?step=done"
+                return redirect(reverse("screens:pair", args=[event.slug]) + "?" + urlencode(
+                    {"code": code, "name": (request.POST.get("name") or "").strip()[:200], "next": done}))
             return redirect(reverse("portal:setup") + "?step=done")
-        return render(request, "portal/setup.html", {"step": step, "steps": SETUP_STEPS})
+        return render(request, "portal/setup.html", {"step": step, "steps": SETUP_STEPS, "event": event,
+                                                     "can_pair": can_pair,
+                                                     "player_url": request.build_absolute_uri("/player/")})
     slug = request.session.pop("evac_setup_event", None)
     request.session.pop("evac_setup_step", None)
     request.session.pop("evac_setup_venue", None)

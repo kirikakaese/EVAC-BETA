@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/pair/<uuid:pk>/", player_api.pair_status, name="pair_status"),
     path("api/config/", player_api.config, name="config"),
     path("api/heartbeat/", player_api.heartbeat, name="heartbeat"),
+    path("api/upload/<slug:kind>/", player_api.upload, name="upload"),
     path("api/stream/", player_api.stream, name="stream"),
     path("api/poll/", player_api.poll, name="poll"),
 ]

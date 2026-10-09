@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // HTTP calls to /player/api/ with a timeout and the device token.
 
+import type { DisplaySettings } from "./screen-settings";
+
 export class Unauthorized extends Error {}
 
 export interface ScreenConfig {
@@ -8,6 +10,7 @@ export interface ScreenConfig {
             groups: { id: string; name: string }[] };
   event: { slug: string; name: string; timezone: string };
   settings: { heartbeat_seconds: number; [key: string]: unknown };
+  display?: DisplaySettings;
   server_time: number;
   seq: number;
 }

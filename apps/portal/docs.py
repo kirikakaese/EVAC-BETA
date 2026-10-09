@@ -41,6 +41,8 @@ CORE_DOCS: list[Doc] = [
         _("What EVAC is, the safety statement and a five-minute quick start."), "\U0001F4CB"),
     Doc("operator-handbook", "docs/OPERATOR_HANDBOOK.md", _("Operator Handbook"), _("Admins & orga"),
         _("Installing, first run, events, roles, modules, extensions, venue node, backups."), "\U0001F6E0\uFE0F"),
+    Doc("kiosk", "deploy/kiosk/README.md", _("Raspberry Pi kiosk"), _("Admins & orga"),
+        _("Turn a Raspberry Pi into a self-healing EVAC screen; build images for many screens."), "\U0001F5A5\uFE0F"),
     Doc("evacuation", "docs/EVACUATION.md", _("Evacuation & alarms"), _("Orga & safety"),
         _("Safety statement, models, states, triggers, fail-safe behaviour and limitations."), "\U0001F6A8"),
     Doc("designer-guide", "docs/DESIGNER_GUIDE.md", _("Designer Guide"), _("Content designers"),

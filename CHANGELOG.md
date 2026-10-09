@@ -6,6 +6,24 @@ released.
 
 ## [Unreleased]
 
+### Added — screen operations (Phase 1, part 6)
+
+- Display settings per event, screen group and screen (ADR-0017): rotation, overscan, content scale, keystone,
+  expected resolution, dim and "screen off" times, sound and volume, daily reload time, evacuation role;
+  screens apply changes within seconds.
+- Remote management on the screen page: real screenshots (tab capture), the player's log, test pattern,
+  clear cache and reload, plus identify and reload; uploads are only accepted when requested and images are
+  re-encoded.
+- Self-healing player: render fallback, reload guard (at most 3 reloads in 10 minutes), crash detection,
+  reloads on error storms, memory pressure and at a daily time, resync after frozen timers.
+- Raspberry Pi kiosk recipe `deploy/kiosk/` (cage + Chromium, watchdog, hardware watchdog, read-only option,
+  pi-gen stage for images).
+- The setup wizard pairs the first screen; the first screen of an event without layouts shows a welcome slide.
+
+### Fixed
+
+- Property tests of the audit hash chain no longer fail on slow CI runners (no Hypothesis deadline).
+
 ### Added — playlists, schedules and live overrides (Phase 1, part 5)
 
 - Modules *Playlists*, *Schedules* and *Live overrides* under **Playback** (ADR-0016): ordered, shuffled

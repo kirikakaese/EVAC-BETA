@@ -260,6 +260,8 @@ def test_websocket(client, admin, event, paired):
     screen, token = paired
     from evac.asgi import application
 
+    start_seq = channel.last_seq(screen.pk)  # pairing already queued a config.changed (welcome slide)
+
     async def run():
         from channels.db import database_sync_to_async
 
@@ -271,7 +273,7 @@ def test_websocket(client, admin, event, paired):
 
         comm = WebsocketCommunicator(application, "/ws/screen/", headers=headers)
         await comm.connect()
-        await comm.send_json_to({"type": "auth", "token": token, "since": 0})
+        await comm.send_json_to({"type": "auth", "token": token, "since": start_seq})
         hello = await comm.receive_json_from(timeout=2)
         assert hello["type"] == "hello" and hello["screen"] == str(screen.pk)
         await comm.send_json_to({"type": "heartbeat", "data": {"version": "ws"}})

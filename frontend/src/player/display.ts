@@ -82,6 +82,26 @@ export class Display {
     this.rendered = renderLayout(main, data, ctx);
   }
 
+  /** Colour bars, a grid and circles to check geometry, overscan and colours (with name and resolution). */
+  testPattern(title: string, lines: string[], seconds = 30): void {
+    this.overlay?.remove();
+    if (this.overlayTimer) clearTimeout(this.overlayTimer);
+    const ov = el("div", "test-pattern");
+    ov.setAttribute("role", "img");
+    ov.setAttribute("aria-label", title);
+    const bars = el("div", "tp-bars");
+    for (const c of ["white", "yellow", "cyan", "green", "magenta", "red", "blue", "black"]) {
+      bars.appendChild(el("span", `tp-bar tp-${c}`));
+    }
+    const ramp = el("div", "tp-ramp");
+    const info = el("div", "tp-info");
+    info.append(el("p", "tp-title", title), ...lines.map((l) => el("p", "", l)));
+    ov.append(bars, ramp, el("div", "tp-grid"), el("div", "tp-circle"), el("div", "tp-corners"), info);
+    this.root.appendChild(ov);
+    this.overlay = ov;
+    this.overlayTimer = setTimeout(() => ov.remove(), seconds * 1000);
+  }
+
   identify(name: string, detail: string, seconds = 10): void {
     this.overlay?.remove();
     if (this.overlayTimer) clearTimeout(this.overlayTimer);

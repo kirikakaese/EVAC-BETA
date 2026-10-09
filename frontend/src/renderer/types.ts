@@ -52,5 +52,7 @@ export interface RenderContext {
   /** editor: show placeholders and error outlines instead of hiding problems */
   editing?: boolean;
   reducedMotion?: boolean;
+  /** screen audio settings: off mutes every media widget */
+  audio?: { enabled: boolean; volume: number };
   onError?: (elementId: string, error: unknown) => void;
 }

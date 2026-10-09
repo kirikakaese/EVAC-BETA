@@ -23,8 +23,22 @@
     <button class="btn btn-primary">{% trans "Create event" %}</button></form>
 {% elif step == "screen" %}
   <h1>{% trans "Pair your first screen" %}</h1>
-  <p>{% trans "The screen player and pairing arrive with the screens module (roadmap phase 1). Once it is installed, open /player/ on any display, enter the code shown there in the event's screen list, and the welcome slide appears." %}</p>
+  {% if can_pair %}
+  <ol class="setup-howto">
+    <li>{% blocktrans with url=player_url %}Open <strong>{{ url }}</strong> in the browser of a display (TV, monitor, Raspberry Pi kiosk). It shows a six-character code.{% endblocktrans %}</li>
+    <li>{% trans "Type the code here. The screen shows a welcome slide within seconds." %}</li>
+  </ol>
+  <form method="post" novalidate>{% csrf_token %}
+    <div class="field"><label for="id_code">{% trans "Code shown on the screen" %}</label>
+      <input id="id_code" name="code" class="code-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12"></div>
+    <div class="field"><label for="id_name">{% trans "Name of the screen" %}</label>
+      <input id="id_name" name="name" maxlength="200" placeholder="{% trans 'e.g. Foyer left' %}"></div>
+    <button class="btn btn-primary">{% trans "Pair screen" %}</button>
+    <button class="btn btn-ghost" name="skip" value="1">{% trans "Later" %}</button></form>
+  {% else %}
+  <p>{% trans "Screens are switched off for this event. You can pair screens later under Screens → Pair a screen." %}</p>
   <form method="post">{% csrf_token %}<button class="btn btn-primary">{% trans "Continue" %}</button></form>
+  {% endif %}
 {% else %}
   <h1>{% trans "All set" %}</h1>
   <p>{% trans "EVAC is ready. Next steps: invite your team, check which modules the event needs, and connect extensions." %}</p>

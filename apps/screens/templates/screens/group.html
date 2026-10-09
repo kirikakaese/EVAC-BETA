@@ -2,7 +2,8 @@
 {% block title %}{{ group.name }}{% endblock %}
 {% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'screens:index' event.slug %}">{% trans "Screens" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'screens:groups' event.slug %}">{% trans "Groups" %}</a> <span aria-hidden="true">›</span> {{ group.name }}</p>{% endblock %}
 {% block content %}
-<div class="page-header"><h1>{{ group.name }}</h1></div>
+<div class="page-header"><h1>{{ group.name }}</h1>
+  {% if can_manage %}<div class="actions"><a class="btn" href="{% url 'screens:group_display' event.slug group.pk %}">{% trans "Display settings" %}</a></div>{% endif %}</div>
 {% if group.description %}<p>{{ group.description }}</p>{% endif %}
 <section class="card"><h2>{% trans "Screens" %}</h2>
 <div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Status" %}</th></tr></thead>
