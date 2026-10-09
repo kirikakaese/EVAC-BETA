@@ -11,6 +11,8 @@ export type ContentRef = { layout: string } | { playlist: string } | { message: 
 export interface Entry {
   id: string; source: string; name: string; priority: number; level?: string; content: ContentRef;
   windows: Window[];
+  /** spoken version of a full-screen announcement (ADR-0022) */
+  speech?: string;
 }
 
 export interface Item {

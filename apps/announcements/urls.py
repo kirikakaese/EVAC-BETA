@@ -5,7 +5,8 @@ from . import views
 
 app_name = "announcements"
 PORTAL_MOUNT = True  # /e/<slug>/announcements/
-ROOT_MOUNTS = [("public/", "apps.announcements.public_urls", "announcements_public")]
+ROOT_MOUNTS = [("public/", "apps.announcements.public_urls", "announcements_public"),
+               ("player/api/announcements/", "apps.announcements.player_urls", "announcements_player")]
 urlpatterns = [
     path("", views.index, name="index"),
     path("new/", views.compose, name="new"),
@@ -21,4 +22,6 @@ urlpatterns = [
     path("<uuid:pk>/reject/", views.reject, name="reject"),
     path("<uuid:pk>/cancel/", views.cancel, name="cancel"),
     path("<uuid:pk>/delete/", views.delete, name="delete"),
+    path("<uuid:pk>/speech/", views.speech, name="speech"),
+    path("<uuid:pk>/speech/render/", views.speech_render, name="speech_render"),
 ]

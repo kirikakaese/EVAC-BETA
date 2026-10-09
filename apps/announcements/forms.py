@@ -68,6 +68,11 @@ class AnnouncementForm(forms.ModelForm):
         from apps.core.registry import registry
 
         specs = registry.ensure_loaded().notification_channels
+        self.fields[TEXT_PREFIX + services.SPEECH] = forms.CharField(
+            label=_("Spoken text"), max_length=services.SPEECH_MAX, required=False,
+            initial=(self.instance.channel_texts or {}).get(services.SPEECH, ""),
+            widget=forms.Textarea(attrs={"rows": 2}),
+            help_text=_("What screens with sound say, for levels that are read aloud. Empty: level, title and text."))
         for key in services.available_channels(event):
             spec = specs[key]
             if spec.max_length:
@@ -138,8 +143,8 @@ class LevelForm(forms.ModelForm):
 
     class Meta:
         model = Level
-        fields = ["name", "rank", "colour", "display", "sound", "min_display_seconds", "repeat_every_minutes",
-                  "default_channels", "requires_approval"]
+        fields = ["name", "rank", "colour", "display", "sound", "speak", "min_display_seconds",
+                  "repeat_every_minutes", "default_channels", "requires_approval"]
         widgets = {"colour": forms.TextInput(attrs={"type": "color"})}
 
     def __init__(self, *args, event, **kwargs):

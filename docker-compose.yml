@@ -28,6 +28,7 @@ x-evac-service: &evac-service
     context: .
     args:
       PYTHON_IMAGE: ${EVAC_PYTHON_IMAGE:-python:3.12-slim}
+      WITH_TTS: ${EVAC_WITH_TTS:-0}
   image: evac:local
   restart: unless-stopped
   env_file:

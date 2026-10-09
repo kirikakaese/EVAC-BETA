@@ -23,6 +23,11 @@ RUN python -c "import tomllib; d = tomllib.load(open('pyproject.toml', 'rb'))['p
     && pip install --no-cache-dir -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
+# Optional offline speech for announcements (ADR-0022): Piper adds ~220 MB, so it is off by default.
+# Build with --build-arg WITH_TTS=1, then install a voice: manage.py evac_tts install
+ARG WITH_TTS=0
+RUN if [ "$WITH_TTS" = "1" ]; then pip install --no-cache-dir "piper-tts>=1.2"; fi
+
 COPY . /app
 
 RUN SECRET_KEY=build EVAC_ALLOW_INSECURE=1 DATABASE_URL=sqlite:///build.sqlite3 \

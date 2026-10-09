@@ -44,6 +44,8 @@ env = environ.Env(
     EVAC_OIDC_AUTO_CREATE=(bool, True),
     EVAC_OIDC_TRUST_EMAIL_VERIFIED=(bool, True),
     EVAC_VAPID_SUBJECT=(str, ""),
+    EVAC_PIPER_BINARY=(str, "piper"),
+    EVAC_TTS_VOICES_DIR=(str, ""),
     EVAC_OIDC_ALLOW_PASSWORD_LOGIN=(bool, True),
     EVAC_OIDC_TRUST_MFA=(bool, False),
     EVAC_WEBAUTHN_RP_ID=(str, ""),
@@ -308,6 +310,9 @@ EVAC_OIDC_AUTO_CREATE = env("EVAC_OIDC_AUTO_CREATE")
 EVAC_OIDC_TRUST_EMAIL_VERIFIED = env("EVAC_OIDC_TRUST_EMAIL_VERIFIED")
 # Web Push contact (VAPID "sub"): mailto: or https: URL; empty = mailto:DEFAULT_FROM_EMAIL
 EVAC_VAPID_SUBJECT = env("EVAC_VAPID_SUBJECT")
+# Offline speech (ADR-0022): the Piper executable and the voices directory (empty: MEDIA_ROOT/tts/voices)
+EVAC_PIPER_BINARY = env("EVAC_PIPER_BINARY")
+EVAC_TTS_VOICES_DIR = env("EVAC_TTS_VOICES_DIR")
 EVAC_OIDC_ALLOW_PASSWORD_LOGIN = env("EVAC_OIDC_ALLOW_PASSWORD_LOGIN")
 # Treat an IdP login with MFA (amr claim) as two-factor verified in EVAC
 EVAC_OIDC_TRUST_MFA = env("EVAC_OIDC_TRUST_MFA")

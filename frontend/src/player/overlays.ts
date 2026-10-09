@@ -3,12 +3,18 @@
 // card. They come with the program (``program.overlays``, ADR-0019), so they also appear and disappear on time
 // without network. Full-screen announcements are program entries instead and need nothing here.
 import type { Window } from "../program/engine";
+import type { Speaker } from "./speech";
+
+/** pause between the level's sound and the spoken text */
+export const SPEECH_DELAY_MS = 1600;
 
 export type OverlayStyle = "banner" | "ticker" | "card";
 
 export interface Overlay {
   id: string; style: OverlayStyle; rank: number; level: string; colour: string; sound: string; title: string;
   text: string; windows: Window[];
+  /** URL of the spoken version (ADR-0022), played after the sound */
+  speech?: string;
 }
 
 export interface Active { overlay: Overlay; start: number; end: number | null }
@@ -111,7 +117,7 @@ export class OverlayLayer {
   private drawn = "";
   private heard = new Set<string>();
 
-  constructor() {
+  constructor(private speaker?: Speaker) {
     this.node = el("div", "ann-layer");
     this.node.setAttribute("aria-live", "polite");
   }
@@ -124,13 +130,17 @@ export class OverlayLayer {
   update(overlays: Overlay[] | undefined, t: number, opts: { hidden?: boolean; audio?: { enabled: boolean; volume: number } } = {}): void {
     const active = opts.hidden ? [] : activeOverlays(overlays, t);
     const { card, banner, ticker } = arrange(active);
+    const loud = opts.audio?.enabled !== false;
     for (const a of active) {
       const key = `${a.overlay.id}@${a.start}`;
+      const chimed = a.overlay.sound && a.overlay.sound !== "none";
       if (!this.heard.has(key)) {
         this.heard.add(key);
-        if (opts.audio?.enabled !== false && a.overlay.sound && a.overlay.sound !== "none") {
-          playSound(a.overlay.sound, opts.audio?.volume ?? 100);
-        }
+        if (loud && chimed) playSound(a.overlay.sound, opts.audio?.volume ?? 100);
+      }
+      // the spoken file may arrive after the overlay appeared (rendered on the server meanwhile)
+      if (loud && a.overlay.speech) {
+        this.speaker?.say(key, a.overlay.speech, { volume: opts.audio?.volume, delayMs: chimed ? SPEECH_DELAY_MS : 0 });
       }
     }
     if (this.heard.size > 500) this.heard = new Set([...this.heard].slice(-100));

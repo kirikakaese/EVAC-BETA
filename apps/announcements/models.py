@@ -46,6 +46,9 @@ class Level(models.Model):
         _("repeat every (minutes)"), default=0, help_text=_("0: show once. Otherwise again until it ends."))
     default_channels = models.JSONField(_("default channels"), default=list, blank=True)
     requires_approval = models.BooleanField(_("always needs approval"), default=False)
+    speak = models.BooleanField(_("read aloud on screens"), default=False,
+                                help_text=_("Screens with sound speak the announcement (offline speech, when a voice "
+                                            "is installed)."))
     emergency = models.BooleanField(
         _("emergency level"), default=False,
         help_text=_("Needs the emergency permission (two-factor session), skips approval and takes over screens "
@@ -143,6 +146,17 @@ class Announcement(TimeStampedModel):
     published_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     last_occurrence = models.DateTimeField(null=True, blank=True)
+    # speech (ADR-0022): rendered once by Piper, stored as tts/<key>.<ext>
+    class Speech(models.TextChoices):
+        NONE = "", _("Not spoken")
+        PENDING = "pending", _("Being prepared")
+        READY = "ready", _("Ready")
+        FAILED = "failed", _("Failed")
+        UNAVAILABLE = "unavailable", _("No voice installed")
+
+    speech_status = models.CharField(max_length=12, choices=Speech.choices, blank=True, default="")
+    speech_file = models.CharField(max_length=80, blank=True)  # "<key>.<ext>"
+    speech_detail = models.CharField(max_length=300, blank=True)
 
     class Meta:
         ordering = ["-starts_at"]

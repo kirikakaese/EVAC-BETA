@@ -9,7 +9,8 @@ import { Connection, type Message, type Transport } from "./connection";
 import { Display } from "./display";
 import { cachedBundle, clearBundle, defaultLayout, fetchBundle, prefetch, type Bundle } from "./content";
 import { cachedProgram, clearProgram, fetchProgram } from "./program";
-import { nextOverlayChange, OverlayLayer } from "./overlays";
+import { nextOverlayChange, OverlayLayer, SPEECH_DELAY_MS } from "./overlays";
+import { prefetchSpeech, Speaker } from "./speech";
 import { nextChange, slideAt, type Program, type Slide } from "../program/engine";
 import { pageNonce } from "../renderer/code";
 import type { LayoutData } from "../renderer/types";
@@ -37,7 +38,8 @@ const TICK_MS = 15_000;
 export class Player {
   readonly clock = new Clock();
   private display: Display;
-  private overlays = new OverlayLayer();
+  private speaker = new Speaker();
+  private overlays = new OverlayLayer(this.speaker);
   private conn: Connection | null = null;
   private config: ScreenConfig | null = null;
   private transport: Transport = "connecting";
@@ -245,6 +247,9 @@ export class Player {
     } catch (err) {
       if (err instanceof Unauthorized) this.unpair();
     }
+    const speech = [...(this.program?.entries ?? []), ...(this.program?.overlays ?? [])]
+      .map((x) => x.speech).filter((u): u is string => !!u);
+    if (speech.length) void prefetchSpeech(speech);
   }
 
   private vars(): Record<string, unknown> {
@@ -301,6 +306,12 @@ export class Player {
     // a full-screen announcement (or, later, an evacuation) hides the overlays
     const takeover = !!slide && (slide.entry.startsWith("announcement:") || slide.entry.startsWith("evacuation"));
     this.overlays.update(this.program?.overlays, now, { hidden: takeover, audio });
+    // a full-screen announcement speaks once per appearance (after its alert tone, if any)
+    const entry = slide ? this.program?.entries.find((e) => e.id === slide?.entry) : undefined;
+    if (entry?.speech && audio.enabled) {
+      this.speaker.say(`${entry.id}@${slide?.start ?? 0}`, entry.speech, { volume: audio.volume,
+                                                                         delayMs: SPEECH_DELAY_MS });
+    }
     if (key === this.shown) return;
     if (this.reloadAtNextSlide && this.shown && safeReload(this.reloadAtNextSlide)) return;
     this.reloadAtNextSlide = "";

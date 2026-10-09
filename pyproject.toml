@@ -36,6 +36,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# offline speech for announcements (ADR-0022; ~220 MB with onnxruntime): pip install -e .[tts]
+tts = ["piper-tts>=1.2"]
 dev = [
     "pytest>=8.0",
     "pytest-django>=4.8",

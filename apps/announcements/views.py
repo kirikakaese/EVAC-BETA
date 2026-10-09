@@ -163,6 +163,8 @@ def detail(request, slug, pk, *, event):
         "can_cancel": ann.status in (*ACTIVE, Announcement.Status.PENDING) and (
             is_author or services.may_target(request.user, ann, perm, request)),
         "decision_form": forms.DecisionForm(),
+        "speech_text": services.speech_text(ann) if ann.level.speak else "",
+        "can_render": _any(request, event, "announcements.publish") or _any(request, event, "announcements.manage"),
         "windows": services.screen_windows(ann, timezone.now(), timezone.now() + services.dt.timedelta(days=1))[:10],
     })
 
@@ -206,6 +208,31 @@ def delete(request, slug, pk, *, event):
         return redirect("announcements:detail", slug, ann.pk)
     messages.success(request, _("Draft deleted."))
     return redirect("announcements:index", slug)
+
+
+@ann_view("announcements.view")
+def speech(request, slug, pk, *, event):
+    """The spoken file, for the preview on the announcement page."""
+    from django.http import FileResponse
+
+    from . import tts
+
+    ann = _get(event, pk)
+    if ann.speech_status != Announcement.Speech.READY or not tts.path_of(ann.speech_file).is_file():
+        raise Http404
+    return FileResponse(tts.path_of(ann.speech_file).open("rb"),
+                        content_type="audio/mp4" if ann.speech_file.endswith(".m4a") else "audio/wav")
+
+
+@require_POST
+@ann_view("announcements.view")
+def speech_render(request, slug, pk, *, event):
+    ann = _get(event, pk)
+    if not (_any(request, event, "announcements.publish") or _any(request, event, "announcements.manage")):
+        raise PermissionDenied
+    services.queue_speech(ann)
+    messages.info(request, _("The spoken version is being prepared."))
+    return redirect("announcements:detail", slug, ann.pk)
 
 
 # ------------------------------------------------------------------ levels and templates
