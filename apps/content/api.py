@@ -5,16 +5,18 @@ from __future__ import annotations
 from django.core.exceptions import ValidationError
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, serializers, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from apps.api.permissions import EventPermission, HasScope
 from apps.api.views import EventScopedMixin
 from apps.core import modules
 
 from . import files, services
-from .models import Asset, AssetFolder, FontFamily, FontFile, Theme, owner_q
+from .models import Asset, AssetFolder, FontFamily, FontFile, Layout, Theme, owner_q
 
 EVENT_SLUG = extend_schema(parameters=[OpenApiParameter("event_slug", str, OpenApiParameter.PATH)])
 
@@ -216,8 +218,86 @@ class AssetViewSet(_Mixin, viewsets.ModelViewSet):
             raise serializers.ValidationError({"detail": exc.messages}) from exc
 
 
+class LayoutSerializer(serializers.ModelSerializer):
+    published_version = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Layout
+        fields = ["id", "key", "name", "description", "theme", "data", "version", "published_version", "is_default",
+                  "updated_at"]
+        read_only_fields = ["id", "version", "published_version", "is_default", "updated_at"]
+        extra_kwargs = {"data": {"required": False}, "key": {"required": False}}
+
+    def get_published_version(self, obj) -> int | None:
+        return obj.published.number if obj.published_id else None
+
+
+class PublishSerializer(serializers.Serializer):
+    at = serializers.DateTimeField(required=False, help_text="Schedule instead of publishing now.")
+
+
+@EVENT_SLUG
+class LayoutViewSet(_Mixin, viewsets.ModelViewSet):
+    """Layouts (format: docs/LAYOUTS.md). ``PATCH`` with ``data`` saves a new version; send ``version`` to
+    detect concurrent edits. ``POST …/publish/`` puts the current draft on the screens."""
+
+    serializer_class = LayoutSerializer
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Layout.objects.none()
+        return Layout.objects.filter(event=self.get_event()).select_related("published")
+
+    def perform_create(self, serializer):
+        from django.utils.text import slugify
+
+        d = serializer.validated_data
+        key = d.get("key") or slugify(d["name"])[:64] or "layout"
+        if Layout.objects.filter(event=self.get_event(), key=key).exists():
+            raise serializers.ValidationError({"key": "This key is taken."})
+        try:
+            serializer.instance = services.create_layout(self.get_event(), name=d["name"], key=key,
+                                                         actor=self.request.user, request=self.request,
+                                                         data=d.get("data"))
+        except ValidationError as exc:
+            raise serializers.ValidationError({"data": exc.messages}) from exc
+
+    def perform_update(self, serializer):
+        layout = serializer.instance
+        d = dict(serializer.validated_data)
+        data = d.pop("data", None)
+        for k, v in d.items():
+            setattr(layout, k, v)
+        layout.save()
+        if data is not None:
+            expected = self.request.data.get("version")
+            try:
+                services.save_layout(layout, data, actor=self.request.user, request=self.request,
+                                     expected_version=int(expected) if expected else None)
+            except ValidationError as exc:
+                raise serializers.ValidationError({"data": exc.messages}) from exc
+
+    def perform_destroy(self, instance):
+        services.delete_layout(instance, actor=self.request.user, request=self.request)
+
+    @extend_schema(request=PublishSerializer, responses={200: dict})
+    @action(detail=True, methods=["post"])
+    def publish(self, request, event_slug=None, pk=None):
+        from apps.events import rbac
+
+        layout = self.get_object()
+        if not rbac.has_perm(request.user, self.get_event(), "content.publish", request=request):
+            raise PermissionDenied("Missing permission content.publish.")
+        data = PublishSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        v = services.publish_layout(layout, actor=request.user, request=request, at=data.validated_data.get("at"))
+        return Response({"version": v.number, "scheduled": v.publish_at})
+
+
 ROUTES = [
     (r"events/(?P<event_slug>[^/.]+)/themes", ThemeViewSet, "event-theme"),
     (r"events/(?P<event_slug>[^/.]+)/fonts", FontViewSet, "event-font"),
     (r"events/(?P<event_slug>[^/.]+)/assets", AssetViewSet, "event-asset"),
+    (r"events/(?P<event_slug>[^/.]+)/layouts", LayoutViewSet, "event-layout"),
 ]

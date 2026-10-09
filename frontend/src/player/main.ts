@@ -7,6 +7,7 @@ import { fetchConfig, pairingStatus, startPairing, Unauthorized, type PairStart,
 import { Clock } from "./clock";
 import { Connection, type Message, type Transport } from "./connection";
 import { Display } from "./display";
+import { cachedBundle, clearBundle, defaultLayout, fetchBundle, prefetch, type Bundle } from "./content";
 import { applyTheme, fetchTheme } from "./theme";
 import { readEnv, t, wsUrl, type PlayerEnv } from "./env";
 import { installErrorHandlers, recordError, report } from "./report";
@@ -22,6 +23,7 @@ export class Player {
   private transport: Transport = "connecting";
   private lastSync: number | null = null;
   private slide = "idle";
+  private bundle: Bundle | null = null;
 
   constructor(private env: PlayerEnv, root: HTMLElement) {
     this.display = new Display(root, this.clock);
@@ -81,9 +83,9 @@ export class Player {
       recordError(String(err));
       this.config = cached;
     }
-    await this.loadTheme(token);
-    if (this.config) this.display.idle(this.config);
-    else this.display.message(t(this.env, "no_server"), t(this.env, "retrying"));
+    this.bundle = cachedBundle();
+    await this.loadContent(token);
+    this.show();
     this.conn = new Connection({
       api: this.env.api, ws: wsUrl(this.env), token, clock: this.clock,
       heartbeatSeconds: this.config?.settings.heartbeat_seconds ?? 10, since: this.config?.seq ?? 0,
@@ -105,8 +107,9 @@ export class Player {
           setConfig(this.config);
           this.lastSync = Date.now();
           this.conn?.setHeartbeat(this.config.settings.heartbeat_seconds);
-          await this.loadTheme(token);
-          if (this.slide === "idle") this.display.idle(this.config);
+          const before = this.bundle?.version;
+          await this.loadContent(token);
+          if (this.bundle?.version !== before || this.slide === "idle") this.show();
         } catch (err) {
           if (err instanceof Unauthorized) this.unpair();
         }
@@ -127,15 +130,45 @@ export class Player {
     }
   }
 
-  private async loadTheme(token: string): Promise<void> {
-    const theme = await fetchTheme(this.env.api, token);
+  /** Theme, fonts and layouts (bundle); falls back to the theme alone if the content module is off. */
+  private async loadContent(token: string): Promise<void> {
+    try {
+      this.bundle = (await fetchBundle(this.env.api, token)) ?? this.bundle;
+    } catch (err) {
+      if (err instanceof Unauthorized) return this.unpair();
+    }
+    const theme = this.bundle ? { ...this.bundle.theme, fonts_css: this.bundle.fonts_css }
+      : await fetchTheme(this.env.api, token);
     if (theme) await applyTheme(theme, token).catch((e) => recordError(String(e)));
+    if (this.bundle) void prefetch(this.bundle);
+  }
+
+  private show(): void {
+    const layout = defaultLayout(this.bundle);
+    const cfg = this.config;
+    if (layout && cfg && this.bundle) {
+      const s = cfg.screen;
+      this.slide = `${layout.key} v${layout.version}`;
+      this.display.layout(layout.data, {
+        vars: { event: cfg.event, screen: { name: s.name, zone: s.zone ?? "", room: s.room ?? "", venue: s.venue ?? "",
+                                            tags: s.tags, groups: s.groups.map((g) => g.name) } },
+        now: () => this.clock.now(), timezone: cfg.event.timezone, assets: this.bundle.assets,
+        fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+        onError: (id, err) => recordError(`${id}: ${String(err)}`),
+      }, layout.variables);
+    } else if (cfg) {
+      this.slide = "idle";
+      this.display.idle(cfg);
+    } else {
+      this.display.message(t(this.env, "no_server"), t(this.env, "retrying"));
+    }
   }
 
   private unpair(): void {
     this.conn?.stop();
     this.conn = null;
     setToken(null);
+    clearBundle();
     void this.pair();
   }
 }

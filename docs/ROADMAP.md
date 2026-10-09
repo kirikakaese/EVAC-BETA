@@ -99,8 +99,12 @@ Partly: 1.1.4 (service worker app cache + last config; the IndexedDB content bun
 1.1.5 (clock offset; synchronised slide changes come with playlists), 1.2.3 (identify, reload, revoke,
 re-pair). Design system done: 1.3.1 (themes, tokens → CSS custom properties, inheritance), 1.3.2 (fonts,
 variable axes, subsetting, built-in Atkinson Hyperlegible + Inter), 1.3.3 (asset library with transcoding;
-usage tracking covers themes until layouts exist) — ADR-0014. Next: layouts, shared renderer and widgets
-(1.1.6, 1.3.4–1.3.7, 1.4), with the Lit editor (ADR-0009).
+usage tracking covers themes until layouts exist) — ADR-0014. Layouts done (ADR-0015): 1.1.6 (shared
+renderer), 1.3.4 (Lit editor: canvas, elements, styling, auto-fit, animations, layers, undo/redo; responsive
+anchors still open), 1.3.5 (versions, diff summary, rollback, draft/published, scheduled publish, optimistic
+locking), 1.3.7 (template variables), 1.4.1 (widget contract as custom elements) and 1.4.2 (basic and time
+widgets; ISO 7010 pictograms move to phase 3, iframe/PDF later), 1.1.4 (offline content bundle). Next:
+playlists, scheduling and overrides (1.5), code mode (1.3.6), remote management and kiosk recipe.
 
 ### Epic 1.1 — Player (`player/`, TypeScript, < 300 kB gz) [§5.1]
 | ID | Ticket | Acceptance criteria |

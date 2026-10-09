@@ -11,3 +11,10 @@ def process_asset(asset_id: str) -> str:
     if asset is None:
         return "gone"
     return services.process(asset).status
+
+
+@shared_task(name="apps.content.tasks.publish_due_layouts")
+def publish_due_layouts() -> int:
+    from . import services
+
+    return services.publish_due()

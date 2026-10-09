@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // What the screen shows until content arrives: the pairing view, an idle slide with clock, and the identify
 // overlay. Content rendering (layouts, widgets, playlists) builds on this in the next steps of phase 1.
+import { renderLayout, type RenderedLayout } from "../renderer/render";
+import type { LayoutData, RenderContext } from "../renderer/types";
 import type { ScreenConfig } from "./api";
 import type { Clock } from "./clock";
-import { qrSvg } from "./qr";
+import { qrSvg } from "../renderer/qr";
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -19,9 +21,13 @@ export class Display {
 
   constructor(private root: HTMLElement, private clock: Clock) {}
 
+  private rendered: RenderedLayout | null = null;
+
   private reset(): HTMLElement {
     if (this.clockTimer) clearInterval(this.clockTimer);
     this.clockTimer = null;
+    this.rendered?.destroy();
+    this.rendered = null;
     this.root.replaceChildren();
     const main = el("main", "view");
     this.root.appendChild(main);
@@ -67,6 +73,13 @@ export class Display {
     };
     tick();
     this.clockTimer = setInterval(tick, 1000);
+  }
+
+  layout(data: LayoutData, ctx: RenderContext, variables?: Record<string, string>): void {
+    const main = this.reset();
+    main.classList.add("layout");
+    for (const [k, v] of Object.entries(variables ?? {})) main.style.setProperty(k, v);
+    this.rendered = renderLayout(main, data, ctx);
   }
 
   identify(name: string, detail: string, seconds = 10): void {

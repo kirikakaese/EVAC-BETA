@@ -24,12 +24,15 @@ demo data; port 8000 opens by itself (log in as `admin@evac.local` / `evac-demo-
 `.devcontainer/` (see its README). `EVAC_TRUST_PROXY_HEADERS=1` (dev settings only) makes Django trust the
 Codespaces proxy's `X-Forwarded-Proto`/`-Host`, so CSRF checks and passkeys see the browser's HTTPS URL.
 
-## Screen player (`player/`)
+## Frontend (`frontend/`): player, renderer, layout editor
 
-TypeScript + Vite, built into `static/player/` (`player.js`, `player.css`, `sw.js`), which is **committed** so
-that EVAC runs without Node. After changing `player/src/` run `make player` (Node 22: `npm ci`, unit tests with
-Vitest, type check, build, size budget of 300 kB gzipped) and commit the result; CI rebuilds and fails if the
-committed bundle differs. Django serves the page at `/player/` (`apps/screens/player_views.py`) with the UI
+TypeScript + Vite. `src/renderer/` is the layout renderer and the built-in widgets (custom elements), shared
+by `src/player/` (the screen app, built into `static/player/`: `player.js`, `player.css`, `sw.js`) and
+`src/editor/` (the Lit layout editor island, built into `static/editor/`). The bundles are **committed** so that
+EVAC runs without Node. After changing `frontend/src/` run `make frontend` (Node 22: `npm ci`, Vitest, type
+check, build, size budgets: player 300 kB, editor 500 kB gzipped) and commit the result; CI rebuilds and fails
+if the committed bundles differ. Editor UI strings are keys looked up in a list in
+`apps/content/layout_views.py` (`EDITOR_STRINGS`); a test fails when a string is missing there. Django serves the page at `/player/` (`apps/screens/player_views.py`) with the UI
 strings and settings in a JSON block, and the service worker at `/player/sw.js` (scope `/player/`).
 
 ## Layout

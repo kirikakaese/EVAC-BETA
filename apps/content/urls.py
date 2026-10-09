@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.urls import path
 
-from . import views
+from . import layout_views, views
 
 app_name = "content"
 PORTAL_MOUNT = True  # /e/<slug>/content/
@@ -16,4 +16,9 @@ urlpatterns = [
     path("fonts.css", views.fonts_css, name="fonts_css"),
     path("assets/", views.assets, name="assets"),
     path("assets/<uuid:pk>/", views.asset, name="asset"),
+    path("layouts/", layout_views.layouts, name="layouts"),
+    path("layouts/<uuid:pk>/", layout_views.layout, name="layout"),
+    path("layouts/<uuid:pk>/edit/", layout_views.layout_edit, name="layout_edit"),
+    path("layouts/<uuid:pk>/save/", layout_views.layout_save, name="layout_save"),
+    path("layouts/<uuid:pk>/publish/", layout_views.layout_publish, name="layout_publish"),
 ]

@@ -1,0 +1,51 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Layout editor island. Uses the portal tokens (evac.css) for chrome; the canvas uses the theme (--evac-*). */
+.page-editor { max-width: none; }
+evac-layout-editor { display: flex; flex-direction: column; gap: .5rem; height: calc(100vh - 9rem); min-height: 34rem;
+  outline: none; }
+.ed-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.ed-title { margin-right: auto; font-size: 1.1rem; }
+.ed-inline { display: inline-flex; align-items: center; gap: .35rem; font-size: .85rem; }
+.ed-inline select { width: auto; }
+.ed-status { font-size: .85rem; color: var(--fg-muted); }
+.ed-status[data-status="dirty"] { color: var(--warn); }
+.ed-status[data-status="error"] { color: var(--err); font-weight: 600; }
+.ed-body { flex: 1 1 auto; display: grid; grid-template-columns: 14rem 1fr 19rem; gap: .5rem; min-height: 0; }
+.ed-side { overflow: auto; background: var(--surface, #161a22); border: 1px solid var(--border, #2a2f3a);
+  border-radius: 8px; padding: .6rem; }
+.ed-h { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-muted); margin: .6rem 0 .4rem; }
+.ed-add { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .4rem; }
+.ed-layers { list-style: none; margin: 0; padding: 0; }
+.ed-layer { width: 100%; text-align: left; background: none; border: 0; color: inherit; padding: .35rem .4rem;
+  border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: .4rem; font: inherit; }
+.ed-layers li.selected .ed-layer { background: var(--primary); color: #fff; }
+.ed-canvas { position: relative; overflow: auto; background: repeating-conic-gradient(#0000 0 25%, #8881 0 50%) 0 0 / 24px 24px;
+  border: 1px solid var(--border, #2a2f3a); border-radius: 8px; min-height: 0; }
+.ed-host { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem;
+  pointer-events: none; }
+.ed-host .evac-stage { box-shadow: 0 4px 24px #0008; flex: none; }
+.ed-overlay { position: absolute; }
+.ed-box { position: absolute; box-sizing: border-box; cursor: move; touch-action: none; }
+.ed-box:hover { outline: 1px dashed #4f8cffaa; }
+.ed-box.selected { outline: 2px solid #4f8cff; }
+.ed-box.locked { cursor: default; }
+.ed-handle { position: absolute; width: 10px; height: 10px; background: #fff; border: 2px solid #4f8cff; border-radius: 2px;
+  transform: translate(-50%, -50%); touch-action: none; }
+.ed-nw { left: 0; top: 0; cursor: nwse-resize; } .ed-n { left: 50%; top: 0; cursor: ns-resize; }
+.ed-ne { left: 100%; top: 0; cursor: nesw-resize; } .ed-e { left: 100%; top: 50%; cursor: ew-resize; }
+.ed-se { left: 100%; top: 100%; cursor: nwse-resize; } .ed-s { left: 50%; top: 100%; cursor: ns-resize; }
+.ed-sw { left: 0; top: 100%; cursor: nesw-resize; } .ed-w { left: 0; top: 50%; cursor: ew-resize; }
+.ed-guide { position: absolute; background: #ff3ea5; pointer-events: none; }
+.ed-guide-x { top: 0; bottom: 0; width: 1px; } .ed-guide-y { left: 0; right: 0; height: 1px; }
+.ed-field { display: flex; flex-direction: column; gap: .2rem; margin-bottom: .5rem; font-size: .85rem; }
+.ed-field > span, .ed-label { color: var(--fg-muted); font-size: .8rem; }
+.ed-field input, .ed-field select, .ed-field textarea { width: 100%; min-height: 2.2rem; font-size: .9rem; }
+.ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .5rem; }
+.ed-check { display: flex; align-items: center; gap: .4rem; font-size: .85rem; margin: .2rem 0; }
+.ed-group { border: 1px solid var(--border, #2a2f3a); border-radius: 8px; padding: .4rem .6rem; margin: 0 0 .6rem; }
+.ed-group legend { font-size: .8rem; color: var(--fg-muted); padding: 0 .3rem; }
+.ed-colour { display: flex; gap: .4rem; align-items: flex-end; } .ed-colour .ed-field { flex: 1; }
+.ed-colour input[type="color"] { width: 2.6rem; height: 2.2rem; margin-bottom: .5rem; padding: 0; }
+.ed-list { max-height: 12rem; overflow: auto; }
+@media (max-width: 1100px) { .ed-body { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; }
+  evac-layout-editor { height: auto; } }

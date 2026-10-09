@@ -110,25 +110,25 @@ jobs:
             coverage.xml
             openapi.yaml
 
-  player:
-    name: player (types, tests, bundle up to date, size budget)
+  frontend:
+    name: frontend (types, tests, bundles up to date, size budgets)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: player
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: player/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - name: Build (typecheck, bundle, size budget)
         run: npm run build
       - name: Committed bundle matches the sources
-        run: git diff --exit-code -- ../static/player || (echo "Run 'make player' and commit static/player/." && exit 1)
+        run: git diff --exit-code -- ../static/player ../static/editor || (echo "Run 'make frontend' and commit static/player/ and static/editor/." && exit 1)
 
   docker:
     name: docker build

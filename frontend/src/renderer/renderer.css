@@ -1,0 +1,42 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Layout renderer: shared by player and editor. All element sizes use container query units of the stage. */
+.evac-stage { position: relative; container-type: size; overflow: hidden; margin: auto;
+  background: var(--evac-background, #000); color: var(--evac-color-text, #fff);
+  font-family: var(--evac-font-body, system-ui, sans-serif); font-size: var(--evac-font-size, 3.2cqh);
+  line-height: var(--evac-line-height, 1.3); letter-spacing: var(--evac-letter-spacing, normal); }
+.evac-el { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;
+  transform-origin: center; }
+.evac-widget { display: block; flex: 1 1 auto; min-height: 0; width: 100%; height: 100%; overflow: hidden; }
+.evac-text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.evac-clamp { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.evac-richtext p { margin: 0 0 .6em; }
+.evac-marquee-box { white-space: nowrap; overflow: hidden; }
+.evac-marquee { display: inline-block; padding-left: 100%; animation: evac-marquee linear infinite; }
+@keyframes evac-marquee { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+evac-image picture, evac-image img, evac-slideshow picture, evac-slideshow img, evac-video video {
+  display: block; width: 100%; height: 100%; }
+evac-slideshow { position: relative; }
+evac-slideshow .evac-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .8s ease; }
+evac-slideshow .evac-slide.active { opacity: 1; }
+evac-qr svg { width: 100%; height: 100%; }
+evac-shape { background: inherit; }
+evac-shape[data-shape="ellipse"] { border-radius: 50%; }
+.evac-el-shape { background: var(--evac-color-primary); }
+.evac-el-shape:has(evac-shape[data-shape="line"]) { background: transparent; }
+evac-shape[data-shape="line"] { height: .4cqh; margin-top: auto; margin-bottom: auto; background: currentColor; }
+evac-clock time, evac-date time, evac-countdown span { display: block; white-space: nowrap; }
+.evac-placeholder { display: flex; align-items: center; justify-content: center; border: .3cqh dashed currentColor;
+  opacity: .6; font-size: 3cqh; }
+.evac-error { outline: .4cqh solid #ef4444; color: #ef4444; font-size: 2.4cqh; }
+.evac-dimmed { opacity: .35; }
+.evac-enter-fade { animation-name: evac-fade; animation-fill-mode: both; }
+.evac-enter-slide-up { animation-name: evac-slide-up; animation-fill-mode: both; }
+.evac-enter-slide-left { animation-name: evac-slide-left; animation-fill-mode: both; }
+.evac-enter-zoom { animation-name: evac-zoom; animation-fill-mode: both; }
+@keyframes evac-fade { from { opacity: 0; } }
+@keyframes evac-slide-up { from { opacity: 0; transform: translateY(8cqh); } }
+@keyframes evac-slide-left { from { opacity: 0; transform: translateX(8cqw); } }
+@keyframes evac-zoom { from { opacity: 0; transform: scale(.85); } }
+@media (prefers-reduced-motion: reduce) {
+  .evac-stage *, .evac-stage { animation: none !important; transition: none !important; }
+}

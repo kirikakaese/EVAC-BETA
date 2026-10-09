@@ -52,7 +52,7 @@ def index(request, slug, *, event):
     theme = services.event_theme(event)
     return render(request, "content/index.html", {
         "event": event, "theme": theme, "preview_css": _preview_css(event, theme),
-        "counts": {"themes": Theme.objects.filter(owner_q(event)).count(),
+        "counts": {"layouts": event.layouts.count(), "themes": Theme.objects.filter(owner_q(event)).count(),
                    "fonts": FontFamily.objects.filter(owner_q(event)).count(),
                    "assets": Asset.objects.filter(owner_q(event)).count()},
     })

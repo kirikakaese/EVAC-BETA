@@ -212,3 +212,59 @@ class Asset(TimeStampedModel):
     @property
     def is_shared(self) -> bool:
         return self.event_id is None
+
+
+class Layout(TimeStampedModel):
+    """A screen layout. ``data`` is the working draft; screens show ``published`` (a :class:`LayoutVersion`)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.CASCADE,
+                              related_name="layouts")
+    key = models.SlugField(max_length=64)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    theme = models.ForeignKey(Theme, null=True, blank=True, on_delete=models.SET_NULL, related_name="layouts",
+                              help_text=_("Leave empty to use the event's theme."))
+    data = models.JSONField(default=dict)
+    version = models.PositiveIntegerField(default=1, editable=False)
+    published = models.ForeignKey("LayoutVersion", null=True, blank=True, on_delete=models.SET_NULL,
+                                  related_name="+")
+    is_default = models.BooleanField(_("default layout of the event"), default=False,
+                                     help_text=_("Shown by screens until playlists and schedules take over."))
+    updated_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+    #: who is editing right now (soft lock for the "someone else is editing" notice)
+    editing_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+    editing_since = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [models.UniqueConstraint(fields=["event", "key"], name="content_layout_unique_key")]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def has_unpublished_changes(self) -> bool:
+        return self.published is None or self.published.data != self.data
+
+
+class LayoutVersion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    layout = models.ForeignKey(Layout, on_delete=models.CASCADE, related_name="versions")
+    number = models.PositiveIntegerField()
+    data = models.JSONField()
+    note = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+    published_at = models.DateTimeField(null=True, blank=True)
+    publish_at = models.DateTimeField(_("publish at"), null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-number"]
+        constraints = [models.UniqueConstraint(fields=["layout", "number"], name="content_layoutversion_unique")]
+
+    def __str__(self):
+        return f"{self.layout} v{self.number}"
