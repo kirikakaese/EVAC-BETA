@@ -24,7 +24,10 @@ x-evac-env: &evac-env
   EVAC_ALLOW_INSECURE: ${EVAC_ALLOW_INSECURE:-0}
 
 x-evac-service: &evac-service
-  build: .
+  build:
+    context: .
+    args:
+      PYTHON_IMAGE: ${EVAC_PYTHON_IMAGE:-python:3.12-slim}
   image: evac:local
   restart: unless-stopped
   env_file:
@@ -39,7 +42,7 @@ x-evac-service: &evac-service
 
 services:
   db:
-    image: postgres:16-alpine
+    image: ${EVAC_POSTGRES_IMAGE:-postgres:16-alpine}
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-evac}
@@ -54,7 +57,7 @@ services:
       retries: 12
 
   redis:
-    image: redis:7-alpine
+    image: ${EVAC_REDIS_IMAGE:-redis:7-alpine}
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     volumes:

@@ -16,6 +16,9 @@ released.
 - Delivery report: refusals (4xx) fail at once and are logged on the extension; network errors, rate limits and
   server errors are retried by the outbox. Matrix and Mastodon deliveries are idempotent.
 - Plugin API: `NotificationChannelSpec.available(event)` and `max_length`.
+- Base images are configurable (`PYTHON_IMAGE` build argument; `EVAC_PYTHON_IMAGE`, `EVAC_POSTGRES_IMAGE`,
+  `EVAC_REDIS_IMAGE` in docker-compose; defaults unchanged). CI pulls them from the ECR public mirror because of
+  Docker Hub's anonymous pull limit.
 
 ### Added — announcements (Phase 2, part 1)
 

@@ -1,6 +1,8 @@
 # EVAC - Event and Venue Administration Core
 # One image for every role; deploy/entrypoint.sh selects it: web | channels | worker | beat | <command>.
-FROM python:3.12-slim
+# the base image can come from a mirror (CI uses public.ecr.aws/docker/library/python:3.12-slim)
+ARG PYTHON_IMAGE=python:3.12-slim
+FROM ${PYTHON_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
