@@ -8,8 +8,9 @@ manifest = PluginManifest(key="content", name="Screen content", version="0.1.0",
 
 
 def register(r: Registry) -> None:
-    from . import api
+    from . import api, services
 
+    r.webhook_sink(services.welcome_on_first_pairing)
     r.module(ModuleSpec(key="content", name=str(_("Screen content")), order=31, category="screens",
                         depends_on=("screens",),
                         description=str(_("Themes, fonts and the asset library for screens; layouts, widgets "

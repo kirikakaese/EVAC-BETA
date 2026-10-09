@@ -542,3 +542,25 @@ def bundle(event, *, url_for, font_url_for, draft_layout=None) -> dict:
     }
     payload["version"] = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
     return payload
+
+
+def welcome_on_first_pairing(event_type: str, payload, event) -> None:
+    """Webhook sink: when the first screen of an event without layouts is paired, create, publish and use a
+    welcome layout, so the new screen shows something friendly right away (closes the setup wizard's loop)."""
+    from django.core.exceptions import ValidationError as DjangoValidationError
+    from django.db import IntegrityError
+
+    from apps.core import modules
+
+    from . import layout_format as lf
+    from .models import Layout
+
+    if event_type != "screen.paired" or event is None or not modules.is_enabled("content", event):
+        return
+    if Layout.objects.filter(event=event).exists():
+        return
+    try:
+        layout = create_layout(event, name="Welcome", key="welcome", actor=None, data=lf.welcome())
+        publish_layout(layout, actor=None)
+    except (DjangoValidationError, IntegrityError):  # pragma: no cover - a concurrent pairing created it
+        return

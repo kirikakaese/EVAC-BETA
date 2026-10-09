@@ -53,6 +53,11 @@ def register(r: Registry) -> None:
             },
         },
     ))
+    from . import display
+
+    r.settings_namespace(SettingsNamespace(
+        key="display", title=str(_("Display")), module="screens", schema=display.SCHEMA, order=31,
+        levels=("instance", "event", "screen_group", "screen"), permission="screens.manage"))
     for key, desc in [
         ("screen.paired", "A screen was paired (or re-paired) with a device."),
         ("screen.revoked", "The device token of a screen was revoked."),

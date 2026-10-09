@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header"><h1>{% trans "Pair a screen" %}</h1></div>
 <div class="grid grid-2">
-  <form method="post" class="card" novalidate>{% csrf_token %}
+  <form method="post" class="card" novalidate>{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
     {% include "portal/_form.html" with form=form %}
     <button class="btn btn-primary">{% trans "Pair screen" %}</button></form>
   <section class="card"><h2>{% trans "How it works" %}</h2>

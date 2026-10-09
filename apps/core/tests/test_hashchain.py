@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from apps.core import hashchain
@@ -17,11 +17,13 @@ def build(payloads):
 payload = st.dictionaries(st.text(min_size=1, max_size=5), st.one_of(st.integers(), st.text(max_size=10)), max_size=4)
 
 
+@settings(deadline=None)  # pure CPU work; a busy CI runner must not turn timing into failures
 @given(st.lists(payload, max_size=8))
 def test_valid_chain_verifies(payloads):
     assert hashchain.verify(build(payloads)).ok
 
 
+@settings(deadline=None)  # pure CPU work; a busy CI runner must not turn timing into failures
 @given(st.lists(payload, min_size=2, max_size=8), st.data())
 def test_any_modification_is_detected(payloads, data):
     rows = build(payloads)
@@ -32,6 +34,7 @@ def test_any_modification_is_detected(payloads, data):
     assert not result.ok and result.first_bad_id == rid
 
 
+@settings(deadline=None)  # pure CPU work; a busy CI runner must not turn timing into failures
 @given(st.lists(payload, min_size=3, max_size=8), st.data())
 def test_removal_is_detected(payloads, data):
     rows = build(payloads)

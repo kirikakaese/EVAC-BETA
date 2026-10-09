@@ -124,6 +124,11 @@ class Screen(TimeStampedModel):
     reported = models.JSONField(default=dict, blank=True)
     #: last health state the offline sweep saw (to alert on transitions only)
     health_state = models.CharField(max_length=10, choices=Health.choices, default=Health.UNPAIRED)
+    #: remote management: the last screenshot (``MEDIA_ROOT/screens/<id>/screenshot.jpg``) and log lines
+    screenshot_at = models.DateTimeField(null=True, blank=True)
+    screenshot_error = models.CharField(max_length=300, blank=True)
+    logs = models.JSONField(default=list, blank=True)
+    logs_at = models.DateTimeField(null=True, blank=True)
 
     objects = ScreenQuerySet.as_manager()
 

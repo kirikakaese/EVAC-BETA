@@ -57,15 +57,16 @@ Used by `/player/`, authenticated with the per-screen device token (`Authorizati
 |---|---|
 | `POST /player/api/pair/` | ask for a pairing code → `{id, code, secret, expires_in, pair_url}` (no auth, rate limited) |
 | `POST /player/api/pair/<id>/` | poll with header `X-Pairing-Secret` → `pending` / `expired` / once `paired` with `token` |
-| `GET /player/api/config/` | screen, event, settings, server time, last message sequence |
+| `GET /player/api/config/` | screen, event, settings, resolved display settings, server time, last message sequence |
 | `POST /player/api/heartbeat/` | `{"data": {version, resolution, orientation, uptime, slide, errors, …}}` → server time |
+| `POST /player/api/upload/<screenshot|logs>/` | answers to staff requests: an image body (or JSON `{error}`) / JSON `{lines}`; refused (409) unless requested in the last two minutes |
 | `GET /player/api/stream/` | SSE of messages for this screen (`Last-Event-ID` / `?since=`) |
 | `GET /player/api/poll/?since=` | long-poll fallback |
 | `GET /player/api/content/theme/` | resolved theme: tokens, CSS variables, `@font-face` rules of the fonts it uses |
 | `GET /player/api/content/bundle/` | offline bundle: theme, fonts, published layouts, asset entries with per-screen signed URLs |
 | `GET /player/api/playlists/program/` | the screen's program for 7 days: entries with priority and time windows, playlists, layout durations, message layouts (ADR-0016) |
 | `GET /player/api/content/files/<sha>/<name>` | asset and font files of the screen's event or the shared library |
-| WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages (`config.changed`, `program.changed`, `identify`, `reload`), `revoked` |
+| WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages (`config.changed`, `program.changed`, `identify`, `reload`, `clear_cache`, `test_pattern`, `screenshot`, `logs`), `revoked` |
 
 ## Webhooks out
 

@@ -107,8 +107,12 @@ widgets; ISO 7010 pictograms move to phase 3, iframe/PDF later), 1.1.4 (offline 
 done (ADR-0016): 1.5.1 (playlists: ordered/shuffled/weighted, durations, tag/condition/time filters,
 nesting), 1.5.2 (schedule rules, week calendar, preview any screen at any time), 1.5.3 (live overrides with
 levels, expiry, active list with cancel; evacuation band reserved), 1.1.5 (synchronised slide changes from the
-shared clock, measured < 10 ms between two screens on one machine). Next: code mode (1.3.6), per-screen
-settings (1.2.2), remote management (1.2.3), resilience (1.1.7), kiosk recipe (1.1.9), wizard step (1.5.4).
+shared clock, measured < 10 ms between two screens on one machine). Screen operations done (ADR-0017): 1.2.2
+(display settings per event/group/screen; the per-screen default playlist is a schedule rule without days or
+times), 1.2.3 (screenshots, logs, test pattern, clear cache, identify, reload, re-pair, revoke; the evacuation
+self-test comes with phase 3), 1.1.7 (render fallback, reload guard, crash detection, memory/daily reload),
+1.1.9 (Raspberry Pi kiosk recipe + pi-gen stage), 1.5.4 (wizard pairs the first screen, welcome slide). Next:
+code mode (1.3.6), then the phase 1 acceptance run.
 
 ### Epic 1.1 — Player (`player/`, TypeScript, < 300 kB gz) [§5.1]
 | ID | Ticket | Acceptance criteria |

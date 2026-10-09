@@ -21,7 +21,7 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 | A stolen session | Two-factor authentication required for orga/control-room/security/admin; sensitive actions only in 2FA-verified sessions; session cookies HttpOnly/SameSite, Secure in production |
 | A leaked API token | Tokens hashed, scoped (`module:read|write`), event-bound, expiring, revocable, `last_used_at`; tokens minted without 2FA cannot use sensitive permissions; tokens cannot mint tokens |
 | Malicious content (XSS) via layouts or code mode | Strict CSP without `unsafe-inline`; code mode runs in a sandboxed iframe with its own CSP and only a postMessage data API (phase 1) |
-| A forged screen / rogue player | Per-screen device tokens, revocable (phase 1) |
+| A forged screen / rogue player | Per-screen device tokens, revocable (phase 1); uploads (screenshots, logs) only accepted within two minutes of a staff request, size-limited, images re-encoded before storing and never served as uploaded |
 | A malicious `.evacpack` | Signed packs, manifest hashes verified (phase 2) |
 | Privilege escalation via role editing | Editing roles and handing out roles with sensitive permissions requires `events.roles` (sensitive); orga cannot grant admin; last-admin guard |
 | A compromised plugin | Plugins are code with full access: install only trusted plugins; `EVAC_DISABLED_PLUGINS` removes one |

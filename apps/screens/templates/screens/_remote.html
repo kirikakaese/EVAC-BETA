@@ -1,0 +1,22 @@
+{% load i18n %}<section class="card" id="remote"{% if pending_screenshot or pending_logs %} hx-get="{% url 'screens:remote' event.slug screen.pk %}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <h2>{% trans "Remote management" %}</h2>
+  {% if resolution_mismatch %}<p class="alert alert-warning">{% blocktrans with r=screen.reported.resolution e=expected %}The screen reports {{ r }}, expected {{ e }}.{% endblocktrans %}</p>{% endif %}
+  {% if can_control and screen.is_paired %}<div class="actions remote-actions">
+    <form method="post" action="{% url 'screens:command' event.slug screen.pk 'screenshot' %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Take screenshot" %}</button></form>
+    <form method="post" action="{% url 'screens:command' event.slug screen.pk 'logs' %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Fetch logs" %}</button></form>
+    <form method="post" action="{% url 'screens:command' event.slug screen.pk 'identify' %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Identify" %}</button></form>
+    <form method="post" action="{% url 'screens:command' event.slug screen.pk 'test_pattern' %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Test pattern (30 s)" %}</button></form>
+    <form method="post" action="{% url 'screens:command' event.slug screen.pk 'reload' %}" class="inline">{% csrf_token %}<button class="btn">{% trans "Reload player" %}</button></form>
+    <form method="post" action="{% url 'screens:command' event.slug screen.pk 'clear_cache' %}" class="inline" data-confirm="{% trans 'Clear the cached content and reload? The screen downloads everything again.' %}">{% csrf_token %}<button class="btn">{% trans "Clear cache and reload" %}</button></form>
+  </div>{% endif %}
+  <h3>{% trans "Screenshot" %}</h3>
+  {% if pending_screenshot %}<p class="muted" role="status">{% trans "Waiting for the screen…" %}</p>{% endif %}
+  {% if has_screenshot %}<figure class="screenshot"><img src="{% url 'screens:screenshot' event.slug screen.pk %}?t={{ screen.screenshot_at|date:'U' }}" alt="{% blocktrans with n=screen.name %}Screenshot of {{ n }}{% endblocktrans %}" width="960" height="540">
+    <figcaption class="small muted">{% blocktrans with t=screen.screenshot_at|timesince %}{{ t }} ago{% endblocktrans %}</figcaption></figure>
+  {% elif not pending_screenshot %}<p class="muted">{% trans "None yet." %}</p>{% endif %}
+  {% if screen.screenshot_error %}<p class="alert alert-info">{% blocktrans with e=screen.screenshot_error %}The screen could not take a screenshot: {{ e }}. Kiosks set up with the EVAC kiosk recipe can; other browsers need to allow screen capture.{% endblocktrans %}</p>{% endif %}
+  <h3>{% trans "Logs" %}</h3>
+  {% if pending_logs %}<p class="muted" role="status">{% trans "Waiting for the screen…" %}</p>{% endif %}
+  {% if screen.logs %}<p class="small muted">{% blocktrans with t=screen.logs_at|timesince %}Fetched {{ t }} ago{% endblocktrans %}</p><pre class="logs" tabindex="0">{% for l in screen.logs %}{{ l }}
+{% endfor %}</pre>{% elif screen.logs_at and not pending_logs %}<p class="muted">{% trans "The screen sent an empty log." %}</p>{% elif not pending_logs %}<p class="muted">{% trans "None fetched yet." %}</p>{% endif %}
+</section>

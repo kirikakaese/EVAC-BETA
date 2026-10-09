@@ -21,7 +21,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.core.audit import client_ip
 
-from . import channel, services
+from . import channel, display, remote, services
 from .models import PairingRequest, Screen
 
 SSE_MAX_SECONDS = 55
@@ -64,6 +64,7 @@ def screen_payload(screen: Screen) -> dict:
         },
         "event": {"slug": screen.event.slug, "name": screen.event.name, "timezone": screen.event.timezone},
         "settings": cfg,
+        "display": display.for_screen(screen),
         "server_time": time.time(),
         "seq": channel.last_seq(screen.pk),
     }
@@ -108,6 +109,26 @@ def heartbeat(request):
         return _unauthorized()
     reply = services.heartbeat(screen, _json_body(request).get("data") or {}, ip=client_ip(request))
     return JsonResponse({"type": "heartbeat.ack", **reply})
+
+
+@csrf_exempt
+@require_POST
+def upload(request, kind):
+    """Answers to remote-management requests: ``screenshot`` (image body, or JSON ``{error}``) and ``logs``
+    (JSON ``{lines: [...]}``). Refused unless staff asked for it in the last two minutes."""
+    screen = _screen(request)
+    if screen is None:
+        return _unauthorized()
+    try:
+        if kind == "screenshot":
+            remote.store_screenshot(screen, request.body, request.content_type or "")
+        elif kind == "logs":
+            remote.store_logs(screen, _json_body(request).get("lines"))
+        else:
+            raise Http404
+    except remote.UploadRefused as exc:
+        return JsonResponse({"detail": str(exc)}, status=409)
+    return JsonResponse({"ok": True})
 
 
 @transaction.non_atomic_requests

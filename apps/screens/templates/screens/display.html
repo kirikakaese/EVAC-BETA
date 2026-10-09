@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Display settings" %} · {{ title }}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'screens:index' event.slug %}">{% trans "Screens" %}</a> <span aria-hidden="true">›</span> <a href="{{ back }}">{{ title }}</a> <span aria-hidden="true">›</span> {% trans "Display" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Display settings" %} <span class="muted small">· {% if level == "screen" %}{% trans "this screen" %}{% else %}{% trans "screen group" %}{% endif %} {{ title }}</span></h1></div>
+<p class="muted">{% if level == "screen" %}{% trans "Values come from the instance, the event and the screen's groups (in name order, a later group wins). Untick “Inherit” to set a value for this screen only." %}{% else %}{% trans "Applies to every screen in this group unless the screen sets its own value. Untick “Inherit” to set a value here." %}{% endif %}</p>
+<form method="post" class="card settings-form" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-error" role="alert">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+  {% for field, inherit, src in form.rows %}
+  <fieldset class="setting">
+    <legend>{{ field.label }}
+      {% if src == level %}<span class="badge badge-info">{% trans "set here" %}</span>{% elif src == "default" %}<span class="badge">{% trans "default" %}</span>{% elif src == "screen_group" %}<span class="badge">{% trans "from a screen group" %}</span>{% else %}<span class="badge">{% blocktrans %}from {{ src }}{% endblocktrans %}</span>{% endif %}
+    </legend>
+    {% include "portal/_field.html" with field=field %}
+    {% include "portal/_field.html" with field=inherit %}
+  </fieldset>
+  {% endfor %}
+  <div class="actions"><button class="btn btn-primary">{% trans "Save" %}</button> <a class="btn btn-ghost" href="{{ back }}">{% trans "Back" %}</a></div>
+</form>
+{% endblock %}

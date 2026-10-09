@@ -13,8 +13,12 @@ urlpatterns = [
     path("pair/", views.pair, name="pair"),
     path("groups/", views.groups, name="groups"),
     path("groups/<uuid:pk>/", views.group, name="group"),
+    path("groups/<uuid:pk>/display/", views.group_display, name="group_display"),
     path("<uuid:pk>/", views.detail, name="detail"),
     path("<uuid:pk>/revoke/", views.revoke, name="revoke"),
     path("<uuid:pk>/delete/", views.delete, name="delete"),
     path("<uuid:pk>/command/<slug:name>/", views.command, name="command"),
+    path("<uuid:pk>/display/", views.screen_display, name="display"),
+    path("<uuid:pk>/remote/", views.remote_panel, name="remote"),
+    path("<uuid:pk>/screenshot.jpg", views.screenshot, name="screenshot"),
 ]
