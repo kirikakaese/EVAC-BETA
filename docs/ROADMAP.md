@@ -183,7 +183,7 @@ declared data kinds, `content.code` permission, audit with hashes).
 | 2.7 | ✅ Offline TTS (Piper, optional download) | pre-render + cache (ADR-0022) |
 | 2.8 | ✅ Staff PWA basics | installable, alarm reception, announcements send/approve, offline queue; Web Push (ADR-0021) |
 | 2.9 | ✅ Custom widget builder (no-code) | HTTP JSON, RSS, iCal, CSV sources and data sources; JSONPath mapping; visuals (ADR-0023); MQTT moved to phase 6 |
-| 2.10 | `.evacpack` import/export (signed) | layouts, themes, widget configs, screen packs; gallery |
+| 2.10 | ✅ `.evacpack` import/export (signed) | layouts, themes, files, fonts, widget configs, playlists (screen packs); gallery; URL import (ADR-0024) |
 
 ## Phase 3 — Venue + evacuation ⬜
 

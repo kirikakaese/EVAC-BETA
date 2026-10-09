@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import ModuleSpec, NavEntry, PermissionSpec, PluginManifest, WebhookEventSpec
+from apps.core.plugins import ModuleSpec, NavEntry, PackSectionSpec, PermissionSpec, PluginManifest, WebhookEventSpec
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="playlists", name="Playlists, schedules and overrides", version="0.1.0",
@@ -11,7 +11,7 @@ SCOPES = ("venue", "zone", "room", "screen_group")
 
 
 def register(r: Registry) -> None:
-    from . import api
+    from . import api, packs
 
     r.module(ModuleSpec(key="playlists", name=str(_("Playlists")), order=32, category="screens",
                         depends_on=("content",),
@@ -41,3 +41,5 @@ def register(r: Registry) -> None:
         r.webhook_event(WebhookEventSpec(key=key, description=desc, module="overrides"))
     for prefix, viewset, basename in api.ROUTES:
         r.api_route(prefix, viewset, basename)
+    r.pack_section(PackSectionSpec(key="playlists", title=str(_("Playlists")), module="playlists", order=70,
+                                   choices=packs.choices, requires=packs.requires, dump=packs.dump, load=packs.load))

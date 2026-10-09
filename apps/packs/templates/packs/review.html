@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{{ pi }}{% endblock %}
+{% block head %}{% if pi.status == "fetching" %}<meta http-equiv="refresh" content="3">{% endif %}{% if config %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><link rel="stylesheet" href="{% static 'editor/preview.css' %}?v={{ editor_version }}">
+{{ config|json_script:"preview-config" }}<script type="module" nonce="{{ csp_nonce }}" src="{% static 'editor/preview.js' %}?v={{ editor_version }}"></script>{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ pi }} {% include "packs/_status.html" %}</h1></div>
+<p><a href="{% url 'packs:index' event.slug %}">← {% trans "Screen packs" %}</a></p>
+{% if pi.status == "fetching" %}<p class="card">{% trans "Downloading the pack… this page updates by itself." %}</p>{% endif %}
+{% if pi.status == "failed" %}<div class="alert alert-error" role="alert">{{ pi.error }}</div>{% endif %}
+<div class="grid grid-2">
+<section class="card"><h2>{% trans "About this pack" %}</h2>
+{% if pi.description %}<p>{{ pi.description }}</p>{% endif %}
+<dl class="kv small"><dt>{% trans "From" %}</dt><dd>{{ pi.get_source_display }}{% if pi.url %}: {{ pi.url|truncatechars:80 }}{% endif %}{% if pi.file_name and not pi.url %} ({{ pi.file_name }}){% endif %}</dd>
+<dt>{% trans "Origin" %}</dt><dd>{% include "packs/_trust.html" %}{% if pi.signer %} {{ pi.signer }}{% endif %}</dd>
+{% if fingerprint %}<dt>{% trans "Key fingerprint" %}</dt><dd><code>{{ fingerprint }}</code></dd>{% endif %}
+{% if pi.size %}<dt>{% trans "Size" %}</dt><dd>{{ pi.size|filesizeformat }}</dd>{% endif %}
+{% if pi.sha256 %}<dt>SHA-256</dt><dd><code class="small">{{ pi.sha256|truncatechars:20 }}</code></dd>{% endif %}</dl>
+{% if summary %}<h3>{% trans "Contents" %}</h3><ul class="plain small">{% for title, names in summary %}<li><strong>{{ title }}</strong>: {{ names|join:", " }}</li>{% endfor %}</ul>{% endif %}
+</section>
+{% if config %}<section class="card"><h2>{% trans "Preview" %}</h2><div class="screen-preview" data-preview>{% trans "Rendering…" %}</div>
+<p class="small muted">{% trans "The first layout with the pack's theme. Pictures from the pack appear after the import." %}</p></section>{% endif %}
+</div>
+{% if pi.status == "ready" %}
+<form method="post" class="card">{% csrf_token %}<h2>{% trans "Import" %}</h2>
+{% if missing %}<p><span class="badge badge-off">{% trans "needs modules" %}</span> {% blocktrans with m=missing|join:", " %}Switch these modules on for this event first: {{ m }}.{% endblocktrans %}</p>
+{% elif blocked %}<div class="alert alert-error" role="alert">{{ blocked }}</div>
+{% else %}
+<p class="small">{% trans "Everything is created as new items in this event (existing ones are not changed). Layouts are published but play only once you add them to a playlist or schedule." %}</p>
+{% if confirm %}<div class="alert alert-warning" role="alert">{% if pi.trust == "unsigned" %}{% trans "This pack is not signed: nobody vouches for where it comes from." %}{% else %}{% trans "This pack is signed by a key this server does not know. Compare the fingerprint with the sender before you continue." %}{% endif %}</div>
+<p><label><input type="checkbox" name="confirm"> {% trans "I trust where this pack comes from" %}</label></p>{% endif %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Import into this event" %}</button></div>
+{% endif %}</form>
+{% endif %}
+{% if pi.status == "imported" %}<section class="card"><h2>{% trans "Imported" %}</h2>
+<p class="small muted">{{ pi.imported_at|date:"D j M Y H:i" }}</p>
+{% if created %}<ul class="plain">{% for title, names in created %}<li><strong>{{ title }}</strong>: {{ names|join:", " }}</li>{% endfor %}</ul>{% else %}<p class="muted">{% trans "Nothing new was created (everything was already there)." %}</p>{% endif %}
+{% if warnings %}<h3>{% trans "Notes" %}</h3><ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>{% endif %}
+</section>{% endif %}
+{% if pi.status != "imported" %}<form method="post" action="{% url 'packs:discard' event.slug pi.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Discard this pack?' %}">{% trans "Discard" %}</button></form>{% endif %}
+{% endblock %}

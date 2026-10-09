@@ -79,7 +79,7 @@ class Resp:
 
 @pytest.fixture
 def public_dns():
-    with mock.patch("apps.widgets.fetch.socket.getaddrinfo", return_value=PUBLIC) as m:
+    with mock.patch("apps.core.safefetch.socket.getaddrinfo", return_value=PUBLIC) as m:
         yield m
 
 
@@ -88,16 +88,16 @@ def test_check_url_blocks_private_and_odd_urls():
     for bad in ["ftp://x.example.org/f", "file:///etc/passwd", "https://user:pw@x.example.org/", "http:///x"]:
         with pytest.raises(fetch.FetchError):
             fetch.check_url(bad)
-    with mock.patch("apps.widgets.fetch.socket.getaddrinfo", return_value=PRIVATE):
+    with mock.patch("apps.core.safefetch.socket.getaddrinfo", return_value=PRIVATE):
         with pytest.raises(fetch.FetchError, match="private network"):
             fetch.check_url("http://sensor.local/")
         fetch.check_url("http://sensor.local/", allow_private=True)
     for addr in ["127.0.0.1", "169.254.169.254", "::1", "::ffff:10.0.0.1", "0.0.0.0", "224.0.0.1"]:
         fam = socket.AF_INET6 if ":" in addr else socket.AF_INET
-        with mock.patch("apps.widgets.fetch.socket.getaddrinfo", return_value=[(fam, 1, 6, "", (addr, 80))]):
+        with mock.patch("apps.core.safefetch.socket.getaddrinfo", return_value=[(fam, 1, 6, "", (addr, 80))]):
             with pytest.raises(fetch.FetchError):
                 fetch.check_url("http://evil.example.org/")
-    with mock.patch("apps.widgets.fetch.socket.getaddrinfo", side_effect=socket.gaierror):
+    with mock.patch("apps.core.safefetch.socket.getaddrinfo", side_effect=socket.gaierror):
         with pytest.raises(fetch.FetchError, match="Unknown host"):
             fetch.check_url("https://nowhere.invalid/")
 
@@ -105,7 +105,7 @@ def test_check_url_blocks_private_and_odd_urls():
 def test_get_redirects_are_checked_again(public_dns):
     hops = [Resp(302, headers={"Location": "/next"}), Resp(200, b'{"ok": 1}', {"ETag": '"v1"',
                                                                                 "Content-Type": "application/json"})]
-    with mock.patch("apps.widgets.fetch.requests.get", side_effect=hops) as get:
+    with mock.patch("apps.core.safefetch.requests.get", side_effect=hops) as get:
         got = fetch.get("https://api.example.org/data", headers={"X-Key": "k"}, etag='"v0"')
     assert got.body == b'{"ok": 1}' and got.etag == '"v1"'
     assert get.call_args_list[1].args[0] == "https://api.example.org/next"
@@ -113,25 +113,25 @@ def test_get_redirects_are_checked_again(public_dns):
     # a redirect into the private network is refused
     def dns(host, *a, **k):
         return PRIVATE if host == "internal" else PUBLIC
-    with mock.patch("apps.widgets.fetch.socket.getaddrinfo", side_effect=dns), \
-         mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(301, headers={"Location": "http://internal/"})):
+    with mock.patch("apps.core.safefetch.socket.getaddrinfo", side_effect=dns), \
+         mock.patch("apps.core.safefetch.requests.get", return_value=Resp(301, headers={"Location": "http://internal/"})):
         with pytest.raises(fetch.FetchError, match="private"):
             fetch.get("https://api.example.org/")
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(302, headers={"Location": "/loop"})):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(302, headers={"Location": "/loop"})):
         with pytest.raises(fetch.FetchError, match="Too many redirects"):
             fetch.get("https://api.example.org/")
 
 
 def test_get_errors_and_limits(public_dns):
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(304)):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(304)):
         assert fetch.get("https://api.example.org/", etag='"x"').status == 304
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(404)):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(404)):
         with pytest.raises(fetch.FetchError, match="404"):
             fetch.get("https://api.example.org/")
-    with mock.patch("apps.widgets.fetch.requests.get", side_effect=requests.ConnectionError("x")):
+    with mock.patch("apps.core.safefetch.requests.get", side_effect=requests.ConnectionError("x")):
         with pytest.raises(fetch.FetchError, match="did not answer"):
             fetch.get("https://api.example.org/")
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, b"x" * (fetch.MAX_BYTES + 1))):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, b"x" * (fetch.MAX_BYTES + 1))):
         with pytest.raises(fetch.FetchError, match="More than"):
             fetch.get("https://api.example.org/")
 
@@ -205,7 +205,7 @@ def test_paths_and_rows():
 def make_feed(event, admin, **kw):
     kw.setdefault("name", "Schedule")
     kw.setdefault("url", "https://api.example.org/schedule.json")
-    with mock.patch("apps.widgets.fetch.socket.getaddrinfo", return_value=PUBLIC):
+    with mock.patch("apps.core.safefetch.socket.getaddrinfo", return_value=PUBLIC):
         return services.save_feed(Feed(event=event, **kw), actor=admin, auth_header=kw.pop("auth", None))
 
 
@@ -217,7 +217,7 @@ def test_feed_fetch_cycle(event, admin, public_dns, django_capture_on_commit_cal
     assert log.changes["auth_header"] == "changed" and "secret" not in json.dumps(log.changes)
     w = services.save_widget(CustomWidget(event=event, name="Talks", feed=feed, items_path="$.talks",
                                           fields={"title": "title", "value": "seats"}), actor=admin)
-    with mock.patch("apps.widgets.fetch.requests.get",
+    with mock.patch("apps.core.safefetch.requests.get",
                     return_value=Resp(200, json.dumps(SCHEDULE).encode(), {"ETag": '"e1"'})) as get, \
          mock.patch("apps.screens.channel.send") as send:
         from django.test import Client
@@ -236,22 +236,22 @@ def test_feed_fetch_cycle(event, admin, public_dns, django_capture_on_commit_cal
     payload = services.widget_payload(w)
     assert payload["rows"][0] == {"title": "Opening", "value": 120} and payload["stale"] is False
     # unchanged data: no new notification; 304: nothing changes
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
         assert services.fetch_feed(feed) is False
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(304)):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(304)):
         assert services.fetch_feed(feed) is False
     # errors keep the last good snapshot and mark the data stale
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(500)):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(500)):
         assert services.fetch_feed(feed) is False
     feed.refresh_from_db()
     assert feed.status == "error" and "500" in feed.error and feed.snapshot == SCHEDULE
     w.refresh_from_db()
     assert services.widget_payload(w)["stale"] is True and services.widget_payload(w)["rows"]
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, b"not json")):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, b"not json")):
         services.fetch_feed(feed)
     assert Feed.objects.get(pk=feed.pk).error.startswith("Not valid JSON")
     with mock.patch("apps.widgets.services.MAX_SNAPSHOT", 10), \
-         mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
+         mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
         services.fetch_feed(feed)
     assert "too large" in Feed.objects.get(pk=feed.pk).error
 
@@ -262,7 +262,7 @@ def test_fetch_due_and_sources(event, admin, public_dns):
     feed = make_feed(event, admin)
     src = services.save_feed(Feed(event=event, name="Event", kind="source", source="event.info"), actor=admin)
     assert src.url == ""
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, b"[1]")):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, b"[1]")):
         assert fetch_due() == 2
         assert fetch_due() == 0  # not due again yet
         assert fetch_feed(str(feed.pk)) is False and fetch_feed("00000000-0000-0000-0000-000000000000") is False
@@ -296,7 +296,7 @@ def test_validation(event, admin, public_dns):
         services.save_feed(Feed(event=event, name="x"), actor=admin)
     with pytest.raises(ValidationError, match="data source"):
         services.save_feed(Feed(event=event, name="x", kind="source", source="nope"), actor=admin)
-    with mock.patch("apps.widgets.fetch.socket.getaddrinfo", return_value=PRIVATE):
+    with mock.patch("apps.core.safefetch.socket.getaddrinfo", return_value=PRIVATE):
         with pytest.raises(ValidationError, match="private network"):
             services.save_feed(Feed(event=event, name="x", url="http://10.0.0.5/x"), actor=admin)
         settings_store.save("widgets", "instance", "", {"allow_private_networks": True}, user=admin)
@@ -329,7 +329,7 @@ def test_validation(event, admin, public_dns):
 def test_builder_pages(client, admin, event, public_dns):
     login_2fa(client, admin)
     assert client.get("/e/demo/widgets/").status_code == 200
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
         r = client.post("/e/demo/widgets/feeds/new/", {"name": "Schedule", "kind": "json",
                                                         "url": "https://api.example.org/s.json", "poll_seconds": 300,
                                                         "enabled": "on"})
@@ -337,7 +337,7 @@ def test_builder_pages(client, admin, event, public_dns):
     assert r["Location"] == f"/e/demo/widgets/feeds/{feed.pk}/" and feed.status == "ok"
     page = client.get(r["Location"]).content.decode()
     assert "$.talks[0].speaker.name" in page and "Make a widget" in page
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
         assert client.post(f"/e/demo/widgets/feeds/{feed.pk}/fetch/").status_code == 302
     bad = client.post("/e/demo/widgets/feeds/new/", {"name": "x", "kind": "json", "url": "ftp://x.example.org",
                                                       "poll_seconds": 300})
@@ -388,7 +388,7 @@ def test_player_data_endpoint(client, admin, event, public_dns):
     from apps.screens import services as screen_services
 
     feed = make_feed(event, admin)
-    with mock.patch("apps.widgets.fetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
+    with mock.patch("apps.core.safefetch.requests.get", return_value=Resp(200, json.dumps(SCHEDULE).encode())):
         services.fetch_feed(feed)
     w = services.save_widget(CustomWidget(event=event, name="Seats", feed=feed, items_path="$.talks",
                                           fields={"label": "title", "value": "seats"}, visual="bars"), actor=admin)

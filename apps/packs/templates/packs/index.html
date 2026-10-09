@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Screen packs" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Screen packs" %}</h1>
+{% if can_export %}<div class="actions"><a class="btn btn-primary" href="{% url 'packs:export' event.slug %}">{% trans "Export a pack" %}</a></div>{% endif %}</div>
+<p class="muted">{% trans "A pack (.evacpack) carries layouts, themes, files, fonts, custom widgets and playlists from one event or server to another. Packs are checked before anything is imported, and you see what they contain first." %}</p>
+{% if can_import %}
+<section class="card"><h2>{% trans "Gallery" %}</h2>
+<p class="small muted">{% trans "Built-in packs to start from. Everything is created as a copy you can change." %}</p>
+<div class="grid grid-3">{% for g in gallery %}<article class="pack-card">
+<h3>{{ g.name }}</h3><p class="small">{{ g.description }}</p>
+<ul class="small muted plain">{% for title, names in g.summary %}<li>{{ title }}: {{ names|join:", " }}</li>{% endfor %}</ul>
+{% if g.missing %}<p class="small"><span class="badge badge-off">{% trans "needs modules" %}</span> {{ g.missing|join:", " }}</p>{% endif %}
+<form method="post" action="{% url 'packs:gallery' event.slug g.key %}">{% csrf_token %}<button class="btn btn-sm">{% trans "Review and import" %}</button></form>
+</article>{% endfor %}</div></section>
+<div class="grid grid-2">
+<form method="post" action="{% url 'packs:upload' event.slug %}" enctype="multipart/form-data" class="card">{% csrf_token %}<h2>{% trans "Import a file" %}</h2>
+{% include "portal/_form.html" with form=upload_form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Upload and review" %}</button></div></form>
+{% if url_import %}<form method="post" action="{% url 'packs:from_url' event.slug %}" class="card">{% csrf_token %}<h2>{% trans "Import from a URL" %}</h2>
+{% include "portal/_form.html" with form=url_form %}<div class="form-actions"><button class="btn">{% trans "Download and review" %}</button></div></form>{% endif %}
+</div>
+<section class="card"><h2>{% trans "Recent imports" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Pack" %}</th><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "Origin" %}</th><th scope="col">{% trans "State" %}</th><th scope="col">{% trans "When" %}</th></tr></thead>
+<tbody>{% for pi in imports %}<tr><td><a href="{% url 'packs:review' event.slug pi.pk %}">{{ pi }}</a></td><td class="small">{{ pi.get_source_display }}</td>
+<td>{% include "packs/_trust.html" %}</td><td>{% include "packs/_status.html" %}</td><td class="small">{{ pi.created_at|date:"D j M H:i" }}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">{% trans "Nothing imported yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endif %}
+{% endblock %}

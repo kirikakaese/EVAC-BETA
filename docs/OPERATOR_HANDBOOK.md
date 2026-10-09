@@ -277,6 +277,23 @@ Screens keep the latest data offline and update when the feed changes. Feeds can
 an instance administrator can allow private networks (venue sensors) under *Settings → General → Data feeds* (instance settings).
 MQTT sources follow in phase 6.
 
+## 5g. Screen packs
+
+**Screen packs** in the event menu moves content between events and servers as `.evacpack` files.
+
+- **Export**: choose layouts, themes, files, fonts, custom widgets or playlists. What they need comes along (a
+  playlist brings its layouts, a layout its pictures, fonts, theme and widgets). A playlist with its layouts is a
+  "screen pack". Packs are signed with this server's key; authorization headers of data feeds are never exported.
+- **Import**: upload a file, give a URL (the server downloads it) or pick a pack from the **gallery**. You first
+  see where it comes from, its contents and a preview; *Import into this event* then creates copies (nothing
+  existing changes). Unsigned packs and packs from unknown keys need a tick on *I trust where this pack comes
+  from*. Notes list what was skipped, e.g. a feed that needs its authorization header again.
+- **Pack keys** (instance admins, *Settings → Pack keys*): this server's public key and fingerprint to give to
+  others, and the keys you trust. *Settings → General → Screen packs* sets the signer name, *Only import packs
+  signed by a trusted key*, URL import, private networks for pack URLs and the size limit.
+- On the command line: `manage.py evac_pack key`, `verify <file>`, `export <event> <file> --layouts=<id,…>`,
+  `import <event> <file> [--yes]`.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

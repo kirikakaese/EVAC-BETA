@@ -321,6 +321,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
         f"{e}/settings/tokens/", f"{e}/audit/", f"{e}/screens/pair/", f"{e}/settings/s/screens/",
         f"{e}/settings/s/content/", f"{e}/playlists/schedules/new/", f"{e}/announcements/new/",
         f"{e}/settings/s/announcements/", f"{e}/widgets/feeds/new/", f"{e}/widgets/new/",
+        f"{e}/packs/", f"{e}/packs/export/", "/settings/packs/",
         f"{e}/settings/extensions/", f"{e}/settings/extensions/webhooks/",
         "/settings/extensions/", "/settings/extensions/webhooks/", "/settings/modules/", "/settings/general/",
         "/settings/general/general/", "/settings/audit/", "/settings/users/", "/events/new/", "/events/import/",
