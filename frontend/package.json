@@ -1,0 +1,23 @@
+{
+  "name": "evac-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "description": "EVAC screen player and layout editor (served at /player/ and in the portal)",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && TARGET=player vite build && TARGET=sw vite build && TARGET=editor vite build && node scripts/size-check.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "lit": "^3.3.3",
+    "uqr": "0.1.3"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "typescript": "~5.9.0",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -241,6 +241,7 @@ CELERY_BEAT_SCHEDULE = {
                                            "schedule": 86400.0},
     "screens-sweep-health": {"task": "apps.screens.tasks.sweep_health", "schedule": 15.0},
     "screens-purge-pairing-requests": {"task": "apps.screens.tasks.purge_pairing_requests", "schedule": 3600.0},
+    "content-publish-due-layouts": {"task": "apps.content.tasks.publish_due_layouts", "schedule": 30.0},
 }
 
 # --------------------------------------------------------------------------- REST framework

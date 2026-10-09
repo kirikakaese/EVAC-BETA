@@ -196,10 +196,18 @@ def save_asset(asset: Asset, *, actor, request=None, before: dict | None = None)
 
 
 def asset_usage(asset: Asset) -> list[str]:
-    """Where the asset is used (themes now; layouts and playlists add themselves later)."""
+    """Where the asset is used: themes and layouts (draft or published version)."""
+    from . import layout_format as lf
+    from .models import Layout
+
     key = str(asset.pk)
-    themes = Theme.objects.filter(Q(event=asset.event) if asset.event_id else Q())
-    return [_("Theme %(name)s") % {"name": t.name} for t in themes if key in tok.referenced_assets(t.tokens or {})]
+    scope = Q(event=asset.event) if asset.event_id else Q()
+    out = [_("Theme %(name)s") % {"name": t.name} for t in Theme.objects.filter(scope)
+           if key in tok.referenced_assets(t.tokens or {})]
+    for lay in Layout.objects.filter(scope).select_related("published"):
+        if key in lf.asset_ids(lay.data) or (lay.published_id and key in lf.asset_ids(lay.published.data)):
+            out.append(_("Layout %(name)s") % {"name": lay.name})
+    return out
 
 
 def delete_asset(asset: Asset, *, actor, request=None) -> None:
@@ -350,3 +358,187 @@ def _is_uuid(value: str) -> bool:
     except ValueError:
         return False
     return True
+
+
+# --------------------------------------------------------------------------- layouts
+
+def _check_refs(event, data: dict) -> list[str]:
+    from . import layout_format as lf
+
+    errors = []
+    assets = lf.asset_ids(data)
+    if assets:
+        known = {str(pk) for pk in Asset.objects.filter(owner_q(event), pk__in=[a for a in assets if _is_uuid(a)])
+                 .values_list("pk", flat=True)}
+        errors += [f"unknown file {a}" for a in sorted(assets - known)]
+    fonts = lf.font_ids(data)
+    if fonts:
+        known = {str(pk) for pk in FontFamily.objects.filter(owner_q(event), pk__in=fonts).values_list("pk",
+                                                                                                         flat=True)}
+        errors += [f"unknown font {f}" for f in sorted(fonts - known)]
+    return errors
+
+
+@transaction.atomic
+def create_layout(event, *, name: str, key: str, actor, request=None, width: int = 1920, height: int = 1080,
+                  starter: bool = True, data: dict | None = None):
+    from . import layout_format as lf
+    from .models import Layout
+
+    if data is None:
+        data = lf.starter(width, height) if starter else lf.empty(width, height)
+    errors = lf.validate(data) + _check_refs(event, data)
+    if errors:
+        raise ValidationError(errors)
+    layout = Layout.objects.create(event=event, name=name, key=key, data=data, updated_by=actor,
+                                   is_default=event is not None and not Layout.objects.filter(event=event).exists())
+    layout.versions.create(number=1, data=data, created_by=actor, note="created")
+    log(action="layout.created", actor=actor, target=layout, event=event, request=request,
+        message=f"Layout {name} created")
+    return layout
+
+
+@transaction.atomic
+def save_layout(layout, data: dict, *, actor, request=None, expected_version: int | None = None, note: str = ""):
+    """Save the draft (every save is a version). Optimistic locking as for themes."""
+    from . import layout_format as lf
+    from .models import Layout
+
+    current = Layout.objects.select_for_update().filter(pk=layout.pk).values_list("version", flat=True).first()
+    if expected_version is not None and current != expected_version:
+        raise Conflict(_("Someone else saved this layout in the meantime. Reload to see their version; your "
+                         "changes are still in the editor."))
+    errors = lf.validate(data) + _check_refs(layout.event, data)
+    if errors:
+        raise ValidationError(errors)
+    if data == layout.data:
+        return layout
+    layout.data = data
+    layout.version = (current or layout.version) + 1
+    layout.updated_by = actor
+    layout.save(update_fields=["data", "version", "updated_by", "updated_at"])
+    layout.versions.create(number=layout.version, data=data, created_by=actor, note=note[:200])
+    log(action="layout.saved", actor=actor, target=layout, event=layout.event, request=request,
+        message=f"Layout {layout.name} saved (version {layout.version})")
+    return layout
+
+
+@transaction.atomic
+def publish_layout(layout, *, actor, request=None, version=None, at=None):
+    """Publish the current draft (or ``version``) now, or schedule it for ``at``."""
+    from django.utils import timezone
+
+    if version is None:
+        version = layout.versions.filter(number=layout.version).first() or layout.versions.create(
+            number=layout.version, data=layout.data, created_by=actor)
+    if at is not None and at > timezone.now():
+        version.publish_at = at
+        version.save(update_fields=["publish_at"])
+        log(action="layout.publish_scheduled", actor=actor, target=layout, event=layout.event, request=request,
+            message=f"Layout {layout.name} v{version.number} scheduled for {at.isoformat()}")
+        return version
+    version.published_at, version.publish_at = timezone.now(), None
+    version.save(update_fields=["published_at", "publish_at"])
+    layout.published = version
+    layout.save(update_fields=["published", "updated_at"])
+    log(action="layout.published", actor=actor, target=layout, event=layout.event, request=request,
+        message=f"Layout {layout.name} v{version.number} published")
+    _notify_screens(None, event=layout.event if layout.event_id else None)
+    return version
+
+
+def publish_due(now=None) -> int:
+    """Publish versions whose scheduled time has come (periodic task)."""
+    from django.utils import timezone
+
+    from .models import LayoutVersion
+
+    now = now or timezone.now()
+    done = 0
+    for v in LayoutVersion.objects.filter(publish_at__lte=now).select_related("layout", "created_by"):
+        publish_layout(v.layout, actor=v.created_by, version=v)
+        done += 1
+    return done
+
+
+def rollback_layout(layout, version, *, actor, request=None):
+    """Make an old version the draft again (as a new version); publish separately."""
+    return save_layout(layout, version.data, actor=actor, request=request, note=f"restored v{version.number}")
+
+
+def set_default_layout(event, layout, *, actor, request=None) -> None:
+    from .models import Layout
+
+    Layout.objects.filter(event=event, is_default=True).exclude(pk=layout.pk).update(is_default=False)
+    layout.is_default = True
+    layout.save(update_fields=["is_default", "updated_at"])
+    log(action="layout.default_changed", actor=actor, target=layout, event=event, request=request,
+        message=f"{layout.name} is now the default layout")
+    _notify_screens(None, event=event)
+
+
+def delete_layout(layout, *, actor, request=None) -> None:
+    log(action="layout.deleted", actor=actor, target=layout, event=layout.event, request=request,
+        message=f"Layout {layout.name} deleted")
+    layout.delete()
+
+
+def mark_editing(layout, user) -> object | None:
+    """Soft lock: remember who edits; return the other editor if someone else edited in the last 2 minutes."""
+    import datetime as dt
+
+    from django.utils import timezone
+
+    from .models import Layout
+
+    now = timezone.now()
+    other = None
+    if layout.editing_by_id and layout.editing_by_id != user.pk and layout.editing_since and \
+            now - layout.editing_since < dt.timedelta(minutes=2):
+        other = layout.editing_by
+    Layout.objects.filter(pk=layout.pk).update(editing_by=user, editing_since=now)
+    return other
+
+
+def asset_entry(asset, url_for) -> dict:
+    return {"id": str(asset.pk), "kind": asset.kind, "name": asset.name, "alt": asset.alt_text,
+            "width": asset.width, "height": asset.height, "duration": asset.duration,
+            "urls": {k: url_for(asset.sha256, v["file"]) for k, v in (asset.variants or {}).items()},
+            "mimes": {k: v.get("mime", "") for k, v in (asset.variants or {}).items()}}
+
+
+def bundle(event, *, url_for, font_url_for, draft_layout=None) -> dict:
+    """Everything a screen needs to play offline: theme, fonts, published layouts and their assets.
+
+    ``draft_layout`` (editor preview) replaces that layout's published data with its draft."""
+    import hashlib
+    import json
+
+    from . import layout_format as lf
+    from .models import Layout
+
+    layouts = []
+    for lay in Layout.objects.filter(event=event).select_related("published", "theme"):
+        data = lay.data if draft_layout is not None and lay.pk == draft_layout.pk else (
+            lay.published.data if lay.published_id else None)
+        if data is None:
+            continue
+        entry = {"id": str(lay.pk), "key": lay.key, "name": lay.name, "default": lay.is_default,
+                 "version": lay.published.number if lay.published_id else 0, "data": data}
+        if lay.theme_id:
+            entry["variables"] = tok.css_variables(lay.theme.resolved(), families=font_stacks(event))
+        layouts.append(entry)
+    used = set().union(*(lf.asset_ids(entry["data"]) for entry in layouts)) if layouts else set()
+    assets = {str(a.pk): asset_entry(a, url_for) for a in Asset.objects.filter(
+        owner_q(event), pk__in=[u for u in used if _is_uuid(u)], status=Asset.Status.READY)}
+    theme = theme_payload(event, lambda a: url_for(a.sha256, a.variants[a.variant("webp", "original")]["file"]),
+                          font_url_for)
+    fonts_used = set().union(*(lf.font_ids(entry["data"]) for entry in layouts)) if layouts else set()
+    fonts_used |= {str(theme["tokens"].get("font_body")), str(theme["tokens"].get("font_heading"))}
+    payload = {
+        "theme": theme, "layouts": layouts, "assets": assets,
+        "fonts_css": fonts_css(event, font_url_for, only=fonts_used),
+        "fonts": {str(f.pk): f.stack for f in font_families(event)},
+    }
+    payload["version"] = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
+    return payload

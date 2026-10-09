@@ -148,6 +148,9 @@ The wizard cannot be re-run once an account exists.
 - Files are only visible to members of the event and its screens, never public by URL. The instance-wide
   **shared library** (instance admins: tick *Add to the shared library* when uploading) is visible to every
   event.
+- **Layouts** are designed in the layout editor (see the [Designer Guide](DESIGNER_GUIDE.md)); screens show
+  the published version of the event's default layout and keep it, with all its files, for offline playback.
+  Publishing can be scheduled (needs the beat service).
 - *Settings → Screen content*: maximum upload size (default 512 MB), largest image edge, AVIF, VP9.
 
 ## 6. Extensions

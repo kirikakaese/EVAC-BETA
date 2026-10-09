@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import ModuleSpec, NavEntry, PermissionSpec, PluginManifest, SettingsNamespace
+from apps.core.plugins import ModuleSpec, NavEntry, PermissionSpec, PluginManifest, SettingsNamespace, WidgetSpec
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="content", name="Screen content", version="0.1.0", kind="module")
@@ -16,8 +16,24 @@ def register(r: Registry) -> None:
                                           "and playlists build on them."))))
     r.permissions_([
         PermissionSpec("content.view", str(_("See themes, fonts and assets"))),
-        PermissionSpec("content.edit", str(_("Upload assets and fonts, edit themes"))),
+        PermissionSpec("content.edit", str(_("Upload assets and fonts, edit themes and layouts"))),
+        PermissionSpec("content.publish", str(_("Publish layouts to screens"))),
     ])
+    for key, name, desc in [
+        ("text", _("Text"), _("Text with template variables, auto-fit, line clamp and ticker")),
+        ("richtext", _("Rich text"), _("Paragraphs with **bold** and *italic*")),
+        ("image", _("Image"), _("An image or SVG from the asset library")),
+        ("slideshow", _("Slideshow"), _("Several images in turn")),
+        ("video", _("Video"), _("A video from the asset library (MP4/WebM)")),
+        ("audio", _("Audio"), _("Background audio")),
+        ("shape", _("Shape"), _("Rectangle, ellipse or line")),
+        ("qr", _("QR code"), _("A QR code for a link or text")),
+        ("clock", _("Clock"), _("Digital clock in the event time zone")),
+        ("countdown", _("Countdown"), _("Counts down to a time")),
+        ("date", _("Date"), _("Today's date")),
+    ]:
+        r.widget(WidgetSpec(key=key, name=str(name), description=str(desc), module="content",
+                            element=f"evac-{key}", script="player/player.js"))
     r.nav(NavEntry(module="content", label=str(_("Design & assets")), url_name="content:index",
                    permission="content.view", section="content", order=20))
     r.settings_namespace(SettingsNamespace(

@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ layout.name }}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:index' event.slug %}">{% trans "Design & assets" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'content:layouts' event.slug %}">{% trans "Layouts" %}</a> <span aria-hidden="true">›</span> {{ layout.name }}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ layout.name }}{% if layout.is_default %} <span class="badge badge-ok">{% trans "default" %}</span>{% endif %}</h1>
+  <div class="actions">{% if can_edit %}<a class="btn btn-primary" href="{% url 'content:layout_edit' event.slug layout.pk %}">{% trans "Open editor" %}</a>{% endif %}</div></div>
+<div class="grid grid-2 align-start">
+  <section class="card"><h2>{% trans "Status" %}</h2>
+    <dl class="kv">
+      <dt>{% trans "On the screens" %}</dt><dd>{% if layout.published %}v{{ layout.published.number }} · {{ layout.published.published_at }}{% else %}{% trans "not published yet" %}{% endif %}</dd>
+      <dt>{% trans "Draft" %}</dt><dd>v{{ layout.version }}{% if layout.has_unpublished_changes %} · <strong>{% trans "unpublished changes" %}</strong>{% endif %}{% if layout.updated_by %} · {{ layout.updated_by }}{% endif %}</dd>
+      <dt>{% trans "Size" %}</dt><dd>{{ layout.data.width }} × {{ layout.data.height }} px · {% blocktrans count n=layout.data.elements|length %}{{ n }} element{% plural %}{{ n }} elements{% endblocktrans %}</dd>
+    </dl>
+    {% if publish_form %}<form method="post" novalidate>{% csrf_token %}<input type="hidden" name="action" value="publish">{% include "portal/_form.html" with form=publish_form %}<button class="btn btn-primary">{% trans "Publish the draft" %}</button></form>{% endif %}
+    {% if can_edit %}<div class="actions">{% if not layout.is_default %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="default"><button class="btn">{% trans "Make default for screens" %}</button></form>{% endif %}
+      <form method="post" class="inline" data-confirm="{% trans 'Delete this layout and all its versions?' %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><button class="btn btn-danger">{% trans "Delete" %}</button></form></div>{% endif %}
+  </section>
+  {% if meta %}<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "Details" %}</h2>{% include "portal/_form.html" with form=meta %}<button class="btn">{% trans "Save" %}</button></form>{% endif %}
+</div>
+<section class="card"><h2>{% trans "Versions" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Version" %}</th><th scope="col">{% trans "Saved" %}</th><th scope="col">{% trans "Changes" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+<tbody>{% for v in versions %}<tr><td>v{{ v.number }}{% if v.note %} <span class="muted small">{{ v.note }}</span>{% endif %}</td><td class="small">{{ v.created_at }}{% if v.created_by %} · {{ v.created_by }}{% endif %}</td>
+  <td class="small">{% if v.diff.added %}+ {{ v.diff.added|join:", " }} {% endif %}{% if v.diff.removed %}− {{ v.diff.removed|join:", " }} {% endif %}{% if v.diff.changed %}✎ {{ v.diff.changed|join:", " }} {% endif %}{% if v.diff.canvas %}{% trans "canvas" %}: {{ v.diff.canvas|join:", " }}{% endif %}</td>
+  <td>{% if layout.published_id == v.pk %}<span class="badge badge-live">{% trans "live" %}</span>{% elif v.publish_at %}<span class="badge badge-pending">{% blocktrans with t=v.publish_at %}scheduled {{ t }}{% endblocktrans %}</span>{% elif v.published_at %}<span class="badge badge-muted">{% trans "was live" %}</span>{% endif %}</td>
+  <td>{% if can_edit and v.number != layout.version %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="rollback"><input type="hidden" name="version" value="{{ v.pk }}"><button class="btn btn-sm" aria-label="{% blocktrans with n=v.number %}Restore version {{ n }}{% endblocktrans %}">{% trans "Restore" %}</button></form>{% endif %}
+    {% if can_publish and layout.published_id != v.pk %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="publish_version"><input type="hidden" name="version" value="{{ v.pk }}"><button class="btn btn-sm" aria-label="{% blocktrans with n=v.number %}Publish version {{ n }}{% endblocktrans %}">{% trans "Publish" %}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

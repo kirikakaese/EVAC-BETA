@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from django.http import FileResponse, Http404
 from django.urls import reverse
+from django.utils.crypto import constant_time_compare, salted_hmac
 
 from apps.events import rbac
 from apps.events.models import Event
@@ -22,8 +23,28 @@ def portal_url(sha: str, name: str) -> str:
     return reverse("content_files:file", args=[sha, name])
 
 
-def player_url(sha: str, name: str) -> str:
-    return reverse("content_player:file", args=[sha, name])
+def _sig(screen_id, sha: str) -> str:
+    return salted_hmac("evac.content.screen-file", f"{screen_id}:{sha}").hexdigest()[:32]
+
+
+def player_url(sha: str, name: str, screen=None) -> str:
+    """File URL for a player. With ``screen`` it carries a per-screen signature, so <img>/<video> can load it
+    without an Authorization header (and the service worker can cache it); it stops working when the screen is
+    revoked or deleted."""
+    url = reverse("content_player:file", args=[sha, name])
+    return f"{url}?s={screen.pk}.{_sig(screen.pk, sha)}" if screen is not None else url
+
+
+def screen_from_signature(value: str, sha: str):
+    from apps.screens.models import Screen
+
+    screen_id, _, sig = (value or "").partition(".")
+    if not sig or not constant_time_compare(sig, _sig(screen_id, sha)):
+        return None
+    try:
+        return Screen.objects.paired().select_related("event").filter(pk=screen_id).first()
+    except (ValueError, Exception):  # noqa: BLE001 - malformed id
+        return None
 
 
 def asset_url(asset, variant: str = "original", *, player: bool = False) -> str:

@@ -6,6 +6,21 @@ released.
 
 ## [Unreleased]
 
+### Added — layouts, renderer, widgets and the layout editor (Phase 1, part 4)
+
+- Layouts (format v1, validated JSON) with versions on every save, publish now or scheduled, publish any
+  version, restore old versions, change summary per version, optimistic locking and a "someone is editing"
+  notice; default layout per event; REST API `/events/<slug>/layouts/` (ADR-0015).
+- Shared renderer for editor and screens (container-query units, identical preview) with built-in widgets:
+  text (auto-fit, line clamp, ticker), rich text, image, synchronised slideshow, video, audio, shape, QR code,
+  clock, date, countdown; per-widget error boundary; entrance animations respecting reduced motion.
+- Template variables and conditions (`{{ event.name|upper }}`, `{% if screen.zone %}`), "show only if".
+- Layout editor (Lit): drag, resize, snapping guides, layers, properties, alignment, undo/redo, copy/paste
+  between layouts, keyboard shortcuts, save and publish.
+- Screens play the event's default layout from an offline bundle; files are prefetched and cached by the
+  service worker via per-screen signed URLs.
+- `player/` became `frontend/` (player, renderer, editor); `make frontend` builds all bundles.
+
 ### Security
 
 - API: the nested event endpoints (`/events/<slug>/roles/`, `members/`, `modules/`, `audit/`) did not check

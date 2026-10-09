@@ -38,3 +38,4 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
 .identify-name { margin: 0; font-size: clamp(3rem, 14vmin, 12rem); font-weight: 800; color: #ffd400; }
 .identify-detail { margin: 0; font-size: clamp(1rem, 4vmin, 3rem); color: var(--fg); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.view.layout { padding: 0; gap: 0; }

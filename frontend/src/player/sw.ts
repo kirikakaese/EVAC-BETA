@@ -4,7 +4,7 @@
 // the device API is never cached.
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
-const CACHE = "evac-player-v1";
+const CACHE = "evac-player-v2";
 
 sw.addEventListener("install", (e) => {
   const event = e as ExtendableEvent;
@@ -24,6 +24,18 @@ sw.addEventListener("fetch", (e) => {
   const event = e as FetchEvent;
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== sw.location.origin) return;
+  // content files are addressed by their hash: cache first, they never change
+  if (url.pathname.startsWith("/player/api/content/files/")) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const hit = await cache.match(event.request, { ignoreSearch: true });
+      if (hit) return hit;
+      const res = await fetch(event.request);
+      if (res.ok && res.status === 200) await cache.put(event.request, res.clone());
+      return res;
+    })());
+    return;
+  }
   if (url.pathname.startsWith("/player/api/")) return;
   if (url.pathname === "/player/" || url.pathname === "/player/index.html") {
     event.respondWith((async () => {

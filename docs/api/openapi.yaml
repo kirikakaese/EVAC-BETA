@@ -681,6 +681,230 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/events/{event_slug}/layouts/:
+    get:
+      operationId: events_layouts_list
+      description: |-
+        Layouts (format: docs/LAYOUTS.md). ``PATCH`` with ``data`` saves a new version; send ``version`` to
+        detect concurrent edits. ``POST …/publish/`` puts the current draft on the screens.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLayoutList'
+          description: ''
+    post:
+      operationId: events_layouts_create
+      description: |-
+        Layouts (format: docs/LAYOUTS.md). ``PATCH`` with ``data`` saves a new version; send ``version`` to
+        detect concurrent edits. ``POST …/publish/`` puts the current draft on the screens.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LayoutRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+          description: ''
+  /api/v1/events/{event_slug}/layouts/{id}/:
+    get:
+      operationId: events_layouts_retrieve
+      description: |-
+        Layouts (format: docs/LAYOUTS.md). ``PATCH`` with ``data`` saves a new version; send ``version`` to
+        detect concurrent edits. ``POST …/publish/`` puts the current draft on the screens.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this layout.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+          description: ''
+    patch:
+      operationId: events_layouts_partial_update
+      description: |-
+        Layouts (format: docs/LAYOUTS.md). ``PATCH`` with ``data`` saves a new version; send ``version`` to
+        detect concurrent edits. ``POST …/publish/`` puts the current draft on the screens.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this layout.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLayoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLayoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLayoutRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+          description: ''
+    delete:
+      operationId: events_layouts_destroy
+      description: |-
+        Layouts (format: docs/LAYOUTS.md). ``PATCH`` with ``data`` saves a new version; send ``version`` to
+        detect concurrent edits. ``POST …/publish/`` puts the current draft on the screens.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this layout.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/{event_slug}/layouts/{id}/publish/:
+    post:
+      operationId: events_layouts_publish_create
+      description: |-
+        Layouts (format: docs/LAYOUTS.md). ``PATCH`` with ``data`` saves a new version; send ``version`` to
+        detect concurrent edits. ``POST …/publish/`` puts the current draft on the screens.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this layout.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/events/{event_slug}/members/:
     get:
       operationId: events_members_list
@@ -3208,6 +3432,73 @@ components:
         original_name:
           type: string
           maxLength: 200
+    Layout:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        key:
+          type: string
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        theme:
+          type: string
+          format: uuid
+          nullable: true
+          description: Leave empty to use the event's theme.
+        data: {}
+        version:
+          type: integer
+          readOnly: true
+        published_version:
+          type: integer
+          nullable: true
+          readOnly: true
+        is_default:
+          type: boolean
+          readOnly: true
+          title: Default layout of the event
+          description: Shown by screens until playlists and schedules take over.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - is_default
+      - name
+      - published_version
+      - updated_at
+      - version
+    LayoutRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        theme:
+          type: string
+          format: uuid
+          nullable: true
+          description: Leave empty to use the event's theme.
+        data: {}
+      required:
+      - name
     Membership:
       type: object
       properties:
@@ -3401,6 +3692,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FontFamily'
+    PaginatedLayoutList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Layout'
     PaginatedMembershipList:
       type: object
       required:
@@ -3741,6 +4055,26 @@ components:
           minimum: -9223372036854775808
           format: int64
           description: 0 = ground floor, negative = basement.
+    PatchedLayoutRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        theme:
+          type: string
+          format: uuid
+          nullable: true
+          description: Leave empty to use the event's theme.
+        data: {}
     PatchedModuleStateRequest:
       type: object
       properties:
@@ -3950,6 +4284,13 @@ components:
           type: string
           minLength: 1
           maxLength: 7
+    PublishRequest:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+          description: Schedule instead of publishing now.
     Role:
       type: object
       properties:

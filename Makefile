@@ -6,7 +6,7 @@ COMPOSE := docker compose
 
 DEPS_CMD = $(PY) -c "import tomllib; d = tomllib.load(open('pyproject.toml', 'rb'))['project']; print('\n'.join(d['dependencies'] + d['optional-dependencies']['dev']))"
 
-.PHONY: dev run worker beat channels test cov lint typecheck a11y migrate makemigrations seed openapi openapi-check player \
+.PHONY: dev run worker beat channels test cov lint typecheck a11y migrate makemigrations seed openapi openapi-check frontend \
         attribution check e2e load chaos up down logs shell build clean
 
 dev:
@@ -51,8 +51,8 @@ makemigrations:
 seed:
 	$(MANAGE) evac_seed_demo
 
-player:                                   # build static/player/ from player/src (needs Node 22)
-	cd player && npm ci --no-audit --no-fund && npm test && npm run build
+frontend:                                 # build static/player/ + static/editor/ from frontend/src (Node 22)
+	cd frontend && npm ci --no-audit --no-fund && npm test && npm run build
 
 openapi:
 	DJANGO_SETTINGS_MODULE=evac.settings.test $(MANAGE) spectacular --file docs/api/openapi.yaml --validate

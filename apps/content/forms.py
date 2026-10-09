@@ -3,7 +3,8 @@ from django import forms
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from .models import Asset, AssetFolder, FontFamily, Theme, owner_q
+from .layout_format import PRESETS
+from .models import Asset, AssetFolder, FontFamily, Layout, Theme, owner_q
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -121,3 +122,45 @@ class ThemeForm(forms.ModelForm):
         if clash.exists():
             raise forms.ValidationError(_("This short name is taken."))
         return key
+
+
+class LayoutCreateForm(forms.Form):
+    name = forms.CharField(label=_("Name"), max_length=200)
+    size = forms.ChoiceField(label=_("Screen size"), choices=[
+        ("1920x1080", _("Full HD landscape 1920 × 1080")), ("1080x1920", _("Full HD portrait 1080 × 1920")),
+        ("3840x2160", _("4K landscape 3840 × 2160")), ("1280x720", _("HD 1280 × 720")),
+        ("1024x768", _("4:3 projector 1024 × 768")), ("3840x1080", _("32:9 LED strip 3840 × 1080")),
+        ("1920x480", _("Ticker strip 1920 × 480"))])
+    starter = forms.BooleanField(label=_("Start with event name, clock and a message"), required=False,
+                                 initial=True)
+
+    def __init__(self, *args, event, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.event = event
+
+    def clean_size(self):
+        return PRESETS[self.cleaned_data["size"]]
+
+    def key(self) -> str:
+        base = slugify(self.cleaned_data["name"])[:56] or "layout"
+        key, n = base, 2
+        while Layout.objects.filter(event=self.event, key=key).exists():
+            key, n = f"{base}-{n}", n + 1
+        return key
+
+
+class LayoutMetaForm(forms.ModelForm):
+    class Meta:
+        model = Layout
+        fields = ["name", "description", "theme"]
+        widgets = {"description": forms.Textarea(attrs={"rows": 2})}
+
+    def __init__(self, *args, event, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["theme"].queryset = Theme.objects.filter(owner_q(event))
+        self.fields["theme"].empty_label = _("The event's theme")
+
+
+class PublishForm(forms.Form):
+    at = forms.DateTimeField(label=_("Publish at"), required=False, widget=forms.DateTimeInput(
+        attrs={"type": "datetime-local"}), help_text=_("Leave empty to publish now."))

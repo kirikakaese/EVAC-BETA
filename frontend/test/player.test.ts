@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from "vitest";
 
-import { Clock } from "../src/clock";
-import { readEnv, t, wsUrl } from "../src/env";
-import { qrSvg } from "../src/qr";
-import { recordError, report } from "../src/report";
-import { getConfig, getToken, setConfig, setToken } from "../src/storage";
+import { Clock } from "../src/player/clock";
+import { readEnv, t, wsUrl } from "../src/player/env";
+import { qrSvg } from "../src/renderer/qr";
+import { recordError, report } from "../src/player/report";
+import { getConfig, getToken, setConfig, setToken } from "../src/player/storage";
 
 describe("clock", () => {
   it("uses the sample with the shortest round trip", () => {
@@ -61,7 +61,7 @@ describe("report and qr", () => {
   });
 });
 
-import { parseFontFaces } from "../src/theme";
+import { parseFontFaces } from "../src/player/theme";
 
 describe("theme", () => {
   it("parses the @font-face rules sent by the server", () => {
