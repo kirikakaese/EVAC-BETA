@@ -10,6 +10,7 @@ from __future__ import annotations
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    DashboardPanelSpec,
     DataSourceSpec,
     EvacTriggerSpec,
     ExtensionFeature,
@@ -75,6 +76,7 @@ def register(r: Registry) -> None:
     r.notification_channel(NotificationChannelSpec(
         key="dial_sms", name=str(_("DIAL: DECT message")), module="announcements",
         send=outbound.channel("message"), available=outbound.available, max_length=outbound.SMS_LIMIT,
+        alert=outbound.alert,
         description=str(_("A text message to the DECT handsets (needs DIAL's messaging feature)."))))
     r.webhook_event(WebhookEventSpec(key="dial.dect_alert", module="dial",
                                      description="DIAL reported a DECT alert (base station down/up, sync degraded)."))
@@ -82,3 +84,8 @@ def register(r: Registry) -> None:
     r.outbox_handler(outbound.JOB, outbound.handle_job)
     r.outbox_handler(inbound.RECORDING_JOB, recordings.handle_job)
     r.outbox_handler(inbound.REFRESH_JOB, sources.handle_refresh)
+    from . import panels
+
+    r.dashboard_panel(DashboardPanelSpec(key="dial.dect", title=str(_("DIAL / DECT")), template="dial/panel.html",
+                                         context=panels.dashboard, module="extensions", order=55,
+                                         refresh_seconds=30))

@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}#{{ inc.number }} {{ inc.title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>#{{ inc.number }} {{ inc.title }}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'ops:index' event.slug %}">{% trans "All incidents" %}</a>{% if can_manage %} <a class="btn" href="{% url 'ops:edit' event.slug inc.pk %}">{% trans "Edit" %}</a>{% endif %}</div></div>
+<div class="grid-2">
+<section class="card" aria-labelledby="sum-h"><h2 id="sum-h">{% trans "Summary" %}</h2>
+<dl class="kv"><dt>{% trans "Severity" %}</dt><dd>{% include "ops/_severity.html" %}</dd>
+<dt>{% trans "Status" %}</dt><dd>{% include "ops/_status.html" %}</dd>
+<dt>{% trans "Category" %}</dt><dd>{{ inc.category }}</dd>
+<dt>{% trans "Where" %}</dt><dd>{{ inc.place|default:"–" }}{% if inc.location %} · {{ inc.location }}{% endif %}</dd>
+<dt>{% trans "Assigned" %}</dt><dd>{{ inc.assignee|default:"–" }}{% if inc.team %} · {{ inc.team }}{% endif %}</dd>
+<dt>{% trans "Reported" %}</dt><dd class="tabular">{{ inc.created_at|date:"D j M H:i" }}{% if inc.reported_by %} · {{ inc.reported_by }}{% endif %}{% if inc.created_by %} <span class="muted small">({% blocktrans with u=inc.created_by %}entered by {{ u }}{% endblocktrans %})</span>{% endif %}</dd>
+{% if inc.acknowledged_at %}<dt>{% trans "Acknowledged" %}</dt><dd class="tabular">{{ inc.acknowledged_at|date:"H:i" }}</dd>{% endif %}
+{% if inc.resolved_at %}<dt>{% trans "Resolved" %}</dt><dd class="tabular">{{ inc.resolved_at|date:"D H:i" }}</dd>{% endif %}</dl>
+{% if inc.description %}<p>{{ inc.description|linebreaksbr }}</p>{% endif %}
+{% if inc.links %}<h3>{% trans "Linked" %}</h3><ul class="plain">{% for l in inc.links %}<li>{{ l.kind }}: {% if l.url %}<a href="{{ l.url }}">{{ l.label }}</a>{% else %}{{ l.label }}{% endif %}</li>{% endfor %}</ul>{% endif %}
+{% if nexts %}<h3>{% trans "Change status" %}</h3><form method="post" action="{% url 'ops:status' event.slug inc.pk %}" class="stack">{% csrf_token %}
+<div class="field"><label for="st-note">{% trans "Note (optional)" %}</label><input id="st-note" name="note" maxlength="500"></div>
+<div class="inline">{% for k, l in nexts %}{% if can_manage or k == "acknowledged" %}<button class="btn{% if k == 'resolved' or k == 'acknowledged' %} btn-primary{% endif %}" name="status" value="{{ k }}">{{ l }}</button>{% endif %}{% endfor %}</div></form>{% endif %}
+{% if escalations %}<h3>{% trans "Escalations" %}</h3><ul class="plain small">{% for e in escalations %}<li class="tabular">{{ e.at|date:"H:i" }} · {{ e.rule_name }} · {% blocktrans count n=e.recipients %}{{ n }} person{% plural %}{{ n }} people{% endblocktrans %}{% if e.channels %} · {{ e.channels|join:", " }}{% endif %}</li>{% endfor %}</ul>{% endif %}
+</section>
+<section class="card" aria-labelledby="tl-h"><h2 id="tl-h">{% trans "Timeline" %}</h2>
+<ol class="timeline">{% for u in updates %}<li class="tl-{{ u.kind }}"><span class="tabular small muted">{{ u.at|date:"H:i" }}</span> <strong>{{ u.get_kind_display }}</strong>{% if u.actor %} <span class="small muted">· {{ u.actor }}</span>{% endif %}
+{% if u.text %}<div>{{ u.text|linebreaksbr }}</div>{% endif %}{% if u.attachment %}<div><a href="{% url 'ops:attachment' event.slug u.pk %}">📎 {{ u.attachment_name }}</a></div>{% endif %}</li>{% endfor %}</ol>
+{% if can_note %}<form method="post" action="{% url 'ops:note' event.slug inc.pk %}" enctype="multipart/form-data" class="stack">{% csrf_token %}{% include "portal/_form.html" with form=note_form %}<div class="form-actions"><button class="btn">{% trans "Add to timeline" %}</button></div></form>{% endif %}
+</section></div>
+<section class="card" aria-labelledby="tk-h"><h2 id="tk-h">{% trans "Tasks" %}</h2>
+{% if tasks %}<ul class="plain">{% for t in tasks %}<li>{% if t.status == "done" %}✓ <s>{{ t.title }}</s>{% else %}○ {{ t.title }}{% endif %}{% if t.assignee %} <span class="small muted">· {{ t.assignee }}</span>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">{% trans "No tasks." %}</p>{% endif %}
+{% if can_manage %}<details><summary class="btn btn-sm">{% trans "Add a task" %}</summary><form method="post" action="{% url 'ops:tasks' event.slug %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">{% include "portal/_form.html" with form=task_form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Add task" %}</button></div></form></details>{% endif %}
+</section>
+{% if log %}<section class="card" aria-labelledby="lg-h"><h2 id="lg-h">{% trans "In the ops log" %}</h2>{% include "ops/_log_list.html" with entries=log %}</section>{% endif %}
+{% endblock %}

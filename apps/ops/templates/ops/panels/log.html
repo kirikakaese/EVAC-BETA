@@ -1,0 +1,1 @@
+{% load i18n %}{% include "ops/_log_list.html" with entries=ctx.entries %}<p><a class="btn btn-sm btn-ghost" href="{% url 'ops:log' event.slug %}">{% if ctx.can_write %}{% trans "Write / full log" %}{% else %}{% trans "Full log" %}{% endif %}</a></p>

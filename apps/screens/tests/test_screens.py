@@ -154,7 +154,7 @@ def test_health_sweep_alerts(client, admin, event, paired, orga):
     assert services.sweep_health(now=timezone.now() + dt.timedelta(seconds=120)) == 1
     assert Screen.objects.get(pk=screen.pk).health_state == "offline"
     note = Notification.objects.get(user=orga)
-    assert "Foyer" in note.title and note.level == "warning"
+    assert "Foyer" in note.title and note.level == "warn"
     device(token).post("/player/api/heartbeat/", {"data": {}}, format="json")
     assert Screen.objects.get(pk=screen.pk).health_state == "online"
 

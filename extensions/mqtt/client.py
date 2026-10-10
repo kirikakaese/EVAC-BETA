@@ -64,6 +64,39 @@ def handle(topic: str, payload: bytes, prefix: str = "evac") -> tuple[str, dict[
     return None
 
 
+def topic_matches(pattern: str, topic: str) -> bool:
+    """MQTT wildcards: ``+`` one level, ``#`` the rest."""
+    pp, tt = pattern.split("/"), topic.split("/")
+    for i, p in enumerate(pp):
+        if p == "#":
+            return True
+        if i >= len(tt) or (p != "+" and p != tt[i]):
+            return False
+    return len(pp) == len(tt)
+
+
+def dispatch(topic: str, payload: bytes, prefix: str = "evac") -> bool:
+    """Messages for modules (``r.mqtt_topic``, e.g. occupancy sensors). Returns whether a module took it."""
+    from apps.core.registry import registry
+
+    base = prefix + "/"
+    if not topic.startswith(base):
+        return False
+    rest = topic[len(base):]
+    for spec in registry.ensure_loaded().mqtt_topics.values():
+        if topic_matches(spec.pattern, rest):
+            spec.handler(rest, payload)
+            return True
+    return False
+
+
+def subscriptions(prefix: str) -> list[tuple[str, int]]:
+    from apps.core.registry import registry
+
+    return [(f"{prefix}/bridge/+/heartbeat", 1), (f"{prefix}/bridge/+/input", 1)] + [
+        (f"{prefix}/{spec.pattern}", 1) for spec in registry.ensure_loaded().mqtt_topics.values()]
+
+
 def _client(cfg: Any) -> Any:
     import paho.mqtt.client as mqtt
 
@@ -96,11 +129,14 @@ def _session(cfg: Any, stop_after: float | None) -> None:  # pragma: no cover - 
     c = _client(cfg)
 
     def on_connect(client: Any, userdata: Any, flags: Any, rc: Any, props: Any = None) -> None:
-        client.subscribe([(f"{prefix}/bridge/+/heartbeat", 1), (f"{prefix}/bridge/+/input", 1)])
-        log.info("mqtt: connected, subscribed to %s/bridge/+", prefix)
+        topics = subscriptions(prefix)
+        client.subscribe(topics)
+        log.info("mqtt: connected, subscribed to %s", ", ".join(t for t, _q in topics))
 
     def on_message(client: Any, userdata: Any, msg: Any) -> None:
         try:
+            if dispatch(msg.topic, msg.payload, prefix):
+                return
             out = handle(msg.topic, msg.payload, prefix)
         except Exception:  # noqa: BLE001 - one bad message must not stop the loop
             log.exception("mqtt: failed on %s", msg.topic)

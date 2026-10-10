@@ -21,6 +21,10 @@ Hardware bridges ([bridge/README.md](../../bridge/README.md)) can talk MQTT inst
 | `<prefix>/bridge/<id>/config` | EVAC → bridge | the bridge configuration (answer to a heartbeat) |
 | `<prefix>/bridge/<id>/result` | EVAC → bridge | `{"id", "result"}` |
 
+| `<prefix>/crowd/<event slug>/<sensor key>` | sensor → EVAC | occupancy: `{"in": 3, "out": 1}`, `{"delta": 2}`, `{"value": 140}` or a bare number (the occupancy); optional `"id"` makes a repeat harmless (ADR-0040) |
+
+Modules can add topics with `r.mqtt_topic(...)`. The extension subscribes to them as well.
+
 `<id>` is free (the reference bridge uses the first 12 characters of its token). Every message carries the bridge
 token: the broker's own access control is a second layer, not the only one. Restrict the bridge accounts to their
 topics in the broker's ACL.

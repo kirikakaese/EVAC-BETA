@@ -1,0 +1,1 @@
+{% load i18n %}<span class="badge st-{{ inc.status }}">{% if inc.status == "new" %}✱{% elif inc.status == "acknowledged" %}👁{% elif inc.status == "in_progress" %}▶{% elif inc.status == "resolved" %}✓{% else %}■{% endif %} {{ inc.get_status_display }}</span>

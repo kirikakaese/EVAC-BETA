@@ -281,3 +281,61 @@ def test_composer_offers_channel_texts(admin_client, event, levels):
         "all_screens": "on", "text_mastodon": "The bar is open! #camp", "action": "draft"})
     assert r.status_code == 302
     assert Announcement.objects.get().channel_texts == {"mastodon": "The bar is open! #camp"}
+
+
+# ------------------------------------------------------------------ staff alerts (ADR-0039)
+def test_staff_alerts(event, settings):
+    from apps.core import alerts
+    from apps.core.plugins import Alert
+
+    settings.EVAC_PUBLIC_URL = "https://evac.example.org"
+    for key in SETTINGS:
+        configure(key, event)
+    assert set(alerts.channels(event)) >= {"email", "ntfy", "matrix", "telegram"}
+    assert "mastodon" not in alerts.channels(event)  # public: never for staff alerts
+    calls = []
+
+    def fake(method, url, json=None, headers=None, timeout=None):
+        calls.append((method, url, json))
+        return Resp(200, {"ok": True})
+
+    a = Alert(title="Hall A is full", body="Please use Hall B.", level="warn", url="/e/demo/crowd/", key="k1")
+    with mock.patch("extensions.notify.http.requests.request", side_effect=fake):
+        for key in ("ntfy", "matrix", "telegram", "email"):
+            res = registry.notification_channels[key].alert(event, a)
+            assert res["recipients"] >= 1, key
+    hosts = {u.split("/")[2]: (m, u, j) for m, u, j in calls}
+    assert hosts["ntfy.example.org"][2]["priority"] == 4
+    assert hosts["ntfy.example.org"][2]["click"] == "https://evac.example.org/e/demo/crowd/"
+    matrix = hosts["matrix.example.org"]
+    assert matrix[0] == "PUT" and "Hall A is full" in matrix[2]["body"]
+    assert hosts["tg.example.org"][2]["disable_notification"] is False
+    assert mail.outbox[-1].subject == "[Camp] Hall A is full" and mail.outbox[-1].bcc
+    # a retried alert posts with the same Matrix transaction id
+    with mock.patch("extensions.notify.http.requests.request", side_effect=fake):
+        registry.notification_channels["matrix"].alert(event, a)
+    assert calls[-1][1] == matrix[1]
+    with mock.patch("extensions.notify.http.requests.request", return_value=Resp(401, text="no")):
+        assert registry.notification_channels["ntfy"].alert(event, a)["status"] == "failed"
+    assert channels.alerter("mastodon") is None
+
+
+def test_alert_outbox_job(event, settings, django_capture_on_commit_callbacks):
+    from apps.core import alerts, outbox
+    from apps.core.plugins import Alert
+
+    configure("ntfy", event)
+    assert alerts.enqueue(event, ["ntfy", "unknown"], Alert(title="x", key="same")) == 1
+    assert alerts.enqueue(event, ["ntfy"], Alert(title="x", key="same")) == 1
+    job = OutboxJob.objects.get(kind=alerts.JOB)
+    with mock.patch("extensions.notify.http.requests.request", return_value=Resp(200, {})), \
+            django_capture_on_commit_callbacks(execute=True):
+        assert outbox.deliver(job)
+    assert job.result["recipients"] == 1
+    job2 = OutboxJob(kind=alerts.JOB, payload={"channel": "gone"}, event=event)
+    alerts.handle_job(job2)
+    assert job2.result == {"skipped": "channel gone"}
+    cfg = ext.get_or_new(registry.get_extension("ntfy"), event)
+    cfg.enabled = False
+    cfg.save()
+    assert alerts.channels(event) == {} or "ntfy" not in alerts.channels(event)

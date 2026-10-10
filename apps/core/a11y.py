@@ -312,6 +312,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
               f"{e}/playlists/overrides/", f"{e}/playlists/preview/", f"{e}/announcements/",
               f"{e}/announcements/templates/", f"{e}/announcements/levels/", f"{e}/staff/", f"{e}/widgets/",
               f"{e}/evacuation/", f"{e}/evacuation/history/", f"{e}/evacuation/panic/", f"{e}/schedule/",
+              f"{e}/ops/", f"{e}/ops/control/", f"{e}/ops/log/", f"{e}/ops/tasks/", f"{e}/crowd/",
               "/offline/", "/", "/about/", "/docs/", "/docs/operator-handbook/", "/search/?q=event",
               "/accounts/profile/", "/accounts/security/", "/accounts/security/totp/", "/accounts/tokens/",
               "/notifications/"]
@@ -327,6 +328,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
         f"{e}/evacuation/readiness/",
         f"{e}/settings/extensions/mqtt/", f"{e}/settings/extensions/dial/", f"{e}/dial/",
         f"{e}/schedule/new/", f"{e}/schedule/stages/", f"{e}/settings/s/program/",
+        f"{e}/ops/new/", f"{e}/ops/escalation/", f"{e}/settings/s/ops/",
         f"{e}/settings/extensions/pretalx/", f"{e}/settings/extensions/frab/", f"{e}/settings/extensions/ical/",
         f"{e}/settings/extensions/", f"{e}/settings/extensions/webhooks/",
         "/settings/extensions/", "/settings/extensions/webhooks/", "/settings/modules/", "/settings/general/",

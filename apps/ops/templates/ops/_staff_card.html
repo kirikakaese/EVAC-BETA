@@ -1,0 +1,21 @@
+{% load i18n %}<section class="card staff-ops"><h2>{% trans "Incidents" %}{% if ctx.open %} <span class="badge badge-warn">{{ ctx.open }} {% trans "open" %}</span>{% endif %}</h2>
+{% if ctx.mine %}<h3>{% trans "Assigned to you" %}</h3><ul class="plain">{% for i in ctx.mine %}<li>{% include "ops/_severity.html" with inc=i %} <a href="{% url 'ops:incident' event.slug i.pk %}">#{{ i.number }} {{ i.title }}</a>{% if i.place or i.location %} <span class="small muted">{{ i.place|default:i.location }}</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
+{% if ctx.fresh %}<h3>{% trans "New, nobody on it yet" %}</h3><ul class="plain">{% for i in ctx.fresh %}<li class="staff-approval"><p>{% include "ops/_severity.html" with inc=i %} <a href="{% url 'ops:incident' event.slug i.pk %}"><strong>#{{ i.number }} {{ i.title }}</strong></a>{% if i.room or i.zone or i.location %} <span class="small muted">{{ i.place|default:i.location }}</span>{% endif %}</p>
+{% if ctx.can_report %}<form method="post" action="{% url 'ops:staff_ack' event.slug i.pk %}" data-offline data-offline-label="{% blocktrans with n=i.number %}On incident #{{ n }}{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-primary">{% trans "I'm on it" %}</button></form>{% endif %}</li>{% endfor %}</ul>{% endif %}
+{% if not ctx.mine and not ctx.fresh %}<p class="muted">{% trans "No open incident needs you." %}</p>{% endif %}
+{% if ctx.can_report %}<details class="staff-form"><summary class="btn">{% trans "Report an incident" %}</summary>
+<form method="post" action="{% url 'ops:staff_report' event.slug %}" class="stack" data-offline data-offline-label="{% trans 'Incident report' %}">{% csrf_token %}
+<input type="hidden" name="next" value="{{ request.path }}"><input type="hidden" name="client_id" data-client-id value="">
+<div class="field"><label for="sr-title">{% trans "What happened?" %}</label><input id="sr-title" name="title" maxlength="200" required></div>
+<div class="field"><label for="sr-where">{% trans "Where?" %}</label><input id="sr-where" name="location" maxlength="200"></div>
+<div class="field"><label for="sr-cat">{% trans "Category" %}</label><select id="sr-cat" name="category">{% for c in ctx.categories %}<option>{{ c }}</option>{% endfor %}</select></div>
+<div class="field"><label for="sr-sev">{% trans "Severity" %}</label><select id="sr-sev" name="severity">{% for k, l in ctx.severities %}<option value="{{ k }}"{% if k == "medium" %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+<button class="btn btn-primary">{% trans "Report" %}</button></form></details>
+<details class="staff-form"><summary class="btn">{% trans "Ops log entry" %}</summary>
+<form method="post" action="{% url 'ops:staff_log' event.slug %}" class="stack" data-offline data-offline-label="{% trans 'Ops log entry' %}">{% csrf_token %}
+<input type="hidden" name="next" value="{{ request.path }}"><input type="hidden" name="client_id" data-client-id value=""><input type="hidden" name="written_at" data-written-at value="">
+<div class="field"><label for="sl-to">{% trans "To" %}</label><input id="sl-to" name="recipient" maxlength="80" placeholder="{% trans 'Control' %}"></div>
+<div class="field"><label for="sl-text">{% trans "Message" %}</label><textarea id="sl-text" name="text" rows="2" required></textarea></div>
+<label class="check"><input type="checkbox" name="important" value="1"> {% trans "Important" %}</label>
+<button class="btn btn-primary">{% trans "Write" %}</button></form></details>{% endif %}
+</section>

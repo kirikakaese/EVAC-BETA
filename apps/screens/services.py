@@ -204,7 +204,7 @@ def _notify_offline(screen: Screen) -> None:
     chain = rbac.scope_chain(screen)
     users = [m.user for m in screen.event.memberships.select_related("user").filter(user__is_active=True)
              if rbac.effective(m.user, screen.event, two_factor=True).access.allows("screens.manage", chain)]
-    notify(users, _("Screen offline: %(name)s") % {"name": screen.name}, level="warning", event=screen.event,
+    notify(users, _("Screen offline: %(name)s") % {"name": screen.name}, level="warn", event=screen.event,
            url=reverse("screens:detail", args=[screen.event.slug, screen.pk]),
            body=_("No heartbeat since %(time)s.") % {
                "time": timezone.localtime(screen.last_seen_at).strftime("%H:%M:%S") if screen.last_seen_at else "-"})

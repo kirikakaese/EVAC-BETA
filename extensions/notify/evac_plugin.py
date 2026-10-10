@@ -69,4 +69,5 @@ def register(r: Registry) -> None:
         r.extension(ext_spec)
         r.notification_channel(NotificationChannelSpec(
             key=ext_spec.key, name=ext_spec.name, send=channels.sender(ext_spec.key), module="announcements",
-            description=ext_spec.description, available=channels.available(ext_spec.key), max_length=max_length))
+            description=ext_spec.description, available=channels.available(ext_spec.key), max_length=max_length,
+            alert=channels.alerter(ext_spec.key)))

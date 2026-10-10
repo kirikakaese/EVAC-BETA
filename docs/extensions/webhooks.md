@@ -26,7 +26,7 @@ shows the last status and recent attempts. Instance-level endpoints receive even
 event-level endpoints only their event's.
 
 Event types available in phase 0 (more are registered by later modules, e.g. `evacuation.state_changed`,
-`announcement.published`, `screen.offline`, `program.session_changed`): `event.created`, `event.updated`, `event.state_changed`,
+`announcement.published`, `screen.offline`, `program.session_changed`, `incident.created`, `incident.updated`, `incident.escalated`, `occupancy.state_changed`): `event.created`, `event.updated`, `event.state_changed`,
 `member.added`, `member.removed`, `module.toggled`, `webhook.ping`. `GET /api/v1/registry/` lists all.
 
 **Test connection** sends a signed `webhook.ping` to every active endpoint.

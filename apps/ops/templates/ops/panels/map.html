@@ -1,0 +1,4 @@
+{% load i18n %}<div class="map-floors">{% for f in ctx.floors %}<figure class="zone-map"><svg viewBox="{{ f.viewbox }}" role="img" aria-labelledby="mf-{{ forloop.counter }}"><title id="mf-{{ forloop.counter }}">{{ f.name }}</title>
+{% for s in f.shapes %}<g class="zone zone-{{ s.level }}"><polygon points="{{ s.points }}" stroke-width="{{ f.stroke }}"/><text x="{{ s.cx }}" y="{{ s.cy }}" font-size="{{ f.font }}" text-anchor="middle">{{ s.zone.name }}{% if s.incidents %} ⚠{{ s.incidents }}{% endif %}</text></g>{% endfor %}</svg>
+<figcaption class="small">{{ f.name }}</figcaption></figure>{% endfor %}</div>
+<p class="small muted legend"><span class="key zone-ok">■</span> {% trans "no open incident" %} <span class="key zone-warn">■</span> ⚠ {% trans "open incident" %} <span class="key zone-crit">■</span> ⚠ {% trans "high or critical" %}</p>

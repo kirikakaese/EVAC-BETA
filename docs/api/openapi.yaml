@@ -1396,6 +1396,235 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/events/{event_slug}/incidents/:
+    get:
+      operationId: events_incidents_list
+      description: Incidents (``?status=open`` for new/acknowledged/in progress).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIncidentList'
+          description: ''
+    post:
+      operationId: events_incidents_create
+      description: Incidents (``?status=open`` for new/acknowledged/in progress).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IncidentRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/v1/events/{event_slug}/incidents/{id}/:
+    get:
+      operationId: events_incidents_retrieve
+      description: Incidents (``?status=open`` for new/acknowledged/in progress).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this incident.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+    patch:
+      operationId: events_incidents_partial_update
+      description: Incidents (``?status=open`` for new/acknowledged/in progress).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this incident.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIncidentRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/v1/events/{event_slug}/incidents/{id}/note/:
+    post:
+      operationId: events_incidents_note_create
+      description: Incidents (``?status=open`` for new/acknowledged/in progress).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this incident.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
+  /api/v1/events/{event_slug}/incidents/{id}/status/:
+    post:
+      operationId: events_incidents_status_create
+      description: Incidents (``?status=open`` for new/acknowledged/in progress).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this incident.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StatusRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          description: ''
   /api/v1/events/{event_slug}/layouts/:
     get:
       operationId: events_layouts_list
@@ -1870,6 +2099,235 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedNowPlayingList'
+          description: ''
+  /api/v1/events/{event_slug}/occupancy/:
+    get:
+      operationId: events_occupancy_list
+      description: Areas with their live count. ``POST …/<id>/count/`` takes a sensor
+        reading.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAreaList'
+          description: ''
+  /api/v1/events/{event_slug}/occupancy/{id}/:
+    get:
+      operationId: events_occupancy_retrieve
+      description: Areas with their live count. ``POST …/<id>/count/`` takes a sensor
+        reading.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this area.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Area'
+          description: ''
+  /api/v1/events/{event_slug}/occupancy/{id}/count/:
+    post:
+      operationId: events_occupancy_count_create
+      description: Areas with their live count. ``POST …/<id>/count/`` takes a sensor
+        reading.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this area.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReadingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReadingRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Area'
+          description: ''
+  /api/v1/events/{event_slug}/ops-log/:
+    get:
+      operationId: events_ops_log_list
+      description: The ops log, newest first. ``POST`` writes an entry (``client_id``
+        makes a retry harmless).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLogEntryList'
+          description: ''
+    post:
+      operationId: events_ops_log_create
+      description: The ops log, newest first. ``POST`` writes an entry (``client_id``
+        makes a retry harmless).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogEntryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogEntryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogEntryRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogEntry'
+          description: ''
+  /api/v1/events/{event_slug}/ops-log/{id}/:
+    get:
+      operationId: events_ops_log_retrieve
+      description: The ops log, newest first. ``POST`` writes an entry (``client_id``
+        makes a retry harmless).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this log entry.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogEntry'
           description: ''
   /api/v1/events/{event_slug}/overrides/:
     get:
@@ -4702,6 +5160,97 @@ components:
         * `rejected` - Rejected
         * `cancelled` - Cancelled
         * `ended` - Ended
+    Area:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        room:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Screens in this room show “full”.
+        zone:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Or a whole zone (screens in the zone).
+        capacity:
+          type: integer
+          readOnly: true
+          description: 'People allowed at once. 0: count only, no rule.'
+        busy_percent:
+          type: integer
+          readOnly: true
+          title: Busy from (%)
+        full_percent:
+          type: integer
+          readOnly: true
+          title: Full from (%)
+        release_percent:
+          type: integer
+          readOnly: true
+          title: Open again below (%)
+          description: “Full” ends only when the count falls below this, so the sign
+            does not flicker at the limit.
+        value:
+          type: integer
+          readOnly: true
+        percent:
+          type: integer
+          readOnly: true
+          nullable: true
+        state:
+          allOf:
+          - $ref: '#/components/schemas/AreaStateEnum'
+          readOnly: true
+        state_since:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        sensor_key:
+          type: string
+          readOnly: true
+          description: 'For sensors over MQTT: <prefix>/crowd/<event>/<sensor key>.'
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - busy_percent
+      - capacity
+      - full_percent
+      - id
+      - name
+      - percent
+      - release_percent
+      - room
+      - sensor_key
+      - state
+      - state_since
+      - updated_at
+      - value
+      - zone
+    AreaStateEnum:
+      enum:
+      - normal
+      - busy
+      - full
+      type: string
+      description: |-
+        * `normal` - Normal
+        * `busy` - Busy
+        * `full` - Full
     Asset:
       type: object
       properties:
@@ -5511,6 +6060,174 @@ components:
         original_name:
           type: string
           maxLength: 200
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        category:
+          type: string
+          maxLength: 40
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IncidentStatusEnum'
+          readOnly: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        zone_name:
+          type: string
+          readOnly: true
+          default: ''
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        room_name:
+          type: string
+          readOnly: true
+          default: ''
+        location:
+          type: string
+          title: Where exactly
+          maxLength: 200
+        assignee:
+          type: string
+          format: uuid
+          nullable: true
+          title: Assigned to
+        assignee_name:
+          type: string
+          readOnly: true
+        team:
+          type: string
+          description: e.g. Security, Medics
+          maxLength: 80
+        reported_by:
+          type: string
+          description: Who reported it (a name, a radio call sign, a phone number).
+          maxLength: 120
+        links:
+          readOnly: true
+        source:
+          type: string
+          description: manual, api, dial, …
+          maxLength: 60
+        external_id:
+          type: string
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        version:
+          type: integer
+          readOnly: true
+      required:
+      - acknowledged_at
+      - assignee_name
+      - closed_at
+      - created_at
+      - id
+      - links
+      - number
+      - resolved_at
+      - room_name
+      - status
+      - title
+      - version
+      - zone_name
+    IncidentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        category:
+          type: string
+          minLength: 1
+          maxLength: 40
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        location:
+          type: string
+          title: Where exactly
+          maxLength: 200
+        assignee:
+          type: string
+          format: uuid
+          nullable: true
+          title: Assigned to
+        team:
+          type: string
+          description: e.g. Security, Medics
+          maxLength: 80
+        reported_by:
+          type: string
+          description: Who reported it (a name, a radio call sign, a phone number).
+          maxLength: 120
+        source:
+          type: string
+          description: manual, api, dial, …
+          maxLength: 60
+        external_id:
+          type: string
+          maxLength: 200
+      required:
+      - title
+    IncidentStatusEnum:
+      enum:
+      - new
+      - acknowledged
+      - in_progress
+      - resolved
+      - closed
+      type: string
+      description: |-
+        * `new` - New
+        * `acknowledged` - Acknowledged
+        * `in_progress` - In progress
+        * `resolved` - Resolved
+        * `closed` - Closed
     Item:
       type: object
       properties:
@@ -5765,6 +6482,95 @@ components:
           default: false
       required:
       - action
+    LogEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        at:
+          type: string
+          format: date-time
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LogEntryKindEnum'
+          readOnly: true
+        sender:
+          type: string
+          title: From
+          description: e.g. Security 2
+          maxLength: 80
+        recipient:
+          type: string
+          title: To
+          description: e.g. Control
+          maxLength: 80
+        text:
+          type: string
+          title: Message
+        important:
+          type: boolean
+        incident:
+          type: string
+          format: uuid
+          nullable: true
+        incident_number:
+          type: integer
+          readOnly: true
+        source:
+          type: string
+          readOnly: true
+          description: 'system entries: the event type'
+        client_id:
+          type: string
+          description: idempotency key of offline entries
+          maxLength: 64
+      required:
+      - at
+      - id
+      - incident_number
+      - kind
+      - source
+      - text
+    LogEntryKindEnum:
+      enum:
+      - message
+      - system
+      type: string
+      description: |-
+        * `message` - Message
+        * `system` - System
+    LogEntryRequest:
+      type: object
+      properties:
+        sender:
+          type: string
+          title: From
+          description: e.g. Security 2
+          maxLength: 80
+        recipient:
+          type: string
+          title: To
+          description: e.g. Control
+          maxLength: 80
+        text:
+          type: string
+          minLength: 1
+          title: Message
+        important:
+          type: boolean
+        incident:
+          type: string
+          format: uuid
+          nullable: true
+        client_id:
+          type: string
+          description: idempotency key of offline entries
+          maxLength: 64
+      required:
+      - text
     Membership:
       type: object
       properties:
@@ -5830,6 +6636,15 @@ components:
       - key
       - name
       - required
+    NoteRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4000
+      required:
+      - text
     NowPlaying:
       type: object
       properties:
@@ -5992,6 +6807,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
+    PaginatedAreaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Area'
     PaginatedAssetList:
       type: object
       required:
@@ -6153,6 +6991,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FontFamily'
+    PaginatedIncidentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Incident'
     PaginatedLayoutList:
       type: object
       required:
@@ -6199,6 +7060,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Level'
+    PaginatedLogEntryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LogEntry'
     PaginatedMembershipList:
       type: object
       required:
@@ -6818,6 +7702,53 @@ components:
           minimum: -9223372036854775808
           format: int64
           description: 0 = ground floor, negative = basement.
+    PatchedIncidentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        category:
+          type: string
+          minLength: 1
+          maxLength: 40
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        location:
+          type: string
+          title: Where exactly
+          maxLength: 200
+        assignee:
+          type: string
+          format: uuid
+          nullable: true
+          title: Assigned to
+        team:
+          type: string
+          description: e.g. Security, Medics
+          maxLength: 80
+        reported_by:
+          type: string
+          description: Who reported it (a name, a radio call sign, a phone number).
+          maxLength: 120
+        source:
+          type: string
+          description: manual, api, dial, …
+          maxLength: 60
+        external_id:
+          type: string
+          maxLength: 200
     PatchedLayoutRequest:
       type: object
       properties:
@@ -7391,6 +8322,20 @@ components:
           type: string
           format: date-time
           description: Schedule instead of publishing now.
+    ReadingRequest:
+      type: object
+      properties:
+        delta:
+          type: integer
+        value:
+          type: integer
+          minimum: 0
+        id:
+          type: string
+          maxLength: 64
+        device:
+          type: string
+          maxLength: 80
     RecurrenceEnum:
       enum:
       - daily
@@ -7994,6 +8939,18 @@ components:
       description: |-
         * `scheduled` - Scheduled
         * `cancelled` - Cancelled
+    SeverityEnum:
+      enum:
+      - low
+      - medium
+      - high
+      - critical
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+        * `critical` - Critical
     SoundEnum:
       enum:
       - none
@@ -8033,6 +8990,16 @@ components:
         * `live` - Live
         * `teardown` - Teardown
         * `archived` - Archived
+    StatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/IncidentStatusEnum'
+        note:
+          type: string
+          maxLength: 500
+      required:
+      - status
     StyleEnum:
       enum:
       - normal

@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Ops log" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Ops log" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'ops:control' event.slug %}">{% trans "Control room" %}</a></div></div>
+{% if form %}<form method="post" class="card log-form">{% csrf_token %}<input type="hidden" name="client_id" data-client-id value=""><input type="hidden" name="written_at" data-written-at value="">
+<h2>{% trans "New entry" %}</h2>{% include "portal/_form.html" with form=form %}
+{% if senders %}<datalist id="callsigns">{% for n in senders %}<option value="{{ n }}">{% endfor %}</datalist>{% endif %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Write" %}</button></div></form>{% endif %}
+<section class="card" aria-labelledby="ent-h"><h2 id="ent-h">{% trans "Entries" %}</h2>
+<form method="get" class="inline filters"><label for="f-only">{% trans "Show" %}</label><select id="f-only" name="only" data-action="submit"><option value="">{% trans "Everything" %}</option><option value="important"{% if only == "important" %} selected{% endif %}>{% trans "Important" %}</option><option value="message"{% if only == "message" %} selected{% endif %}>{% trans "Messages" %}</option><option value="system"{% if only == "system" %} selected{% endif %}>{% trans "System" %}</option></select>
+<label for="f-q">{% trans "Search" %}</label><input id="f-q" name="q" type="search" value="{{ q }}"><button class="btn btn-sm">{% trans "Filter" %}</button></form>
+{% include "ops/_log_list.html" with entries=page.object_list %}
+{% if page.has_other_pages %}<nav class="pager" aria-label="{% trans 'Pages' %}">{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&amp;only={{ only }}&amp;q={{ q|urlencode }}">{% trans "Newer" %}</a>{% endif %} <span>{{ page.number }} / {{ page.paginator.num_pages }}</span> {% if page.has_next %}<a href="?page={{ page.next_page_number }}&amp;only={{ only }}&amp;q={{ q|urlencode }}">{% trans "Older" %}</a>{% endif %}</nav>{% endif %}
+</section>
+{% endblock %}

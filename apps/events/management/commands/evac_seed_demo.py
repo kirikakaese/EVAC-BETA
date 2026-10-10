@@ -50,9 +50,14 @@ class Command(BaseCommand):
             ground = Floor.objects.create(building=main, name="Ground floor", level=0)
             upper = Floor.objects.create(building=main, name="First floor", level=1)
             Floor.objects.create(building=outdoor, name="Field", level=0)
-            north = Zone.objects.create(venue=venue, name="Zone North", capacity=1200, color="#2563eb")
-            south = Zone.objects.create(venue=venue, name="Zone South", capacity=900, color="#16a34a")
-            yard = Zone.objects.create(venue=venue, name="Courtyard", outdoor=True, capacity=2000, color="#ca8a04")
+            # zone outlines in metres on the ground floor (the map editor draws them on a plan)
+            gf = str(ground.pk)
+            north = Zone.objects.create(venue=venue, name="Zone North", capacity=1200, color="#2563eb",
+                                        areas=[{"floor": gf, "points": [[0, 0], [60, 0], [60, 30], [0, 30]]}])
+            south = Zone.objects.create(venue=venue, name="Zone South", capacity=900, color="#16a34a",
+                                        areas=[{"floor": gf, "points": [[0, 30], [60, 30], [60, 55], [0, 55]]}])
+            yard = Zone.objects.create(venue=venue, name="Courtyard", outdoor=True, capacity=2000, color="#ca8a04",
+                                       areas=[{"floor": gf, "points": [[60, 0], [95, 0], [95, 55], [60, 55]]}])
             rooms = [("Hall A", ground, [north], 800), ("Hall B", ground, [south], 600), ("Foyer", ground,
                      [north, south], 300), ("Workshop 1", upper, [north], 40), ("Workshop 2", upper, [south], 40)]
             for name, floor, zones, cap in rooms:
@@ -88,10 +93,12 @@ class Command(BaseCommand):
         if "evacuation" in registry.ensure_loaded().modules and not modules.instance_enabled("evacuation"):
             modules.set_instance("evacuation", True, user=admin)
         # a demo program (when the program module is installed): sessions today and tomorrow
-        if "program" in registry.modules:
-            import importlib
+        import importlib
 
-            importlib.import_module("apps.schedule.demo").seed(event, admin)
+        # demo data of optional modules, when installed (they are never imported directly)
+        for key, path in (("program", "apps.schedule.demo"), ("crowd", "apps.crowd.demo"), ("ops", "apps.ops.demo")):
+            if key in registry.modules:
+                importlib.import_module(path).seed(event, admin)
         self.stdout.write(self.style.SUCCESS(
             f"Demo ready: log in as admin@evac.local / {password} (other demo accounts: "
             f"{', '.join(p[0] for p in PEOPLE)}; same password). Event: /e/demo/"))

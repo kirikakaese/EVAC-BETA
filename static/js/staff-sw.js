@@ -19,7 +19,7 @@ self.addEventListener("activate", function (event) {
   }).then(function () { return self.clients.claim(); }));
 });
 
-function isStaffPage(url) { return /^\/e\/[^/]+\/staff\/$/.test(url.pathname); }
+function isStaffPage(url) { return /^\/e\/[^/]+\/(staff|crowd\/count\/[0-9a-f-]+)\/$/.test(url.pathname); }
 
 self.addEventListener("fetch", function (event) {
   const req = event.request;

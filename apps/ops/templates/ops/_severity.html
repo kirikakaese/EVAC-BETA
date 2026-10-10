@@ -1,0 +1,1 @@
+{% load i18n %}<span class="badge sev-{{ inc.severity }}">{% if inc.severity == "critical" %}‼{% elif inc.severity == "high" %}!{% elif inc.severity == "medium" %}•{% else %}·{% endif %} {{ inc.get_severity_display }}</span>

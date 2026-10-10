@@ -18,6 +18,7 @@ class Broadcast(models.Model):
     class Source(models.TextChoices):
         EVACUATION = "evacuation", _("Evacuation")
         ANNOUNCEMENT = "announcement", _("Announcement")
+        ALERT = "alert", _("Staff alert")
         TEST = "test", _("Test")
 
     class Status(models.TextChoices):

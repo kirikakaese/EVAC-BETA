@@ -1,0 +1,3 @@
+{% load i18n %}<section class="card staff-crowd"><h2>{% trans "Door counter" %}</h2>
+{% if ctx.areas %}<ul class="plain">{% for a in ctx.areas %}<li><a class="btn" href="{% url 'crowd:counter' event.slug a.pk %}">{{ a.name }}</a> <span class="tabular">{{ a.value }}{% if a.capacity %} / {{ a.capacity }}{% endif %}</span> {% include "crowd/_bar.html" %}</li>{% endfor %}</ul>
+{% else %}<p class="muted">{% trans "No areas to count yet." %}</p>{% endif %}</section>

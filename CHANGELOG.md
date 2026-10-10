@@ -6,6 +6,61 @@ released.
 
 ## [Unreleased]
 
+### Added — Operations and occupancy (Phase 6)
+
+- Incidents & control room module (`apps/ops`, module `ops`, ADR-0039):
+  - incidents with per-event numbers, category, severity, room/zone/place, assignment, team, status
+    (new → acknowledged → in progress → resolved → closed, reopen);
+  - a timeline with notes, photos and files, links and escalations;
+  - scoped permissions by zone;
+  - permissions `ops.view`, `ops.report`, `ops.manage`, `ops.escalation`, `ops.export`.
+- Radio-style ops log: people's "from → to" entries, plus system lines for alarms, staff answers, offline screens,
+  DECT alerts, announcements, overrides, occupancy and program changes (a webhook sink; a setting switches them
+  off).
+- Tasks with assignee, team, due time and incident.
+- Escalation rules:
+  - severity, categories, "at once" or "after N minutes not acknowledged/resolved";
+  - notify roles (in-app + Web Push) and send to channels;
+  - each rule once per incident; beat task `ops-escalate-due`.
+- Incident report as CSV (formula-safe) and JSON with the ops log.
+- Staff app card: new and assigned incidents with "I'm on it", plus incident report and ops log forms that work
+  offline. Replays are ignored: the offline queue now gives each submission a client id and the time it was
+  written.
+- Control room dashboard `/e/<slug>/ops/control/`:
+  - a large-screen grid of self-refreshing panels contributed by modules: alarms, open incidents, a zone map with
+    incidents, occupancy, screen health, announcements, DIAL/DECT, ops log and tasks;
+  - full-screen button.
+- Occupancy module (`apps/crowd`, module `crowd`, ADR-0040):
+  - areas (room, zone or any place) with capacity, busy/full thresholds and a release threshold (hysteresis);
+  - an alternative to suggest, a custom text, screen groups, and roles and channels to alert.
+- Door counter in the staff app:
+  - big +1/−1 buttons; several devices add up;
+  - clicks shown at once, queued offline, sent in batches with client ids (never counted twice);
+  - counter pages work offline.
+- Sensors:
+  - `POST /api/v1/events/<slug>/occupancy/<id>/count/` (`{delta}`, `{in, out}`, `{value}`);
+  - MQTT `<prefix>/crowd/<event>/<sensor key>`.
+- When an area is full, screens in its room or zone (and chosen groups) show a banner such as "Foyer is full.
+  Please use Hall B." within a second. Staff are alerted, the ops log gets a line, and webhook
+  `occupancy.state_changed` fires.
+- Occupancy history: per-minute samples, an SVG chart (2 to 48 h), recent counts, audited corrections and "reset
+  all"; data source `crowd.areas` for screen widgets.
+- APIs: `/events/<slug>/incidents/` (with `status` and `note` actions), `/events/<slug>/ops-log/`,
+  `/events/<slug>/occupancy/`. New webhook events: `incident.created`, `incident.updated`, `incident.escalated`,
+  `occupancy.state_changed`.
+- Plugin API 3:
+  - `NotificationChannelSpec.alert` and `apps.core.alerts`: staff alerts through ntfy, Matrix, Telegram, e-mail
+    and DIAL DECT messages via the outbox (`core.alert`); Mastodon and the feed stay out;
+  - `r.dashboard_panel`;
+  - `r.mqtt_topic`: the MQTT extension routes module topics.
+- Demo seed: zone outlines, occupancy areas with an afternoon of history, incidents, ops log traffic, tasks and
+  escalation rules.
+- Phase 6 gate as `frontend/e2e/phase6.mjs`.
+
+### Fixed
+
+- Screen-offline notifications used an invalid level (`warning`); they now show as warnings.
+
 ### Added — Program (Phase 5)
 
 - Program module (`apps/schedule`, module `program`, ADR-0038):

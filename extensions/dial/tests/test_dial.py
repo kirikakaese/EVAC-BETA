@@ -580,3 +580,19 @@ def test_roles_match_by_email(event, link, other):
     RoleMapping.objects.create(config=link, dial_role="orga", role=Role.objects.get(event=event, key="orga"))
     rows = roles.proposals(link, [{"user": "someone-else", "role": "orga", "email": "BOB@example.org"}])
     assert rows[0]["user"] == other and rows[0]["by_email"]
+
+
+def test_dect_message_staff_alert(event, link, dial):
+    from apps.core import alerts
+    from apps.core.plugins import Alert
+    from apps.core.registry import registry
+
+    assert "dial_sms" in alerts.channels(event) and "dial_call" not in alerts.channels(event)
+    spec = registry.notification_channels["dial_sms"]
+    a = Alert(title="Incident #3 (High): Fight", body="Gate C", key="incident:x:y")
+    res = spec.alert(event, a)
+    assert res["status"] == "sent"
+    sms = [c for c in dial.calls if c[1] == "messaging/broadcast/"]
+    assert sms[-1][3]["text"] == "Incident #3 (High): Fight: Gate C"
+    again = spec.alert(event, a)  # the same alert again: no second call
+    assert again["status"] == "sent" and len([c for c in dial.calls if c[1] == "messaging/broadcast/"]) == len(sms)

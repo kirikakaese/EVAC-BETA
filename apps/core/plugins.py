@@ -24,7 +24,8 @@ from typing import Any, Literal
 
 #: Bumped when this module grows or changes. Plugins declare the API version they target; a plugin declaring a
 #: newer version than this EVAC provides refuses to load. 2: ``layout_check``, ``sync`` and ``node_action``.
-API_VERSION = 2
+#: 3: ``NotificationChannelSpec.alert``, ``dashboard_panel`` and ``mqtt_topic``.
+API_VERSION = 3
 
 PluginKind = Literal["core", "module", "extension"]
 NavSection = Literal["event", "operations", "content", "settings", "admin"]
@@ -162,10 +163,25 @@ class WidgetSpec:
 
 
 @dataclass(frozen=True)
+class Alert:
+    """A plain message for staff (incident escalation, "room full"), not an announcement. ``level`` is ``info``,
+    ``warn`` or ``err``; ``key`` is stable for one alert so a retried delivery can be recognised."""
+
+    title: str
+    body: str = ""
+    level: str = "info"
+    url: str = ""
+    key: str = ""
+
+
+@dataclass(frozen=True)
 class NotificationChannelSpec:
     """An announcement channel (ADR-0019). ``send(delivery) -> {"status", "recipients", "detail"}`` runs in the
     outbox (raise to retry). ``available(event) -> bool`` hides it where it is not set up (e.g. an extension that
-    is off); ``max_length`` > 0 offers a shorter per-channel text in the composer."""
+    is off); ``max_length`` > 0 offers a shorter per-channel text in the composer.
+
+    ``alert(event, Alert) -> {"recipients", "detail"}`` (optional, ADR-0039) sends a staff alert through the same
+    channel; channels that reach the public (Mastodon, the public feed) leave it out. Also run in the outbox."""
 
     key: str
     name: str
@@ -174,6 +190,7 @@ class NotificationChannelSpec:
     description: str = ""
     available: Callable[[Any], bool] | None = None
     max_length: int = 0
+    alert: Callable[[Any, Alert], Mapping[str, Any]] | None = None
 
 
 @dataclass(frozen=True)
@@ -187,6 +204,34 @@ class StaffCardSpec:
     context: Callable[[Any, Any], Mapping[str, Any] | None]
     module: str = "core"
     order: int = 100
+
+
+@dataclass(frozen=True)
+class DashboardPanelSpec:
+    """A panel of the control room dashboard (ADR-0039). ``context(request, event) -> dict | None`` returns the
+    template context, or None to hide the panel for this user; ``template`` renders the panel body. The page
+    refreshes each panel every ``refresh_seconds``. ``size``: ``normal``, ``wide`` (two columns) or ``tall``."""
+
+    key: str
+    title: str
+    template: str
+    context: Callable[[Any, Any], Mapping[str, Any] | None]
+    module: str = "core"
+    order: int = 100
+    size: str = "normal"
+    refresh_seconds: int = 10
+
+
+@dataclass(frozen=True)
+class MqttTopicSpec:
+    """Messages the MQTT extension routes to a module (ADR-0039). ``pattern`` is below the configured prefix and
+    may use MQTT wildcards (``crowd/+/+``); ``handler(topic, payload) -> None`` gets the topic without the prefix
+    and the raw payload. Handlers must not trust the payload: validate it and look secrets up themselves."""
+
+    key: str
+    pattern: str
+    handler: Callable[[str, bytes], None]
+    module: str = "core"
 
 
 @dataclass(frozen=True)

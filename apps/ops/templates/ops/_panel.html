@@ -1,0 +1,2 @@
+{% load i18n %}<section class="card panel panel-{{ spec.size }}" id="panel-{{ spec.key|slugify }}" aria-labelledby="ph-{{ spec.key|slugify }}" hx-get="{% url 'ops:panel' event.slug spec.key %}" hx-trigger="every {{ spec.refresh_seconds }}s" hx-swap="outerHTML">
+<h2 id="ph-{{ spec.key|slugify }}">{{ spec.title }}</h2>{% include spec.template %}</section>

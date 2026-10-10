@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Tasks" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Tasks" %}</h1></div>
+<nav class="tabs" aria-label="{% trans 'Tasks' %}"><a href="?show=open"{% if show == "open" %} aria-current="page"{% endif %}>{% trans "Open" %}</a><a href="?show=mine"{% if show == "mine" %} aria-current="page"{% endif %}>{% trans "Mine" %}</a><a href="?show=all"{% if show == "all" %} aria-current="page"{% endif %}>{% trans "All" %}</a></nav>
+<section class="card" aria-labelledby="tl-h"><h2 id="tl-h" class="sr-only">{% trans "Task list" %}</h2>
+{% if tasks %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Task" %}</th><th scope="col">{% trans "Assigned" %}</th><th scope="col">{% trans "Due" %}</th><th scope="col">{% trans "Incident" %}</th><th scope="col">{% trans "Status" %}</th></tr></thead>
+<tbody>{% for t in tasks %}<tr><td><strong>{{ t.title }}</strong>{% if t.notes %}<br><span class="small">{{ t.notes }}</span>{% endif %}</td><td>{{ t.assignee|default:"" }}{% if t.team %} <span class="small muted">{{ t.team }}</span>{% endif %}</td>
+<td class="tabular nowrap">{% if t.due_at %}{{ t.due_at|date:"D H:i" }}{% if t.status == "open" and t.due_at < now %} <span class="badge badge-err">{% trans "overdue" %}</span>{% endif %}{% else %}–{% endif %}</td>
+<td>{% if t.incident %}<a href="{% url 'ops:incident' event.slug t.incident_id %}">#{{ t.incident.number }}</a>{% endif %}</td>
+<td><form method="post" action="{% url 'ops:task_done' event.slug t.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">{% if t.status == "done" %}<span class="badge badge-ok">{% trans "done" %}</span> <button class="btn btn-sm btn-ghost" name="done" value="0">{% trans "Reopen" %}</button>{% else %}<button class="btn btn-sm" name="done" value="1">{% trans "Done" %}</button>{% endif %}</form></td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No tasks." %}</p>{% endif %}</section>
+{% if form %}<form method="post" class="card">{% csrf_token %}<h2>{% trans "New task" %}</h2>{% include "portal/_form.html" with form=form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Add task" %}</button></div></form>{% endif %}
+{% endblock %}

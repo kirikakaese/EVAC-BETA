@@ -70,6 +70,12 @@
     if (action === "print") {
       e.preventDefault();
       window.print();
+    } else if (action === "fullscreen") {
+      // <button data-action="fullscreen" data-target=".control-room">: that element full screen (Esc leaves)
+      e.preventDefault();
+      const target = document.querySelector(el.getAttribute("data-target") || "main") || document.documentElement;
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (target.requestFullscreen) target.requestFullscreen().catch(function () { /* not allowed here */ });
     } else if (action === "copy") {
       e.preventDefault();
       const target = document.querySelector(el.getAttribute("data-target"));
@@ -311,8 +317,17 @@
       .catch(function () { /* still offline */ })
       .then(function () { flushing = false; showSync(); if (load().length && navigator.onLine) setTimeout(flush, 500); });
   }
+  function newId() {
+    return (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  }
   document.addEventListener("submit", function (e) {
     const form = e.target;
+    if (form.querySelectorAll) {
+      // every submission gets its own id (the server ignores a replay) and the time it was written
+      form.querySelectorAll("input[data-client-id]").forEach(function (i) { i.value = newId(); });
+      form.querySelectorAll("input[data-written-at]").forEach(function (i) { i.value = new Date().toISOString(); });
+    }
     if (!form.hasAttribute || !form.hasAttribute("data-offline") || navigator.onLine) return;
     e.preventDefault();
     const data = {};
@@ -378,5 +393,95 @@
         }
       });
     }
+  }
+  // ---- door counter (occupancy, ADR-0040): <div data-counter data-area data-endpoint data-state-url>.
+  // Clicks show at once, wait in localStorage (offline too) and go to the server in batches with a client id
+  // each, so a replay after a lost answer counts nothing twice; the count of other doors arrives by polling.
+  const counter = document.querySelector("[data-counter]");
+  if (counter) {
+    const QKEY = "evac.count-queue";
+    const DKEY = "evac.count-device";
+    const area = counter.getAttribute("data-area");
+    const valueEl = counter.querySelector("[data-counter-value]");
+    const stateEl = counter.querySelector("[data-counter-state]");
+    const syncEl = counter.querySelector("[data-counter-sync]");
+    const deviceEl = counter.querySelector("[data-counter-device]");
+    let server = parseInt(valueEl.textContent, 10) || 0;
+    let sending = false;
+    const token = function () {
+      try { return JSON.parse(document.body.getAttribute("hx-headers") || "{}")["X-CSRFToken"] || ""; } catch (e) { return ""; }
+    };
+    const loadQ = function () { try { return JSON.parse(localStorage.getItem(QKEY) || "[]"); } catch (e) { return []; } };
+    const saveQ = function (q) { try { localStorage.setItem(QKEY, JSON.stringify(q)); } catch (e) { /* full or blocked */ } };
+    const uid = function () {
+      return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+    };
+    try { deviceEl.value = localStorage.getItem(DKEY) || ""; } catch (e) { /* ignore */ }
+    deviceEl.addEventListener("change", function () { try { localStorage.setItem(DKEY, deviceEl.value); } catch (e) { /* ignore */ } });
+    function pending() {
+      return loadQ().filter(function (c) { return c.area === area; }).reduce(function (n, c) { return n + c.delta; }, 0);
+    }
+    function paint(st) {
+      valueEl.textContent = String(Math.max(0, server + pending()));
+      if (st && st.label) {
+        const span = document.createElement("span");
+        span.className = "occ-state occ-" + st.state;
+        span.textContent = (st.state === "full" ? "⛔ " : st.state === "busy" ? "▲ " : "● ") + st.label;
+        stateEl.replaceChildren(span);
+      }
+      const n = loadQ().length;
+      const key = n ? (navigator.onLine ? "pending" : "offline") : "synced";
+      syncEl.dataset.state = n ? (navigator.onLine ? "waiting" : "offline") : "synced";
+      syncEl.textContent = (counter.getAttribute("data-label-" + key) || "").replace("{n}", String(n));
+    }
+    function send() {
+      const q = loadQ();
+      if (!q.length || sending || !navigator.onLine) return paint();
+      sending = true;
+      const batch = q.slice(0, 200);
+      fetch(counter.getAttribute("data-endpoint"), { method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": token() }, body: JSON.stringify({ counts: batch }) })
+        .then(function (r) {
+          if (r.ok || r.status === 400 || r.status === 403) {
+            const sent = {};
+            batch.forEach(function (c) { sent[c.id] = true; });
+            saveQ(loadQ().filter(function (c) { return !sent[c.id]; }));
+          }
+          return r.ok ? r.json() : null;
+        })
+        .then(function (data) {
+          const st = data && data.areas && data.areas[area];
+          if (st) server = st.value;
+          paint(st);
+        })
+        .catch(function () { paint(); })
+        .then(function () { sending = false; if (loadQ().length && navigator.onLine) setTimeout(send, 300); });
+    }
+    counter.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-count]");
+      if (!btn) return;
+      const delta = parseInt(btn.getAttribute("data-count"), 10) || 0;
+      if (delta < 0 && server + pending() + delta < 0) return;  // not below zero
+      const q = loadQ();
+      q.push({ id: uid(), area: area, delta: delta, at: new Date().toISOString(), device: deviceEl.value || "" });
+      saveQ(q);
+      btn.classList.add("is-pressed");
+      setTimeout(function () { btn.classList.remove("is-pressed"); }, 120);
+      if (navigator.vibrate) navigator.vibrate(15);
+      paint();
+      send();
+    });
+    function poll() {
+      if (!navigator.onLine || loadQ().length) return;
+      fetch(counter.getAttribute("data-state-url"), { credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (st) { if (st) { server = st.value; paint(st); } })
+        .catch(function () { /* offline */ });
+    }
+    window.addEventListener("online", send);
+    window.addEventListener("offline", function () { paint(); });
+    setInterval(function () { if (loadQ().length) send(); else poll(); }, 4000);
+    paint();
+    send();
   }
 })();
