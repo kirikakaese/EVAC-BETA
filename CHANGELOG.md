@@ -6,6 +6,16 @@ released.
 
 ## [Unreleased]
 
+### Added — map editor (Phase 3, part 2)
+
+- Floor plans per floor (PNG, JPEG, WebP, SVG sanitised, PDF via poppler's `pdftoppm`, now in the Docker image)
+  and a map editor (ADR-0027): add, drag and connect points, zone outlines, screens with position and facing,
+  scale by measuring a known distance (placed things keep their place), route arrows and points without a way
+  out; side panel with lists and numeric fields.
+- Plugin API: `r.map_layer(MapLayerSpec(...))`; screens are the first layer (`Screen.floor`, `position_x/y` in
+  metres, `facing`; also in the screens API). Zone outlines travel with event export/import.
+- The SVG sanitiser moved to `apps.core.svg`.
+
 ### Added — venue route graph (Phase 3, part 1)
 
 - ADR-0002 (central/node sync) and ADR-0003 (alarm delivery redundancy) accepted with the review decisions:

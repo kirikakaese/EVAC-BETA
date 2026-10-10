@@ -22,6 +22,7 @@ from .plugins import (
     EvacTriggerSpec,
     EventHook,
     ExtensionSpec,
+    MapLayerSpec,
     ModuleSpec,
     NavEntry,
     NotificationChannelSpec,
@@ -76,6 +77,7 @@ class Registry:
         self.pack_sections: dict[str, PackSectionSpec] = {}
         self.anchor_sources: dict[str, TimeAnchorSpec] = {}
         self.audiences: dict[str, AudienceSpec] = {}
+        self.map_layers: dict[str, MapLayerSpec] = {}
         self.websocket_routes: list[Any] = []
         self.api_routes: list[tuple[str, Any, str]] = []
 
@@ -199,6 +201,10 @@ class Registry:
     def audience(self, spec: AudienceSpec) -> None:
         """Groups of people for channels that reach people (ADR-0025)."""
         self._add(self.audiences, spec.key, spec, "audience")
+
+    def map_layer(self, spec: MapLayerSpec) -> None:
+        """Things placed on the venue map (ADR-0027)."""
+        self._add(self.map_layers, spec.key, spec, "map layer")
 
     def staff_card(self, spec: StaffCardSpec) -> None:
         """A card on the staff page (PWA)."""

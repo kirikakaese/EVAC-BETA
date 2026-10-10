@@ -107,9 +107,12 @@ class Screen(TimeStampedModel):
     room = models.ForeignKey("venues.Room", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     manual_groups = models.ManyToManyField(ScreenGroup, blank=True, related_name="manual_screens",
                                            verbose_name=_("groups"))
-    #: position on the floor plan (0..1 of the plan's width/height), used for evacuation arrows (Phase 3)
+    #: place on the venue map (map editor, ADR-0027): floor (empty: outdoors), metres on that floor's plan and
+    #: the direction the screen faces (degrees clockwise from the plan's "up"), used for evacuation arrows
+    floor = models.ForeignKey("venues.Floor", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     position_x = models.FloatField(null=True, blank=True)
     position_y = models.FloatField(null=True, blank=True)
+    facing = models.FloatField(null=True, blank=True)
 
     token_hash = models.CharField(max_length=64, null=True, blank=True, unique=True, editable=False)
     token_prefix = models.CharField(max_length=24, blank=True, editable=False)

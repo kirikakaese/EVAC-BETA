@@ -252,6 +252,25 @@ class AudienceSpec:
 
 
 @dataclass(frozen=True)
+class MapLayerSpec:
+    """Things of a module placed on the venue map (ADR-0027), e.g. screens; later live layers (occupancy,
+    incidents).
+
+    * ``items(event, venue) -> [{"id", "label", "floor": id | None, "x", "y", "facing", "placed": bool}]``
+    * ``place(event, item_id, *, floor, x, y, facing, actor, request)``: store a position (``x`` None: remove
+      it from the map); raises ``PermissionDenied``/``ValidationError``.
+    * ``rescale(floor, factor)``: a floor's scale was measured; multiply stored positions on it by ``factor``."""
+
+    key: str
+    title: str
+    items: Callable[[Any, Any], list[dict[str, Any]]]
+    place: Callable[..., None] | None = None
+    rescale: Callable[[Any, float], None] | None = None
+    module: str = "core"
+    order: int = 100
+
+
+@dataclass(frozen=True)
 class EvacTriggerSpec:
     """A source that can raise an evacuation/alarm state change (consumed by the Phase 3 module)."""
 

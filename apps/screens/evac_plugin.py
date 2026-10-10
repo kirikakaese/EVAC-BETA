@@ -3,6 +3,7 @@ from django.urls import path
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    MapLayerSpec,
     ModuleSpec,
     NavEntry,
     PermissionSpec,
@@ -23,7 +24,10 @@ def _group_choices(event):
 
 
 def register(r: Registry) -> None:
-    from . import api, consumers
+    from . import api, consumers, services
+
+    r.map_layer(MapLayerSpec(key="screens", title=str(_("Screens")), items=services.map_items,
+                             place=services.map_place, rescale=services.map_rescale, module="screens", order=10))
 
     r.module(ModuleSpec(key="screens", name=str(_("Screens")), order=30, category="screens",
                         description=str(_("Digital signage: pair screens, group them and watch their health. "

@@ -315,7 +315,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
               "/accounts/profile/", "/accounts/security/", "/accounts/security/totp/", "/accounts/tokens/",
               "/notifications/"]
     if venue_slug:
-        member.append(f"{e}/venues/{venue_slug}/")
+        member += [f"{e}/venues/{venue_slug}/", f"{e}/venues/{venue_slug}/map/"]
     admin = member + [
         f"{e}/settings/", f"{e}/members/", f"{e}/roles/", f"{e}/settings/modules/", f"{e}/settings/s/general/",
         f"{e}/settings/tokens/", f"{e}/audit/", f"{e}/screens/pair/", f"{e}/settings/s/screens/",

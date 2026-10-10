@@ -60,6 +60,13 @@ class Floor(models.Model):
     building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name="floors")
     name = models.CharField(max_length=200)
     level = models.SmallIntegerField(default=0, help_text=_("0 = ground floor, negative = basement."))
+    #: floor plan (map editor, ADR-0027): "<sha256>.png|svg" under MEDIA_ROOT/venues/plans/, size in pixels
+    plan_file = models.CharField(max_length=80, blank=True)
+    plan_width = models.PositiveIntegerField(default=0)
+    plan_height = models.PositiveIntegerField(default=0)
+    #: metres per plan pixel; ``plan_scaled`` is False until someone measured a known distance
+    metres_per_px = models.FloatField(default=0.05)
+    plan_scaled = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["level", "name"]
@@ -84,6 +91,8 @@ class Zone(models.Model):
     outdoor = models.BooleanField(default=False)
     capacity = models.PositiveIntegerField(null=True, blank=True)
     color = models.CharField(max_length=7, default="#22c55e")
+    #: outlines drawn in the map editor: [{"floor": "<id>" | null, "points": [[x, y], ...]}] in metres
+    areas = models.JSONField(default=list, blank=True)
 
     class Meta:
         ordering = ["name"]

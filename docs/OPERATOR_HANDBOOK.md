@@ -129,6 +129,20 @@ floors, zones and rooms, and the **route graph** used for evacuation arrows and 
 
 During an evacuation, blocked exits are taken out and the routes recompute at once.
 
+**Map** (button on the venue page) shows one floor at a time:
+
+1. Upload the **floor plan** (PNG, JPEG, WebP, SVG or PDF). Then **Measure**: click both ends of a distance you
+   know (a wall, a door width), type its length in metres and *Set scale*. Everything already drawn on the floor
+   keeps its place.
+2. **Add point** places exits, assembly points, doors, waypoints, stairs and lifts where you click;
+   **Select** drags them. **Connect** joins two points (click both). Green arrows show each point's next step
+   on the way out; a dashed red ring marks points without one.
+3. **Zone outline**: choose a zone, click its corners, *Finish outline*.
+4. **Place**: choose a screen and click where it hangs; turn *Facing* to the direction its display looks.
+   Evacuation arrows on screens will use this.
+
+The side panel lists all points and screens, with numeric positions for keyboard use. Everything is saved at once.
+
 ## 5a. Screens
 
 - **Pair**: open `<your EVAC>/player/` in the screen's browser (kiosk mode, TV browser, Raspberry Pi). It shows

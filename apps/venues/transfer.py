@@ -13,6 +13,7 @@ def export_venues(event) -> list[dict[str, Any]]:
     out = []
     for v in event.venues.prefetch_related("buildings__floors", "zones", "rooms__zones", "points__floor__building",
                                            "points__zone", "points__room", "edges"):
+        floor_names = {str(f.pk): [b.name, f.name] for b in v.buildings.all() for f in b.floors.all()}
         out.append({
             "slug": v.slug, "name": v.name, "description": v.description, "address": v.address,
             "timezone": v.timezone, "is_permanent": v.is_permanent,
@@ -21,7 +22,9 @@ def export_venues(event) -> list[dict[str, Any]]:
             "buildings": [{"name": b.name, "outdoor": b.outdoor, "order": b.order,
                            "floors": [{"name": f.name, "level": f.level} for f in b.floors.all()]}
                           for b in v.buildings.all()],
-            "zones": [{"name": z.name, "outdoor": z.outdoor, "capacity": z.capacity, "color": z.color}
+            "zones": [{"name": z.name, "outdoor": z.outdoor, "capacity": z.capacity, "color": z.color,
+                       "areas": [{"floor": floor_names.get(a.get("floor")), "points": a.get("points", [])}
+                                 for a in z.areas or []]}
                       for z in v.zones.all()],
             "rooms": [{"name": r.name, "capacity": r.capacity, "step_free": r.step_free, "has_lift": r.has_lift,
                        "wheelchair_spaces": r.wheelchair_spaces,
@@ -55,9 +58,13 @@ def import_venues(event, data: list[dict[str, Any]], user) -> None:
                 for f in b.get("floors", []):
                     floors[(b["name"], f["name"])] = Floor.objects.create(building=building, name=f["name"],
                                                                           level=int(f.get("level", 0)))
-            zones = {z["name"]: Zone.objects.create(venue=venue, name=z["name"], outdoor=bool(z.get("outdoor")),
-                                                    capacity=z.get("capacity"), color=z.get("color", "#22c55e"))
-                     for z in item.get("zones", [])}
+            zones = {z["name"]: Zone.objects.create(
+                venue=venue, name=z["name"], outdoor=bool(z.get("outdoor")), capacity=z.get("capacity"),
+                color=z.get("color", "#22c55e"),
+                areas=[{"floor": str(floors[tuple(a["floor"])].pk) if a.get("floor") and tuple(a["floor"]) in floors
+                        else None, "points": a.get("points", [])} for a in z.get("areas", [])
+                       if not a.get("floor") or tuple(a["floor"]) in floors])
+                for z in item.get("zones", [])}
             for r in item.get("rooms", []):
                 room = Room.objects.create(venue=venue, name=r["name"], capacity=r.get("capacity"),
                                            step_free=bool(r.get("step_free", True)), has_lift=bool(r.get("has_lift")),
