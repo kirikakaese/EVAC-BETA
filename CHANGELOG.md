@@ -34,6 +34,12 @@ released.
   codes `DEMO-0001` …
 - `frontend/e2e/phase8.mjs`: the Phase 8 gate.
 
+### Fixed
+
+- Program: a live delay with "also later sessions on this stage" stopped at midnight UTC of the session's date, so
+  sessions after midnight (and, east of UTC, late evening sessions) were not shifted. It now shifts the following
+  sessions on the stage within the next 12 hours (`FOLLOWING_HOURS`).
+
 ### Added — Crew, inventory and helpdesk (Phase 7)
 
 - Crew & shifts module (`apps/crew`, module `crew`, ADR-0041):

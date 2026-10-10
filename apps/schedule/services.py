@@ -25,6 +25,8 @@ ANCHOR_KEY = "program"
 PUSH = "schedule.changed"
 WEBHOOK = "program.session_changed"
 
+#: how far ahead "also later sessions on this stage" shifts (live delay)
+FOLLOWING_HOURS = 12
 
 def program_settings(event: Any) -> dict[str, Any]:
     return settings_store.get("program", event=event)
@@ -159,8 +161,8 @@ def _hm(value: dt.datetime, event: Any) -> str:
 
 def delay(s: Session, minutes: int, *, actor: Any, request: Any = None, note: str | None = None,
           shift_following: bool = False) -> Session:
-    """Shift the session (positive: later). ``shift_following`` moves the later sessions on the same stage that
-    day by the same amount."""
+    """Shift the session (positive: later). ``shift_following`` moves the later sessions on the same stage within
+    the next ``FOLLOWING_HOURS`` by the same amount (a horizon, not the calendar day: programs run past midnight)."""
     minutes = int(minutes)
     if not minutes or abs(minutes) > 24 * 60:
         raise ValidationError(_("Give a delay in minutes (at most a day)."))
@@ -178,9 +180,11 @@ def delay(s: Session, minutes: int, *, actor: Any, request: Any = None, note: st
     out = _live(s, kind, text, actor=actor, request=request, fields=["starts_at", "ends_at"], note=note,
                 data={"minutes": minutes})
     if shift_following and s.stage_id:
-        day_end = s.starts_at.replace(hour=23, minute=59)
+        before = s.starts_at - delta
         for later in Session.objects.filter(event=s.event, stage=s.stage, status=Session.Status.SCHEDULED,
-                                            starts_at__gt=s.starts_at - delta, starts_at__lte=day_end).exclude(pk=s.pk):
+                                            starts_at__gt=before,
+                                            starts_at__lte=before + dt.timedelta(hours=FOLLOWING_HOURS)
+                                            ).exclude(pk=s.pk):
             delay(later, minutes, actor=actor, request=request)
     return out
 

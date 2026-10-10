@@ -28,7 +28,7 @@ def test_delay_cancel_move_restore(event, stages, talk, later, admin, django_cap
     talk.refresh_from_db()
     later.refresh_from_db()
     assert talk.delay_minutes == 10 and talk.note == "Starts 10 min late" and talk.changed
-    assert later.delay_minutes == 10  # the following session on the stage moved too
+    assert later.delay_minutes == 10  # the following session on the stage moved too, also across midnight
     assert SessionChange.objects.filter(session=talk, kind="delay").exists()
     assert AuditLog.objects.filter(action="program.delay").count() == 2
     services.delay(talk, -10, actor=admin)
@@ -55,6 +55,24 @@ def test_delay_cancel_move_restore(event, stages, talk, later, admin, django_cap
     services.reschedule(talk, at(120), at(150), actor=admin)
     talk.refresh_from_db()
     assert talk.delay_minutes == 135 and "New time" in talk.note
+
+
+def test_shift_following_crosses_midnight_within_horizon(event, stages, admin):
+    night = dt.datetime(2030, 7, 1, 23, 30, tzinfo=dt.UTC)
+    first = services.save_session(Session(event=event, title="Late set", stage=stages["main"], starts_at=night,
+                                          ends_at=night + dt.timedelta(minutes=45)), actor=admin)
+    after = services.save_session(Session(event=event, title="After midnight", stage=stages["main"],
+                                          starts_at=night + dt.timedelta(hours=1),
+                                          ends_at=night + dt.timedelta(hours=2)), actor=admin)
+    far = services.save_session(Session(event=event, title="Next evening", stage=stages["main"],
+                                        starts_at=night + dt.timedelta(hours=services.FOLLOWING_HOURS + 1),
+                                        ends_at=night + dt.timedelta(hours=services.FOLLOWING_HOURS + 2)),
+                                actor=admin)
+    with mock.patch.object(services, "push_screens"):
+        services.delay(first, 15, actor=admin, shift_following=True)
+    after.refresh_from_db()
+    far.refresh_from_db()
+    assert after.delay_minutes == 15 and far.delay_minutes == 0
 
 
 def test_validation(event, stages, admin):
