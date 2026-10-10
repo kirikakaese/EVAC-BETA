@@ -102,10 +102,15 @@ The wizard cannot be re-run once an account exists.
   for admin, orga, control-room and security by default. Without it those roles are inactive and a banner
   says so. Alarm-relevant (*sensitive*) permissions always need a two-factor verified session, also for
   instance admins. Admins can reset a user's second factors under *Instance → Users*.
-- **Single sign-on**: set `EVAC_OIDC_*` (redirect URI `<EVAC_PUBLIC_URL>/accounts/oidc/callback/`). EVAC
-  and DIAL can use the same identity provider. Accounts are linked by verified e-mail address;
-  `EVAC_OIDC_ALLOW_PASSWORD_LOGIN=0` makes SSO the only login. `EVAC_OIDC_TRUST_MFA=1` accepts the IdP's
-  multi-factor login (`amr` claim) as EVAC two-factor.
+- **Single sign-on**: set `EVAC_OIDC_*` (redirect URI `<EVAC_PUBLIC_URL>/accounts/oidc/callback/`). Accounts are
+  linked by the IdP subject, then by verified e-mail address; `EVAC_OIDC_ALLOW_PASSWORD_LOGIN=0` makes SSO the only
+  login. `EVAC_OIDC_TRUST_MFA=1` accepts the IdP's multi-factor login (`amr` claim) as EVAC two-factor.
+- **One identity provider for EVAC and DIAL**: register EVAC and DIAL at the same IdP (two clients, or one client
+  with both redirect URIs: `<EVAC_PUBLIC_URL>/accounts/oidc/callback/` and `<DIAL_PUBLIC_URL>/accounts/oidc/callback/`)
+  and set the same issuer in `EVAC_OIDC_ISSUER` and `DIAL_OIDC_ISSUER`, with scopes `openid email profile` in both.
+  Both link by subject and verified e-mail, so a person has one login. Roles are not taken from the IdP in either
+  system; DIAL roles can be mapped to EVAC roles by hand on the event's DIAL page
+  ([extensions/dial.md](extensions/dial.md#single-sign-on-and-roles)).
 
 ## 5. Modules and settings
 

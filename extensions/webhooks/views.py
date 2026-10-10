@@ -39,8 +39,8 @@ class EndpointForm(forms.ModelForm):
 
 def _back(event, key):
     if event is None:
-        return reverse("extensions:instance_webhooks:endpoints", args=[key])
-    return reverse("extensions:event_webhooks:endpoints", args=[event.slug, key])
+        return reverse("extensions:instance_webhooks:endpoints")
+    return reverse("extensions:event_webhooks:endpoints", args=[event.slug])
 
 
 def endpoints(request, key, slug=None):

@@ -1,0 +1,68 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "DIAL" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "DIAL phone network" %}</h1>
+<div class="actions"><a class="btn" href="{{ settings_url }}">{% trans "Link settings" %}</a>
+{% if config and can_roles %}<a class="btn" href="{% url 'dial:roles' event.slug %}">{% trans "Roles" %}</a>{% endif %}</div></div>
+
+{% if not config %}
+<section class="card"><p>{% trans "This event is not linked to a DIAL event yet." %}</p>
+<p><a class="btn btn-primary" href="{{ settings_url }}">{% trans "Link DIAL" %}</a></p></section>
+{% else %}
+<section class="card" aria-labelledby="dial-link"><h2 id="dial-link">{% trans "Link" %}</h2>
+<dl class="kv">
+<dt>{% trans "DIAL event" %}</dt><dd><code>{{ config.settings.event }}</code> · {{ config.settings.base_url }}</dd>
+<dt>{% trans "Connection" %}</dt><dd>{% if config.health == "ok" %}<span class="badge badge-ok">{% trans "ok" %}</span>{% elif config.health == "error" %}<span class="badge badge-err">{% trans "error" %}</span> <span class="small">{{ config.last_error }}</span>{% else %}<span class="badge badge-muted">{% trans "not tested" %}</span>{% endif %}{% if config.last_check_at %} <span class="small muted">{{ config.last_check_at|date:"D j M H:i" }}</span>{% endif %}</dd>
+<dt>{% trans "Features" %}</dt><dd><ul class="plain small">{% for f, on in features %}<li>{% if on %}<span class="badge badge-ok">{% trans "on" %}</span>{% else %}<span class="badge badge-muted">{% trans "off" %}</span>{% endif %} {{ f.name }}</li>{% endfor %}</ul></dd>
+</dl>
+{% if can_manage %}
+<details><summary>{% trans "Set up DIAL for this link" %}</summary>
+<ol class="small">
+<li>{% blocktrans %}In DIAL, mint a service token for the event (Orga → Tokens) with the scopes below and paste it into the link settings.{% endblocktrans %}<br><code>{{ scopes|join:" " }}</code></li>
+<li>{% blocktrans %}In DIAL, add a webhook (Orga → Webhooks) with this URL and the secret shown on the link settings page; leave the event types empty to receive all.{% endblocktrans %}<br>
+<code id="dial-hook">{{ webhook_url }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#dial-hook" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button>
+· <a href="{{ dial_webhooks_url }}" rel="noopener">{% trans "DIAL webhooks page" %}</a></li>
+<li>{% trans "Use “Test connection” on the link settings page." %}</li>
+</ol></details>
+{% endif %}
+</section>
+
+<section class="card" aria-labelledby="dial-dect"><h2 id="dial-dect">{% trans "DECT network" %}</h2>
+{% if dect and dect.data.rfps is not None %}
+<p role="status">{% if dect.data.ok %}<span class="badge badge-ok">{% trans "ok" %}</span>{% else %}<span class="badge badge-err">{% trans "problems" %}</span>{% endif %}
+{% blocktrans with u=dect.data.up t=dect.data.rfps d=dect.data.down s=dect.data.unsynced %}{{ u }} of {{ t }} base stations up · {{ d }} down · {{ s }} unsynced{% endblocktrans %}
+<span class="small muted">{% blocktrans with t=dect.fetched_at|date:"H:i" %}as of {{ t }}{% endblocktrans %}</span></p>
+{% if dect.data.items %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Base station" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Location" %}</th><th scope="col">{% trans "Calls" %}</th></tr></thead>
+<tbody>{% for r in dect.data.items|slice:":30" %}<tr><th scope="row">{{ r.name }}</th><td>{% if r.status == "up" %}<span class="badge badge-ok">{{ r.status }}</span>{% elif r.status == "inactive" %}<span class="badge badge-muted">{{ r.status }}</span>{% else %}<span class="badge badge-err">{{ r.status }}</span>{% endif %}</td><td>{{ r.location|default:"–" }}</td><td>{{ r.calls }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% elif dect and dect.error %}<p class="muted">{% blocktrans with e=dect.error %}DIAL did not answer: {{ e }}{% endblocktrans %}</p>
+{% elif features %}<p class="muted">{% trans "Fetching the status from DIAL…" %}</p>{% endif %}
+{% if alerts %}<h3>{% trans "Recent DECT alerts" %}</h3><ul class="plain small">{% for a in alerts %}<li>{% if a.kind == "rfp.up" or a.kind == "omm.reachable" %}<span class="badge badge-ok">{{ a.kind }}</span>{% else %}<span class="badge badge-warn">{{ a.kind }}</span>{% endif %} {{ a.at|date:"D H:i" }} · {{ a.message|default:a.rfp }}</li>{% endfor %}</ul>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="dial-broadcasts"><h2 id="dial-broadcasts">{% trans "Broadcasts" %}</h2>
+<p class="small muted">{% blocktrans %}Alarms (stages chosen in the link settings) ring DIAL handsets through DIAL's emergency broadcast; announcements can use the channels “DIAL: ring handsets” and “DIAL: DECT message”. Each delivery is retried until DIAL accepts it.{% endblocktrans %}</p>
+{% if broadcasts %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "When" %}</th><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "Kind" %}</th><th scope="col">{% trans "Text" %}</th><th scope="col">{% trans "Result" %}</th></tr></thead>
+<tbody>{% for b in broadcasts %}<tr><th scope="row">{{ b.created_at|date:"D j M H:i:s" }}</th><td>{{ b.get_source_display }}</td><td>{{ b.get_kind_display }}</td><td>{{ b.text|truncatechars:80 }}</td>
+<td>{% if b.status == "sent" %}<span class="badge badge-ok">{{ b.get_status_display }}</span>{% elif b.status == "failed" %}<span class="badge badge-err">{{ b.get_status_display }}</span>{% else %}<span class="badge badge-muted">{{ b.get_status_display }}</span>{% endif %} <span class="small">{{ b.detail }}</span>{% if b.attempts > 1 %} <span class="small muted">({% blocktrans count n=b.attempts %}{{ n }} attempt{% plural %}{{ n }} attempts{% endblocktrans %})</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "Nothing sent to DIAL yet." %}</p>{% endif %}
+{% if can_manage %}<form method="post" action="{% url 'dial:test_broadcast' event.slug %}" class="stack">{% csrf_token %}
+<h3>{% trans "Test" %}</h3>
+<div class="field"><label for="dial-kind">{% trans "Send" %}</label><select id="dial-kind" name="kind"><option value="message">{% trans "DECT text message" %}</option><option value="emergency">{% trans "Ring handsets (emergency broadcast)" %}</option></select></div>
+<div class="field"><label for="dial-text">{% trans "Text" %}</label><input id="dial-text" name="text" maxlength="480" value="{% trans 'This is a test of the EVAC link.' %}"></div>
+<div class="form-actions"><button class="btn" data-hold="1000" data-hold-label="{% trans 'Keep holding…' %}">{% trans "Send test" %}</button></div></form>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="dial-recordings"><h2 id="dial-recordings">{% trans "Announcements by phone" %}</h2>
+<p class="small muted">{% blocktrans %}Orga call DIAL's announcement number and record a message. EVAC imports the audio, transcribes it when Whisper is installed, and puts the announcement into the approval queue (or publishes it at once for the extensions listed in the link settings).{% endblocktrans %}</p>
+{% if recordings %}<ul class="plain">{% for r in recordings %}<li>{{ r.received_at|date:"D j M H:i" }} · {% blocktrans with e=r.extension d=r.duration %}extension {{ e }}, {{ d }} s{% endblocktrans %} ·
+{% if r.status == "imported" %}<span class="badge badge-ok">{{ r.get_status_display }}</span>{% elif r.status == "failed" %}<span class="badge badge-err">{{ r.get_status_display }}</span>{% else %}<span class="badge badge-muted">{{ r.get_status_display }}</span>{% endif %}
+{% if r.announcement %} <a href="{% url 'announcements:detail' event.slug r.announcement.pk %}">{{ r.announcement.title }}</a> ({{ r.announcement.get_status_display }}){% endif %}
+{% if r.detail %}<br><span class="small muted">{{ r.detail }}</span>{% endif %}</li>{% endfor %}</ul>
+{% else %}<p class="muted">{% trans "No recordings yet." %}</p>{% endif %}
+</section>
+
+{% if can_manage %}<section class="card" aria-labelledby="dial-widgets"><h2 id="dial-widgets">{% trans "Widgets for screens" %}</h2>
+<p class="small muted">{% blocktrans %}Data sources: DIAL phonebook, important numbers (“call X for Y”), info pages and DECT status. Add ready-made widgets for them; they appear under Widgets → Custom widgets and can be placed in any layout.{% endblocktrans %}</p>
+<form method="post" action="{% url 'dial:install_widgets' event.slug %}">{% csrf_token %}<button class="btn">{% trans "Add DIAL widgets" %}</button></form></section>{% endif %}
+{% endif %}
+{% endblock %}

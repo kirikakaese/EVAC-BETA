@@ -23,8 +23,10 @@ def _patterns(prefix: str, name_prefix: str):
     ]
     for spec in registry.ensure_loaded().extensions.values():
         if spec.urls:
-            out.append(path(f"{prefix}<slug:key>/x/", include((spec.urls, spec.key),
-                                                                namespace=f"{name_prefix}_{spec.key}")))
+            # the key is literal: every extension gets its own mount (``<slug:key>`` would send all to the first)
+            out.append(path(f"{prefix}{spec.key}/x/", include((spec.urls, spec.key),
+                                                              namespace=f"{name_prefix}_{spec.key}"),
+                            {"key": spec.key}))
     return out
 
 
