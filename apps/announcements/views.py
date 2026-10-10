@@ -156,6 +156,7 @@ def detail(request, slug, pk, *, event):
     return render(request, "announcements/detail.html", {
         "event": event, "ann": ann, "deliveries": deliveries,
         "channel_names": [names.get(c, c) for c in ann.channels],
+        "audiences": services.audience_labels(ann), "anchor_text": services.anchor_text(ann),
         "can_edit": ann.status in (Announcement.Status.DRAFT, Announcement.Status.REJECTED) and (
             is_author or _any(request, event, "announcements.publish")),
         "can_approve": ann.status == Announcement.Status.PENDING and not is_author

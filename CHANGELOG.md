@@ -6,6 +6,14 @@ released.
 
 ## [Unreleased]
 
+### Added — announcement audiences and time anchors (Phase 2, part 7)
+
+- Audiences (ADR-0025): *Only these people* limits staff notifications of an announcement to members with
+  chosen roles; other modules add audiences with `r.audience(AudienceSpec(...))`.
+- Time anchors: announcements can be sent relative to an anchor ("10 min before the start of …") and follow it
+  when it moves (`r.anchor_source(TimeAnchorSpec(...))`, signal `apps.core.signals.anchor_moved`); program items
+  become anchors with the program module. API fields `audiences`, `anchor`, `anchor_edge`, `anchor_offset`.
+
 ### Added — screen packs (Phase 2, part 6)
 
 - `.evacpack` import/export (ADR-0024): zip with manifest, hashed files and an Ed25519 signature; export of

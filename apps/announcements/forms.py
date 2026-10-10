@@ -59,7 +59,33 @@ class AnnouncementForm(forms.ModelForm):
             if self.is_bound else services.variables_in(self.initial.get("title", self.instance.title),
                                                         self.initial.get("body", self.instance.body),
                                                         self.initial.get("short", self.instance.short))
+        self.anchors = services.anchor_choices(event)
+        audiences = services.audience_choices(event)
+        if audiences:
+            self.fields["audiences"] = forms.MultipleChoiceField(
+                label=_("Only these people"), choices=audiences, required=False, widget=forms.CheckboxSelectMultiple,
+                initial=self.instance.audiences,
+                help_text=_("For channels that reach people (staff app, notifications). Empty: everybody they "
+                            "reach. Screens and public channels are not affected."))
+        if self.anchors:
+            offset = self.instance.anchor_offset or 0
+            self.fields["anchor"] = forms.ChoiceField(
+                label=_("Relative to"), choices=[("", _("— a fixed time —")), *self.anchors], required=False,
+                initial=self.instance.anchor,
+                help_text=_("Sends at a time relative to an item and follows it when it moves. "
+                            "{{anchor}} in the texts becomes its name."))
+            self.fields["anchor_minutes"] = forms.IntegerField(
+                label=_("Minutes"), min_value=0, max_value=services.MAX_ANCHOR_OFFSET, required=False,
+                initial=abs(offset))
+            self.fields["anchor_when"] = forms.ChoiceField(
+                label=_("Before or after"), choices=[("before", _("before")), ("after", _("after"))],
+                initial="after" if offset > 0 else "before")
+            self.fields["anchor_edge"] = forms.ChoiceField(
+                label=_("Of its"), choices=[("start", _("start")), ("end", _("end"))],
+                initial=self.instance.anchor_edge or "start")
         for name in names:
+            if name == "anchor" and self.anchors:
+                continue
             self.fields[VAR_PREFIX + name] = forms.CharField(
                 label=name.replace("_", " ").capitalize(), max_length=300, required=True,
                 initial=(self.instance.variables or {}).get(name, ""),
@@ -102,11 +128,15 @@ class AnnouncementForm(forms.ModelForm):
     def target_fields(self):
         return [self[n] for n in ("all_screens", *TARGETS)]
 
+    def audience_fields(self):
+        return [self["audiences"]] if "audiences" in self.fields else []
+
     def channel_text_fields(self):
         return [self[name] for name in self.fields if name.startswith(TEXT_PREFIX)]
 
     def timing_fields(self):
-        return [self[n] for n in ("starts_at", "ends_at", "recurrence", "recurrence_until")]
+        anchor = ("anchor", "anchor_minutes", "anchor_when", "anchor_edge") if self.anchors else ()
+        return [self[n] for n in ("starts_at", *anchor, "ends_at", "recurrence", "recurrence_until")]
 
     def clean(self):
         cleaned = super().clean()
@@ -116,6 +146,8 @@ class AnnouncementForm(forms.ModelForm):
             cleaned["channels"] = [c for c in cleaned["level"].default_channels if c in dict(
                 self.fields["channels"].choices)]
         cleaned["starts_at"] = cleaned.get("starts_at") or timezone.now()
+        if cleaned.get("anchor") and cleaned.get("recurrence"):
+            self.add_error("recurrence", _("Announcements timed relative to an item cannot repeat."))
         return cleaned
 
     def build(self) -> tuple[Announcement, dict]:
@@ -123,6 +155,14 @@ class AnnouncementForm(forms.ModelForm):
         ann = self.save(commit=False)
         variables = {name[len(VAR_PREFIX):]: self.cleaned_data[name] for name in self.fields
                      if name.startswith(VAR_PREFIX)}
+        ann.anchor = self.cleaned_data.get("anchor") or ""
+        if self.anchors:
+            minutes = self.cleaned_data.get("anchor_minutes") or 0
+            ann.anchor_offset = -minutes if self.cleaned_data.get("anchor_when") == "before" else minutes
+            ann.anchor_edge = self.cleaned_data.get("anchor_edge") or "start"
+        if ann.anchor:
+            variables["anchor"] = dict(self.anchors).get(ann.anchor, "").split(": ", 1)[-1]
+        ann.audiences = list(self.cleaned_data.get("audiences") or [])
         ann.variables = variables
         ann.title = services.render_text(ann.title, variables, self.event)[:200]
         ann.body = services.render_text(ann.body, variables, self.event)

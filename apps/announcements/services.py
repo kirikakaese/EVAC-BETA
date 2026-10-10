@@ -146,6 +146,8 @@ def _validate(ann: Announcement) -> None:
         raise ValidationError(_("The end must be after the start."))
     if ann.recurrence and not ann.recurrence_until:
         raise ValidationError(_("Repeating announcements need a last day."))
+    _validate_audiences(ann)
+    _validate_anchor(ann)
     known = set(available_channels(ann.event))
     unknown = [c for c in ann.channels if c not in known]
     if unknown:
@@ -336,6 +338,144 @@ def feed_items(event, limit: int = 50) -> list[Announcement]:
                                       published_at__isnull=False)
           .select_related("level").order_by("-published_at"))
     return [a for a in qs[:limit * 2] if FEED in a.channels][:limit]
+
+
+# ------------------------------------------------------------------ audiences and time anchors (ADR-0025)
+MAX_ANCHOR_OFFSET = 7 * 24 * 60  # minutes
+PERSONAL_CHANNELS = {STAFF}  # channels that reach people and honour audiences
+
+
+def _enabled(spec, event) -> bool:
+    return spec.module == "core" or modules.is_enabled(spec.module, event)
+
+
+def _sorted(specs):
+    return sorted(specs.values(), key=lambda s: (s.order, s.key))
+
+
+def audience_choices(event) -> list[tuple[str, str]]:
+    """Groups channels that reach people can be limited to: ``("roles:<id>", "Role: Orga")``."""
+    out: list[tuple[str, str]] = []
+    for spec in _sorted(registry.ensure_loaded().audiences):
+        if _enabled(spec, event):
+            out += [(f"{spec.key}:{i}", f"{spec.title}: {label}") for i, label in spec.choices(event)]
+    return out
+
+
+def audience_labels(ann: Announcement) -> list[str]:
+    names = dict(audience_choices(ann.event)) if ann.audiences else {}
+    return [names.get(a, a) for a in ann.audiences or []]
+
+
+def audience_members(ann: Announcement) -> set | None:
+    """The people the audiences cover (``None``: no audiences chosen, everybody the channel reaches)."""
+    if not ann.audiences:
+        return None
+    wanted: dict[str, set[str]] = {}
+    for value in ann.audiences:
+        kind, _sep, ident = str(value).partition(":")
+        wanted.setdefault(kind, set()).add(ident)
+    specs = registry.ensure_loaded().audiences
+    users: set = set()
+    for kind, ids in wanted.items():
+        spec = specs.get(kind)
+        if spec is not None and _enabled(spec, ann.event):
+            users |= set(spec.members(ann.event, ids))
+    return users
+
+
+def _validate_audiences(ann: Announcement) -> None:
+    if not isinstance(ann.audiences, list) or not all(isinstance(a, str) for a in ann.audiences):
+        raise ValidationError(_("Audiences must be a list."))
+    if ann.audiences:
+        unknown = set(ann.audiences) - set(dict(audience_choices(ann.event)))
+        if unknown:
+            raise ValidationError(_("Unknown audience: %(a)s") % {"a": ", ".join(sorted(unknown))})
+        if not set(ann.channels) & PERSONAL_CHANNELS:
+            raise ValidationError(_("Audiences only apply to staff notifications: choose that channel too."))
+
+
+def anchor_choices(event) -> list[tuple[str, str]]:
+    """Time anchors announcements can be scheduled relative to: ``("<source>:<id>", "Talk: Opening")``."""
+    out: list[tuple[str, str]] = []
+    for spec in _sorted(registry.ensure_loaded().anchor_sources):
+        if _enabled(spec, event):
+            out += [(f"{spec.key}:{i}", f"{spec.title}: {label}") for i, label in spec.choices(event)]
+    return out
+
+
+def resolve_anchor(event, value: str):
+    source, _sep, ident = (value or "").partition(":")
+    spec = registry.ensure_loaded().anchor_sources.get(source)
+    if spec is None or not ident or not _enabled(spec, event):
+        return None
+    return spec.resolve(event, ident)
+
+
+def apply_anchor(ann: Announcement) -> bool:
+    """Move ``starts_at`` (and ``ends_at``, keeping the duration) to the anchor time plus the offset. Returns
+    whether the times changed; raises ``ValidationError`` when the anchor is gone."""
+    anchor = resolve_anchor(ann.event, ann.anchor)
+    if anchor is None or anchor.start is None:
+        raise ValidationError(_("The item this announcement is timed relative to no longer exists."))
+    base = anchor.end if ann.anchor_edge == "end" and anchor.end else anchor.start
+    when = base + dt.timedelta(minutes=ann.anchor_offset)
+    ann.anchor_label = str(anchor.label or "")[:200]
+    if when == ann.starts_at:
+        return False
+    if ann.ends_at and ann.starts_at:
+        ann.ends_at = ann.ends_at + (when - ann.starts_at)
+    ann.starts_at = when
+    return True
+
+
+def _validate_anchor(ann: Announcement) -> None:
+    if not ann.anchor:
+        ann.anchor_label = ""
+        return
+    if ann.recurrence:
+        raise ValidationError(_("Announcements timed relative to an item cannot repeat."))
+    if ann.anchor_edge not in ("start", "end") or abs(int(ann.anchor_offset or 0)) > MAX_ANCHOR_OFFSET:
+        raise ValidationError(_("The offset may be at most a week."))
+    apply_anchor(ann)
+
+
+def anchor_text(ann: Announcement) -> str:
+    """ "10 min before the start of Opening" """
+    if not ann.anchor:
+        return ""
+    minutes, edge = abs(ann.anchor_offset), (_("the start") if ann.anchor_edge == "start" else _("the end"))
+    label = ann.anchor_label or ann.anchor
+    if not minutes:
+        return _("at %(edge)s of %(label)s") % {"edge": edge, "label": label}
+    when = _("before") if ann.anchor_offset < 0 else _("after")
+    return _("%(m)s min %(when)s %(edge)s of %(label)s") % {"m": minutes, "when": when, "edge": edge,
+                                                            "label": label}
+
+
+def anchor_moved(sender, *, event, anchor_id, **kwargs) -> int:
+    """Signal ``apps.core.signals.anchor_moved``: announcements not yet sent follow their anchor."""
+    moved = 0
+    waiting = [Announcement.Status.DRAFT, Announcement.Status.PENDING, Announcement.Status.SCHEDULED,
+               Announcement.Status.REJECTED]
+    for ann in Announcement.objects.filter(event=event, anchor=f"{sender}:{anchor_id}", status__in=waiting
+                                           ).select_related("level", "event"):
+        before = ann.starts_at
+        try:
+            changed = apply_anchor(ann)
+        except ValidationError:
+            log(action="announcement.anchor_lost", target=ann, event=event,
+                message=f"Announcement {ann.title}: the item it is timed relative to is gone; it keeps its time")
+            continue
+        ann.save(update_fields=["starts_at", "ends_at", "anchor_label", "updated_at"])
+        if changed:
+            moved += 1
+            log(action="announcement.rescheduled", target=ann, event=event,
+                message=f"Announcement {ann.title} follows {ann.anchor_label or ann.anchor}",
+                changes={"starts_at": [before.isoformat(), ann.starts_at.isoformat()]})
+            if ann.status == Announcement.Status.SCHEDULED:
+                _notify_screens(ann)
+    return moved
 
 
 # ------------------------------------------------------------------ timing
@@ -694,6 +834,9 @@ def send_staff(d: Delivery) -> dict[str, Any]:
 
     ann = d.announcement
     users = staff_recipients(ann.event)
+    audience = audience_members(ann)
+    if audience is not None:
+        users = [u for u in users if u in audience]
     level = "err" if ann.level.emergency else ("warn" if ann.level.rank >= 30 else "info")
     n = notify(users, f"{ann.level.name}: {ann.title}", body=ann.text, url=_url(ann), level=level, event=ann.event)
     return {"recipients": n, "detail": _("%(n)s staff members") % {"n": n}}
@@ -722,6 +865,8 @@ def publish_due(now: dt.datetime | None = None) -> int:
     n = 0
     for ann in (Announcement.objects.filter(status__in=[Announcement.Status.SCHEDULED, Announcement.Status.LIVE],
                                             starts_at__lte=now).select_related("level", "event")):
+        if ann.anchor and ann.status == Announcement.Status.SCHEDULED and _anchor_moved_later(ann, now):
+            continue
         due = [o for o in occurrences(ann, ann.starts_at, now + dt.timedelta(seconds=1)) if o <= now]
         latest = due[-1] if due else None
         if latest and (ann.last_occurrence is None or latest > ann.last_occurrence):
@@ -734,3 +879,14 @@ def publish_due(now: dt.datetime | None = None) -> int:
             ann.status = Announcement.Status.ENDED
             ann.save(update_fields=["status", "updated_at"])
     return n
+
+
+def _anchor_moved_later(ann: Announcement, now: dt.datetime) -> bool:
+    """Last look at the anchor before sending (it may have moved without a signal)."""
+    try:
+        changed = apply_anchor(ann)
+    except ValidationError:
+        return False  # anchor gone: send at the last known time
+    if changed:
+        ann.save(update_fields=["starts_at", "ends_at", "anchor_label", "updated_at"])
+    return ann.starts_at > now

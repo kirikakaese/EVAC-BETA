@@ -176,8 +176,8 @@ declared data kinds, `content.code` permission, audit with hashes).
 |---|---|---|
 | 2.1 | ✅ Priority levels (configurable) [§6] | display style, sound, min display time, repetition, default channels |
 | 2.2 | ✅ Templates with variables + optional layout | English built-ins |
-| 2.3 | Scheduling incl. relative to program items | start/end, daily/weekly ✅; relative to program items open |
-| 2.4 | Targeting (venues, zones, rooms, groups, screens, audiences) | scoped permissions respected; places ✅, audiences open |
+| 2.3 | Scheduling incl. relative to program items | start/end, daily/weekly ✅; relative to anchors ✅ (ADR-0025); program items as anchors with 5.1 |
+| 2.4 | ✅ Targeting (venues, zones, rooms, groups, screens, audiences) | scoped permissions respected; places ✅, audiences ✅ (roles; crew teams and attendee groups with their modules, ADR-0025) |
 | 2.5 | ✅ Approval workflow | draft → approve/edit/reject; emergency bypass for permitted roles |
 | 2.6 | `apps/notify` channel adapters | screens, public feed, Web Push (VAPID), ntfy, e-mail, Matrix, Telegram, Mastodon, webhook; per-channel text; outbox delivery report — ✅ (Web Push with 2.8, ADR-0021) |
 | 2.7 | ✅ Offline TTS (Piper, optional download) | pre-render + cache (ADR-0022) |
@@ -222,7 +222,7 @@ announcement → approval queue; DIAL widgets render.
 **Gate:** imported schedule shows now/next on screens; live change propagates < 5 s.
 | ID | Ticket |
 |---|---|
-| 5.1 | Program module (rooms/stages, sessions, speakers, tracks, live changes, public page, iCal/JSON/frab export) |
+| 5.1 | Program module (rooms/stages, sessions, speakers, tracks, live changes, public page, iCal/JSON/frab export); sessions as announcement anchors (ADR-0025) |
 | 5.2 | pretalx, frab/Pentabarf, iCal extensions with conflict handling |
 | 5.3 | Program widgets |
 

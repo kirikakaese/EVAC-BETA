@@ -99,10 +99,11 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = ["id", "level", "template", "variables", "title", "body", "short", "all_screens", *M2M,
-                  "channels", "channel_texts", "starts_at", "ends_at", "recurrence", "recurrence_until", "status",
+                  "channels", "channel_texts", "audiences", "starts_at", "anchor", "anchor_edge", "anchor_offset",
+                  "anchor_label", "ends_at", "recurrence", "recurrence_until", "status",
                   "decision_note", "published_at", "speech_status", "deliveries", "send", "created_at"]
         read_only_fields = ["id", "status", "decision_note", "published_at", "speech_status", "deliveries",
-                            "created_at"]
+                            "created_at", "anchor_label"]
         extra_kwargs = {"title": {"required": False}, "starts_at": {"required": False}}
 
     def __init__(self, *args, **kwargs):
@@ -119,6 +120,11 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     def validate_channel_texts(self, value):
         if not isinstance(value, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in value.items()):
             raise serializers.ValidationError("An object of channel keys and texts.")
+        return value
+
+    def validate_audiences(self, value):
+        if not isinstance(value, list) or not all(isinstance(a, str) for a in value):
+            raise serializers.ValidationError("A list of audience keys, e.g. \"roles:<id>\".")
         return value
 
     def validate_channels(self, value):
