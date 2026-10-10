@@ -15,6 +15,9 @@ def register(r: Registry) -> None:
     from . import webpush
 
     r.outbox_handler(webpush.JOB_KIND, webpush.handle_job)
+    from . import alerts
+
+    r.outbox_handler(alerts.JOB, alerts.handle_job)
     r.module(ModuleSpec(key="core", name=str(_("Core")), required=True, order=0,
                         description=str(_("Accounts, events, roles, audit log, settings and the plugin framework."))))
     r.permissions_([

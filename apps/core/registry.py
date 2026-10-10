@@ -18,6 +18,7 @@ from .plugins import (
     API_VERSION,
     AudienceSpec,
     CliCommandSpec,
+    DashboardPanelSpec,
     DataSourceSpec,
     EvacTriggerSpec,
     EventHook,
@@ -25,6 +26,7 @@ from .plugins import (
     LayoutCheck,
     MapLayerSpec,
     ModuleSpec,
+    MqttTopicSpec,
     NavEntry,
     NodeAction,
     NotificationChannelSpec,
@@ -79,6 +81,8 @@ class Registry:
         self.sync_specs: dict[str, SyncSpec] = {}
         self.node_actions: dict[str, NodeAction] = {}
         self.staff_cards: dict[str, StaffCardSpec] = {}
+        self.dashboard_panels: dict[str, DashboardPanelSpec] = {}
+        self.mqtt_topics: dict[str, MqttTopicSpec] = {}
         self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
         self.pack_sections: dict[str, PackSectionSpec] = {}
         self.anchor_sources: dict[str, TimeAnchorSpec] = {}
@@ -229,6 +233,14 @@ class Registry:
     def staff_card(self, spec: StaffCardSpec) -> None:
         """A card on the staff page (PWA)."""
         self._add(self.staff_cards, spec.key, spec, "staff card")
+
+    def dashboard_panel(self, spec: DashboardPanelSpec) -> None:
+        """A panel of the control room dashboard (ADR-0039)."""
+        self._add(self.dashboard_panels, spec.key, spec, "dashboard panel")
+
+    def mqtt_topic(self, spec: MqttTopicSpec) -> None:
+        """MQTT messages routed to a module by the MQTT extension (ADR-0039)."""
+        self._add(self.mqtt_topics, spec.key, spec, "MQTT topic")
 
     def websocket_route(self, route: Any) -> None:
         self.websocket_routes.append(route)

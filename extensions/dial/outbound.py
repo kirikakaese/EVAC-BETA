@@ -156,6 +156,22 @@ def available(event: Any) -> bool:
     return config is not None and config.feature_enabled("announcements")
 
 
+def alert(event: Any, a: Any) -> dict[str, Any]:
+    """``NotificationChannelSpec.alert`` of “DIAL: DECT message”: a staff alert (incident escalation, room full) as
+    a DECT text message (ADR-0039)."""
+    config = config_for(event)
+    if config is None or not config.feature_enabled("announcements"):
+        return {"status": "skipped", "detail": _("DIAL is not linked for this event.")}
+    text = a.title + (f": {a.body}" if a.body else "")
+    b = queue(config, kind=Broadcast.Kind.MESSAGE, source=Broadcast.Source.ALERT, text=text,
+              reference=f"alert:{a.key}" if a.key else "", enqueue=False)
+    if b is None:
+        return {"status": "skipped", "detail": _("Nothing to say.")}
+    if b.status == Broadcast.Status.PENDING:
+        return send(b)
+    return {"status": b.status, "recipients": b.targets, "detail": b.detail}
+
+
 def channel(kind: str) -> Any:
     def send_delivery(d: Any) -> dict[str, Any]:
         from apps.announcements.services import text_for

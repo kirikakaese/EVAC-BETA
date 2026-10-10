@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% blocktrans with a=area.name %}Counter · {{ a }}{% endblocktrans %}{% endblock %}
+{% block content %}
+<div class="counter" data-counter data-area="{{ area.pk }}" data-endpoint="{% url 'crowd:counts' event.slug %}" data-state-url="{% url 'crowd:state' event.slug area.pk %}"
+     data-label-pending="{% trans '{n} clicks waiting to be sent' %}" data-label-synced="{% trans 'All clicks sent' %}" data-label-offline="{% trans 'Offline: clicks are kept and sent later' %}">
+<div class="page-header"><h1>{{ area.name }}</h1><div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'portal:staff' event.slug %}">{% trans "Staff app" %}</a></div></div>
+<p class="counter-value"><span data-counter-value class="tabular">{{ area.value }}</span>{% if area.capacity %} <span class="muted">/ <span class="tabular">{{ area.capacity }}</span></span>{% endif %}</p>
+<p class="counter-state" data-counter-state role="status">{% include "crowd/_bar.html" with a=area %}</p>
+<div class="counter-buttons">
+<button type="button" class="btn counter-in" data-count="1" aria-label="{% trans 'One person in' %}">+1<span>{% trans "in" %}</span></button>
+<button type="button" class="btn counter-out" data-count="-1" aria-label="{% trans 'One person out' %}">−1<span>{% trans "out" %}</span></button>
+</div>
+<div class="counter-more"><button type="button" class="btn" data-count="5">+5</button><button type="button" class="btn" data-count="-5">−5</button></div>
+<p class="small" data-counter-sync role="status"></p>
+<div class="field counter-device"><label for="counter-device">{% trans "Door or device (shown in the history)" %}</label><input id="counter-device" data-counter-device maxlength="80" placeholder="{% trans 'e.g. Door A' %}"></div>
+</div>
+{% endblock %}

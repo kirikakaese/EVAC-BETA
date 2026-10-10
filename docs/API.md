@@ -50,6 +50,9 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `GET /events/<slug>/now-playing/` | what every paired screen shows now (source, entry, layout, until) | `playlists.view` |
 | `GET /events/<slug>/sessions/` (`?day=YYYY-MM-DD`) | program sessions with stage, track, speakers, `planned_start`, `delay_minutes`, `status`, `overrides` | `program.view`, token scope `program` |
 | `POST /events/<slug>/sessions/<id>/live/` | live change `{action: delay|cancel|move|restore, minutes, stage, note, shift_following}` | `program.live` |
+| `/events/<slug>/incidents/` | incidents (`?status=open`); `POST` reports one, `PATCH` edits; `POST …/<id>/status/` `{status, note}`, `POST …/<id>/note/` `{text}` | `ops.view` / `ops.report` / `ops.manage`, token scope `ops` |
+| `/events/<slug>/ops-log/` | the ops log, newest first; `POST` `{text, sender, recipient, important, incident, client_id}` | `ops.view` / `ops.report` |
+| `/events/<slug>/occupancy/` | areas with `value`, `capacity`, `percent`, `state`; `POST …/<id>/count/` takes a sensor reading `{delta}` / `{in, out}` / `{value}` (+ `id`) | `crowd.view` / `crowd.count`, token scope `crowd` |
 | `/events/<slug>/assets/` | asset library (`?kind=image`); `POST` multipart `upload` (+ `name`, `folder`); `urls` per variant | `content.view` / `content.edit` |
 
 ### Screen player API

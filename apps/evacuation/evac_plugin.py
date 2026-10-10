@@ -4,6 +4,7 @@ from typing import Any
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    DashboardPanelSpec,
     EvacTriggerSpec,
     ModuleSpec,
     NavEntry,
@@ -143,3 +144,8 @@ def register(r: Registry) -> None:
     r.webhook_event(WebhookEventSpec(key="evacuation.staff_ack", module="evacuation",
                                      description="A staff member answered an alarm in the staff app (on it, zone "
                                                  "clear, need help)."))
+    from . import panels
+
+    r.dashboard_panel(DashboardPanelSpec(key="evacuation.state", title=str(_("Alarms")),
+                                         template="evacuation/panel.html", context=panels.dashboard,
+                                         module="evacuation", order=10, refresh_seconds=3))

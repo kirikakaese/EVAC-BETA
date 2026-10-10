@@ -1,0 +1,4 @@
+{% load i18n %}{% if ctx.areas %}<ul class="plain panel-list occ-panel">{% for a in ctx.areas %}<li><a href="{% url 'crowd:area' event.slug a.pk %}"><strong>{{ a.name }}</strong></a> <span class="tabular">{{ a.value }}{% if a.capacity %} / {{ a.capacity }}{% endif %}</span> {% include "crowd/_bar.html" %}
+{% if a.capacity %}<div class="occ-meter" role="img" aria-label="{{ a.percent }} %"><span class="occ-fill occ-{{ a.state }} w-{{ a.bar|stringformat:'d' }}"></span></div>{% endif %}</li>{% endfor %}</ul>
+<p class="small muted">{% blocktrans with n=ctx.total %}{{ n }} people counted{% endblocktrans %}</p>
+{% else %}<p class="muted">{% trans "No areas yet." %}</p>{% endif %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Incident escalation" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Incident escalation" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'ops:index' event.slug %}">{% trans "Incidents" %}</a></div></div>
+<p class="muted">{% trans "A rule notifies the members of roles (in the app and as a push on their phones) and sends to channels when an incident of a severity is reported, or when it stays unacknowledged for some minutes. Each rule fires once per incident." %}</p>
+<section class="card" aria-labelledby="r-h"><h2 id="r-h">{% trans "Rules" %}</h2>
+{% if rules %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Rule" %}</th><th scope="col">{% trans "When" %}</th><th scope="col">{% trans "Notifies" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+<tbody>{% for r in rules %}<tr><td><a href="{% url 'ops:rule' event.slug r.pk %}"><strong>{{ r.name }}</strong></a>{% if not r.enabled %} <span class="badge badge-muted">○ {% trans "off" %}</span>{% endif %}</td>
+<td>{% blocktrans with s=r.get_min_severity_display %}{{ s }} or higher{% endblocktrans %}{% if r.categories %} · {{ r.categories|join:", " }}{% endif %}<br><span class="small">{% if r.after_minutes %}{% blocktrans with m=r.after_minutes w=r.get_until_display %}after {{ m }} min {{ w }}{% endblocktrans %}{% else %}{% trans "at once" %}{% endif %}</span></td>
+<td>{{ r.roles.all|join:", "|default:"–" }}{% if r.channels %}<br><span class="small">{{ r.channels|join:", " }}</span>{% endif %}</td>
+<td><form method="post" action="{% url 'ops:rule_delete' event.slug r.pk %}">{% csrf_token %}<button class="btn btn-sm btn-ghost" data-confirm="{% trans 'Delete this rule?' %}">{% trans "Delete" %}</button></form></td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No rules yet: incidents notify nobody automatically." %}</p>{% endif %}</section>
+<form method="post" class="card" action="{% if rule %}{% url 'ops:rule' event.slug rule.pk %}{% else %}{% url 'ops:rules' event.slug %}{% endif %}">{% csrf_token %}
+<h2>{% if rule %}{% blocktrans with n=rule.name %}Edit “{{ n }}”{% endblocktrans %}{% else %}{% trans "New rule" %}{% endif %}</h2>{% include "portal/_form.html" with form=form %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Save rule" %}</button>{% if rule %} <a class="btn btn-ghost" href="{% url 'ops:rules' event.slug %}">{% trans "New rule instead" %}</a>{% endif %}</div></form>
+{% endblock %}

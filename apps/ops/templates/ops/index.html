@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Incidents" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Incidents" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'ops:control' event.slug %}">{% trans "Control room" %}</a>
+{% if can_export %}<a class="btn btn-ghost" href="{% url 'ops:export' event.slug %}">{% trans "Report (CSV)" %}</a> <a class="btn btn-ghost" href="{% url 'ops:export' event.slug %}?format=json">{% trans "Report (JSON)" %}</a>{% endif %}
+{% if can_report %}<a class="btn btn-primary" href="{% url 'ops:new' event.slug %}">{% trans "Report an incident" %}</a>{% endif %}</div></div>
+<nav class="tabs" aria-label="{% trans 'Status' %}"><a href="?show=open"{% if show == "open" %} aria-current="page"{% endif %}>{% trans "Open" %} <span class="tabular">({{ open_count }})</span></a>
+{% for k, l, n in tabs %}<a href="?show={{ k }}"{% if show == k %} aria-current="page"{% endif %}>{{ l }} <span class="tabular">({{ n }})</span></a>{% endfor %}
+<a href="?show=all"{% if show == "all" %} aria-current="page"{% endif %}>{% trans "All" %}</a></nav>
+<section class="card" aria-labelledby="list-h"><h2 id="list-h" class="sr-only">{% trans "Incident list" %}</h2>
+<form method="get" class="inline filters"><input type="hidden" name="show" value="{{ show }}">
+<label for="f-sev">{% trans "Severity" %}</label><select id="f-sev" name="severity" data-action="submit"><option value="">{% trans "All" %}</option>{% for k, l in severities %}<option value="{{ k }}"{% if severity == k %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+<label for="f-cat">{% trans "Category" %}</label><select id="f-cat" name="category" data-action="submit"><option value="">{% trans "All" %}</option>{% for c in categories %}<option{% if category == c %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+<label for="f-q">{% trans "Search" %}</label><input id="f-q" name="q" value="{{ q }}" type="search"><button class="btn btn-sm">{% trans "Filter" %}</button></form>
+{% if incidents %}<div class="table-wrap"><table class="incident-table"><thead><tr><th scope="col">#</th><th scope="col">{% trans "Severity" %}</th><th scope="col">{% trans "Incident" %}</th><th scope="col">{% trans "Where" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Assigned" %}</th><th scope="col">{% trans "Reported" %}</th></tr></thead>
+<tbody>{% for i in incidents %}<tr><td class="tabular">{{ i.number }}</td><td>{% include "ops/_severity.html" with inc=i %}</td>
+<td><a href="{% url 'ops:incident' event.slug i.pk %}"><strong>{{ i.title }}</strong></a><br><span class="small muted">{{ i.category }}</span></td>
+<td>{{ i.place }}{% if i.location %}{% if i.room or i.zone %}<br>{% endif %}<span class="small">{{ i.location }}</span>{% endif %}</td>
+<td>{% include "ops/_status.html" with inc=i %}</td><td>{{ i.assignee|default:"" }}{% if i.team %}<br><span class="small muted">{{ i.team }}</span>{% endif %}</td>
+<td class="nowrap tabular">{{ i.created_at|date:"D H:i" }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No incidents here." %}</p>{% endif %}</section>
+{% endblock %}

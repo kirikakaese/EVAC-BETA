@@ -417,6 +417,80 @@ MQTT sources follow in phase 6.
 Imports only reach public addresses. Set `EVAC_IMPORT_ALLOW_PRIVATE=1` for a pretalx or calendar server on the venue
 network.
 
+## 5i. Incidents, ops log and the control room
+
+The **Operations** part of the event menu (module *Incidents & control room*, ADR-0039) holds the control room's
+tools. The built-in roles *Control room* and *Security* have all of it, and *Viewer* can read it.
+
+- **Incidents**: *Report an incident*. Give a title, a category (Settings → Incidents lists them), a severity, a
+  room or zone and where exactly, who reported it, and whom it is assigned to.
+  - Each incident gets a number (#1, #2, …) and a timeline: notes, photos and files (up to 10 MB), status changes,
+    assignments, escalations.
+  - Status runs *New → Acknowledged → In progress → Resolved → Closed*. Whoever may report may also acknowledge.
+    A closed incident can be reopened.
+  - *Report (CSV/JSON)* exports one row per incident, with the times to acknowledge and resolve, for the
+    post-event report.
+- **Ops log**: the radio log. Write "from → to: message" entries, mark the important ones, and link an incident.
+  The system adds lines for alarms, staff answers, offline screens, DECT alerts, announcements, overrides,
+  occupancy and program changes. Settings → Incidents can switch the system lines off.
+- **Tasks**: things to do, with whom, by when and for which incident. *Done* ticks them off, and the assignee is
+  notified.
+- **Escalation** (*Incidents → Escalation*, permission `ops.escalation`): rules like "high or critical: notify the
+  control room at once" or "not acknowledged after 5 minutes: notify security and the ntfy topic".
+  - Members of the chosen roles get a notification, which is a push on their phone with the staff app installed.
+  - Channels set up under Settings → Extensions also get the message: ntfy, Matrix, Telegram, e-mail, or DIAL
+    DECT messages.
+  - Each rule fires once per incident.
+- **Staff app**: the *Incidents* card lists what is new and assigned to you, with *I'm on it*. It also has
+  *Report an incident* and *Ops log entry* forms. Both work offline and are sent once the phone is back online.
+- **Control room** (`/e/<event>/ops/control/`): one page for a big screen, with *Full screen*. Panels refresh by
+  themselves every few seconds:
+  - alarms;
+  - open incidents;
+  - a zone map with incidents;
+  - occupancy;
+  - screen health;
+  - announcements;
+  - DIAL/DECT;
+  - the ops log;
+  - open tasks.
+
+  Panels of switched-off modules are not shown.
+
+## 5j. Occupancy
+
+**Occupancy** in the event menu (module *Occupancy*, ADR-0040) counts people per area: a room, a zone or any place
+such as a queue or a tent.
+
+1. **Add an area**: a name, the room or zone, and the capacity (empty: the room's). Then set the thresholds:
+   - *busy from* (80 %);
+   - *full from* (100 %);
+   - *open again below* (90 %). "Full" ends only below this, so the sign does not flicker.
+
+   Choose:
+   - *Send people to*: another area to suggest while it has space;
+   - extra screen groups (e.g. the foyer screens);
+   - a custom text;
+   - roles and channels to alert.
+2. **Count**:
+   - **Door staff**: in the staff app, *Door counter → the area* gives big **+1 in** and **−1 out** buttons.
+     Several phones can count the same area, and the numbers add up. Without network, the clicks are kept and
+     sent later, and the page shows how many are waiting.
+     Door staff need the permission `crowd.count` (*Control room* has it; add it to a crew role).
+   - **Sensors**: `POST /api/v1/events/<event>/occupancy/<id>/count/` with a service token (scope `crowd`).
+     Send `{"in": 3, "out": 1}`, `{"delta": 2}` or `{"value": 140}`. Over MQTT, use
+     `<prefix>/crowd/<event>/<sensor key>` (docs: [mqtt](extensions/mqtt.md)).
+   - **Corrections**: on the area page, *Set count*. *Reset all to 0* is for the start of a day. Both are audited.
+3. **When an area is full**:
+   - screens in its room or zone (and the chosen groups) show a red banner, for example "Foyer is full. Please
+     use Hall B.", within a second;
+   - the chosen roles get an alert, and the ops log gets a line.
+
+   When the count falls below the release threshold, the banner goes away and an "open again" alert follows.
+4. **History**: the area page charts the last 2 to 48 hours with the busy and full lines.
+
+Occupancy holds no personal data. Clicks and sensors record a device label, not who clicked.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

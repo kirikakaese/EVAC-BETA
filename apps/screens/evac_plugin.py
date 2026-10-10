@@ -3,6 +3,7 @@ from django.urls import path
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    DashboardPanelSpec,
     MapLayerSpec,
     ModuleSpec,
     NavEntry,
@@ -75,3 +76,8 @@ def register(r: Registry) -> None:
     r.api_route(r"events/(?P<event_slug>[^/.]+)/screens", api.ScreenViewSet, "event-screen")
     r.api_route(r"events/(?P<event_slug>[^/.]+)/screen-groups", api.ScreenGroupViewSet, "event-screen-group")
     r.websocket_route(path("ws/screen/", consumers.ScreenConsumer.as_asgi()))
+    from . import panels
+
+    r.dashboard_panel(DashboardPanelSpec(key="screens.health", title=str(_("Screens")),
+                                         template="screens/panel.html", context=panels.dashboard,
+                                         module="screens", order=40, refresh_seconds=15))

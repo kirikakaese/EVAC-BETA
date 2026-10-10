@@ -1,0 +1,1 @@
+{% load i18n %}<span class="occ-state occ-{{ a.state }}">{% if a.state == "full" %}⛔{% elif a.state == "busy" %}▲{% else %}●{% endif %} {{ a.get_state_display }}</span>

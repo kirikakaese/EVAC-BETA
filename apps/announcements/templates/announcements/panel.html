@@ -1,0 +1,4 @@
+{% load i18n %}{% if ctx.live %}<h3 class="small">{% trans "On air" %}</h3><ul class="plain panel-list">{% for a in ctx.live %}<li>{% include "announcements/_level.html" with level=a.level %} <a href="{% url 'announcements:detail' event.slug a.pk %}">{{ a.title }}</a></li>{% endfor %}</ul>{% else %}<p class="muted">{% trans "Nothing on air." %}</p>{% endif %}
+{% if ctx.pending %}<p><span class="badge badge-pending">{{ ctx.pending }}</span> {% trans "waiting for approval" %}</p>{% endif %}
+{% if ctx.recent %}<h3 class="small">{% trans "Recently" %}</h3><ul class="plain small">{% for a in ctx.recent %}<li class="tabular">{{ a.published_at|date:"H:i" }} · {{ a.title }}</li>{% endfor %}</ul>{% endif %}
+<p><a class="btn btn-sm btn-ghost" href="{% url 'announcements:index' event.slug %}">{% trans "Announcements" %}</a></p>

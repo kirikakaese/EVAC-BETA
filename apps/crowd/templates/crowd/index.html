@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Occupancy" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Occupancy" %}</h1>
+<div class="actions">{% if can_manage and areas %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="reset"><button class="btn btn-ghost" data-confirm="{% trans 'Set every area to 0? Do this before doors open.' %}">{% trans "Reset all to 0" %}</button></form>{% endif %}</div></div>
+<section class="card" aria-labelledby="ar-h"><h2 id="ar-h">{% trans "Areas" %} <span class="muted small tabular">{% blocktrans with n=total %}{{ n }} people counted{% endblocktrans %}</span></h2>
+{% if areas %}<div class="table-wrap"><table class="occ-table"><thead><tr><th scope="col">{% trans "Area" %}</th><th scope="col">{% trans "Now" %}</th><th scope="col">{% trans "Capacity" %}</th><th scope="col">{% trans "State" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+<tbody>{% for a in areas %}<tr><td><a href="{% url 'crowd:area' event.slug a.pk %}"><strong>{{ a.name }}</strong></a>{% if a.room or a.zone %}<br><span class="small muted">{{ a.room.name|default:"" }}{{ a.zone.name|default:"" }}</span>{% endif %}</td>
+<td class="tabular"><strong>{{ a.value }}</strong>{% if a.capacity %}<div class="occ-meter" role="img" aria-label="{{ a.percent }} %"><span class="occ-fill occ-{{ a.state }} w-{{ a.bar|stringformat:'d' }}"></span></div>{% endif %}</td>
+<td class="tabular">{% if a.capacity %}{{ a.capacity }} <span class="small muted">({{ a.percent }} %)</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+<td>{% include "crowd/_bar.html" %}{% if a.state_since %}<br><span class="small muted">{% blocktrans with t=a.state_since|timesince %}for {{ t }}{% endblocktrans %}</span>{% endif %}</td>
+<td>{% if can_count %}<a class="btn btn-sm" href="{% url 'crowd:counter' event.slug a.pk %}">{% trans "Counter" %}</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No areas yet. Add a room or zone with its capacity; door staff count with the staff app." %}</p>{% endif %}</section>
+{% if form %}<form method="post" class="card">{% csrf_token %}<h2>{% trans "New area" %}</h2>{% include "portal/_form.html" with form=form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Add area" %}</button></div></form>{% endif %}
+{% endblock %}

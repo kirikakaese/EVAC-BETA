@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ area.name }} · {% trans "Occupancy" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ area.name }}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'crowd:index' event.slug %}">{% trans "All areas" %}</a>{% if can_count %} <a class="btn btn-primary" href="{% url 'crowd:counter' event.slug area.pk %}">{% trans "Counter" %}</a>{% endif %}</div></div>
+<div class="grid-2">
+<section class="card" aria-labelledby="now-h"><h2 id="now-h">{% trans "Now" %}</h2>
+<p class="occ-big"><span class="tabular">{{ area.value }}</span>{% if area.capacity %} <span class="muted">/ {{ area.capacity }}</span>{% endif %} {% include "crowd/_bar.html" with a=area %}</p>
+{% if area.capacity %}<p class="small muted">{% blocktrans with b=area.busy_percent f=area.full_percent r=area.release_percent %}Busy from {{ b }} %, full from {{ f }} %, open again below {{ r }} %.{% endblocktrans %}</p>{% endif %}
+{% if area.state == "full" and area.show_on_screens %}<p>{% trans "Screens show:" %} <strong>{{ suggestion }}</strong></p>{% endif %}
+{% if can_manage %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="correct">{% include "portal/_form.html" with form=correction %}<button class="btn">{% trans "Set count" %}</button></form>{% endif %}
+</section>
+<section class="card" aria-labelledby="hist-h"><h2 id="hist-h">{% trans "History" %}</h2>
+<nav class="tabs" aria-label="{% trans 'Period' %}"><a href="?hours=2"{% if hours == 2 %} aria-current="page"{% endif %}>2 h</a><a href="?hours=6"{% if hours == 6 %} aria-current="page"{% endif %}>6 h</a><a href="?hours=12"{% if hours == 12 %} aria-current="page"{% endif %}>12 h</a><a href="?hours=24"{% if hours == 24 %} aria-current="page"{% endif %}>24 h</a><a href="?hours=48"{% if hours == 48 %} aria-current="page"{% endif %}>48 h</a></nav>
+<figure class="occ-chart"><svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img" aria-labelledby="ch-t"><title id="ch-t">{% blocktrans with h=hours p=chart.peak %}People in the area over the last {{ h }} hours, highest {{ p }}{% endblocktrans %}</title>
+<line class="axis" x1="{{ chart.xl }}" y1="{{ chart.ybase }}" x2="{{ chart.xr }}" y2="{{ chart.ybase }}"/>
+<text class="tick" x="{{ chart.xl|add:-6 }}" y="12" text-anchor="end">{{ chart.ymax }}</text><text class="tick" x="{{ chart.xl|add:-6 }}" y="{{ chart.ybase }}" text-anchor="end">0</text>
+{% for l in chart.lines %}<line class="limit limit-{{ l.cls }}" x1="{{ chart.xl }}" y1="{{ l.y }}" x2="{{ chart.xr }}" y2="{{ l.y }}"/><text class="tick" x="{{ chart.xr }}" y="{{ l.y }}" dy="-3" text-anchor="end">{{ l.label }}</text>{% endfor %}
+{% for t in chart.ticks %}<text class="tick" x="{{ t.x }}" y="{{ chart.height }}" dy="-4" text-anchor="middle">{{ t.label }}</text>{% endfor %}
+<polyline class="series" points="{{ chart.points }}"/></svg>
+<figcaption class="small muted">{% blocktrans with p=chart.peak %}Highest: {{ p }}.{% endblocktrans %} {% if chart.lines %}{% trans "Dashed lines: busy and full." %}{% endif %}</figcaption></figure>
+</section></div>
+<section class="card" aria-labelledby="rc-h"><h2 id="rc-h">{% trans "Recent counts" %}</h2>
+{% if recent %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Time" %}</th><th scope="col">{% trans "Change" %}</th><th scope="col">{% trans "After" %}</th><th scope="col">{% trans "From" %}</th></tr></thead>
+<tbody>{% for c in recent %}<tr><td class="tabular">{{ c.at|date:"H:i:s" }}</td><td class="tabular">{% if c.delta > 0 %}+{% endif %}{{ c.delta }}</td><td class="tabular">{{ c.value_after }}</td><td>{{ c.get_source_display }}{% if c.device %} · {{ c.device }}{% endif %}{% if c.user %} · {{ c.user }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "Nothing counted yet." %}</p>{% endif %}</section>
+{% if form %}<form method="post" class="card">{% csrf_token %}<h2>{% trans "Settings" %}</h2>{% include "portal/_form.html" with form=form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button></div></form>
+<form method="post" class="card">{% csrf_token %}<input type="hidden" name="what" value="delete"><button class="btn btn-danger" data-confirm="{% trans 'Delete this area with its history?' %}">{% trans "Delete area" %}</button></form>{% endif %}
+{% endblock %}

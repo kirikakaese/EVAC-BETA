@@ -230,13 +230,17 @@ announcement → approval queue; DIAL widgets render. ✅ `make dial-e2e` (CI jo
 | 5.2 | ✅ pretalx, frab/Pentabarf, iCal extensions with conflict handling (local changes survive a re-sync) |
 | 5.3 | ✅ Program widgets (now/next, the day, live changes; offline on the screen) |
 
-## Phase 6 — Ops + crowd ⬜ [§11.3, §11.4]
-**Gate:** "Room full" appears automatically at the threshold.
+## Phase 6 — Ops + crowd ✅ [§11.3, §11.4]
+**Gate:** "Room full" appears automatically at the threshold. ✅ `frontend/e2e/phase6.mjs` (`make e2e`, CI): two
+door counters (one offline for a while) fill the foyer; its screen shows "Foyer is full. Please use Hall B." about
+0.15 s after the 10th person, the control room is alerted, and the banner leaves below the release threshold.
+[ADR-0039](adr/0039-operations-and-control-room.md), [ADR-0040](adr/0040-occupancy.md).
+
 | ID | Ticket |
 |---|---|
-| 6.1 | Incidents, ops log, tasks, escalation |
-| 6.2 | Control room dashboard |
-| 6.3 | Occupancy: PWA counter (offline queue), MQTT/HTTP sensors, capacity rules → screens + alerts, history |
+| 6.1 | ✅ Incidents, ops log, tasks, escalation (rules → roles + notification channels; offline reports from the staff app; incident report) |
+| 6.2 | ✅ Control room dashboard (panels from every module: alarms, incidents, zone map, occupancy, screens, announcements, DIAL/DECT, ops log, tasks) |
+| 6.3 | ✅ Occupancy: PWA counter (offline queue), MQTT/HTTP sensors, capacity rules → screens + alerts, history |
 
 ## Phase 7 — Crew, inventory, helpdesk ⬜ [§11.2, §11.6, §11.7]
 **Gate:** shift board on screens; lend/return with QR.

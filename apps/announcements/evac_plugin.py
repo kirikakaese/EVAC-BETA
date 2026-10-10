@@ -2,6 +2,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    DashboardPanelSpec,
     DataSourceSpec,
     ModuleSpec,
     NavEntry,
@@ -95,3 +96,8 @@ def register(r: Registry) -> None:
         r.webhook_event(WebhookEventSpec(key=key, description=desc, module="announcements"))
     for prefix, viewset, basename in api.ROUTES:
         r.api_route(prefix, viewset, basename)
+    from . import panels
+
+    r.dashboard_panel(DashboardPanelSpec(key="announcements.recent", title=str(_("Announcements")),
+                                         template="announcements/panel.html", context=panels.dashboard,
+                                         module="announcements", order=50, refresh_seconds=10))

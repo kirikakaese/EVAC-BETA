@@ -65,7 +65,7 @@ again without removing the package.
 | `SettingsNamespace` | `r.settings_namespace` | typed settings with inheritance and generated forms |
 | `ScopeKind` | `r.scope_kind` | objects role assignments can be scoped to |
 | `DataSourceSpec`, `WidgetSpec` | `r.data_source`, `r.widget` | screen content; a data source with `fetch(event)` returning JSON-like data can feed custom widgets (ADR-0023) |
-| `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (raise to retry); `available(event)` hides it where it is not set up; `max_length` offers an own text per channel (ADR-0019, ADR-0020; example: `extensions/notify`) |
+| `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (raise to retry); `available(event)` hides it where it is not set up; `max_length` offers an own text per channel (ADR-0019, ADR-0020; example: `extensions/notify`). Optional `alert(event, Alert)` sends a plain staff alert (incident escalation, "room full"); public channels leave it out; queue alerts with `apps.core.alerts.enqueue(event, keys, Alert(...))` (ADR-0039) |
 | `EvacTriggerSpec` | `r.evac_trigger` | alarm trigger sources (phase 3) |
 | `WebhookEventSpec` | `r.webhook_event` | outbound event types (`apps.core.webhooks.emit`) |
 | `CliCommandSpec` | `r.cli_command` | `evac <name>` sub-commands |
@@ -82,7 +82,9 @@ again without removing the package.
 | layout check | `r.layout_check(fn)` | `fn(layout, data) -> [{"level", "message", "element"}]`; errors block publishing (ADR-0033) |
 | sync spec | `r.sync(SyncSpec(module, models=(SyncModel(label, queryset, live=, local_fields=, secret_fields=, natural_key=, files=), ...), order=))` | what a venue node receives in the event snapshot and, for `live` models, sends back in its op-log (ADR-0036) |
 | node action | `r.node_action(kind, fn)` | `fn(event, payload, actor) -> dict`: a live action central forwards to the node holding a checked-out event; call `apps.nodes.guard.remote(event)` / `forward(...)` in your services |
-| webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension) |
+| webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension and the ops log) |
+| dashboard panel | `r.dashboard_panel(DashboardPanelSpec(key, title, template, context, module=, order=, size=, refresh_seconds=))` | a panel of the control room dashboard; `context(request, event)` returns the template context or `None` to hide it; refreshed every `refresh_seconds` (ADR-0039) |
+| MQTT topic | `r.mqtt_topic(MqttTopicSpec(key, pattern, handler, module=))` | MQTT messages below the configured prefix (`crowd/+/+`) handed to `handler(topic, payload)` by the MQTT extension; validate the payload yourself (ADR-0040) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 
 Duplicate keys raise `RegistryError`; a plugin needing a newer `api_version` refuses to load.

@@ -199,6 +199,92 @@ def test_mastodon(cfg) -> str:
     return _("Signed in as @%(a)s.") % {"a": me.get("acct", "?")}
 
 
+# ------------------------------------------------------------------ staff alerts (ADR-0039)
+ALERT_URGENCY = {"info": "normal", "warn": "high", "err": "max"}
+
+
+def _alert_link(alert) -> str:
+    from django.conf import settings
+
+    base = getattr(settings, "EVAC_PUBLIC_URL", "") or ""
+    return f"{base}{alert.url}" if base and alert.url.startswith("/") else ""
+
+
+def alert_email(cfg, event, alert) -> dict[str, Any]:
+    to = _fixed(cfg)  # staff already get the alert in the app; only the fixed list here
+    if not to:
+        return {"status": "skipped", "detail": _("No recipients configured.")}
+    prefix = (cfg.settings.get("subject_prefix") or f"[{event.name}]").strip()
+    link = _alert_link(alert)
+    msg = mail.EmailMessage(subject=f"{prefix} {alert.title}"[:250],
+                            body=(alert.body or alert.title) + (f"\n\n{link}" if link else ""),
+                            from_email=cfg.settings.get("from_email") or None, bcc=to)
+    if alert.level in ("warn", "err"):
+        msg.extra_headers = {"Importance": "high", "X-Priority": "1"}
+    msg.send()
+    return {"recipients": len(to), "detail": _("%(n)s addresses") % {"n": len(to)}}
+
+
+def alert_ntfy(cfg, event, alert) -> dict[str, Any]:
+    body = {"topic": cfg.settings.get("topic", ""), "title": alert.title[:250], "message": alert.body or alert.title,
+            "priority": NTFY_PRIORITY[ALERT_URGENCY.get(alert.level, "normal")],
+            "tags": ["warning"] if alert.level != "info" else []}
+    link = _alert_link(alert)
+    if link:
+        body["click"] = link
+    token = cfg.secret("token")
+    call("POST", _base(cfg.settings.get("server") or "https://ntfy.sh"), json=body,
+         headers={"Authorization": f"Bearer {token}"} if token else None)
+    return {"recipients": 1, "detail": _("topic %(t)s") % {"t": body["topic"]}}
+
+
+def alert_matrix(cfg, event, alert) -> dict[str, Any]:
+    import hashlib
+
+    room = cfg.settings.get("room_id", "")
+    text = alert.title + (f"\n\n{alert.body}" if alert.body else "")
+    content = {"msgtype": "m.text", "body": text, "format": "org.matrix.custom.html",
+               "formatted_body": f"<p><strong>{html.escape(alert.title)}</strong></p>"
+                                 + (f"<p>{html.escape(alert.body)}</p>" if alert.body else "")}
+    txn = hashlib.sha256(f"alert:{alert.key or text}".encode()).hexdigest()[:32]  # a retry does not post twice
+    url = (f"{_base(cfg.settings.get('homeserver'))}/_matrix/client/v3/rooms/{quote(room, safe='')}"
+           f"/send/m.room.message/{txn}")
+    call("PUT", url, json=content, headers={"Authorization": f"Bearer {cfg.secret('access_token')}"})
+    return {"recipients": 1, "detail": _("room %(r)s") % {"r": room}}
+
+
+def alert_telegram(cfg, event, alert) -> dict[str, Any]:
+    text = f"<b>{html.escape(alert.title)}</b>" + (f"\n\n{html.escape(alert.body)}" if alert.body else "")
+    link = _alert_link(alert)
+    if link:
+        text += f'\n\n<a href="{html.escape(link)}">{html.escape(_("Details"))}</a>'
+    chat = cfg.settings.get("chat_id", "")
+    _telegram(cfg, "sendMessage", {"chat_id": chat, "text": text[:4096], "parse_mode": "HTML",
+                                   "disable_notification": alert.level == "info",
+                                   "link_preview_options": {"is_disabled": True}})
+    return {"recipients": 1, "detail": _("chat %(c)s") % {"c": chat}}
+
+
+ALERTS = {"email": alert_email, "ntfy": alert_ntfy, "matrix": alert_matrix, "telegram": alert_telegram}
+
+
+def alerter(key: str):
+    """``NotificationChannelSpec.alert`` of a channel (Mastodon has none: it is public)."""
+    if key not in ALERTS:
+        return None
+
+    def send(event, alert) -> dict[str, Any]:
+        cfg = ext.effective(key, event)
+        if cfg is None:
+            return {"status": "skipped", "detail": _("The extension is off for this event.")}
+        try:
+            return ALERTS[key](cfg, event, alert)
+        except Rejected as exc:
+            ext.write_log(cfg, "error", f"alert refused: {exc}")
+            return {"status": "failed", "detail": str(exc)}
+    return send
+
+
 # ------------------------------------------------------------------ glue
 SENDERS = {"email": send_email, "ntfy": send_ntfy, "matrix": send_matrix, "telegram": send_telegram,
            "mastodon": send_mastodon}
