@@ -484,6 +484,8 @@ def extension_webhook(request, key, config_id):
     except ValueError:
         return JsonResponse({"ok": False, "error": "invalid JSON"}, status=400)
     delivery_id = request.headers.get(spec.delivery_header, "")[:200]
+    if not delivery_id and spec.delivery_id is not None:
+        delivery_id = (spec.delivery_id(request.headers, body, payload) or "")[:200]
     event_type = request.headers.get(spec.event_header, "")[:100]
     if delivery_id:
         seen = InboundDelivery.objects.filter(config=config, delivery_id=delivery_id).first()

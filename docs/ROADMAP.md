@@ -205,18 +205,19 @@ ADR-0003 must be accepted before implementation starts.** Both accepted 2026-10-
 | 3.11 | ✅ Safety acknowledgement | once per event when enabling the module; shown on settings page and in the wizard |
 | 3.12 | ✅ Tests [§8.7] | unit, property (routing), Playwright E2E, chaos (kill web/channels, partition), load (500 WS players); `make e2e load chaos`; [drill runbook](DRILL_RUNBOOK.md) |
 
-## Phase 4 — DIAL extension ⬜ [§9]
+## Phase 4 — DIAL extension ✅ [§9]
 
 **Gate:** against a running DIAL demo: webhook → evac arm; evac → DIAL broadcast; phone-recorded
-announcement → approval queue; DIAL widgets render.
+announcement → approval queue; DIAL widgets render. ✅ `make dial-e2e` (CI job), [ADR-0037](adr/0037-dial-extension.md),
+[extensions/dial.md](extensions/dial.md).
 
 | ID | Ticket |
 |---|---|
-| 4.1 | Link config + test connection (`/api/v1/health/?event=`, `/api/v1/me/`), token scopes documented |
-| 4.2 | Inbound: `X-DIAL-Signature`, `X-DIAL-Event`; emergency.triggered → trigger policy; page.updated; announcement.recorded → draft (optional Whisper); dect.* → data source + ops log |
-| 4.3 | Outbound: emergency broadcast + messaging broadcast via outbox; delivery report |
-| 4.4 | Data sources + widgets: phonebook, important numbers, info pages, DECT status, "call X for Y" |
-| 4.5 | Shared OIDC IdP docs; manual DIAL-role → EVAC-role mapping table |
+| 4.1 | ✅ Link config + test connection (`/api/v1/health/?event=`, `/api/v1/me/`), token scopes documented |
+| 4.2 | ✅ Inbound: `X-DIAL-Signature`, `X-DIAL-Event`; emergency.triggered → trigger policy; page.updated; announcement.recorded → draft (optional Whisper); dect.* → data source + ops log (DECT alerts, notifications, `dial.dect_alert`; the ops log of 6.1 lists them) |
+| 4.3 | ✅ Outbound: emergency broadcast + messaging broadcast via outbox; delivery report |
+| 4.4 | ✅ Data sources + widgets: phonebook, important numbers, info pages, DECT status, "call X for Y" |
+| 4.5 | ✅ Shared OIDC IdP docs; manual DIAL-role → EVAC-role mapping table |
 
 ## Phase 5 — Program ⬜ [§11.1]
 **Gate:** imported schedule shows now/next on screens; live change propagates < 5 s.

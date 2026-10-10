@@ -94,6 +94,7 @@ EVAC_BUILTIN_PLUGINS = [
     "extensions.webhooks",
     "extensions.notify",
     "extensions.mqtt",
+    "extensions.dial",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
 

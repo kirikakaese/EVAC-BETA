@@ -119,10 +119,16 @@ SPEC = ExtensionSpec(
     secret_fields=(("api_token", "API token"),),
     features=(ExtensionFeature("rooms", "Room import", "import"),),
     inbound_webhooks=True, signature_header="X-Foo-Signature",
+    # optional: an idempotency key when Foo sends no delivery header (repeats are answered once, "duplicate")
+    delivery_id=lambda headers, body, payload: f"foo:{payload.get('id', '')}",
     test_connection=test, handle_webhook=on_webhook, purge=lambda config: ...,
-    urls="foo_ext.urls",  # optional custom views at .../extensions/foo/x/
+    urls="foo_ext.urls",  # optional custom views at .../extensions/foo/x/ (the settings page links "Open")
 )
 ```
+
+The DIAL extension (`extensions/dial/`) is a complete example: event-scoped link, inbound webhooks with
+`delivery_id`, an evacuation trigger source, a webhook sink, announcement channels, data sources and outbox jobs
+([extensions/dial.md](extensions/dial.md), [ADR-0037](adr/0037-dial-extension.md)).
 
 Use `apps.extensions.services.effective(key, event)` to get the configuration that applies to an event
 (own connection or the instance-wide one) and `config.feature_enabled("rooms")` before doing work.

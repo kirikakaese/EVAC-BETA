@@ -164,6 +164,8 @@ class Announcement(TimeStampedModel):
     speech_status = models.CharField(max_length=12, choices=Speech.choices, blank=True, default="")
     speech_file = models.CharField(max_length=80, blank=True)  # "<key>.<ext>"
     speech_detail = models.CharField(max_length=300, blank=True)
+    #: the spoken file is a recording (e.g. announced by phone through DIAL), not rendered from the text
+    speech_recorded = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-starts_at"]

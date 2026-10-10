@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "DIAL roles" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "DIAL roles" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'dial:status' event.slug %}">{% trans "DIAL" %}</a></div></div>
+<p class="muted">{% blocktrans %}Which EVAC role may people get who have a role in the DIAL event? Nothing is assigned automatically: below, check each proposal (DIAL shows usernames, EVAC suggests the member whose e-mail name matches) and assign the ones that are right. Only people who already are members of this event can get a role.{% endblocktrans %}</p>
+
+<section class="card" aria-labelledby="map-h"><h2 id="map-h">{% trans "Mapping" %}</h2>
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="mapping">
+{% include "portal/_form.html" with form=form %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Save mapping" %}</button></div></form></section>
+
+<section class="card" aria-labelledby="prop-h"><h2 id="prop-h">{% trans "Proposals" %}</h2>
+{% if snapshot and snapshot.error %}<p class="muted">{% blocktrans with e=snapshot.error %}DIAL did not answer: {{ e }}{% endblocktrans %}</p>
+{% elif not snapshot or not snapshot.fetched_at %}<p class="muted">{% trans "Fetching the members from DIAL… reload in a moment." %}</p>
+{% elif not proposals %}<p class="muted">{% trans "No DIAL member has a mapped role." %}</p>
+{% else %}<p class="small muted">{% blocktrans with t=snapshot.fetched_at|date:"H:i" %}DIAL members as of {{ t }}.{% endblocktrans %}</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="assign">
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Assign" %}</th><th scope="col">{% trans "DIAL user" %}</th><th scope="col">{% trans "DIAL role" %}</th><th scope="col">{% trans "EVAC member" %}</th><th scope="col">{% trans "EVAC role" %}</th></tr></thead>
+<tbody>{% for p in proposals %}<tr>
+<td>{% if p.has %}<span class="badge badge-ok">{% trans "has it" %}</span>{% else %}<input type="checkbox" name="pick_{{ p.index }}" id="pick-{{ p.index }}" aria-label="{% blocktrans with u=p.dial_user %}Assign to {{ u }}{% endblocktrans %}"{% if not can_assign %} disabled{% endif %}>{% endif %}</td>
+<th scope="row">{{ p.dial_user }}</th><td>{{ p.dial_role }}</td>
+<td><label class="sr-only" for="user-{{ p.index }}">{% blocktrans with u=p.dial_user %}EVAC member for {{ u }}{% endblocktrans %}</label>
+<select id="user-{{ p.index }}" name="user_{{ p.index }}"><option value="">{% trans "— choose —" %}</option>{% for value, label in members %}<option value="{{ value }}"{% if p.user and value == p.user.pk|stringformat:"s" %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></td>
+<td>{{ p.role.name }}</td></tr>{% endfor %}</tbody></table></div>
+{% if can_assign %}<div class="form-actions"><button class="btn btn-primary">{% trans "Assign selected" %}</button></div>{% else %}<p class="small muted">{% trans "Assigning needs the permission to manage members." %}</p>{% endif %}
+</form>{% endif %}</section>
+{% endblock %}

@@ -35,7 +35,9 @@ failed).
 - Signature header (default `X-EVAC-Signature`, extensions may use their own, e.g. `X-DIAL-Signature`):
   `sha256=<hex HMAC-SHA256 of the raw body with the webhook secret>`, compared in constant time.
 - Optional delivery id header (`X-EVAC-Delivery`): the same id is processed once; repeats return the stored
-  answer with `"duplicate": true`.
+  answer with `"duplicate": true`. Senders without one can be deduplicated by the extension
+  (`ExtensionSpec.delivery_id`, e.g. DIAL: event type + hash of `data`).
+- Custom views of an extension are mounted at `…/extensions/<key>/x/`; the settings page links there ("More").
 - Optional event header (`X-EVAC-Event`).
 - Answers: `401` bad signature, `403` disabled, `400` invalid JSON, `404` unknown, otherwise what the
   extension returns.
@@ -45,7 +47,7 @@ failed).
 | Extension | Phase | Page |
 |---|---|---|
 | Webhooks (generic, in/out) | 0 | [webhooks](extensions/webhooks.md) |
-| DIAL — DECT & IP Administration Layer | 4 | – |
+| DIAL — DECT & IP Administration Layer | 4 | [dial](extensions/dial.md) |
 | pretalx / frab / iCal | 5 | – |
 | pretix | 8 | – |
 | Engelsystem | 7 | – |

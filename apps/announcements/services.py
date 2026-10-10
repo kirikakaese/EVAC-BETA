@@ -214,6 +214,31 @@ def submit(ann: Announcement, *, actor, request=None) -> Announcement:
     return _approve(ann, actor=actor, request=request, note="")
 
 
+def submit_external(ann: Announcement, *, source: str, publish_now: bool = False) -> Announcement:
+    """An announcement made by an integration (e.g. recorded by phone in DIAL): into the approval queue, or, when
+    the integration's allow-list says so, approved at once. Emergency levels always wait for a person."""
+    if ann.level.emergency:
+        publish_now = False
+    _validate(ann)
+    with transaction.atomic():
+        ann.status = Announcement.Status.DRAFT
+        ann.save()
+        log(action="announcement.drafted", actor=None, target=ann, event=ann.event,
+            message=f"Announcement {ann.title} from {source}",
+            changes={"level": ann.level.key, "channels": ann.channels, "target": ann.target_label(),
+                     "source": source})
+        if publish_now:
+            return _approve(ann, actor=None, note=f"{source}: published at once (allow-list)")
+        ann.status = Announcement.Status.PENDING
+        ann.submitted_at = timezone.now()
+        ann.save(update_fields=["status", "submitted_at", "updated_at"])
+        log(action="announcement.submitted", actor=None, target=ann, event=ann.event,
+            message=f"Announcement {ann.title} from {source} waits for approval")
+    _notify_approvers(ann, None)
+    webhooks.emit("announcement.pending", payload(ann), event=ann.event)
+    return ann
+
+
 def approve(ann: Announcement, *, actor, request=None, note: str = "") -> Announcement:
     if ann.status != Announcement.Status.PENDING:
         raise ValidationError(_("Nothing to approve."))
@@ -636,6 +661,8 @@ def queue_speech(ann: Announcement) -> None:
     """Render the spoken version ahead of time (when the level speaks and the announcement goes to screens)."""
     from . import tts
 
+    if ann.speech_recorded and ann.speech_file:
+        return  # a recording is played as it is
     if not ann.level.speak or SCREENS not in ann.channels:
         return
     usable, why = tts.status(ann_settings(ann.event).get("tts_voice", ""))

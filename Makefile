@@ -7,7 +7,7 @@ COMPOSE := docker compose
 DEPS_CMD = $(PY) -c "import tomllib; d = tomllib.load(open('pyproject.toml', 'rb'))['project']; print('\n'.join(d['dependencies'] + d['optional-dependencies']['dev']))"
 
 .PHONY: dev run worker beat channels test cov lint typecheck a11y migrate makemigrations seed openapi openapi-check frontend \
-        attribution check e2e node-e2e load chaos up down logs shell build clean
+        attribution check e2e node-e2e dial-e2e load chaos up down logs shell build clean
 
 dev:
 	test -d .venv || python3 -m venv .venv
@@ -76,6 +76,10 @@ e2e:
 # Central/node sync with two real instances (ADR-0036): enrol, checkout, alarms both ways, partition, check-in
 node-e2e:
 	$(PY) scripts/node_sync_e2e.py
+
+# Phase 4 gate: EVAC against a running DIAL (DIAL_DIR = DIAL checkout with its .venv; redis-server on PATH)
+dial-e2e:
+	$(PY) scripts/dial_e2e.py
 
 # Chaos (roadmap 3.12): kill the server during an alarm, fallback origin, forged/stale/bridge clears, recovery
 chaos:

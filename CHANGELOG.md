@@ -6,6 +6,37 @@ released.
 
 ## [Unreleased]
 
+### Added — DIAL extension (Phase 4)
+
+- `extensions/dial` ([extensions/dial.md](docs/extensions/dial.md), ADR-0037): links an event to a DIAL event (DIAL
+  URL, event slug, encrypted `dial_…` service token, webhook secret; test connection via `health/?event=` and
+  `me/`; the needed token scopes are documented and shown).
+- Emergency calls in DIAL (`emergency.triggered`) go to the new evacuation trigger source “DIAL emergency call”
+  through its trigger policy (default arm); configurable stage and numbers; refused (409) while the evacuation module
+  is off or its statement not accepted; DIAL's broadcast echo is ignored.
+- Alarms ring DIAL handsets: raising or escalating into chosen stages (drills only when allowed, optional group)
+  sends DIAL's emergency broadcast with the stage's spoken text, and the all clear after a rung alarm; through the
+  outbox with retries; every call is listed on the DIAL page.
+- Announcement channels “DIAL: ring handsets” and “DIAL: DECT message”.
+- Announcements by phone: `announcement.recorded` imports the recording from the configured DIAL URL, transcribes it
+  with optional offline whisper.cpp (`EVAC_WHISPER_BINARY`, `EVAC_WHISPER_MODEL`) and creates an announcement in the
+  approval queue (or published at once for allow-listed extensions); screens play the recording.
+- Data sources `dial.phonebook`, `dial.numbers` (“call X for Y”: own list, emergency numbers named after where they
+  ring, service numbers), `dial.pages` (as text) and `dial.dect`; “Add DIAL widgets” creates five ready-made widgets;
+  `page.updated` and DECT alerts refresh them.
+- DECT alerts (`dect.*`) on the event's DIAL page (`/e/<slug>/dial/`), in the extension log, as webhook event
+  `dial.dect_alert` and as notifications for the new permission “See the DIAL link” (`dial.status`).
+- DIAL role → EVAC role mapping table with reviewed, never automatic assignments; shared OIDC IdP documented.
+- `ExtensionSpec.delivery_id`: idempotency for inbound webhooks whose sender has no delivery header.
+- Announcements: `speech_recorded` (a recording is never replaced by synthetic speech) and
+  `services.submit_external` for announcements made by integrations.
+- `make dial-e2e` / CI job: the Phase 4 gate against a running DIAL (web, Celery worker, Redis).
+
+### Fixed
+
+- Custom views of extensions were all routed to the first extension that had any (`<slug:key>/x/`); each extension
+  now has its own mount, and the settings page button opens it.
+
 ### Changed — CI runs once per commit
 
 - CI runs on pull requests and pushes to `main` (plus nightly and on demand), no longer on every branch push, so a

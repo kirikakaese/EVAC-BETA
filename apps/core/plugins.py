@@ -401,7 +401,8 @@ class ExtensionSpec:
     * ``secret_fields``: names of secret values (encrypted at rest, never shown again after save).
     * ``test_connection(config) -> ConnectionResult`` powers the "Test connection" button.
     * ``handle_webhook(config, headers, body: bytes, payload) -> WebhookResult`` handles inbound webhooks
-      after EVAC verified the HMAC signature (header ``signature_header``, ``sha256=<hex>``).
+      after EVAC verified the HMAC signature (header ``signature_header``, ``sha256=<hex>``). Deliveries with the
+      same ``delivery_header`` (or, without one, the same ``delivery_id(headers, body, payload)``) run once.
     * ``purge(config)`` deletes data the extension imported ("disconnect & purge").
     * ``urls``: dotted path of an optional urlconf with custom views, mounted below the settings page.
     """
@@ -421,6 +422,9 @@ class ExtensionSpec:
     delivery_header: str = "X-EVAC-Delivery"
     test_connection: Callable[[Any], ConnectionResult] | None = None
     handle_webhook: Callable[[Any, Mapping[str, str], bytes, Any], WebhookResult] | None = None
+    #: idempotency key when the sender sets no delivery header (e.g. a hash of the body for systems whose retries
+    #: resend the same body); "" = process every delivery
+    delivery_id: Callable[[Mapping[str, str], bytes, Any], str] | None = None
     purge: Callable[[Any], None] | None = None
     urls: str = ""
     docs: str = ""
