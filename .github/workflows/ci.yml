@@ -1,11 +1,19 @@
 name: CI
 
+# Pushes to main and pull requests, not every branch push: a branch with an open PR would otherwise run everything
+# twice for the same commit. Branches without a PR can still be checked with "Run workflow" (workflow_dispatch).
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: "17 3 * * *"   # nightly: dependency audit (load/chaos jobs join in phase 3)
+    - cron: "17 3 * * *"   # nightly: dependency audit, full suite including chaos and load
+
+# A new push to a pull request cancels its run for the older commit; runs on main are never cancelled.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PYTHON_VERSION: "3.12"

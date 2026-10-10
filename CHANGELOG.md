@@ -6,6 +6,12 @@ released.
 
 ## [Unreleased]
 
+### Changed — CI runs once per commit
+
+- CI runs on pull requests and pushes to `main` (plus nightly and on demand), no longer on every branch push, so a
+  pull request no longer shows every check twice. A newer push to a pull request cancels the run for the older
+  commit; runs on `main` are never cancelled.
+
 ### Added — phase 3 acceptance tests and drill runbook (Phase 3, part 13)
 
 - Browser E2E `frontend/e2e/evacuation.mjs` (in `make e2e`): accept the statement, raise a drill with
