@@ -32,6 +32,7 @@ test:
 
 cov:
 	$(PY) -m pytest -p no:cacheprovider --cov --cov-report=term --cov-report=xml
+	$(PY) -m coverage report --include='apps/evacuation/*' --fail-under=95 --skip-covered
 
 lint:
 	.venv/bin/ruff check apps evac extensions conftest.py scripts

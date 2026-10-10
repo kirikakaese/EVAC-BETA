@@ -81,6 +81,12 @@ class Command(BaseCommand):
         if north is not None:
             services.assign_role(event, crew, event.roles.get(key="viewer"), scope_kind="zone",
                                  scope_id=str(north.pk), actor=admin)
+        # the demo shows the (otherwise off by default) evacuation module
+        from apps.core import modules
+        from apps.core.registry import registry
+
+        if "evacuation" in registry.ensure_loaded().modules and not modules.instance_enabled("evacuation"):
+            modules.set_instance("evacuation", True, user=admin)
         self.stdout.write(self.style.SUCCESS(
             f"Demo ready: log in as admin@evac.local / {password} (other demo accounts: "
             f"{', '.join(p[0] for p in PEOPLE)}; same password). Event: /e/demo/"))

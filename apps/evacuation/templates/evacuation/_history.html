@@ -1,0 +1,6 @@
+{% load i18n %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Time" %}</th><th scope="col">{% trans "Where" %}</th><th scope="col">{% trans "Change" %}</th><th scope="col">{% trans "Drill" %}</th><th scope="col">{% trans "By" %}</th><th scope="col">{% trans "Note" %}</th></tr></thead>
+<tbody>{% for h in history %}<tr><td class="small"><time datetime="{{ h.at|date:'c' }}">{{ h.at|date:"D j M H:i:s" }}</time></td><td>{{ h.zone_name|default:_("Whole event") }}</td>
+<td>{{ h.get_from_state_display }} → <strong>{{ h.get_to_state_display }}</strong> <span class="muted small">({{ h.get_kind_display }})</span></td>
+<td>{% if h.drill %}<span class="badge badge-evac-drill">{% trans "drill" %}</span>{% else %}<span class="muted">{% trans "no" %}</span>{% endif %}</td>
+<td class="small">{{ h.actor_repr|default:h.source }}</td><td class="small">{{ h.reason|default:"–" }}</td></tr>
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No changes yet." %}</td></tr>{% endfor %}</tbody></table></div>

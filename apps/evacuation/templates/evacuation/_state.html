@@ -1,0 +1,1 @@
+{% load i18n %}<span class="badge badge-evac badge-evac-{{ s.state }}">{{ s.label }}</span>{% if s.drill and s.state != "normal" %} <span class="badge badge-evac-drill">{{ drill_text }}</span>{% endif %}

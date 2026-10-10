@@ -1,8 +1,7 @@
 # Evacuation and alarm information
 
-> **Status:** the evacuation module ships in **phase 3**. This page states the safety position and the
-> design that phase 0 prepares; it is extended with operating instructions, drill runbooks and limitations
-> when the module exists.
+> **Status:** phase 3 in progress. The state machine and the control page exist (3.3); triggers and
+> policies, screen content, propagation, fail-safe and the drill runbook follow (see the roadmap).
 
 ## Safety statement
 
@@ -10,6 +9,35 @@ EVAC is a **supplementary information system**. It is **not** a certified fire a
 system or evacuation system; DIN 14675, DIN VDE 0833, EN 54 and similar standards do not apply and EVAC
 does not claim compliance. It complements — and never replaces — the legally required systems and
 procedures of the venue. Operators must acknowledge this once per event when enabling the module.
+
+## States and rules (roadmap 3.3, [ADR-0029](adr/0029-evacuation-state-machine.md))
+
+| State | Severity | Meaning |
+|---|---|---|
+| Normal | 0 | regular content |
+| All clear | 1 | "all clear" for the configured time (default 5 minutes), then normal |
+| Staff alert | 2 | silent pre-alarm: staff channels only |
+| Attention | 3 | public "please pay attention to announcements" |
+| Shelter in place | 4 | stay inside / severe weather |
+| Evacuate | 5 | full evacuation with routes |
+
+- The event has a state and every zone can have its own. A screen in a zone shows the **more severe** of the
+  two (real before drill).
+- **Never auto-clear**: nothing returns to normal by timeout, reconnect or restart. Only the **all clear**, given
+  by someone with `evacuation.clear` (or `evacuation.drill` for a drill), ends an alarm. The all-clear time is
+  stored, so a restart neither shortens nor extends it. *Back to normal now* ends it early.
+- Alarms can be raised, escalated and **stepped down directly** (evacuate → shelter in place), always with
+  hold-to-confirm and recorded.
+- An all clear for the whole event also clears the zones that have their own alarm; the form lists them, all
+  ticked, and an unticked zone keeps its alarm.
+- **Drills** run in any alarm state with a marker (Settings → Evacuation → *Drill marker*, default "DRILL"). A
+  real alarm anywhere in the event ends every drill at once; a drill cannot start while a real alarm is
+  active; drills are never shown instead of a real alarm. History and audit log keep drills apart.
+- Staff alert, attention and shelter in place can be switched off per event; every state can be renamed.
+  Evacuate, all clear and normal cannot be switched off.
+- Permissions: `evacuation.view`, `evacuation.trigger`, `evacuation.clear`, `evacuation.drill` (all three
+  sensitive: two-factor session; scope them to a venue or zone), `evacuation.manage`. The built-in
+  *security* role raises alarms but cannot clear them.
 
 ## What phase 0 already provides
 

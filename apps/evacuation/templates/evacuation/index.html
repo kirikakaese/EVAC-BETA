@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Evacuation" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Evacuation" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'evacuation:history' event.slug %}">{% trans "History" %}</a></div></div>
+<p class="alert alert-info small">{% blocktrans %}EVAC is a supplementary information system. It is not a certified fire alarm, voice alarm or evacuation system and does not replace them, nor the procedures required for your venue.{% endblocktrans %}</p>
+
+<section class="card evac-now evac-now-{{ ev.state }}" aria-labelledby="evac-now-title">
+<h2 id="evac-now-title">{% trans "Whole event" %}</h2>
+<p class="evac-now-state">{% include "evacuation/_state.html" with s=ev drill_text=cfg.drill_text %}</p>
+<p class="small muted">{% if ev.since %}{% blocktrans with t=ev.since|date:"D j M H:i:s" %}Since {{ t }}{% endblocktrans %}{% if ev.row.changed_by %} · {{ ev.row.changed_by }}{% endif %}{% if ev.row.reason %} · “{{ ev.row.reason }}”{% endif %}{% else %}{% trans "No alarm so far." %}{% endif %}
+{% if ev.state == "all_clear" and ev.clear_until %}<br>{% blocktrans with t=ev.clear_until|date:"H:i:s" %}Screens return to normal content at {{ t }}.{% endblocktrans %}{% endif %}</p>
+{% if ev.state == "all_clear" and can_change %}<form method="post" action="{% url 'evacuation:end_all_clear' event.slug %}">{% csrf_token %}<button class="btn btn-sm">{% trans "Back to normal now" %}</button></form>{% endif %}
+</section>
+
+<section class="card"><h2>{% trans "Zones" %}</h2>
+{% if zones %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Own state" %}</th><th scope="col">{% trans "Screens show" %}</th><th scope="col">{% trans "Since" %}</th></tr></thead>
+<tbody>{% for z in zones %}<tr><th scope="row">{{ z.zone.venue.name }} · {{ z.zone.name }}</th>
+<td>{% include "evacuation/_state.html" with s=z.own drill_text=cfg.drill_text %}{% if z.own.state == "all_clear" and can_change %}<form method="post" class="inline" action="{% url 'evacuation:end_all_clear' event.slug %}">{% csrf_token %}<input type="hidden" name="zone" value="{{ z.zone.pk }}"><button class="btn btn-ghost btn-sm">{% trans "Back to normal now" %}</button></form>{% endif %}</td>
+<td>{% include "evacuation/_state.html" with s=z.shown drill_text=cfg.drill_text %}</td>
+<td class="small">{{ z.own.since|date:"D H:i:s"|default:"–" }}</td></tr>{% endfor %}</tbody></table></div>
+<p class="small muted">{% trans "A screen in a zone shows the more severe of the event state and the zone state. While a real alarm applies, drills are not shown." %}</p>
+{% else %}<p class="muted">{% trans "The event's venues have no zones yet. Alarms apply to the whole event." %}</p>{% endif %}
+</section>
+
+{% if form %}<form method="post" action="{% url 'evacuation:change' event.slug %}" class="card evac-change">{% csrf_token %}
+<h2>{% trans "Change the state" %}</h2>
+{% include "portal/_form.html" with form=form %}
+<p class="small muted">{% trans "Only the all clear ends an alarm; nothing returns to normal on its own. A real alarm ends every running drill." %}</p>
+<div class="form-actions"><button class="btn btn-danger btn-lg" data-hold="1500" data-hold-label="{% trans 'Keep holding…' %}">{% trans "Hold to confirm" %}</button></div>
+</form>{% endif %}
+
+<section class="card"><h2>{% trans "Recent changes" %}</h2>{% include "evacuation/_history.html" %}</section>
+{% endblock %}

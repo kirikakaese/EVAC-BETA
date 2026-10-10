@@ -94,7 +94,7 @@ ignore_missing_imports = true
 follow_imports = "silent"
 warn_unused_ignores = true
 # Pure-python safety and framework cores are type-checked strictly; the list grows with every phase
-# (apps/evacuation joins in Phase 3, see CLAUDE.md).
+# (apps/evacuation since Phase 3; without Django stubs, model and form classes subclass ``Any``).
 files = [
     "apps/core/plugins.py",
     "apps/core/registry.py",
@@ -104,5 +104,13 @@ files = [
     "apps/events/permissions.py",
     "apps/playlists/engine.py",
     "apps/venues/routing.py",
+    "apps/evacuation/",
 ]
 strict = true
+exclude = ["/tests/", "/migrations/"]
+
+[[tool.mypy.overrides]]
+# Django ships no type information here: allow subclassing its (Any) base classes and its decorators
+module = ["apps.evacuation.*"]
+disallow_subclassing_any = false
+disallow_untyped_decorators = false

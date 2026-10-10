@@ -25,7 +25,7 @@ exponential backoff (10 s, 20 s, 40 s … up to 1 h) until `EVAC_OUTBOX_MAX_ATTE
 shows the last status and recent attempts. Instance-level endpoints receive events of **all** events;
 event-level endpoints only their event's.
 
-Event types available in phase 0 (more are registered by later modules, e.g. `evac.state_changed`,
+Event types available in phase 0 (more are registered by later modules, e.g. `evacuation.state_changed`,
 `announcement.published`, `screen.offline`): `event.created`, `event.updated`, `event.state_changed`,
 `member.added`, `member.removed`, `module.toggled`, `webhook.ping`. `GET /api/v1/registry/` lists all.
 

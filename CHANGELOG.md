@@ -6,6 +6,20 @@ released.
 
 ## [Unreleased]
 
+### Added — evacuation state machine (Phase 3, part 4)
+
+- Evacuation module (off by default, depends on venues; ADR-0029): persisted state per event and per zone
+  (normal, staff alert, attention, shelter in place, evacuate, all clear), highest severity wins, drills with a
+  marker, never auto-clear (only an explicit all clear ends an alarm; the all-clear time is stored and survives
+  restarts), direct step-down, event all clear with per-zone choice, a real alarm ends every drill and drills
+  never mask real alarms.
+- Control page with hold-to-confirm and history (real alarms / drills), Settings → Evacuation (states in use,
+  names, all-clear time, drill marker), permissions `evacuation.view/trigger/clear/drill/manage` (sensitive,
+  zone/venue scopes), webhook and realtime event `evacuation.state_changed`, audit actions `evacuation.*` with
+  the drill flag.
+- Pure state machine under mypy strict with every transition tested; 95 % coverage gate for
+  `apps/evacuation` in `make cov` and CI. The demo seed switches the module on.
+
 ### Added — georeferencing and offline map tiles (Phase 3, part 3)
 
 - Floors can be aligned with OpenStreetMap (ADR-0028): corner position and rotation typed in or set by dragging
