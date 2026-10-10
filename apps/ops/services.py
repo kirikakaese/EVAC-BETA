@@ -325,6 +325,14 @@ def sink(event_type: str, payload: Any, event: Any) -> None:
     elif event_type == "program.session_changed" and (p.get("status") == "cancelled" or p.get("moved")):
         text = _("Program: %(t)s %(w)s") % {"t": p.get("title", "?"), "w": _("cancelled") if p.get(
             "status") == "cancelled" else _("moved to %(s)s") % {"s": p.get("stage") or "?"}}
+    elif event_type == "crew.no_show":
+        text = _("No-show: %(m)s on %(t)s (%(n)s missing)") % {"m": p.get("member", "?"), "t": p.get("title", "?"),
+                                                              "n": p.get("missing", "?")}
+    elif event_type == "inventory.overdue":
+        text = _("Not returned: %(i)s %(n)s (%(b)s)") % {"i": p.get("item", "?"), "n": p.get("name", ""),
+                                                        "b": p.get("borrower", "?")}
+    elif event_type == "helpdesk.request" and p.get("category") == "accessibility":
+        text = _("Accessibility request: %(s)s") % {"s": p.get("subject", "?")}
     if text:
         system_log(event, text, source=event_type, important=important)
 

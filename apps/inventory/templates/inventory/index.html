@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Inventory" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Inventory" %}</h1>
+<div class="actions">{% if can_manage %}<a class="btn btn-ghost" href="{% url 'inventory:labels' event.slug %}{% if category %}?category={{ category }}{% endif %}">{% trans "Print QR labels" %}</a>
+<a class="btn btn-primary" href="{% url 'inventory:item_new' event.slug %}">{% trans "New item" %}</a>{% endif %}</div></div>
+<section class="card" aria-labelledby="out-h"><h2 id="out-h">{% trans "Who has what" %}</h2>
+{% if loans %}<p class="panel-figures"><b class="tabular">{{ loans|length }}</b> {% trans "lent out" %}{% if overdue %} · <span class="badge badge-err">{{ overdue }} {% trans "overdue" %}</span>{% endif %}</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Item" %}</th><th scope="col">{% trans "Lent to" %}</th><th scope="col">{% trans "Since" %}</th><th scope="col">{% trans "Due back" %}</th></tr></thead>
+<tbody>{% for ln in loans %}<tr><td><a href="{% url 'inventory:item' event.slug ln.item_id %}"><span class="mono">{{ ln.item.asset_tag }}</span> {{ ln.item.name }}</a></td>
+<td><strong>{{ ln.borrower }}</strong>{% if ln.contact %} <span class="small muted">{{ ln.contact }}</span>{% endif %}</td>
+<td class="tabular nowrap">{{ ln.lent_at|date:"D H:i" }}</td>
+<td class="tabular nowrap">{% if ln.due_at %}{{ ln.due_at|date:"D H:i" }}{% if ln.due_at < now %} <span class="badge badge-err">{% trans "overdue" %}</span>{% endif %}{% else %}–{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">✓ {% trans "Everything is in." %}</p>{% endif %}</section>
+<section class="card" aria-labelledby="items-h"><h2 id="items-h">{% trans "Items" %}</h2>
+<form method="get" class="inline filters"><label for="f-q">{% trans "Search" %}</label><input id="f-q" type="search" name="q" value="{{ q }}" placeholder="{% trans 'Tag, name, serial, borrower' %}">
+<label for="f-status">{% trans "Status" %}</label><select id="f-status" name="status"><option value="">{% trans "Any" %}</option>{% for k, v in statuses %}<option value="{{ k }}"{% if status == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+<label for="f-cat">{% trans "Category" %}</label><select id="f-cat" name="category"><option value="">{% trans "All" %}</option>{% for c in categories %}<option value="{{ c.pk }}"{% if category == c.pk|stringformat:"s" %} selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+<button class="btn btn-sm">{% trans "Show" %}</button></form>
+{% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Tag" %}</th><th scope="col">{% trans "Item" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Where" %}</th></tr></thead>
+<tbody>{% for it in items %}<tr><td class="mono nowrap"><a href="{% url 'inventory:item' event.slug it.pk %}">{{ it.asset_tag }}</a></td>
+<td><strong>{{ it.name }}</strong>{% if it.category %} <span class="small muted">{{ it.category.name }}</span>{% endif %}</td>
+<td>{% include "inventory/_status.html" with status=it.status label=it.get_status_display %}{% if it.loan %} <span class="small">{{ it.loan.borrower }}</span>{% endif %}</td>
+<td>{% if it.room %}{{ it.room.name }}{% endif %}{% if it.location %} <span class="small muted">{{ it.location }}</span>{% endif %}{% if not it.room and not it.location %}–{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No items." %}</p>{% endif %}</section>
+<section class="card" aria-labelledby="cat-h"><h2 id="cat-h">{% trans "Categories" %}</h2>
+{% if categories %}<ul class="plain">{% for c in categories %}<li><a href="?category={{ c.pk }}">{{ c.name }}</a>{% if c.loan_hours %} <span class="small muted">{% blocktrans count n=c.loan_hours %}usually {{ n }} hour{% plural %}usually {{ n }} hours{% endblocktrans %}</span>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">{% trans "No categories yet." %}</p>{% endif %}
+{% if cform %}<form method="post" class="inline">{% csrf_token %}{% include "portal/_form.html" with form=cform %}<button class="btn">{% trans "Add category" %}</button></form>{% endif %}</section>
+{% endblock %}

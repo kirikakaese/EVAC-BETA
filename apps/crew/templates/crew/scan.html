@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Check in" %} · {{ shift.title }}{% endblock %}
+{% block content %}
+<div class="scan-page">
+<h1>{{ shift.title }}</h1>
+<p class="muted">{{ shift.team.name }} · <span class="tabular">{{ shift.starts_at|date:"D H:i" }}–{{ shift.ends_at|time:"H:i" }}</span>{% if shift.place %} · {{ shift.place }}{% endif %}</p>
+{% if a and a.status == "checked_in" %}<p class="scan-state"><span class="badge badge-ok">{% trans "checked in" %}</span> <span class="tabular">{{ a.checked_in_at|time:"H:i" }}</span></p>
+<form method="post" data-offline data-offline-label="{% blocktrans with t=shift.title %}Check out of {{ t }}{% endblocktrans %}">{% csrf_token %}<button class="btn btn-lg">{% trans "Check out" %}</button></form>
+{% elif a and a.status == "done" %}<p class="scan-state"><span class="badge badge-muted">{% trans "done" %}</span> {% trans "Thank you!" %}</p>
+{% else %}{% if not a %}<p>{% if missing %}{% blocktrans count n=missing %}This shift still needs {{ n }} person: checking in signs you up.{% plural %}This shift still needs {{ n }} people: checking in signs you up.{% endblocktrans %}{% else %}{% trans "You are not on this shift and it is full." %}{% endif %}</p>{% endif %}
+<form method="post" data-offline data-offline-label="{% blocktrans with t=shift.title %}Check in to {{ t }}{% endblocktrans %}">{% csrf_token %}<button class="btn btn-lg btn-primary">{% trans "Check in" %}</button></form>{% endif %}
+<p><a href="{% url 'portal:staff' event.slug %}">{% trans "Staff app" %}</a></p></div>
+{% endblock %}

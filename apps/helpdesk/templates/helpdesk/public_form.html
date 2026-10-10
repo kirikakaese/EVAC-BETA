@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ title }} · {{ event.name }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ title }}</h1><div class="actions"><a class="btn btn-ghost" href="{% url 'helpdesk_public:help' event.slug %}">{% trans "Help" %}</a></div></div>
+<section class="card"><form method="post">{% csrf_token %}{% include "portal/_form.html" with form=form %}
+<p class="small muted">{% trans "We use your contact details only to answer you and delete them after the event." %}</p>
+<button class="btn btn-primary btn-lg">{% trans "Send" %}</button></form></section>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if obj %}{% blocktrans with t=obj.title %}Edit {{ t }}{% endblocktrans %}{% else %}{% trans "New shift" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if obj %}{% blocktrans with t=obj.title %}Edit {{ t }}{% endblocktrans %}{% else %}{% trans "New shift" %}{% endif %}</h1></div>
+<form method="post" class="card">{% csrf_token %}{% include "portal/_form.html" with form=form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button></div></form>
+{% if obj %}<form method="post" action="{% url 'crew:shift_delete' event.slug obj.pk %}" class="card">{% csrf_token %}<button class="btn btn-danger" data-confirm="{% trans 'Delete this shift and its sign-ups?' %}">{% trans "Delete shift" %}</button></form>{% endif %}
+{% endblock %}

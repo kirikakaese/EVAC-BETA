@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if t %}{{ t.reference }}{% else %}{{ obj.reference }}{% endif %} · {{ event.name }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if t %}{% blocktrans with r=t.reference %}Your request {{ r }}{% endblocktrans %}{% else %}{% blocktrans with r=obj.reference %}Your report {{ r }}{% endblocktrans %}{% endif %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'helpdesk_public:help' event.slug %}">{% trans "Help" %}</a></div></div>
+<section class="card"><p>{% trans "Keep this page: it shows the state and our answers." %} <button type="button" class="btn btn-sm btn-ghost" data-action="copy" data-copy="{{ url }}">{% trans "Copy link" %}</button></p>
+{% if t %}<dl class="kv"><dt>{% trans "Subject" %}</dt><dd>{{ t.subject }}</dd><dt>{% trans "Status" %}</dt><dd>{% include "helpdesk/_status.html" with status=t.status label=t.get_status_display %}</dd><dt>{% trans "Sent" %}</dt><dd class="tabular">{{ t.created_at|date:"D j M H:i" }}</dd></dl>
+{% for r in replies %}<div class="reply"><p><span class="badge badge-info">{% trans "Helpdesk" %}</span> <span class="small muted tabular">{{ r.at|date:"D H:i" }}</span></p><p>{{ r.text|linebreaksbr }}</p></div>{% empty %}<p class="muted">{% trans "No answer yet. We will get back to you." %}</p>{% endfor %}
+{% else %}<dl class="kv"><dt>{% trans "What" %}</dt><dd>{{ obj.what }}</dd><dt>{% trans "Status" %}</dt><dd>{% if obj.status == "open" %}<span class="badge badge-info">{% trans "We are looking" %}</span>{% elif obj.status == "matched" %}<span class="badge badge-ok">{% trans "Probably found: please come to the helpdesk" %}</span>{% elif obj.status == "returned" %}<span class="badge badge-ok">{% trans "Handed over" %}</span>{% else %}<span class="badge badge-muted">{% trans "Closed" %}</span>{% endif %}</dd></dl>{% endif %}
+</section>
+{% endblock %}

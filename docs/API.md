@@ -53,6 +53,13 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `/events/<slug>/incidents/` | incidents (`?status=open`); `POST` reports one, `PATCH` edits; `POST …/<id>/status/` `{status, note}`, `POST …/<id>/note/` `{text}` | `ops.view` / `ops.report` / `ops.manage`, token scope `ops` |
 | `/events/<slug>/ops-log/` | the ops log, newest first; `POST` `{text, sender, recipient, important, incident, client_id}` | `ops.view` / `ops.report` |
 | `/events/<slug>/occupancy/` | areas with `value`, `capacity`, `percent`, `state`; `POST …/<id>/count/` takes a sensor reading `{delta}` / `{in, out}` / `{value}` (+ `id`) | `crowd.view` / `crowd.count`, token scope `crowd` |
+| `GET /events/<slug>/shifts/` (`?day=YYYY-MM-DD`) | shifts with team, place, `needed`, `filled` and the people with their status; `GET …/shifts/needed/` lists shifts now and soon that still need people | `crew.view`, token scope `crew` |
+| `GET /events/<slug>/crew-teams/` | crew teams (with `source`/`external_id` when imported from Engelsystem) | `crew.view`, token scope `crew` |
+| `GET /events/<slug>/inventory-items/` (`?status=lent`, `?category=`, `?search=`) | items with asset tag, status and the open loan (who has it, due back) | `inventory.view`, token scope `inventory` |
+| `GET /events/<slug>/loans/` (`?open=1`) | loans, newest first | `inventory.view`, token scope `inventory` |
+| `GET /events/<slug>/helpdesk-requests/` (`?status=new`) | helpdesk requests with reference, category, contact, status | `helpdesk.view`, token scope `helpdesk` |
+| `GET /events/<slug>/lost-found/` (`?kind=found&status=open`, `?search=`) | lost reports and found items | `helpdesk.view`, token scope `helpdesk` |
+| `GET /events/<slug>/faq/` | FAQ entries | `helpdesk.view`, token scope `helpdesk` |
 | `/events/<slug>/assets/` | asset library (`?kind=image`); `POST` multipart `upload` (+ `name`, `folder`); `urls` per variant | `content.view` / `content.edit` |
 
 ### Screen player API

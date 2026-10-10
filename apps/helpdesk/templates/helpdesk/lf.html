@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ obj.reference }} {{ obj.what }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1><span class="mono">{{ obj.reference }}</span> {{ obj.what }}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'helpdesk:lost_found' event.slug %}">{% trans "Lost & found" %}</a>
+{% if can_manage %}<a class="btn" href="{% url 'helpdesk:lf_edit' event.slug obj.pk %}">{% trans "Edit" %}</a>{% endif %}</div></div>
+<div class="grid-2">
+<section class="card" aria-labelledby="d-h"><h2 id="d-h">{% if obj.kind == "lost" %}{% trans "Lost report" %}{% else %}{% trans "Found item" %}{% endif %}</h2>
+<dl class="kv"><dt>{% trans "Status" %}</dt><dd>{% include "helpdesk/_status.html" with status=obj.status kind=obj.kind label=obj.get_status_display %}{% if obj.match %} ↔ <a class="mono" href="{% url 'helpdesk:lf' event.slug obj.match.pk %}">{{ obj.match.reference }}</a> {{ obj.match.what }}{% endif %}</dd>
+<dt>{% trans "Category" %}</dt><dd>{{ obj.get_category_display }}{% if obj.colour %} · {{ obj.colour }}{% endif %}</dd>
+<dt>{% trans "Where" %}</dt><dd>{% if obj.room %}{{ obj.room.name }} {% endif %}{{ obj.where|default:"–" }}</dd>
+<dt>{% trans "When" %}</dt><dd class="tabular">{{ obj.when|date:"D j M H:i"|default:"–" }}</dd>
+{% if obj.kind == "found" %}<dt>{% trans "Kept at" %}</dt><dd>{{ obj.storage|default:"–" }}</dd>{% endif %}
+<dt>{% if obj.kind == "found" %}{% trans "Found by" %}{% else %}{% trans "Owner" %}{% endif %}</dt><dd>{% if obj.name %}{{ obj.name }}{% if obj.contact %} · {% endif %}{% endif %}{% if obj.contact %}<span class="mono">{{ obj.contact }}</span>{% endif %}{% if not obj.name and not obj.contact %}–{% endif %}</dd>
+{% if obj.handed_at %}<dt>{% trans "Handed to" %}</dt><dd>{{ obj.handed_to }} <span class="small muted tabular">{{ obj.handed_at|date:"D H:i" }}{% if obj.handed_by %} · {{ obj.handed_by }}{% endif %}</span></dd>{% endif %}</dl>
+{% if obj.description %}<p>{{ obj.description|linebreaksbr }}</p>{% endif %}
+{% if obj.photo %}<img class="item-photo" src="{{ obj.photo.url }}" alt="{% trans 'Photo' %}">{% endif %}
+{% if obj.source == "public" %}<p class="small muted">{% trans "Reported on the public page. Status link:" %} <span class="mono url-text">{{ status_url }}</span></p>{% endif %}</section>
+{% if can_manage %}<section class="card" aria-labelledby="a-h"><h2 id="a-h">{% trans "Next step" %}</h2>
+{% if obj.status == "open" %}
+{% if suggestions %}<h3>{% trans "Looks like" %}</h3><ul class="plain">{% for s, o in suggestions %}<li class="match-row"><span><a class="mono" href="{% url 'helpdesk:lf' event.slug o.pk %}">{{ o.reference }}</a> <strong>{{ o.what }}</strong> <span class="small muted">{{ o.get_category_display }}{% if o.colour %} · {{ o.colour }}{% endif %} · {{ o.created_at|date:"D H:i" }}</span> <span class="badge badge-info">{% blocktrans %}score {{ s }}{% endblocktrans %}</span></span>
+<form method="post" action="{% url 'helpdesk:lf_action' event.slug obj.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="other" value="{{ o.pk }}"><button class="btn btn-sm" name="action" value="match">{% trans "Match" %}</button></form></li>{% endfor %}</ul>
+{% else %}<p class="muted">{% if obj.kind == "lost" %}{% trans "No found item looks like it yet." %}{% else %}{% trans "No lost report looks like it yet." %}{% endif %}</p>{% endif %}
+{% if obj.kind == "found" %}<form method="post" action="{% url 'helpdesk:lf_action' event.slug obj.pk %}">{% csrf_token %}<div class="field"><label for="to">{% trans "Hand over to (name, ID checked)" %}</label><input id="to" name="to" maxlength="120" required></div><button class="btn btn-primary" name="action" value="hand_over">{% trans "Hand over" %}</button></form>{% endif %}
+{% elif obj.status == "matched" %}<form method="post" action="{% url 'helpdesk:lf_action' event.slug obj.pk %}">{% csrf_token %}<div class="field"><label for="to">{% trans "Hand over to (name, ID checked)" %}</label><input id="to" name="to" maxlength="120" value="{% if obj.kind == 'lost' %}{{ obj.name }}{% else %}{{ obj.match.name }}{% endif %}"></div>
+<button class="btn btn-primary" name="action" value="hand_over">{% trans "Hand over" %}</button> <button class="btn btn-ghost" name="action" value="unmatch">{% trans "Not the same, unmatch" %}</button></form>{% endif %}
+{% if obj.status == "open" or obj.status == "matched" %}<form method="post" action="{% url 'helpdesk:lf_action' event.slug obj.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="reason" value="closed"><button class="btn btn-sm btn-ghost" name="action" value="close" data-confirm="{% trans 'Close without handing over?' %}">{% trans "Close" %}</button></form>{% endif %}
+{% if obj.status == "returned" or obj.status == "closed" %}<p class="muted">✓ {% trans "Done." %}</p>{% endif %}
+</section>{% endif %}</div>
+{% endblock %}

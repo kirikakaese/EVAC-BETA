@@ -1,0 +1,3 @@
+{% load i18n %}<p class="panel-figures"><b class="tabular">{{ ctx.out }}</b> {% trans "lent out" %}{% if ctx.overdue %} · <b class="tabular">{{ ctx.overdue|length }}</b> {% trans "overdue" %}{% endif %}</p>
+{% if ctx.overdue %}<ul class="plain panel-list">{% for ln in ctx.overdue %}<li><span class="badge badge-err">{% trans "overdue" %}</span> <a href="{% url 'inventory:item' event.slug ln.item_id %}"><span class="mono">{{ ln.item.asset_tag }}</span> {{ ln.item.name }}</a> <span class="small muted">{{ ln.borrower }}{% if ln.contact %} · {{ ln.contact }}{% endif %}</span></li>{% endfor %}</ul>{% endif %}
+<p><a class="btn btn-sm btn-ghost" href="{% url 'inventory:index' event.slug %}">{% trans "Who has what" %}</a></p>

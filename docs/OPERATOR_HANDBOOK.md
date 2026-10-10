@@ -491,6 +491,80 @@ such as a queue or a tent.
 
 Occupancy holds no personal data. Clicks and sensors record a device label, not who clicked.
 
+## 5k. Crew and shifts
+
+**Shift board** in the event menu (module *Crew*, ADR-0041).
+
+1. **Teams and crew** (*Teams and crew*): add teams with a colour, a meeting point and their leads, and skills
+   such as *First aid* or *Forklift*. Add crew members with a name and a contact (phone or DECT); link an account
+   when the person logs in to EVAC. Members can belong to several teams. Team leads manage their own team without
+   any other role; for more, grant `crew.manage` or `crew.checkin` scoped to a team (Roles → assign with scope
+   *Team*).
+2. **Shifts**: *New shift* with team, title, room or place, start and end, people needed, skills, and whether crew
+   may sign up themselves. The board shows each day, the people per shift and a **Needed now** list.
+3. **Rules** (Settings → Crew): at most 10 hours a day, 30 minutes rest between shifts, sign-up up to 30 minutes
+   after the start, cancel until 60 minutes before, no-show after 15 minutes, "needed now" looks 3 hours ahead.
+   A lead can add someone anyway (*anyway* on the shift page); the audit log records it.
+4. **Check-in**:
+   - **QR code**: every shift page has a QR code; *Print QR code* prints a sheet for the meeting point. Crew scan
+     it with the phone camera and press *Check in* (and later *Check out*). Someone who is not on the shift joins
+     it if the rules allow ("walk-in").
+   - **Staff app**: *My shifts* has *Check in*, *Check out* and *Cancel*; *Help needed* signs up with one tap.
+     Both work offline and are sent when the phone is back.
+   - **Team lead**: on the shift page, *Check in*, *Check out*, *No-show*, *Remove* per person.
+5. **No-shows**: a sign-up not checked in 15 minutes after the start becomes a no-show; the team leads get a
+   notification and the ops log a line, and the shift is "needed" again.
+6. **On screens**: *Add shift board widgets for screens* on the shift board creates *Crew: needed now* and
+   *Crew: shift board*. Put one on a layout with a **Data widget** element (Design → Layouts) and show the layout
+   on the crew-room screen. Sign-ups and check-ins appear there within seconds.
+7. **Engelsystem**: Settings → Extensions → *Engelsystem* imports angel types, shifts and sign-ups
+   ([engelsystem](extensions/engelsystem.md)). *Sync now* is also on the shift board.
+
+## 5l. Inventory
+
+**Inventory** in the event menu (module *Inventory*, ADR-0042): radios, keys, vehicles, tools, laptops.
+
+1. **Items**: *New item* with a name, a category (with its usual loan time), serial number, where it is kept and a
+   photo. Leave the asset tag empty for the next number (`EV-0001`; the prefix is in Settings → Inventory).
+   *How many* creates identical items (e.g. 20 radios) with consecutive tags.
+2. **Labels**: *Print QR labels* (all, a category, or the items just created) prints a sheet with QR code, tag and
+   name. Stick them on the items. The QR code opens the item's page on any phone of someone with
+   `inventory.view`.
+3. **Lend**: scan the label (or open the item). Enter who gets it (a name, or choose an account), a contact, the
+   due time (pre-filled from the category), optionally take a photo, and let them sign on the screen with a
+   finger. *Lend*. Settings → Inventory can make the signature required.
+4. **Take back**: scan the label again, choose the condition (OK, damaged, incomplete), optionally a note and a
+   photo, *Take back*. Damaged or incomplete items go to *maintenance* with a note; set them *available* again
+   from *Notes and maintenance* when fixed.
+5. **Who has what** is at the top of the inventory page; overdue loans are marked. Borrowers with an account and
+   whoever lent the item get one reminder when it is overdue; the ops log gets a line. The control room has a
+   *Lent out* panel, and the staff app shows each person what they have.
+6. **Map**: items can be placed on the floor plans (Venues → Map, layer *Inventory*).
+
+Lending needs `inventory.lend`; adding items, labels and maintenance need `inventory.manage`.
+
+## 5m. Helpdesk: lost & found, requests, FAQ
+
+**Helpdesk** and **Lost & found** in the event menu (module *Helpdesk*, ADR-0043).
+
+- **Public help page** `/public/<event>/help/` (link on the helpdesk page, e.g. as a QR code on screens and
+  posters): the FAQ, found items (what, category, colour and day only), *Ask the helpdesk* and *I lost something*.
+  Visitors get a status link that shows the state and your replies; they need no account. Settings → Helpdesk
+  switches the page, the forms and the found list off.
+- **Requests**: new requests notify the helpdesk; accessibility requests also go to the ops log. Open one to
+  assign it, set its status (new, in progress, waiting, done) and add notes. Tick *Reply* to show a note to the
+  requester on their status page. The desk can also log a request from someone at the counter (*New request*).
+- **Lost & found**: *Found item* logs what was handed in (what, category, colour, where and when, a photo, where it
+  is kept, the finder). *Lost report* records what someone lost and how to reach them. Each item page suggests
+  look-alikes of the other kind (same category and colour, shared words); *Match* links them, the visitor's
+  status page then says "Probably found: please come to the helpdesk". *Hand over* records to whom (check their
+  ID). *Close* ends an item that is not handed over (e.g. given to the police).
+- **FAQ**: questions with an answer and a topic. *On the public help page* and *on screens* choose where they
+  appear (data source *Helpdesk: FAQ* for a custom widget).
+
+Contacts of visitors are only visible to the helpdesk. Delete them after the event (export and purge the event, or
+delete the rows) according to your retention rules.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

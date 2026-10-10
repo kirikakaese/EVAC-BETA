@@ -1,0 +1,3 @@
+{% load i18n %}<p class="panel-figures"><b class="tabular">{{ ctx.open }}</b> {% trans "requests open" %}{% if ctx.new %} · <b class="tabular">{{ ctx.new }}</b> {% trans "new" %}{% endif %} · <b class="tabular">{{ ctx.lost }}</b> {% trans "lost" %} · <b class="tabular">{{ ctx.found }}</b> {% trans "found" %}</p>
+{% if ctx.latest %}<ul class="plain panel-list">{% for t in ctx.latest %}<li>{% include "helpdesk/_status.html" with status=t.status label=t.get_status_display %} <a href="{% url 'helpdesk:ticket' event.slug t.pk %}"><span class="mono">{{ t.reference }}</span> {{ t.subject }}</a></li>{% endfor %}</ul>{% endif %}
+<p><a class="btn btn-sm btn-ghost" href="{% url 'helpdesk:index' event.slug %}">{% trans "Helpdesk" %}</a></p>

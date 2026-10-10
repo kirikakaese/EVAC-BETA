@@ -1,0 +1,5 @@
+{% load i18n %}<section class="card staff-inventory"><h2>{% trans "Inventory" %}</h2>
+{% if ctx.mine %}<p>{% trans "You have:" %}</p><ul class="plain">{% for ln in ctx.mine %}<li><a href="{% url 'inventory:item' event.slug ln.item_id %}"><span class="mono">{{ ln.item.asset_tag }}</span> {{ ln.item.name }}</a>{% if ln.due_at %} <span class="small muted tabular">{% trans "due" %} {{ ln.due_at|date:"D H:i" }}</span>{% if ln.due_at < ctx.now %} <span class="badge badge-err">{% trans "overdue" %}</span>{% endif %}{% endif %}</li>{% endfor %}</ul>
+{% else %}<p class="muted">{% trans "Nothing lent to you." %}</p>{% endif %}
+{% if ctx.can_lend %}<p class="small muted">{% trans "Lend or take back: scan the QR label with the phone camera." %}</p><p><a class="btn btn-sm btn-ghost" href="{% url 'inventory:index' event.slug %}">{% trans "Who has what" %}</a></p>{% endif %}
+</section>

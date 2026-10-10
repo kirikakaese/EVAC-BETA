@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Helpdesk" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Helpdesk" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'helpdesk:faq' event.slug %}">{% trans "FAQ" %}</a>
+<a class="btn btn-ghost" href="{% url 'helpdesk:lf_new' event.slug %}?kind=lost">{% trans "Lost report" %}</a>
+<a class="btn btn-ghost" href="{% url 'helpdesk:lf_new' event.slug %}">{% trans "Found item" %}</a>
+<a class="btn btn-primary" href="{% url 'helpdesk:ticket_new' event.slug %}">{% trans "New request" %}</a></div></div>
+<div class="grid-2">
+<section class="card" aria-labelledby="lf-h"><h2 id="lf-h">{% trans "Lost & found" %}</h2>
+<p class="panel-figures"><a href="{% url 'helpdesk:lost_found' event.slug %}?kind=lost"><b class="tabular">{{ lost_open }}</b> {% trans "lost reports open" %}</a> · <a href="{% url 'helpdesk:lost_found' event.slug %}?kind=found"><b class="tabular">{{ found_open }}</b> {% trans "found items waiting" %}</a> · <a href="{% url 'helpdesk:lost_found' event.slug %}?status=matched"><b class="tabular">{{ matched }}</b> {% trans "matched, to hand over" %}</a></p>
+{% if recent %}<ul class="plain">{% for o in recent %}<li><a href="{% url 'helpdesk:lf' event.slug o.pk %}"><span class="mono">{{ o.reference }}</span> {{ o.what }}</a> {% include "helpdesk/_status.html" with status=o.status kind=o.kind label=o.get_status_display %} <span class="small muted">{{ o.get_kind_display }} · {{ o.created_at|date:"D H:i" }}</span></li>{% endfor %}</ul>{% endif %}</section>
+<section class="card" aria-labelledby="pub-h"><h2 id="pub-h">{% trans "Public help page" %}</h2>
+<p>{% trans "Visitors find the FAQ, found items and the forms here (no login):" %}</p><p><a class="mono url-text" href="{{ public_url }}">{{ public_url }}</a> <button type="button" class="btn btn-sm btn-ghost" data-action="copy" data-copy="{{ public_url }}">{% trans "Copy" %}</button></p></section></div>
+<section class="card" aria-labelledby="rq-h"><h2 id="rq-h">{% trans "Requests" %}</h2>
+<nav class="tabs" aria-label="{% trans 'Filter' %}"><a href="?status=open"{% if status == "open" %} aria-current="page"{% endif %}>{% trans "Open" %}</a><a href="?status=mine"{% if status == "mine" %} aria-current="page"{% endif %}>{% trans "Mine" %}</a>{% for k, v in statuses %}<a href="?status={{ k }}"{% if status == k %} aria-current="page"{% endif %}>{{ v }}</a>{% endfor %}</nav>
+{% if tickets %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Ref." %}</th><th scope="col">{% trans "Request" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Since" %}</th></tr></thead>
+<tbody>{% for t in tickets %}<tr><td class="mono nowrap"><a href="{% url 'helpdesk:ticket' event.slug t.pk %}">{{ t.reference }}</a></td>
+<td><strong>{{ t.subject }}</strong> <span class="small muted">{{ t.get_category_display }}{% if t.name %} · {{ t.name }}{% endif %}{% if t.source == "public" %} · {% trans "web form" %}{% endif %}</span></td>
+<td>{% include "helpdesk/_status.html" with status=t.status label=t.get_status_display %}{% if t.assignee %} <span class="small">{{ t.assignee }}</span>{% endif %}</td>
+<td class="tabular nowrap">{{ t.created_at|date:"D H:i" }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">✓ {% trans "No requests here." %}</p>{% endif %}</section>
+{% endblock %}

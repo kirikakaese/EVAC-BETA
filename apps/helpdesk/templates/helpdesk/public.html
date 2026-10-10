@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% blocktrans with e=event.name %}Help · {{ e }}{% endblocktrans %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% blocktrans with e=event.name %}Help · {{ e }}{% endblocktrans %}</h1>
+<div class="actions">{% if requests %}<a class="btn btn-primary" href="{% url 'helpdesk_public:form' event.slug 'request' %}">{% trans "Ask the helpdesk" %}</a>{% endif %}
+{% if lost %}<a class="btn" href="{% url 'helpdesk_public:form' event.slug 'lost' %}">{% trans "I lost something" %}</a>{% endif %}</div></div>
+{% for topic, entries in topics %}<section class="card faq" aria-labelledby="t-{{ forloop.counter }}"><h2 id="t-{{ forloop.counter }}">{{ topic|default:_("Questions") }}</h2>
+{% for e in entries %}<details><summary>{{ e.question }}</summary><p>{{ e.answer|linebreaksbr }}</p></details>{% endfor %}</section>
+{% endfor %}
+{% if found is not None %}<section class="card" aria-labelledby="f-h"><h2 id="f-h">{% trans "Found items" %}</h2>
+{% if found %}<p class="small muted">{% trans "Is one of these yours? Come to the helpdesk with the reference and a description." %}</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Ref." %}</th><th scope="col">{% trans "What" %}</th><th scope="col">{% trans "Found" %}</th></tr></thead>
+<tbody>{% for o in found %}<tr><td class="mono">{{ o.reference }}</td><td><strong>{{ o.what }}</strong> <span class="small muted">{{ o.get_category_display }}{% if o.colour %} · {{ o.colour }}{% endif %}</span></td><td class="tabular nowrap">{{ o.when|default:o.created_at|date:"D j M" }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "Nothing waiting right now." %}</p>{% endif %}</section>{% endif %}
+{% endblock %}

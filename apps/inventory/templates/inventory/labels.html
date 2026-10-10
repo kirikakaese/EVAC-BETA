@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "QR labels" %}{% endblock %}
+{% block content %}
+<div class="page-header no-print"><h1>{% trans "QR labels" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'inventory:index' event.slug %}">{% trans "Inventory" %}</a><button type="button" class="btn btn-primary" data-action="print">{% trans "Print" %}</button></div></div>
+<p class="no-print muted">{% blocktrans count n=labels|length %}{{ n }} label. Scanning it opens the item to lend or take back.{% plural %}{{ n }} labels. Scanning one opens the item to lend or take back.{% endblocktrans %}</p>
+<ul class="plain label-sheet" aria-label="{% trans 'Labels' %}">{% for l in labels %}<li class="qr-label"><div class="qr-box" role="img" aria-label="{% blocktrans with t=l.item.asset_tag %}QR code of {{ t }}{% endblocktrans %}">{{ l.qr|safe }}</div>
+<div><strong class="mono">{{ l.item.asset_tag }}</strong><br><span class="small">{{ l.item.name }}</span><br><span class="small muted">{{ event.name }}</span></div></li>{% empty %}<li class="muted">{% trans "No items." %}</li>{% endfor %}</ul>
+{% endblock %}

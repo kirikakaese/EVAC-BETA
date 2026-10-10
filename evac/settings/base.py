@@ -93,6 +93,9 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.schedule",
     "apps.ops",
     "apps.crowd",
+    "apps.crew",
+    "apps.inventory",
+    "apps.helpdesk",
     "apps.packs",
     "apps.evacuation",
     "extensions.webhooks",
@@ -100,6 +103,7 @@ EVAC_BUILTIN_PLUGINS = [
     "extensions.mqtt",
     "extensions.dial",
     "extensions.program_import",
+    "extensions.engelsystem",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
 
@@ -267,6 +271,9 @@ CELERY_BEAT_SCHEDULE = {
     "widgets-fetch-due": {"task": "apps.widgets.tasks.fetch_due", "schedule": 30.0},
     "program-import-sync-due": {"task": "extensions.program_import.tasks.sync_due", "schedule": 60.0},
     "ops-escalate-due": {"task": "apps.ops.tasks.escalate_due", "schedule": 60.0},
+    "crew-mark-no-shows": {"task": "apps.crew.tasks.mark_no_shows", "schedule": 60.0},
+    "inventory-remind-overdue": {"task": "apps.inventory.tasks.remind_overdue", "schedule": 300.0},
+    "engelsystem-sync-due": {"task": "extensions.engelsystem.tasks.sync_due", "schedule": 60.0},
     "packs-cleanup": {"task": "apps.packs.tasks.cleanup", "schedule": 3600.0},
     "evacuation-process-due": {"task": "apps.evacuation.tasks.process_due", "schedule": 5.0},
 }
@@ -309,7 +316,7 @@ SPECTACULAR_SETTINGS = {
 # prod settings refuse to start without explicit keys).
 EVAC_SECRETS_KEYS = env("EVAC_SECRETS_KEYS")
 EVAC_RATE_LIMITS = {"login": 20, "twofactor": 20, "setup": 10, "webhook": 600, "invite": 20, "early_access": 10,
-                    "pairing": 300, "bridge": 600, "node_enrol": 10}
+                    "pairing": 300, "bridge": 600, "node_enrol": 10, "public_form": 10}
 # Early-access gate (docs/adr/0012-early-access-gate.md): a shared password in front of the whole site while
 # a public server is not ready for everyone. Empty = off. Changing the password locks everybody out again.
 EVAC_EARLY_ACCESS_PASSWORD = env("EVAC_EARLY_ACCESS_PASSWORD")

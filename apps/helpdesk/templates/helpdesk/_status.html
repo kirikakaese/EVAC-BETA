@@ -1,0 +1,1 @@
+<span class="badge {% if status == 'new' or status == 'open' and kind == 'lost' %}badge-warn{% elif status == 'open' or status == 'waiting' %}badge-info{% elif status == 'matched' %}badge-info{% elif status == 'returned' or status == 'done' %}badge-ok{% else %}badge-muted{% endif %}">{{ label }}</span>
