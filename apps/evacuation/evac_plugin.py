@@ -42,6 +42,12 @@ def register(r: Registry) -> None:
     r.nav(NavEntry(module="evacuation", label=str(_("Evacuation")), url_name="evacuation:index",
                    permission="evacuation.view", section="event", order=5))
     props: dict[str, Any] = {
+        "model": {"type": "string", "title": "Evacuation model", "default": "staged",
+                  "enum": ["simple", "staged", "zones"],
+                  "x-enum-labels": ["Simple takeover: one button, evacuate everywhere",
+                                "Staged, global: all stages, the whole event at once",
+                                "Zones and routes: stages per zone, arrows to the nearest open exit"],
+                  "description": "Switching never ends an alarm that is active; it limits what can be raised."},
         "staff_alert_enabled": {"type": "boolean", "title": "Use “Staff alert” (silent pre-alarm)", "default": True},
         "attention_enabled": {"type": "boolean", "title": "Use “Attention”", "default": True},
         "shelter_in_place_enabled": {"type": "boolean", "title": "Use “Shelter in place”", "default": True},
@@ -60,6 +66,21 @@ def register(r: Registry) -> None:
         key="evacuation", title=str(_("Evacuation")), module="evacuation", order=15,
         permission="evacuation.manage", levels=("instance", "event"),
         schema={"type": "object", "properties": props}))
+    r.settings_namespace(SettingsNamespace(
+        key="evacuation_screen", title=str(_("Evacuation direction")), module="evacuation", order=16,
+        permission="evacuation.manage", levels=("screen",),
+        schema={"type": "object", "properties": {
+            "hint_text": {"type": "string", "title": "Direction text", "default": "", "maxLength": 80,
+                          "description": "e.g. “Exit B”. Overrides the computed route on this screen."},
+            "hint_arrow": {"type": "string", "title": "Arrow", "default": "",
+                           "enum": ["", "ahead", "ahead_right", "right", "back_right", "back", "back_left", "left",
+                                    "ahead_left"],
+                           "x-enum-labels": ["None", "Ahead", "Ahead right", "Right", "Back right", "Back",
+                                         "Back left", "Left", "Ahead left"]},
+        }}))
+    r.webhook_event(WebhookEventSpec(key="evacuation.routes_changed", module="evacuation",
+                                     description="An exit, assembly point or passage was blocked or opened again; "
+                                                 "routes changed."))
     r.webhook_event(WebhookEventSpec(key="evacuation.state_changed", module="evacuation",
                                      description="The evacuation state of the event or a zone changed "
                                                  "(includes the drill flag)."))

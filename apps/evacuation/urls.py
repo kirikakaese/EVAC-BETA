@@ -10,4 +10,6 @@ urlpatterns = [
     path("change/", views.change, name="change"),
     path("end-all-clear/", views.end_all_clear, name="end_all_clear"),
     path("history/", views.history, name="history"),
+    path("block/", views.block, name="block"),
+    path("screens/<uuid:pk>/direction/", views.hint, name="hint"),
 ]

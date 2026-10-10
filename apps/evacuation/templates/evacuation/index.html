@@ -5,6 +5,8 @@
 <div class="actions"><a class="btn" href="{% url 'evacuation:history' event.slug %}">{% trans "History" %}</a></div></div>
 <p class="alert alert-info small">{% blocktrans %}EVAC is a supplementary information system. It is not a certified fire alarm, voice alarm or evacuation system and does not replace them, nor the procedures required for your venue.{% endblocktrans %}</p>
 
+<p class="small muted">{% trans "Model" %}: <strong>{{ model_label }}</strong>{% if can_manage %} · <a href="{% url 'portal:settings_ns' event.slug 'evacuation' %}">{% trans "Change in Settings → Evacuation" %}</a>{% endif %}</p>
+
 <section class="card evac-now evac-now-{{ ev.state }}" aria-labelledby="evac-now-title">
 <h2 id="evac-now-title">{% trans "Whole event" %}</h2>
 <p class="evac-now-state">{% include "evacuation/_state.html" with s=ev drill_text=cfg.drill_text %}</p>
@@ -13,15 +15,40 @@
 {% if ev.state == "all_clear" and can_change %}<form method="post" action="{% url 'evacuation:end_all_clear' event.slug %}">{% csrf_token %}<button class="btn btn-sm">{% trans "Back to normal now" %}</button></form>{% endif %}
 </section>
 
-<section class="card"><h2>{% trans "Zones" %}</h2>
+{% if zones or zones_model %}<section class="card"><h2>{% trans "Zones" %}</h2>
 {% if zones %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Own state" %}</th><th scope="col">{% trans "Screens show" %}</th><th scope="col">{% trans "Since" %}</th></tr></thead>
 <tbody>{% for z in zones %}<tr><th scope="row">{{ z.zone.venue.name }} · {{ z.zone.name }}</th>
 <td>{% include "evacuation/_state.html" with s=z.own drill_text=cfg.drill_text %}{% if z.own.state == "all_clear" and can_change %}<form method="post" class="inline" action="{% url 'evacuation:end_all_clear' event.slug %}">{% csrf_token %}<input type="hidden" name="zone" value="{{ z.zone.pk }}"><button class="btn btn-ghost btn-sm">{% trans "Back to normal now" %}</button></form>{% endif %}</td>
 <td>{% include "evacuation/_state.html" with s=z.shown drill_text=cfg.drill_text %}</td>
 <td class="small">{{ z.own.since|date:"D H:i:s"|default:"–" }}</td></tr>{% endfor %}</tbody></table></div>
 <p class="small muted">{% trans "A screen in a zone shows the more severe of the event state and the zone state. While a real alarm applies, drills are not shown." %}</p>
-{% else %}<p class="muted">{% trans "The event's venues have no zones yet. Alarms apply to the whole event." %}</p>{% endif %}
-</section>
+{% elif zones_model %}<p class="muted">{% trans "The event's venues have no zones yet. Alarms apply to the whole event." %}</p>{% endif %}
+</section>{% endif %}
+
+{% if zones_model %}<section class="card"><h2>{% trans "Exits and passages" %}</h2>
+{% if points %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Point" %}</th><th scope="col">{% trans "Venue" %}</th><th scope="col">{% trans "Status" %}</th>{% if can_block %}<th scope="col">{% trans "Action" %}</th>{% endif %}</tr></thead>
+<tbody>{% for row in points %}<tr><th scope="row">{{ row.point }}</th><td>{{ row.point.venue.name }}{% if row.point.zone %} · {{ row.point.zone.name }}{% endif %}</td>
+<td>{% if row.blocked %}<span class="badge badge-err">{% trans "blocked" %}</span> <span class="small muted">{{ row.blocked.since|date:"H:i:s" }}{% if row.blocked.reason %} · {{ row.blocked.reason }}{% endif %}</span>{% else %}<span class="badge badge-ok">{% trans "open" %}</span>{% endif %}</td>
+{% if can_block %}<td><form method="post" action="{% url 'evacuation:block' event.slug %}" class="inline">{% csrf_token %}<input type="hidden" name="point" value="{{ row.point.pk }}">
+{% if row.blocked %}<input type="hidden" name="blocked" value="0"><button class="btn btn-sm" data-hold="1000" data-hold-label="{% trans 'Keep holding…' %}">{% trans "Open again" %}</button>
+{% else %}<input type="hidden" name="blocked" value="1"><label class="sr-only" for="reason-{{ row.point.pk }}">{% trans "Reason" %}</label><input id="reason-{{ row.point.pk }}" name="reason" maxlength="300" placeholder="{% trans 'Reason (optional)' %}" class="input-sm">
+<button class="btn btn-danger btn-sm" data-hold="1000" data-hold-label="{% trans 'Keep holding…' %}">{% trans "Block" %}</button>{% endif %}</form></td>{% endif %}</tr>{% endfor %}</tbody></table></div>
+<p class="small muted">{% trans "Routes avoid blocked points at once; screens point to the nearest open assembly point or exit." %}</p>
+{% else %}<p class="muted">{% trans "No exits or assembly points yet: draw them on the venue map." %}</p>{% endif %}</section>{% endif %}
+
+<section class="card"><h2>{% trans "Screens" %}</h2>
+{% if screens %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Shows" %}</th><th scope="col">{% trans "Direction" %}</th>{% if can_manage %}<th scope="col">{% trans "Fixed direction (overrides the route)" %}</th>{% endif %}</tr></thead>
+<tbody>{% for row in screens %}<tr><th scope="row">{{ row.screen.name }}</th>
+<td>{% include "evacuation/_state.html" with s=row.shown drill_text=cfg.drill_text %}</td>
+<td>{% if row.kind == "route" %}{% if row.glyph %}<span class="evac-arrow" aria-hidden="true">{{ row.glyph }}</span> {{ row.arrow }} · {% endif %}{% blocktrans with t=row.toward g=row.target d=row.distance %}towards {{ t }}, to {{ g }} ({{ d }} m){% endblocktrans %}{% if not row.glyph %} <span class="small muted">({% trans "set the facing on the map for an arrow" %})</span>{% endif %}
+{% elif row.kind == "hint" %}{% if row.glyph %}<span class="evac-arrow" aria-hidden="true">{{ row.glyph }}</span> {{ row.arrow }}{% endif %}{% if row.text %} “{{ row.text }}”{% endif %} <span class="badge badge-info">{% trans "fixed" %}</span>
+{% elif row.follow_staff %}<span class="badge badge-warn">{% trans "Follow staff instructions" %}</span> <span class="small muted">{% trans "no route: place the screen on the map and connect exits" %}</span>
+{% else %}<span class="muted">{% trans "Evacuation layout without direction" %}</span>{% endif %}</td>
+{% if can_manage %}<td><form method="post" action="{% url 'evacuation:hint' event.slug row.screen.pk %}" class="inline evac-hint">{% csrf_token %}
+<label class="sr-only" for="hint-arrow-{{ row.screen.pk }}">{% trans "Arrow" %}</label><select id="hint-arrow-{{ row.screen.pk }}" name="hint_arrow" class="input-sm">{% for v, l in arrow_choices %}<option value="{{ v }}"{% if v == row.hint.1 %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+<label class="sr-only" for="hint-text-{{ row.screen.pk }}">{% trans "Direction text" %}</label><input id="hint-text-{{ row.screen.pk }}" name="hint_text" maxlength="80" value="{{ row.hint.0 }}" placeholder="{% trans 'e.g. Exit B' %}" class="input-sm">
+<button class="btn btn-sm">{% trans "Save" %}</button></form></td>{% endif %}</tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No screens in this event." %}</p>{% endif %}</section>
 
 {% if form %}<form method="post" action="{% url 'evacuation:change' event.slug %}" class="card evac-change">{% csrf_token %}
 <h2>{% trans "Change the state" %}</h2>

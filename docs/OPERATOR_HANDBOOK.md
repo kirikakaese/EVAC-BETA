@@ -168,7 +168,15 @@ in [EVACUATION.md](EVACUATION.md) first: EVAC supplements, and never replaces, t
   directly. Nothing returns to normal on its own: give the **All clear** (for the whole event it also clears the
   ticked zones), which shows for the configured time and then ends; *Back to normal now* ends it early.
 - A real alarm ends every running drill. **History** lists every change; filter real alarms or drills.
-- *Settings → Evacuation*: which states are used, their names, the all-clear time and the drill marker.
+- *Settings → Evacuation*: the **model** (simple takeover, staged global, zones and routes), which states are
+  used, their names, the all-clear time and the drill marker.
+- **Zones and routes**: zones get their own alarms (partial evacuation). *Exits and passages* lists exits,
+  assembly points, doors and stairs: **Block** one (hold) when it cannot be used and every route avoids it;
+  *Open again* when it is clear. *Screens* shows where each screen sends people. Place each screen on the venue
+  map with its facing, and put a waypoint near it, so it gets an arrow; otherwise it says "Follow staff
+  instructions".
+- **Fixed direction** per screen (any model): choose an arrow and a text such as "Exit B" in the *Screens* table;
+  it overrides the computed route.
 
 Screens, notifications, trigger sources (panic page, hardware bridge, DIAL, API) and the drill runbook arrive
 with the next parts of phase 3.

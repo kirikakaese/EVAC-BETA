@@ -10,6 +10,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.http import require_POST
 
 from apps.events import rbac
@@ -17,10 +18,43 @@ from apps.portal.shortcuts import event_view
 
 from . import machine, services
 from .forms import EVENT, ChangeForm
-from .machine import State
-from .models import EvacState, StateChange
+from .guidance import Arrow
+from .guidance import Kind as GuidanceKind
+from .machine import Model, State
+from .models import BlockedPoint, EvacState, StateChange
 
 MODULE = "evacuation"
+MODEL_LABELS = [(Model.SIMPLE, _lazy("Simple takeover")), (Model.STAGED, _lazy("Staged, global")),
+                (Model.ZONES, _lazy("Zones and routes"))]
+GLYPHS = {Arrow.AHEAD: "↑", Arrow.AHEAD_RIGHT: "↗", Arrow.RIGHT: "→", Arrow.BACK_RIGHT: "↘", Arrow.BACK: "↓",
+          Arrow.BACK_LEFT: "↙", Arrow.LEFT: "←", Arrow.AHEAD_LEFT: "↖"}
+ARROW_CHOICES = [("", _lazy("No arrow"))] + [(a.value, a.value.replace("_", " ")) for a in Arrow]
+
+
+def _points(event: Any) -> list[dict[str, Any]]:
+    """Exits, assembly points and passages that can be blocked (waypoints are not listed)."""
+    blocked = {str(b.point_id): b for b in BlockedPoint.objects.filter(event=event).select_related("blocked_by")}
+    return [{"point": p, "blocked": blocked.get(str(p.pk))}
+            for p in services.points_of(event).exclude(kind="waypoint").order_by("venue__name", "kind", "name")]
+
+
+def _screen_rows(event: Any, cfg: services.Config) -> list[dict[str, Any]]:
+    from apps.venues.models import Point
+
+    views = services.screen_views(event)
+    ids = {v.guidance.toward for v in views} | {v.guidance.target for v in views}
+    names = {str(p.pk): p.name for p in Point.objects.filter(pk__in=[i for i in ids if i])}
+    rows = []
+    for v in views:
+        g = v.guidance
+        state = v.shown.state.value
+        rows.append({"screen": v.screen, "shown": {"state": state, "label": cfg.labels[state], "drill": v.shown.drill},
+                     "kind": g.kind.value, "glyph": GLYPHS.get(g.arrow) if g.arrow else "",
+                     "arrow": g.arrow.value.replace("_", " ") if g.arrow else "", "text": g.text,
+                     "toward": names.get(g.toward or ""), "target": names.get(g.target or ""),
+                     "distance": g.distance, "hint": services.hint_of(event, v.screen),
+                     "follow_staff": g.kind is GuidanceKind.FOLLOW_STAFF})
+    return rows
 
 
 def _rows(event: Any, labels: dict[str, str]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -47,7 +81,9 @@ def _form(request: HttpRequest, event: Any, cfg: services.Config, zones: list[di
           data: Any = None) -> ChangeForm:
     alarm_zones = [z["zone"] for z in zones if z["own"]["alarm"]]
     can_drill = rbac.has_any(request.user, event, services.PERM_DRILL, request=request)
-    return ChangeForm(data, zones=[z["zone"] for z in zones], labels=cfg.labels, enabled=cfg.enabled,
+    # outside the zones model, zones are only offered to end an alarm they still have
+    scopes = [z["zone"] for z in zones if cfg.model is Model.ZONES or z["own"]["state"] != "normal"]
+    return ChangeForm(data, zones=scopes, labels=cfg.labels, enabled=cfg.enabled,
                       alarm_zones=alarm_zones, can_drill=can_drill)
 
 
@@ -65,8 +101,15 @@ def _page(request: HttpRequest, event: Any, form: ChangeForm | None = None) -> H
     cfg = services.config(event)
     ev, zones = _rows(event, cfg.labels)
     can_change = _can_change(request, event)
+    zones_model = cfg.model is Model.ZONES
+    can_block = rbac.has_any(request.user, event, services.PERM_TRIGGER, request=request)
     return render(request, "evacuation/index.html", {
-        "event": event, "ev": ev, "zones": zones, "cfg": cfg, "can_change": can_change,
+        "event": event, "ev": ev, "zones": zones if zones_model or any(z["own"]["alarm"] for z in zones) else [],
+        "cfg": cfg, "can_change": can_change, "zones_model": zones_model,
+        "model_label": dict(MODEL_LABELS)[cfg.model], "points": _points(event) if zones_model else [],
+        "can_block": can_block, "screens": _screen_rows(event, cfg),
+        "can_manage": rbac.has_any(request.user, event, "evacuation.manage", request=request),
+        "arrow_choices": ARROW_CHOICES,
         "form": form or (_form(request, event, cfg, zones) if can_change else None),
         "history": StateChange.objects.filter(event=event).select_related("actor")[:15],
         "labels": cfg.labels,
@@ -143,3 +186,42 @@ def history(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
         rows = rows.filter(drill=False)
     return render(request, "evacuation/history.html", {"event": event, "history": rows[:500], "labels": cfg.labels,
                                                        "filter": request.GET.get("drills", "")})
+
+
+@require_POST
+@event_view("evacuation.view", module=MODULE)
+def block(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    pid = request.POST.get("point", "")
+    point = services.points_of(event).filter(pk=pid).first() if _uuid(pid) else None
+    if point is None:
+        messages.error(request, _("Unknown point."))
+        return redirect("evacuation:index", event.slug)
+    blocked = request.POST.get("blocked") == "1"
+    try:
+        services.set_blocked(event, point, blocked, actor=request.user, request=request,
+                             reason=request.POST.get("reason", "")[:300])
+    except PermissionDenied:
+        messages.error(request, _("You may not block or open this point."))
+    else:
+        messages.success(request, (_("%(p)s is blocked. Routes avoid it.") if blocked
+                                   else _("%(p)s is open again.")) % {"p": point.name})
+    return redirect("evacuation:index", event.slug)
+
+
+@require_POST
+@event_view("evacuation.manage", module=MODULE)
+def hint(request: HttpRequest, slug: str, pk: str, *, event: Any) -> HttpResponse:
+    screen = next((s for s in services._screens(event) if str(s.pk) == str(pk)), None)
+    if screen is None:
+        messages.error(request, _("Unknown screen."))
+        return redirect("evacuation:index", event.slug)
+    arrow = request.POST.get("hint_arrow", "")
+    if arrow not in dict(ARROW_CHOICES):
+        arrow = ""
+    from apps.core import settings_store
+
+    settings_store.save("evacuation_screen", "screen", str(screen.pk),
+                        {"hint_text": request.POST.get("hint_text", "")[:80].strip(), "hint_arrow": arrow},
+                        user=request.user, event=event)
+    messages.success(request, _("Direction for %(s)s saved.") % {"s": screen.name})
+    return redirect("evacuation:index", event.slug)

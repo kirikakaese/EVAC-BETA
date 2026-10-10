@@ -3,12 +3,14 @@ import pytest
 from django.test import RequestFactory
 
 from apps.accounts.twofactor import SESSION_KEY
-from apps.core import modules
+from apps.core import modules, settings_store
 
 
 @pytest.fixture(autouse=True)
 def evacuation_on(db):
     modules.set_instance("evacuation", True)
+    # most tests use zone states; the default model (staged) is tested on its own
+    settings_store.save("evacuation", "instance", "", {"model": "zones"})
 
 
 @pytest.fixture
