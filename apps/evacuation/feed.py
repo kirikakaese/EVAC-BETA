@@ -85,6 +85,27 @@ def _role(screen: Any) -> str:
         return "participant"
 
 
+def roles(event: Any, screens: list[Any]) -> dict[str, str]:
+    """``_role`` for many screens at once: the event's value for every screen without an own or group value (one
+    lookup instead of one per screen; an alarm reaches hundreds of screens at once)."""
+    try:
+        from apps.core.models import SettingValue
+        from apps.screens import display
+        from apps.screens.models import ScreenGroup
+
+        groups = {str(g) for g in ScreenGroup.objects.filter(event=event).values_list("pk", flat=True)}
+        own = {sid for level, sid, values in SettingValue.objects.filter(
+                   namespace="display", level__in=("screen", "screen_group")).values_list("level", "scope_id", "values")
+               if "evacuation_role" in (values or {}) and (level == "screen" or sid in groups)
+               for sid in ([sid] if level == "screen" else ["*"])}
+        if "*" in own:  # a group sets it: groups are matched per screen
+            return {str(s.pk): _role(s) for s in screens}
+        base = str(display.resolve(event=event).values.get("evacuation_role") or "participant")
+        return {str(s.pk): _role(s) if str(s.pk) in own else base for s in screens}
+    except Exception:  # noqa: BLE001 - a broken setting must never keep a screen out of an evacuation
+        return {str(s.pk): "participant" for s in screens}
+
+
 def payloads(event: Any, screens: list[Any] | None = None, *, seq: int | None = None) -> dict[str, dict[str, Any]]:
     """Payload per screen id. ``screens`` limits the work (default: all screens of the event)."""
     from apps.venues.models import Point
@@ -99,6 +120,7 @@ def payloads(event: Any, screens: list[Any] | None = None, *, seq: int | None = 
     layouts: dict[str, dict[str, Any] | None] = {}
     ids = {v.guidance.toward for v in views} | {v.guidance.target for v in views}
     names = {str(p.pk): p.name for p in Point.objects.filter(pk__in=[i for i in ids if i])}
+    role_of = roles(event, [v.screen for v in views])
     out: dict[str, dict[str, Any]] = {}
     now = timezone.now()
     for view in views:
@@ -115,7 +137,7 @@ def payloads(event: Any, screens: list[Any] | None = None, *, seq: int | None = 
             "label": cfg.labels.get(state, state), "drill": shown.drill, "drill_text": cfg.drill_text,
             "since": shown.since.isoformat() if shown.since else None,
             "clear_until": shown.clear_until.isoformat() if shown.clear_until else None,
-            "takeover": shown.state in TAKEOVER, "role": _role(view.screen), "model": cfg.model.value,
+            "takeover": shown.state in TAKEOVER, "role": role_of[str(view.screen.pk)], "model": cfg.model.value,
             "guidance": {"kind": g.kind.value, "arrow": g.arrow.value if g.arrow else None, "text": g.text,
                          "toward": names.get(g.toward or "", ""), "target": names.get(g.target or "", ""),
                          "distance": g.distance},
@@ -157,12 +179,15 @@ def push(event: Any) -> None:
 
         if current_seq(event) != seq:
             return  # a newer change is on its way and sends its own payloads
+        from . import alarmkey
+
         issued = int(time.time() * 1000)
+        signer = alarmkey.Signer(event)
+        out = []
         for sid, body in payloads(event, seq=seq).items():
             body["issued"] = issued
-            screen = _screen(sid)
-            if screen is not None:
-                channel.send(screen, "evac.state", sign(event, body))
+            out.append((sid, "evac.state", alarmkey.sign_payload(event, body, signer=signer)))
+        channel.send_many(out)
 
     transaction.on_commit(send)
 

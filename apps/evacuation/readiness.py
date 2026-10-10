@@ -64,8 +64,10 @@ def screens(event: Any, now: Any = None) -> list[Row]:
     now = now or timezone.now()
     rows = []
     found = acks.screen_acks(event)
-    for s in _paired(event):
-        role = feed._role(s)
+    paired = _paired(event)
+    role_of = feed.roles(event, paired)
+    for s in paired:
+        role = role_of[str(s.pk)]
         ack = found.get(str(s.pk))
         reported = s.reported or {}
         audio = str(reported.get("evac_audio") or "")

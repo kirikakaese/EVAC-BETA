@@ -13,6 +13,7 @@ from django.core.management import CommandError, call_command
 from django.test import Client
 from django.utils import timezone
 
+from apps.core import settings_store
 from apps.core.a11y import check_html
 from apps.core.models import AuditLog, Notification
 from apps.evacuation import acks, alarmkey, bridges, feed, readiness, services
@@ -118,9 +119,9 @@ def test_readiness_rows(event):
                                  bundle_served_at=now - timedelta(minutes=15), selftest_at=now - timedelta(days=1),
                                  selftest={"ok": s is ok, "stages": {"evacuate": "error: x"},
                                            "signature": "invalid", "origins": {"o": "unreachable"}})
-    with mock.patch.object(feed, "_role", side_effect=lambda s: "excluded" if s.name == "Excluded" else "participant"):
-        rows = {r.screen.name: r for r in readiness.screens(event, now)}
-        summary = readiness.summary(list(rows.values()))
+    settings_store.save("display", "screen", str(excluded.pk), {"evacuation_role": "excluded"})
+    rows = {r.screen.name: r for r in readiness.screens(event, now)}
+    summary = readiness.summary(list(rows.values()))
     assert rows["OK"].ready and rows["OK"].warnings == ["bundle not refreshed for 15 minutes"]
     st = rows["Stale"]
     assert "evacuation bundle not current" in st.problems and "sound blocked by the browser (autoplay)" in st.problems

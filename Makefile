@@ -77,9 +77,13 @@ e2e:
 node-e2e:
 	$(PY) scripts/node_sync_e2e.py
 
-# Placeholders until the evacuation module (Phase 3); see docs/ROADMAP.md
-chaos load:
-	@echo "'make $@' arrives with evacuation (phase 3) - see docs/ROADMAP.md"; exit 1
+# Chaos (roadmap 3.12): kill the server during an alarm, fallback origin, forged/stale/bridge clears, recovery
+chaos:
+	sh scripts/chaos.sh
+
+# Load (roadmap 3.12): 500 WebSocket players get an alarm within 2 s (p95); PLAYERS=200 make load
+load:
+	$(PY) scripts/load_ws.py --players $${PLAYERS:-500}
 
 # --- Docker Compose ---------------------------------------------------------
 up:

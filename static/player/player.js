@@ -2937,7 +2937,7 @@ class ui {
   /** Without a connection, ask the fallback origins (secondary node, bridge) for the signed alarm state. */
   async pollFallback() {
     const t = this.evac?.bundle;
-    if (!(this.transport !== "offline" || !t?.fallback_origins.length))
+    if (!(["websocket", "sse", "poll"].includes(this.transport) || !t?.fallback_origins.length))
       for (const e of t.fallback_origins)
         try {
           const n = await fetch(`${e}/evac/${t.event}/state`, { cache: "no-store" });

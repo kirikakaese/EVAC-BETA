@@ -108,11 +108,12 @@ def coverage(event: Any) -> Coverage:
         screens = list(Screen.objects.paired().filter(event=event).select_related("zone")
                        .prefetch_related("room__zones"))
     acks = {str(a.screen_id): a for a in ScreenAck.objects.filter(event=event)}
+    role_of = feed.roles(event, screens)
     per_zone: dict[str, dict[str, Any]] = {}
     total = confirmed = offline = fallback = 0
     missing: list[str] = []
     for s in screens:
-        if feed._role(s) == "excluded":
+        if role_of[str(s.pk)] == "excluded":
             continue
         total += 1
         a = acks.get(str(s.pk))

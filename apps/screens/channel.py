@@ -59,3 +59,36 @@ def since(screen_id, seq: int) -> list[dict[str, Any]]:
 
 def last_seq(screen_id) -> int:
     return int(cache.get(_seq_key(screen_id)) or 0)
+
+
+def send_many(items: list[tuple[Any, str, dict[str, Any]]]) -> int:
+    """``send`` for many screens at once: ``[(screen id, type, data), ...]``. One pass over the cache and one
+    hop into the channel layer instead of one per screen (an alarm reaches every screen of the event)."""
+    msgs = []
+    try:
+        for sid, type_, data in items:
+            cache.add(_seq_key(sid), 0, None)
+            msgs.append((sid, {"seq": int(cache.incr(_seq_key(sid))), "type": type_, "data": data, "ts": time.time()}))
+        bufs = cache.get_many([_buf_key(sid) for sid, _m in msgs])
+        for sid, m in msgs:
+            bufs[_buf_key(sid)] = [*(bufs.get(_buf_key(sid)) or []), m][-BUFFER_SIZE:]
+        cache.set_many(bufs, BUFFER_TTL)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("screen buffer unavailable: %s", exc)
+        return 0
+    try:
+        import asyncio
+
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+
+        layer = get_channel_layer()
+        if layer is not None:
+            async def fan_out() -> None:
+                await asyncio.gather(*(layer.group_send(group_name(sid), {"type": "screen.message", "message": m})
+                                       for sid, m in msgs))
+
+            async_to_sync(fan_out)()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("channel layer unavailable: %s", exc)
+    return len(msgs)

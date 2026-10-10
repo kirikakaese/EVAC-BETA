@@ -129,37 +129,55 @@ def test_player_state_and_ack(event, admin, screen, zones):
     assert c.get("/player/api/evacuation/state/", **api(raw)).json() == {"enabled": False}
 
 
+def _sent(send):
+    """The (screen, type, data) items of every send_many call."""
+    return [item for c in send.call_args_list for item in c.args[0] if item[1] == "evac.state"]
+
+
 def test_push_sends_every_screen_its_payload(event, admin, screen, django_capture_on_commit_callbacks):
     s, raw = screen
-    with mock.patch("apps.screens.channel.send") as send, django_capture_on_commit_callbacks(execute=True):
+    with mock.patch("apps.screens.channel.send_many") as send, django_capture_on_commit_callbacks(execute=True):
         services.change(event, "shelter_in_place", actor=admin, request=tf(admin))
-    sent = [c for c in send.call_args_list if c.args[1] == "evac.state"]
-    assert len(sent) == 1
-    body = sent[0].args[2]
+    sent = _sent(send)
+    assert len(sent) == 1 and sent[0][0] == str(s.pk)
+    body = sent[0][2]
     assert body["state"] == "shelter_in_place" and body["issued"] > 0 and "sig" in body
     # settings that shape payloads push too; changes in one transaction send once (the newest wins)
-    with mock.patch("apps.screens.channel.send") as send, django_capture_on_commit_callbacks(execute=True):
+    with mock.patch("apps.screens.channel.send_many") as send, django_capture_on_commit_callbacks(execute=True):
         settings_store.save("evacuation_screen", "screen", str(s.pk), {"hint_text": "Exit B"})
         settings_store.save("evacuation", "instance", "", {"model": "zones", "drill_text": "EXERCISE"})
-    pushed = [c.args[2] for c in send.call_args_list if c.args[1] == "evac.state"]
+    pushed = [item[2] for item in _sent(send)]
     assert len(pushed) == 1 and pushed[0]["drill_text"] == "EXERCISE" and pushed[0]["direction"] == "Exit B"
-    with mock.patch("apps.screens.channel.send") as send:
+    with mock.patch("apps.screens.channel.send_many") as send:
         for value in ("A", "B"):
             with django_capture_on_commit_callbacks(execute=True):
                 settings_store.save("evacuation_screen", "screen", str(s.pk), {"hint_text": value})
-    assert [c.args[2]["direction"] for c in send.call_args_list if c.args[1] == "evac.state"] == ["A", "B"]
+    assert [item[2]["direction"] for item in _sent(send)] == ["A", "B"]
     with mock.patch("django.apps.apps.is_installed", return_value=False), \
-            mock.patch("apps.screens.channel.send") as send, django_capture_on_commit_callbacks(execute=True):
+            mock.patch("apps.screens.channel.send_many") as send, django_capture_on_commit_callbacks(execute=True):
         feed.push(event)
     assert not send.called
 
 
 def test_roles(event, admin, screen):
+    from apps.screens.models import ScreenGroup
+
     s, raw = screen
+    other = Screen.objects.create(event=event, name="Other")
+    assert feed.roles(event, [s, other]) == {str(s.pk): "participant", str(other.pk): "participant"}
+    settings_store.save("display", "event", str(event.pk), {"evacuation_role": "info"}, event=event)
     settings_store.save("display", "screen", str(s.pk), {"evacuation_role": "excluded"})
     assert feed.payloads(event)[str(s.pk)]["role"] == "excluded"
+    assert feed.roles(event, [s, other]) == {str(s.pk): "excluded", str(other.pk): "info"}
+    # a group sets it: groups are matched per screen
+    g = ScreenGroup.objects.create(event=event, name="Backstage")
+    g.manual_screens.add(other)
+    settings_store.save("display", "screen_group", str(g.pk), {"evacuation_role": "excluded"})
+    assert feed.roles(event, [s, other]) == {str(s.pk): "excluded", str(other.pk): "excluded"}
     with mock.patch("apps.screens.display.for_screen", side_effect=RuntimeError):
         assert feed._role(s) == "participant"
+    with mock.patch("apps.screens.display.resolve", side_effect=RuntimeError):
+        assert feed.roles(event, [other]) == {str(other.pk): "participant"}
 
 
 def test_speech_url_and_endpoint(event, screen, tmp_path, settings):

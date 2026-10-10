@@ -124,6 +124,12 @@ the statement's text. Until then the REST API and hardware bridges refuse alarms
   (offline, bundle not current, sound blocked, self-test failures).
 - **Alarm key**: rotate it when a device that held it is lost; export it only for bridges and secondary nodes.
 
+## Tests and drills (roadmap 3.12)
+
+Unit and property tests cover the state machine, policies and routing. `make e2e`, `make chaos`, `make load` and
+`make node-e2e` run the acceptance checks of brief §8.7 (also in CI). Drills follow the
+[drill runbook](DRILL_RUNBOOK.md).
+
 ## What phase 0 already provides
 
 - **Permissions with two-factor gates**: alarm permissions will be registered as *sensitive*; they only work

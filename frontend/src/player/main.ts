@@ -362,7 +362,8 @@ export class Player {
   /** Without a connection, ask the fallback origins (secondary node, bridge) for the signed alarm state. */
   private async pollFallback(): Promise<void> {
     const b = this.evac?.bundle;
-    if (this.transport !== "offline" || !b?.fallback_origins.length) return;
+    // no live connection (offline, or still reconnecting after the server went away): ask the fallback origins
+    if (["websocket", "sse", "poll"].includes(this.transport) || !b?.fallback_origins.length) return;
     for (const origin of b.fallback_origins) {
       try {
         const res = await fetch(`${origin}/evac/${b.event}/state`, { cache: "no-store" });

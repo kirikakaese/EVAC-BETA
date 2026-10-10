@@ -97,17 +97,27 @@ def canonical(core: dict[str, Any]) -> str:
     return json.dumps(core, sort_keys=True, separators=(",", ":"))
 
 
+class Signer:
+    """The event's signing key, loaded (and decrypted) once for many messages."""
+
+    def __init__(self, event: Any) -> None:
+        row = ensure(event)
+        self.kid, self.key = row.public_key[:8], _private(row)
+
+    def sign(self, core: dict[str, Any]) -> dict[str, str]:
+        msg = canonical(core)
+        return {"kid": self.kid, "m": msg, "s": b64(self.key.sign(msg.encode()))}
+
+
 def sign_core(event: Any, core: dict[str, Any]) -> dict[str, str]:
-    row = ensure(event)
-    msg = canonical(core)
-    return {"kid": row.public_key[:8], "m": msg, "s": b64(_private(row).sign(msg.encode()))}
+    return Signer(event).sign(core)
 
 
-def sign_payload(event: Any, body: dict[str, Any]) -> dict[str, Any]:
+def sign_payload(event: Any, body: dict[str, Any], *, signer: Signer | None = None) -> dict[str, Any]:
     """Add ``sig`` to a screen payload (see :mod:`feed`)."""
     core = {"e": body.get("event"), "sc": body.get("screen") or "*", "seq": body.get("seq"), "st": body.get("state"),
             "d": bool(body.get("drill")), "t": bool(body.get("takeover")), "ia": int(time.time()), "v": body.get("v")}
-    return {**body, "sig": sign_core(event, core)}
+    return {**body, "sig": (signer or Signer(event)).sign(core)}
 
 
 def state_message(event: Any) -> dict[str, Any]:

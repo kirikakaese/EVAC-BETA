@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 from django.utils import timezone
 
+from apps.core import settings_store
 from apps.core.a11y import check_html
 from apps.core.models import AuditLog, Notification
 from apps.evacuation import acks, feed, services
@@ -65,17 +66,17 @@ def test_record_latency_and_limits(event, screens):
 
 
 def test_coverage_per_zone(event, admin, screens, zones):
+    settings_store.save("display", "screen", str(screens["x"].pk), {"evacuation_role": "excluded"})
     services.change(event, "evacuate", actor=admin, request=tf(admin))
     seq = feed.current_seq(event)
-    with mock.patch.object(feed, "_role", side_effect=lambda s: "excluded" if s.name == "Excluded" else "participant"):
-        cov = acks.coverage(event)
-        assert (cov.total, cov.confirmed, cov.offline, cov.pending) == (4, 0, 2, 2)
-        _ack(screens["a"], seq, latency=200)
-        _ack(screens["b"], seq - 1)  # an older message does not count
-        _ack(screens["c"], seq, latency=1800, fallback=True)  # offline now, but it confirmed the message
-        cov = acks.coverage(event)
+    cov = acks.coverage(event)
+    assert (cov.total, cov.confirmed, cov.offline, cov.pending) == (4, 0, 2, 2)
+    _ack(screens["a"], seq, latency=200)
+    _ack(screens["b"], seq - 1)  # an older message does not count
+    _ack(screens["c"], seq, latency=1800, fallback=True)  # offline now, but it confirmed the message
+    cov = acks.coverage(event)
     assert (cov.total, cov.confirmed, cov.offline, cov.pending, cov.fallback) == (4, 2, 1, 1, 1)
-    assert cov.seq == seq and cov.last_p95_ms == 1800 and cov.samples == 2  # seq 0 is not measured
+    assert cov.seq == seq and cov.last_p95_ms == 1800 and cov.samples == 3
     by_zone = {z["zone"]: z for z in cov.zones}
     assert by_zone["North"] == {"zone": "North", "total": 2, "confirmed": 2, "offline": 0}
     assert by_zone["South"]["confirmed"] == 0 and by_zone["—"]["offline"] == 1

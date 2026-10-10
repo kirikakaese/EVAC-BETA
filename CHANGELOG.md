@@ -6,6 +6,25 @@ released.
 
 ## [Unreleased]
 
+### Added — phase 3 acceptance tests and drill runbook (Phase 3, part 13)
+
+- Browser E2E `frontend/e2e/evacuation.mjs` (in `make e2e`): accept the statement, raise a drill with
+  hold-to-confirm, the screen takes over within 2 s, "1 of 1 screens confirmed", staff answer, all clear, back to
+  normal.
+- `make chaos` (CI job): the server is killed during an alarm; the screen stays in alarm, takes a bridge-signed
+  alarm from a fallback origin, refuses forged, stale and bridge-issued clears, survives a reload without the
+  server and follows the control room again afterwards (`scripts/chaos_fallback.py`).
+- `make load` (CI job): 500 WebSocket players receive an alarm raised through the API; p95 about 1.1 s locally.
+- [Drill runbook](docs/DRILL_RUNBOOK.md).
+
+### Fixed
+
+- Screens could not reach fallback origins: the player page's Content Security Policy now allows the configured
+  origins (strictly validated), and the player asks them as soon as it has no live connection, not only once it
+  gave up reconnecting.
+- Alarm pushes to hundreds of screens were slow (p95 5.4 s for 500): screen roles are resolved in one lookup, the
+  alarm key is loaded once per push, and messages go out in one batch (`channel.send_many`).
+
 ### Added — safety acknowledgement (Phase 3, part 12)
 
 - The evacuation module's safety statement (supplementary system, not DIN 14675 / DIN VDE 0833 / EN 54) is
