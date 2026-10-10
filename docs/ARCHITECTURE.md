@@ -102,7 +102,14 @@ per-event ring buffer with sequence numbers.
 
 ## 7. Central service and venue node
 
-Proposed in [ADR-0002](adr/0002-central-node-sync.md) (config snapshots with ETags central → node,
-op-log with idempotency keys node → central, resumable asset sync) and
-[ADR-0003](adr/0003-alarm-delivery-redundancy.md) (signed alarm messages, secondary node, hardware bridge).
-`EVAC_MODE` (`central`/`node`) exists from phase 0; behaviour arrives in phase 3.
+[ADR-0002](adr/0002-central-node-sync.md) and, as built, [ADR-0036](adr/0036-venue-node-sync.md):
+- config snapshots with ETags go from central to the node, declared per module with `r.sync`;
+- an op-log with idempotency keys goes from the node to central;
+- media files sync resumably;
+- live actions are forwarded to the node;
+- the node signs its requests (Ed25519), and secrets travel sealed (X25519).
+
+`apps/nodes` holds the models, the central API (`/api/v1/node/`), the node client (`manage.py evac_node`) and the
+single-writer guard. [ADR-0003](adr/0003-alarm-delivery-redundancy.md) and
+[ADR-0034](adr/0034-evacuation-fail-safe.md) cover signed alarm messages, fallback origins and the hardware
+bridge.

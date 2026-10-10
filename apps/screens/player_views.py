@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -36,7 +37,31 @@ def player_strings() -> dict[str, str]:
         "pair_waiting": _("Waiting for pairing…"),
         "no_server": _("EVAC server not reachable"),
         "retrying": _("Retrying automatically."),
+        "Follow the instructions of the staff": _("Follow the instructions of the staff"),
+        "Self-test": _("Self-test"), "This is a test. There is no alarm.": _("This is a test. There is no alarm."),
+        "TEST": _("TEST"),
     }
+
+
+ORIGIN = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{1,5})?$")
+
+
+def fallback_origins() -> list[str]:
+    """Every fallback origin configured for evacuation (any event): the player may fetch signed alarm state from
+    them (ADR-0034), so they go into the page's ``connect-src``. Only plain ``scheme://host[:port]`` values."""
+    from django.apps import apps
+
+    if not apps.is_installed("apps.evacuation"):
+        return []
+    from apps.core.models import SettingValue
+
+    out: set[str] = set()
+    for values in SettingValue.objects.filter(namespace="evacuation").values_list("values", flat=True):
+        for origin in (values or {}).get("fallback_origins") or []:
+            origin = str(origin).strip().rstrip("/")
+            if ORIGIN.match(origin):
+                out.add(origin)
+    return sorted(out)
 
 
 @require_safe
@@ -51,7 +76,13 @@ def index(request):
     }
     resp = render(request, "screens/player.html", {"env": env, "bundle_version": bundle_version()})
     resp["Cache-Control"] = "no-cache"
-    return allow_code_frames(resp)
+    resp = allow_code_frames(resp)
+    origins = fallback_origins()
+    if origins:
+        policy = dict(resp.evac_csp)
+        policy["connect-src"] = [*policy.get("connect-src", ["'self'"]), *origins]
+        resp.evac_csp = policy
+    return resp
 
 
 @require_safe

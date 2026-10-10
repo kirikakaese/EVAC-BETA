@@ -1,0 +1,16 @@
+{% load i18n %}<section class="card evac-propagation" id="evac-propagation" aria-labelledby="evac-propagation-title" hx-get="{% url 'evacuation:propagation' event.slug %}" hx-trigger="every {% if alarm_since %}3s{% else %}15s{% endif %}" hx-swap="outerHTML">
+<h2 id="evac-propagation-title">{% trans "Screens reached" %}</h2>
+{% if cov.total %}<p class="evac-coverage" role="status"><strong>{% blocktrans with c=cov.confirmed t=cov.total %}{{ c }} of {{ t }} screens confirmed{% endblocktrans %}</strong>
+{% if cov.offline %} · <span class="badge badge-err">{% blocktrans count n=cov.offline %}{{ n }} offline{% plural %}{{ n }} offline{% endblocktrans %}</span>{% endif %}
+{% if cov.pending %} · <span class="badge badge-warn">{% blocktrans count n=cov.pending %}{{ n }} waiting{% plural %}{{ n }} waiting{% endblocktrans %}</span>{% endif %}
+{% if cov.confirmed == cov.total %} <span class="badge badge-ok">{% trans "all" %}</span>{% endif %}</p>
+{% if cov.fallback %}<p class="small">{% blocktrans count n=cov.fallback %}{{ n }} screen shows the signed fallback state (main server unreachable).{% plural %}{{ n }} screens show the signed fallback state (main server unreachable).{% endblocktrans %}</p>{% endif %}
+<p class="small muted">{% trans "Trigger to screen (p95)" %}: {% if cov.last_p95_ms is not None %}{% blocktrans with ms=cov.last_p95_ms %}{{ ms }} ms for the current message{% endblocktrans %}{% else %}{% trans "no measurement for the current message" %}{% endif %}{% if cov.p95_ms is not None %} · {% blocktrans with ms=cov.p95_ms n=cov.samples %}{{ ms }} ms over the last 24 hours ({{ n }} samples){% endblocktrans %}{% endif %}
+{% if slow %} <span class="badge badge-warn">{% blocktrans with t=target_ms %}above the {{ t }} ms target{% endblocktrans %}</span>{% endif %}</p>
+{% if cov.zones|length > 1 %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Confirmed" %}</th><th scope="col">{% trans "Offline" %}</th></tr></thead>
+<tbody>{% for z in cov.zones %}<tr><th scope="row">{{ z.zone }}</th><td>{{ z.confirmed }} / {{ z.total }}{% if z.confirmed == z.total %} <span class="badge badge-ok">{% trans "all" %}</span>{% endif %}</td><td>{% if z.offline %}<span class="badge badge-err">{{ z.offline }}</span>{% else %}0{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% else %}<p class="muted">{% trans "No screens take part in alarms." %}</p>{% endif %}
+<h3>{% trans "Staff answers" %}</h3>
+{% if answers %}<ul class="evac-answers">{% for a in answers %}<li><span class="badge {% if a.kind == 'need_help' %}badge-err{% elif a.kind == 'zone_clear' %}badge-ok{% else %}badge-info{% endif %}">{{ a.get_kind_display }}</span> {{ a.user_repr }}{% if a.zone %} · {{ a.zone.name }}{% endif %}{% if a.note %} · “{{ a.note }}”{% endif %} <span class="small muted">{{ a.at|date:"H:i:s" }}{% if a.drill %} · {% trans "drill" %}{% endif %}</span></li>{% endfor %}</ul>
+{% elif alarm_since %}<p class="muted">{% trans "No answers yet." %}</p>{% else %}<p class="muted">{% trans "Staff answers appear here during an alarm." %}</p>{% endif %}
+</section>

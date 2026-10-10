@@ -1199,6 +1199,30 @@ paths:
                 items:
                   $ref: '#/components/schemas/EvacuationState'
           description: ''
+  /api/v1/events/{event_slug}/evacuation/coverage/:
+    get:
+      operationId: events_evacuation_coverage_retrieve
+      description: |-
+        Screens that confirmed the current message ("X of Y confirmed / Z offline"), per zone, and the
+        trigger-to-render time (p95); staff answers to the running alarm.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvacuationCoverage'
+          description: ''
   /api/v1/events/{event_slug}/evacuation/trigger/:
     post:
       operationId: events_evacuation_trigger_create
@@ -4975,6 +4999,51 @@ components:
       - a
       - b
       - venue
+    EvacuationCoverage:
+      type: object
+      properties:
+        seq:
+          type: integer
+        total:
+          type: integer
+        confirmed:
+          type: integer
+        offline:
+          type: integer
+        pending:
+          type: integer
+        fallback:
+          type: integer
+        p95_ms:
+          type: integer
+          nullable: true
+        last_p95_ms:
+          type: integer
+          nullable: true
+        samples:
+          type: integer
+        zones:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        staff:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - confirmed
+      - fallback
+      - last_p95_ms
+      - offline
+      - p95_ms
+      - pending
+      - samples
+      - seq
+      - staff
+      - total
+      - zones
     EvacuationState:
       type: object
       properties:

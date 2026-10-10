@@ -1,0 +1,21 @@
+# EVAC hardware bridge on a Raspberry Pi. Install: copy to /etc/systemd/system/, then: systemctl enable --now evac-bridge
+[Unit]
+Description=EVAC hardware bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=evac-bridge
+Group=gpio
+ExecStart=/usr/bin/python3 /opt/evac-bridge/evac_bridge.py --config /etc/evac-bridge.toml
+Restart=always
+RestartSec=2
+StateDirectory=evac-bridge
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+WatchdogSec=0
+
+[Install]
+WantedBy=multi-user.target

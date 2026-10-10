@@ -6,7 +6,7 @@ import { shellAssets } from "./shell";
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
-const CACHE = "evac-player-v3";
+const CACHE = "evac-player-v4";
 
 /** Cache the page and everything it loads. The first visit loads them before this worker controls the page,
  *  so without this an offline restart would find the page but not its script. */
@@ -36,8 +36,10 @@ sw.addEventListener("fetch", (e) => {
   const event = e as FetchEvent;
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== sw.location.origin) return;
-  // content files and spoken announcements are addressed by their hash: cache first, they never change
-  if (url.pathname.startsWith("/player/api/content/files/") || url.pathname.startsWith("/player/api/announcements/speech/")) {
+  // content files and spoken announcements and evacuation messages are addressed by their hash: cache first,
+  // they never change (the evacuation speech must play when the server is gone, ADR-0034)
+  if (["/player/api/content/files/", "/player/api/announcements/speech/", "/player/api/evacuation/speech/"]
+    .some((prefix) => url.pathname.startsWith(prefix))) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
       const hit = await cache.match(event.request, { ignoreSearch: true });

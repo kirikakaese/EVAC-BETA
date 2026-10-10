@@ -50,7 +50,7 @@ export function installErrorHandlers(win: Window = window): void {
 
 export interface ReportState { version: string; slide: string; lastSync: number | null; online: boolean;
                                contentVersion?: string; displayState?: string; capture?: boolean;
-                               recovered?: string }
+                               recovered?: string; evacAck?: string; evacBundle?: string; evacAudio?: string }
 
 export function report(state: ReportState): Record<string, unknown> {
   const w = window.innerWidth, h = window.innerHeight;
@@ -70,5 +70,8 @@ export function report(state: ReportState): Record<string, unknown> {
     ...(state.displayState ? { display_state: state.displayState } : {}),
     ...(state.capture !== undefined ? { capture: state.capture } : {}),
     ...(state.recovered ? { recovered: state.recovered } : {}),
+    ...(state.evacAck ? { evac_ack: state.evacAck } : {}),
+    ...(state.evacBundle ? { evac_bundle: state.evacBundle } : {}),
+    ...(state.evacAudio ? { evac_audio: state.evacAudio } : {}),
   };
 }

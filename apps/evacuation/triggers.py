@@ -31,7 +31,7 @@ DRILL_GRACE = timedelta(minutes=15)
 
 @dataclass
 class Outcome:
-    result: str  # executed | armed | waiting | notified | duplicate
+    result: str  # executed | armed | waiting | notified | duplicate | forwarded (to the venue node)
     changes: list[StateChange] = field(default_factory=list)
     request: EvacRequest | None = None
 
@@ -88,7 +88,9 @@ def _who(actor: Any, source: str) -> str:
 
 def trigger(event: Any, target: State | str, *, source: str, zone: Any = None, drill: bool = False,
             actor: Any = None, request: Any = None, reason: str = "", key: str = "",
-            clear_zones: list[str] | None = None, check_perms: bool = True) -> Outcome:
+            clear_zones: list[str] | None = None, check_perms: bool = True, execute: bool = False) -> Outcome:
+    """Raise or change a state through ``source``'s policy. ``execute`` skips the policy and the two-person rule:
+    only for alarms already shown publicly (a bridge that issued it while the server was unreachable)."""
     target = State(target)
     if source == policy.SCHEDULE:
         drill = True
@@ -105,6 +107,13 @@ def trigger(event: Any, target: State | str, *, source: str, zone: Any = None, d
                 event=event, zone=zone)), False)
         if not services.can(actor, event, target, drill=kind_drill, zone=zone, request=request):
             raise PermissionDenied("evacuation")
+    from apps.nodes import guard
+
+    if guard.remote(event):  # checked out: the node decides (ADR-0036); permissions were checked here
+        guard.forward(event, "evacuation.trigger", {
+            "state": target.value, "source": source, "zone": str(zone.pk) if zone else None, "drill": drill,
+            "reason": reason[:300], "key": key[:100], "clear_zones": clear_zones, "execute": execute}, actor=actor)
+        return Outcome("forwarded")
     services.check(event, target, zone=zone, drill=drill)  # refused changes are refused for every source
     now = timezone.now()
     states, seconds = two_person(event)
@@ -112,14 +121,14 @@ def trigger(event: Any, target: State | str, *, source: str, zone: Any = None, d
     base = {"event": event, "source": source, "state": target.value, "drill": drill, "zone": zone,
             "reason": reason[:300], "requested_by": user, "requested_repr": _who(actor, source), "created_at": now,
             "key": key[:100], "clear_zones": clear_zones}
-    if source in policy.PERSON_SOURCES and user is not None and target.value in states:
+    if source in policy.PERSON_SOURCES and user is not None and target.value in states and not execute:
         req = EvacRequest.objects.create(kind=policy.RequestKind.SECOND, deadline=now + timedelta(seconds=seconds),
                                          **base)
         _log(req, "evacuation.second_requested", user, request)
         _alert(event, req, _("Second person needed: %(s)s") % {"s": req.get_state_display()})
         return Outcome("waiting", [], req)
     decision = policy.resolve(rules(event), source, target.value, str(zone.pk) if zone else "") \
-        if target in machine.ALARMS else policy.Decision(policy.Action.EXECUTE)
+        if target in machine.ALARMS and not execute else policy.Decision(policy.Action.EXECUTE)
     if decision.action is policy.Action.EXECUTE:
         changes = services.change(event, target, zone=zone, drill=drill, actor=actor, request=request,
                                   source=source, reason=reason, clear_zones=clear_zones, check_perms=False)
@@ -167,7 +176,22 @@ def _execute(req: EvacRequest, *, actor: Any, request: Any, status: str) -> list
     return changes
 
 
+def _forward_decision(req: EvacRequest, verdict: str, actor: Any, request: Any) -> bool:
+    from apps.nodes import guard
+
+    if not guard.remote(req.event):
+        return False
+    own = verdict == "reject" and req.requested_by_id is not None and req.requested_by_id == getattr(actor, "pk", None)
+    if not own and not services.can(actor, req.event, State(req.state), drill=req.drill, zone=req.zone,
+                                    request=request):
+        raise PermissionDenied("evacuation")
+    guard.forward(req.event, "evacuation.decide", {"request": str(req.pk), "verdict": verdict}, actor=actor)
+    return True
+
+
 def confirm(req: EvacRequest, *, actor: Any, request: Any = None) -> list[StateChange]:
+    if _forward_decision(req, "confirm", actor, request):
+        return []
     with transaction.atomic():
         req = EvacRequest.objects.select_for_update().get(pk=req.pk)
         if req.status != policy.Status.PENDING:
@@ -182,6 +206,8 @@ def confirm(req: EvacRequest, *, actor: Any, request: Any = None) -> list[StateC
 
 
 def reject(req: EvacRequest, *, actor: Any, request: Any = None) -> None:
+    if _forward_decision(req, "reject", actor, request):
+        return
     with transaction.atomic():
         req = EvacRequest.objects.select_for_update().get(pk=req.pk)
         if req.status != policy.Status.PENDING:
@@ -197,8 +223,13 @@ def reject(req: EvacRequest, *, actor: Any, request: Any = None) -> None:
 
 def process_due(event: Any = None, now: Any = None) -> int:
     """Escalate armed requests and expire two-person requests whose time is up; start due scheduled drills."""
+    from apps.nodes import guard
+
     now = now or timezone.now()
-    qs = EvacRequest.objects.filter(status=policy.Status.PENDING, deadline__lte=now)
+    if event is not None and (guard.remote(event) or guard.read_only_copy(event)):
+        return 0  # the node holding the event escalates, expires and starts drills
+    qs = EvacRequest.objects.filter(status=policy.Status.PENDING, deadline__lte=now) \
+        .exclude(event_id__in=guard.remote_event_ids())
     if event is not None:
         qs = qs.filter(event=event)
     done = 0
@@ -223,12 +254,22 @@ def process_due(event: Any = None, now: Any = None) -> int:
                 continue
             done += 1
     done += start_due_drills(event, now)
+    from . import acks
+
+    done += acks.watchdog(event, now)
+    if event is None:
+        from . import bridges
+
+        done += bridges.sweep(now)
     return done
 
 
 def start_due_drills(event: Any = None, now: Any = None) -> int:
+    from apps.nodes import guard
+
     now = now or timezone.now()
-    qs = ScheduledDrill.objects.filter(started_at__isnull=True, at__lte=now).select_related("event", "zone")
+    qs = ScheduledDrill.objects.filter(started_at__isnull=True, at__lte=now).select_related("event", "zone") \
+        .exclude(event_id__in=guard.remote_event_ids())
     if event is not None:
         qs = qs.filter(event=event)
     n = 0

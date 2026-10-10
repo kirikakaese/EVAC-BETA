@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Venue node" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Venue node" %}</h1></div>
+{% if mode == "node" %}<section class="card"><h2>{% trans "On this node" %}</h2>
+{% if held and held.checked_out %}<p><span class="badge badge-ok">{% trans "held here" %}</span> {% trans "Live state (alarms, announcements, overrides) is decided here. Change the configuration on the central server; it arrives with the next sync." %}</p>
+{% elif held %}<p><span class="badge badge-muted">{% trans "read-only copy" %}</span> {% trans "This event was checked in; the central server decides again." %}</p>
+{% else %}<p class="muted">{% trans "This node does not hold the event." %}</p>{% endif %}</section>
+{% else %}
+<section class="card"><h2>{% trans "Status" %}</h2>
+{% if co %}<p><span class="badge badge-warn">{% trans "checked out" %}</span> {% blocktrans with n=co.node.name t=co.started_at|date:"D j M H:i" %}to {{ n }} since {{ t }}{% endblocktrans %}{% if co.state == "checkin_requested" %} · <span class="badge badge-info">{% trans "check-in requested" %}</span>{% endif %}</p>
+<p class="small muted">{% blocktrans with s=co.applied_seq %}Changes received from the node: {{ s }}.{% endblocktrans %}{% if co.last_sync %} {% blocktrans with t=co.last_sync|date:"D H:i:s" %}Last sync {{ t }}.{% endblocktrans %}{% endif %}{% if co.node.last_seen %} {% blocktrans with t=co.node.last_seen|date:"D H:i:s" %}Node last seen {{ t }}.{% endblocktrans %}{% endif %}</p>
+<p>{% trans "While the event is checked out, alarms, announcements and overrides are decided on the node. Alarms raised here are sent to the node and run there when it picks them up; with the node offline they cannot run from here." %}</p>
+{% else %}<p><span class="badge badge-ok">{% trans "on this server" %}</span> {% trans "The event runs here." %}</p>{% endif %}</section>
+{% if can %}{% if co %}<div class="card"><h2>{% trans "Take the event back" %}</h2>
+<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="checkin"><button class="btn btn-primary"{% if co.state == "checkin_requested" %} disabled{% endif %}>{% trans "Request check-in" %}</button></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="force">
+<p class="small muted">{% trans "Only when the node is lost: take the event back at the last position received. Changes the node made after that are lost." %}</p>
+<div class="field"><label for="force-reason">{% trans "Reason" %}</label><input id="force-reason" name="reason" maxlength="200"></div>
+<button class="btn btn-danger" data-hold="1500" data-hold-label="{% trans 'Keep holding…' %}">{% trans "Force check-in" %}</button></form></div>
+{% elif nodes %}<form method="post" class="card">{% csrf_token %}<input type="hidden" name="what" value="checkout"><h2>{% trans "Check out to a node" %}</h2>
+<div class="field"><label for="co-node">{% trans "Node" %}</label><select id="co-node" name="node">{% for n in nodes %}<option value="{{ n.pk }}">{{ n.name }}</option>{% endfor %}</select></div>
+<p class="small muted">{% trans "Screens pair with the node at the venue. Configuration stays editable here and follows to the node." %}</p>
+<div class="form-actions"><button class="btn btn-primary" data-confirm="{% trans 'Hand the event to this node?' %}">{% trans "Check out" %}</button></div></form>
+{% else %}<p class="muted">{% trans "No enrolled nodes. An instance admin adds them under Venue nodes." %}</p>{% endif %}{% endif %}
+{% if actions %}<section class="card"><h2>{% trans "Actions sent to the node" %}</h2><ul class="plain">{% for a in actions %}<li><span class="badge {% if a.status == 'done' %}badge-ok{% elif a.status == 'pending' %}badge-warn{% else %}badge-err{% endif %}">{{ a.get_status_display }}</span> {{ a.kind }} · {{ a.actor_repr }} <span class="small muted">{{ a.created_at|date:"H:i:s" }}</span></li>{% endfor %}</ul></section>{% endif %}
+{% if history %}<section class="card"><h2>{% trans "History" %}</h2><ul class="plain">{% for h in history %}<li>{{ h.node.name }} · {{ h.get_state_display }} · {{ h.started_at|date:"D j M H:i" }}{% if h.ended_at %} – {{ h.ended_at|date:"D j M H:i" }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+{% endif %}
+{% endblock %}

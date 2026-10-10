@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""REST API: ``GET /api/v1/events/<slug>/evacuation/`` (state) and ``POST .../evacuation/trigger/`` (ADR-0031).
+"""REST API: ``GET /api/v1/events/<slug>/evacuation/`` (state), ``GET .../evacuation/coverage/`` (screens reached,
+latency) and ``POST .../evacuation/trigger/`` (ADR-0031).
 
 Triggers from the API follow the policy of their source (default ``arm``), need ``evacuation.trigger`` (or
 ``evacuation.drill``) for the token's owner in a two-factor token, and accept an idempotency ``key``: a repeated
@@ -23,7 +24,7 @@ from apps.api.permissions import EventPermission, HasScope
 from apps.api.views import EventScopedMixin
 from apps.core import modules
 
-from . import machine, policy, services, triggers
+from . import acks, machine, policy, services, triggers
 
 EVENT_SLUG = extend_schema(parameters=[OpenApiParameter("event_slug", str, OpenApiParameter.PATH)])
 API_SOURCES = {policy.API, policy.BRIDGE}
@@ -54,8 +55,12 @@ class EvacuationViewSet(EventScopedMixin, viewsets.ViewSet):
 
     def get_event(self) -> Any:
         event = super().get_event()
-        if not getattr(self, "swagger_fake_view", False) and not modules.is_enabled("evacuation", event):
-            raise NotFound("The evacuation module is switched off for this event.")
+        if not getattr(self, "swagger_fake_view", False):
+            if not modules.is_enabled("evacuation", event):
+                raise NotFound("The evacuation module is switched off for this event.")
+            if modules.acknowledgement_needed("evacuation", event):
+                raise PermissionDenied("The evacuation safety statement has not been accepted for this event "
+                                       "(Settings → Evacuation).")
         return event
 
     @extend_schema(responses=inline_serializer("EvacuationState", {
@@ -107,6 +112,30 @@ class EvacuationViewSet(EventScopedMixin, viewsets.ViewSet):
         req = out.request
         return Response({"result": out.result, "request": str(req.pk) if req else None,
                          "status": req.status if req else None}, status=200 if out.result == "duplicate" else 201)
+
+
+    @extend_schema(responses=inline_serializer("EvacuationCoverage", {
+        "seq": serializers.IntegerField(), "total": serializers.IntegerField(),
+        "confirmed": serializers.IntegerField(), "offline": serializers.IntegerField(),
+        "pending": serializers.IntegerField(), "fallback": serializers.IntegerField(),
+        "p95_ms": serializers.IntegerField(allow_null=True), "last_p95_ms": serializers.IntegerField(allow_null=True),
+        "samples": serializers.IntegerField(), "zones": serializers.ListField(child=serializers.DictField()),
+        "staff": serializers.ListField(child=serializers.DictField())}))
+    @action(detail=False, methods=["get"])
+    def coverage(self, request: Request, event_slug: str | None = None) -> Response:
+        """Screens that confirmed the current message ("X of Y confirmed / Z offline"), per zone, and the
+        trigger-to-render time (p95); staff answers to the running alarm."""
+        event = self.get_event()
+        cov = acks.coverage(event)
+        since = acks.alarm_since(event)
+        return Response({
+            "seq": cov.seq, "total": cov.total, "confirmed": cov.confirmed, "offline": cov.offline,
+            "pending": cov.pending, "fallback": cov.fallback, "p95_ms": cov.p95_ms, "last_p95_ms": cov.last_p95_ms,
+            "samples": cov.samples, "zones": cov.zones,
+            "staff": [{"kind": a.kind, "user": a.user_repr, "zone": str(a.zone_id) if a.zone_id else None,
+                       "note": a.note, "drill": a.drill, "at": a.at.isoformat()}
+                      for a in (acks.recent_staff(event, since) if since else [])],
+        })
 
 
 ROUTES = [(r"events/(?P<event_slug>[^/.]+)/evacuation", EvacuationViewSet, "event-evacuation")]

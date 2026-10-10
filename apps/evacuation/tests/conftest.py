@@ -7,10 +7,13 @@ from apps.core import modules, settings_store
 
 
 @pytest.fixture(autouse=True)
-def evacuation_on(db):
+def evacuation_on(db, request):
     modules.set_instance("evacuation", True)
     # most tests use zone states; the default model (staged) is tested on its own
     settings_store.save("evacuation", "instance", "", {"model": "zones"})
+    # the safety statement is accepted (its gate is tested in test_acknowledgement.py)
+    if "event" in request.fixturenames and "unacknowledged" not in request.keywords:
+        modules.acknowledge(request.getfixturevalue("event"), "evacuation")
 
 
 @pytest.fixture

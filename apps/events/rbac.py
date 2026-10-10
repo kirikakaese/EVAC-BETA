@@ -30,6 +30,8 @@ class Effective:
 def _two_factor(request, user) -> bool:
     if request is None:
         return False
+    if getattr(request, "trusted_node_action", False):
+        return True  # a venue node runs an action central authorised with the person's two factors (ADR-0036)
     token = getattr(request, "service_token", None)
     if token is not None:
         return bool(token.created_with_2fa)

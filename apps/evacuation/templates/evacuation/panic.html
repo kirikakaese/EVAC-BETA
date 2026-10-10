@@ -12,5 +12,6 @@
 <p class="small muted">{% trans "Hold a button until it confirms." %}</p>
 <div class="evac-panic-buttons">{% for value, label in stages %}<button class="btn btn-lg evac-panic-btn evac-panic-{{ value }}" name="state" value="{{ value }}" data-hold="1500" data-hold-label="{% trans 'Keep holding…' %}"><span class="badge badge-evac badge-evac-{{ value }}" aria-hidden="true"></span>{{ label }}</button>{% endfor %}</div>
 </form>{% else %}<p class="muted">{% trans "You may not raise alarms in this event." %}</p>{% endif %}
+{% if alarm %}<section class="card"><h2>{% trans "Answer the alarm" %}</h2>{% include "evacuation/_answer.html" with zones=zones prefix="panic" next=request.path %}</section>{% endif %}
 <p class="small muted">{% blocktrans %}EVAC is a supplementary information system. Call the emergency services and follow the venue's procedures.{% endblocktrans %}</p>
 {% endblock %}

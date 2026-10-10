@@ -71,8 +71,24 @@ class EventForm(forms.ModelForm):
 
 
 class SetupEventForm(EventForm):
+    """The wizard's event step. Modules with a statement to accept (the evacuation module) can be switched on here:
+    the statement is shown and must be accepted (brief §2)."""
+
     class Meta(EventForm.Meta):
         fields = ["name", "slug", "timezone", "start_date", "end_date"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.core.registry import registry
+
+        self.ack_modules = [m for m in registry.ensure_loaded().modules.values() if m.acknowledgement]
+        for m in self.ack_modules:
+            self.fields[f"use_{m.key}"] = forms.BooleanField(
+                required=False, label=_("Use the %(m)s module in this event, and accept its statement") % {
+                    "m": m.name}, help_text=m.acknowledgement)
+
+    def modules_to_enable(self) -> list[str]:
+        return [m.key for m in self.ack_modules if self.cleaned_data.get(f"use_{m.key}")]
 
 
 class TransitionForm(forms.Form):

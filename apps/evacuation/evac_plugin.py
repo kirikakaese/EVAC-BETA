@@ -25,12 +25,30 @@ def _label(default: str) -> dict[str, Any]:
             "description": "Empty: the built-in name."}
 
 
+SAFETY_STATEMENT = _(
+    "EVAC is a supplementary information system. It is not a certified fire alarm system, voice alarm system or "
+    "evacuation system: DIN 14675, DIN VDE 0833, EN 54 and similar standards do not apply to it, and it does not "
+    "comply with them.\n\n"
+    "It complements, and never replaces, the fire alarm and voice alarm systems, the signage and the evacuation "
+    "procedures the venue and the authorities require. Screens, networks and power can fail: plan the evacuation "
+    "so that it works without EVAC, and keep the venue's own alarms as the alarm that counts.\n\n"
+    "Test the evacuation content, the self-test and a drill before the event.")
+
+
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
+    from .node_actions import ACTIONS
+
+    for kind, fn in ACTIONS.items():
+        r.node_action(kind, fn)
     r.module(ModuleSpec(
         key="evacuation", name=str(_("Evacuation")), order=15, category="venue", default_enabled=False,
         depends_on=("venues",),
         description=str(_("Supplementary evacuation information: alarm states per event and zone, drills. "
-                          "Not a certified fire alarm, voice alarm or evacuation system; it complements them."))))
+                          "Not a certified fire alarm, voice alarm or evacuation system; it complements them.")),
+        acknowledgement=str(SAFETY_STATEMENT)))
     r.permissions_([
         PermissionSpec("evacuation.view", str(_("See the evacuation state and its history")), scopes=SCOPES),
         PermissionSpec("evacuation.trigger", str(_("Raise, change and step down real alarms")), scopes=SCOPES,
@@ -68,6 +86,16 @@ def register(r: Registry) -> None:
                                "default": 60, "minimum": 10, "maximum": 600,
                                "description": "Otherwise the request expires, nothing changes and the control "
                                               "room is alerted."},
+        "fallback_origins": {"type": "array", "title": "Fallback origins for screens", "default": [],
+                             "items": {"type": "string", "format": "uri", "maxLength": 200}, "maxItems": 3,
+                             "description": "Up to three base URLs (secondary node, hardware bridge) that serve the "
+                                            "signed alarm state when the main server is unreachable, e.g. "
+                                            "http://10.0.0.5:8088. One per line."},
+        "viewing_distance_m": {"type": "number", "title": "Viewing distance for evacuation text (m)", "default": 8,
+                               "minimum": 1, "maximum": 100,
+                               "description": "Used by the layout checks: letters at least 1/250 of this high."},
+        "screen_height_m": {"type": "number", "title": "Typical screen height (m)", "default": 0.6, "minimum": 0.1,
+                            "maximum": 10},
         "drill_text": {"type": "string", "title": "Drill marker", "default": "DRILL", "maxLength": 40,
                        "description": "Shown on screens and prefixed to notifications during drills."},
     }
@@ -108,3 +136,10 @@ def register(r: Registry) -> None:
         r.evac_trigger(EvacTriggerSpec(key=key, name=str(name), description=str(desc), module="evacuation"))
     for prefix, viewset, basename in api.ROUTES:
         r.api_route(prefix, viewset, basename)
+    from . import content
+
+    r.layout_check(content.layout_check)
+    r.outbox_handler(content.SPEECH_JOB, content.render_speech)
+    r.webhook_event(WebhookEventSpec(key="evacuation.staff_ack", module="evacuation",
+                                     description="A staff member answered an alarm in the staff app (on it, zone "
+                                                 "clear, need help)."))

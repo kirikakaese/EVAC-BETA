@@ -5,13 +5,16 @@ import { gzipSync } from "node:zlib";
 
 const BANNER = (what) => `// SPDX-License-Identifier: AGPL-3.0-or-later\n// EVAC ${what}, built from frontend/src with \`npm run build\` - do not edit.\n`;
 const CSS_BANNER = (what) => `/* SPDX-License-Identifier: AGPL-3.0-or-later */\n/* EVAC ${what}, built from frontend/src with \`npm run build\` - do not edit. */\n`;
+// the imported ISO 7010 artwork (src/renderer/iso7010.LICENSE)
+const ISO = "// Includes ISO 7010 safety signs from @iso-safety-signs/core (Copyright (c) Karl Norling, MIT,\n" +
+  "// https://github.com/karlnorling/iso-safety-signs).\n";
 const BUNDLES = [
   { dir: "player", budget: 300, banners: {
-    "player.js": BANNER("player") + "// Includes uqr (MIT, https://github.com/unjs/uqr).\n",
+    "player.js": BANNER("player") + "// Includes uqr (MIT, https://github.com/unjs/uqr).\n" + ISO,
     "sw.js": BANNER("player service worker"), "player.css": CSS_BANNER("player") } },
   { dir: "editor", budget: 500, banners: {
-    "editor.js": BANNER("layout editor") + "// Includes Lit (BSD-3-Clause, https://lit.dev) and uqr (MIT).\n",
-    "editor.css": CSS_BANNER("layout editor"), "preview.js": BANNER("slide preview"),
+    "editor.js": BANNER("layout editor") + "// Includes Lit (BSD-3-Clause, https://lit.dev) and uqr (MIT).\n" + ISO,
+    "editor.css": CSS_BANNER("layout editor"), "preview.js": BANNER("slide preview") + ISO,
     "preview.css": CSS_BANNER("slide preview") } },
   { dir: "mapeditor", budget: 150, banners: {
     "mapeditor.js": BANNER("venue map editor") + "// Includes Lit (BSD-3-Clause, https://lit.dev).\n",

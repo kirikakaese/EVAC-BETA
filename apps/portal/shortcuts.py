@@ -20,6 +20,23 @@ def get_event(request, slug: str) -> Event:
     return event
 
 
+def can_acknowledge(request, event, key: str) -> bool:
+    return any(rbac.has_any(request.user, event, p, request=request) for p in ("modules.manage", f"{key}.manage"))
+
+
+def acknowledgement_gate(request, event, key: str):
+    """The module's statement, to be accepted once for this event before any of its pages work."""
+    from django.shortcuts import render
+
+    from apps.core.registry import registry
+
+    spec = registry.ensure_loaded().modules[key]
+    return render(request, "portal/acknowledge.html", {
+        "event": event, "spec": spec, "can": can_acknowledge(request, event, key),
+        "next": request.get_full_path() if request.method == "GET" else ""}, status=403 if request.method != "GET"
+        else 200)
+
+
 def event_view(perm: str | None = "events.view", module: str | None = None):
     """Decorator for ``view(request, slug, ..., event=...)``: login, membership, permission, module checks."""
 
@@ -38,6 +55,8 @@ def event_view(perm: str | None = "events.view", module: str | None = None):
                     raise Http404("Module disabled")
             if perm and not rbac.has_any(request.user, event, perm, request=request):
                 raise PermissionDenied(perm)
+            if module is not None and modules.acknowledgement_needed(module, event):
+                return acknowledgement_gate(request, event, module)
             return fn(request, slug, *args, event=event, **kwargs)
 
         return wrapper

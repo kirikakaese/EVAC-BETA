@@ -41,6 +41,11 @@ ELEMENT_TYPES = {
     "countdown": {"target": {"type": "string", "maxLength": 200}, "finished": {"type": "string", "maxLength": 300},
                   "format": {"enum": ["auto", "hms", "ms", "days"]}},
     "date": {"format": {"enum": ["long", "short", "weekday", "iso"]}, "timezone": {"type": "string", "maxLength": 64}},
+    # ISO 7010 safety signs drawn by the renderer (ADR-0033); "arrow" uses ``direction`` ("auto": the screen's
+    # computed way out during an evacuation, else hidden)
+    "pictogram": {"code": {"enum": ["E001", "E002", "E007", "E003", "W001", "arrow"]},
+                  "direction": {"enum": ["auto", "ahead", "ahead_right", "right", "back_right", "back", "back_left",
+                                         "left", "ahead_left"]}},
     # a custom widget of the widgets module (ADR-0023): its rows arrive separately from /player/api/widgets/data/
     "data": {"widget": UUID, "title": {"type": "string", "maxLength": 200}},
     # code mode (ADR-0018): runs in a sandboxed frame without network; only the data listed in "data" is sent in

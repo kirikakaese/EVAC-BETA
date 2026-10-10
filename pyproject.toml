@@ -33,6 +33,8 @@ dependencies = [
     "Pillow>=11.2",
     "fonttools[woff]>=4.53",
     "defusedxml>=0.7",
+    # MQTT transport for hardware bridges (extensions/mqtt, off until configured; pure Python, ~200 kB)
+    "paho-mqtt>=2.1",
 ]
 
 [project.optional-dependencies]
@@ -66,8 +68,9 @@ include = ["apps*", "evac*", "extensions*"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "evac.settings.test"
 python_files = ["test_*.py", "tests.py"]
-testpaths = ["apps", "extensions", "tests"]
+testpaths = ["apps", "extensions", "bridge", "tests"]
 addopts = "-q"
+markers = ["unacknowledged: do not accept the evacuation safety statement for the test's event"]
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.coverage.run]
@@ -105,12 +108,18 @@ files = [
     "apps/playlists/engine.py",
     "apps/venues/routing.py",
     "apps/evacuation/",
+    "apps/nodes/",
 ]
 strict = true
 exclude = ["/tests/", "/migrations/"]
 
 [[tool.mypy.overrides]]
 # Django ships no type information here: allow subclassing its (Any) base classes and its decorators
-module = ["apps.evacuation.*"]
+module = ["apps.evacuation.*", "apps.nodes.*"]
 disallow_subclassing_any = false
 disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+# model instances and querysets are Any without Django stubs; returning them is not an error here
+module = ["apps.nodes.*"]
+warn_return_any = false

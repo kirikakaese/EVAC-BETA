@@ -7,7 +7,7 @@ COMPOSE := docker compose
 DEPS_CMD = $(PY) -c "import tomllib; d = tomllib.load(open('pyproject.toml', 'rb'))['project']; print('\n'.join(d['dependencies'] + d['optional-dependencies']['dev']))"
 
 .PHONY: dev run worker beat channels test cov lint typecheck a11y migrate makemigrations seed openapi openapi-check frontend \
-        attribution check e2e load chaos up down logs shell build clean
+        attribution check e2e node-e2e load chaos up down logs shell build clean
 
 dev:
 	test -d .venv || python3 -m venv .venv
@@ -35,7 +35,7 @@ cov:
 	$(PY) -m coverage report --include='apps/evacuation/*' --fail-under=95 --skip-covered
 
 lint:
-	.venv/bin/ruff check apps evac extensions conftest.py scripts
+	.venv/bin/ruff check apps evac extensions bridge conftest.py scripts
 
 typecheck:
 	.venv/bin/mypy
@@ -73,9 +73,17 @@ check: lint typecheck test openapi-check attribution
 e2e:
 	sh scripts/e2e.sh
 
-# Placeholders until the evacuation module (Phase 3); see docs/ROADMAP.md
-chaos load:
-	@echo "'make $@' arrives with evacuation (phase 3) - see docs/ROADMAP.md"; exit 1
+# Central/node sync with two real instances (ADR-0036): enrol, checkout, alarms both ways, partition, check-in
+node-e2e:
+	$(PY) scripts/node_sync_e2e.py
+
+# Chaos (roadmap 3.12): kill the server during an alarm, fallback origin, forged/stale/bridge clears, recovery
+chaos:
+	sh scripts/chaos.sh
+
+# Load (roadmap 3.12): 500 WebSocket players get an alarm within 2 s (p95); PLAYERS=200 make load
+load:
+	$(PY) scripts/load_ws.py --players $${PLAYERS:-500}
 
 # --- Docker Compose ---------------------------------------------------------
 up:

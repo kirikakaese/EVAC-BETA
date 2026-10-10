@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Hardware bridges" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Hardware bridges" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'evacuation:policies' event.slug %}">{% trans "Triggers & drills" %}</a><a class="btn" href="{% url 'evacuation:index' event.slug %}">{% trans "Control page" %}</a></div></div>
+<p class="muted">{% blocktrans %}A bridge connects dry contacts (fire alarm panel relays), buttons and key switches. Its inputs raise alarms through the “Hardware bridge” source, which arms by default: the control room confirms, or the alarm executes by itself after the escalation time. A reset contact never ends an alarm; wiring faults and a missing heartbeat only alert the control room.{% endblocktrans %}</p>
+{% if new_token %}<div class="alert alert-warn" role="alert"><p><strong>{% trans "Bridge token (shown once):" %}</strong></p>
+<p><code class="token" id="bridge-token">{{ new_token }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#bridge-token" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></p>
+<p class="small">{% blocktrans with u=base_url %}Put it into the bridge's configuration together with the address {{ u }}{% endblocktrans %}</p></div>{% endif %}
+
+{% for row in rows %}<section class="card bridge"><div class="page-header"><h2>{{ row.b.name }}</h2>
+<p>{% if row.b.online %}<span class="badge badge-ok">{% trans "online" %}</span>{% elif row.b.last_seen %}<span class="badge badge-err">{% trans "offline" %}</span>{% else %}<span class="badge badge-muted">{% trans "never seen" %}</span>{% endif %}
+<span class="small muted">{% if row.b.last_seen %}{% blocktrans with t=row.b.last_seen|date:"D H:i:s" %}last heartbeat {{ t }}{% endblocktrans %}{% if row.b.transport %} · {{ row.b.transport }}{% endif %}{% endif %} · <code>{{ row.b.token_prefix }}…</code></span></p></div>
+{% if row.states %}<ul class="plain bridge-inputs">{% for i, st in row.states %}<li><span class="badge {% if st == 'active' %}badge-err{% elif st == 'fault' %}badge-warn{% elif st == 'rest' %}badge-ok{% else %}badge-muted{% endif %}">{% if st == "active" %}{% trans "triggered" %}{% elif st == "fault" %}{% trans "wiring fault" %}{% elif st == "rest" %}{% trans "at rest" %}{% else %}{% trans "no report yet" %}{% endif %}</span> <strong>{{ i.label }}</strong> <span class="small muted"><code>{{ i.key }}</code> → {{ i.state }}</span></li>{% endfor %}</ul>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="inputs"><input type="hidden" name="pk" value="{{ row.b.pk }}">
+<div class="field"><label for="inputs-{{ row.b.pk }}">{% trans "Inputs" %}</label>
+<textarea id="inputs-{{ row.b.pk }}" name="inputs" rows="4" class="mono" aria-describedby="inputs-help-{{ row.b.pk }}">{{ row.inputs_text }}</textarea>
+<p class="help" id="inputs-help-{{ row.b.pk }}">{% trans "One per line: key; label; stage; zone (optional). Example: in1; Fire panel relay 3; evacuate; Zone North" %}</p>
+{% if row.error %}<p class="error" role="alert">{{ row.error }}</p>{% endif %}</div>
+<div class="form-actions"><button class="btn btn-primary">{% trans "Save inputs" %}</button></div></form>
+<div class="actions"><form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="rotate"><input type="hidden" name="pk" value="{{ row.b.pk }}"><button class="btn btn-sm" data-confirm="{% trans 'Issue a new token? The bridge stops working until it has the new one.' %}">{% trans "New token" %}</button></form>
+<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="delete"><input type="hidden" name="pk" value="{{ row.b.pk }}"><button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Remove this bridge?' %}">{% trans "Remove" %}</button></form></div>
+</section>{% empty %}<p class="muted">{% trans "No bridges yet." %}</p>{% endfor %}
+
+<form method="post" class="card">{% csrf_token %}<input type="hidden" name="what" value="add"><h2>{% trans "Add a bridge" %}</h2>
+<div class="field"><label for="bridge-name">{% trans "Name" %}</label><input id="bridge-name" name="name" maxlength="100" placeholder="{% trans 'e.g. Fire panel, hall A' %}">{% if add_error %}<p class="error" role="alert">{{ add_error }}</p>{% endif %}</div>
+<div class="form-actions"><button class="btn btn-primary">{% trans "Add bridge" %}</button></div>
+<p class="small muted">{% blocktrans with h=heartbeat o=offline_after %}Bridges send a heartbeat every {{ h }} seconds; after {{ o }} seconds without one the control room is alerted. Reference software for a Raspberry Pi and an ESP32 is in the repository under bridge/.{% endblocktrans %}</p></form>
+{% endblock %}

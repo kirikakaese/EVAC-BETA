@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Venue nodes" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Venue nodes" %}</h1></div>
+<p class="muted">{% blocktrans %}A venue node is EVAC on a small computer at the venue (EVAC_MODE=node). An event checked out to it keeps its screens, announcements and evacuation running without the uplink; the node fetches the configuration from here and sends back what happened on site.{% endblocktrans %}</p>
+{% if mode == "node" %}<section class="card"><h2>{% trans "This is a venue node" %}</h2>
+{% if identity and identity.enrolled_at %}<p>{% blocktrans with n=identity.name u=identity.central_url %}Enrolled as {{ n }} at {{ u }}.{% endblocktrans %}{% if identity.last_contact %} {% blocktrans with t=identity.last_contact|date:"D j M H:i:s" %}Last contact {{ t }}.{% endblocktrans %}{% endif %}</p>
+{% if identity.last_error %}<p class="alert alert-warn" role="status">{{ identity.last_error }}</p>{% endif %}
+{% if held %}<ul class="plain">{% for h in held %}<li>{% if h.checked_out %}<span class="badge badge-ok">{% trans "held here" %}</span>{% else %}<span class="badge badge-muted">{% trans "read-only copy" %}</span>{% endif %} <strong>{{ h.slug }}</strong> <span class="small muted">{% blocktrans with p=h.pushed_seq n=h.next_seq|add:"-1" %}op-log {{ p }} of {{ n }} sent{% endblocktrans %}{% if h.files_missing %} · {% blocktrans count n=h.files_missing %}{{ n }} file missing{% plural %}{{ n }} files missing{% endblocktrans %}{% endif %}</span></li>{% endfor %}</ul>{% endif %}
+{% else %}<p>{% trans "Not enrolled yet. Run: manage.py evac_node enrol --central https://… --code …" %}</p>{% endif %}</section>{% endif %}
+
+{% if code %}<div class="alert alert-warn" role="alert"><p><strong>{% blocktrans with n=code_for.name %}Enrolment code for {{ n }} (shown once, valid for 24 hours):{% endblocktrans %}</strong></p>
+<p><code class="token" id="node-code">{{ code }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#node-code" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></p>
+<p class="small"><code>manage.py evac_node enrol --central {{ central_url }} --code {{ code }}</code></p></div>{% endif %}
+
+<section class="card"><h2>{% trans "Nodes" %}</h2>
+{% if rows %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Node" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Events held" %}</th><th scope="col">{% trans "Actions" %}</th></tr></thead>
+<tbody>{% for r in rows %}<tr><th scope="row">{{ r.node.name }}</th>
+<td>{% if r.node.revoked_at %}<span class="badge badge-muted">{% trans "revoked" %}</span>{% elif r.node.enrolled_at %}<span class="badge badge-ok">{% trans "enrolled" %}</span>{% if r.node.last_seen %} <span class="small muted">{% blocktrans with t=r.node.last_seen|date:"D H:i:s" %}last seen {{ t }}{% endblocktrans %}{% if r.node.version %} · {{ r.node.version }}{% endif %}</span>{% endif %}{% else %}<span class="badge badge-warn">{% trans "waiting for enrolment" %}</span>{% endif %}</td>
+<td>{% for co in r.checkouts %}<a href="{% url 'nodes:index' co.event.slug %}">{{ co.event.name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">–</span>{% endfor %}</td>
+<td>{% if not r.node.revoked_at %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="pk" value="{{ r.node.pk }}"><input type="hidden" name="what" value="code"><button class="btn btn-sm">{% trans "New enrolment code" %}</button></form>
+<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="pk" value="{{ r.node.pk }}"><input type="hidden" name="what" value="revoke"><button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Revoke this node? It can no longer sync.' %}">{% trans "Revoke" %}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No nodes yet." %}</p>{% endif %}</section>
+
+<form method="post" class="card">{% csrf_token %}<input type="hidden" name="what" value="add"><h2>{% trans "Add a node" %}</h2>
+<div class="field"><label for="node-name">{% trans "Name" %}</label><input id="node-name" name="name" maxlength="100" placeholder="{% trans 'e.g. Hall A rack' %}"></div>
+<div class="form-actions"><button class="btn btn-primary">{% trans "Add node" %}</button></div></form>
+{% endblock %}

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // EVAC slide preview, built from frontend/src with `npm run build` - do not edit.
-var tt = Object.defineProperty;
-var et = (n, t, e) => t in n ? tt(n, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : n[t] = e;
-var E = (n, t, e) => et(n, typeof t != "symbol" ? t + "" : t, e);
-const nt = `(() => {
+// Includes ISO 7010 safety signs from @iso-safety-signs/core (Copyright (c) Karl Norling, MIT,
+// https://github.com/karlnorling/iso-safety-signs).
+var et = Object.defineProperty;
+var nt = (n, t, e) => t in n ? et(n, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : n[t] = e;
+var E = (n, t, e) => nt(n, typeof t != "symbol" ? t + "" : t, e);
+const st = `(() => {
   let data = {}, received = 0;
   const listeners = [];
   const post = (m) => parent.postMessage(m, "*");
@@ -28,7 +30,7 @@ const nt = `(() => {
 function O(n) {
   return n.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
-function st(n, t, e, s = "") {
+function it(n, t, e, s = "") {
   const i = O(t), r = e ? ` ${e}` : "", o = [
     "default-src 'none'",
     `script-src 'nonce-${t}'`,
@@ -42,9 +44,9 @@ function st(n, t, e, s = "") {
     "frame-src 'none'",
     "worker-src 'none'"
   ].join("; "), a = String(n.css ?? "").replace(/<\/style/gi, "<\\/style"), c = String(n.js ?? "").replace(/<\/script/gi, "<\\/script");
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${O(o)}"><style nonce="${i}">html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--evac-color-text,#fff);font-family:var(--evac-font-body,system-ui,sans-serif)}${s}</style><style nonce="${i}">${a}</style><script nonce="${i}">${nt}<\/script></head><body>${String(n.html ?? "")}` + (c.trim() ? `<script nonce="${i}">${c}<\/script>` : "") + "</body></html>";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${O(o)}"><style nonce="${i}">html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--evac-color-text,#fff);font-family:var(--evac-font-body,system-ui,sans-serif)}${s}</style><style nonce="${i}">${a}</style><script nonce="${i}">${st}<\/script></head><body>${String(n.html ?? "")}` + (c.trim() ? `<script nonce="${i}">${c}<\/script>` : "") + "</body></html>";
 }
-function it(n) {
+function rt(n) {
   const t = [];
   try {
     const e = getComputedStyle(n);
@@ -59,11 +61,11 @@ function it(n) {
   }
   return t.length ? `:root{${t.join(";")}}` : "";
 }
-function rt(n = document) {
+function ot(n = document) {
   const t = n.querySelector("script[nonce]");
   return t?.nonce || t?.getAttribute("nonce") || "";
 }
-function ot(n, t, e) {
+function at(n, t, e) {
   const s = t.trim();
   if (s === "now") return new Date(e.now ? e.now() : Date.now());
   if (/^".*"$|^'.*'$/.test(s)) return s.slice(1, -1);
@@ -75,19 +77,19 @@ function ot(n, t, e) {
   }
   return i;
 }
-function at(n) {
+function ct(n) {
   const t = [];
   let e = "", s = "";
   for (const i of n)
     s ? (i === s && (s = ""), e += i) : i === '"' || i === "'" ? (s = i, e += i) : i === "|" ? (t.push(e), e = "") : e += i;
   return t.push(e), t.map((i) => i.trim());
 }
-function ct(n) {
+function lt(n) {
   if (!n) return "";
   const t = n.trim();
   return /^".*"$|^'.*'$/.test(t) ? t.slice(1, -1) : t;
 }
-function L(n, t, e) {
+function H(n, t, e) {
   const s = e ? { timeZone: e } : {};
   switch (t) {
     case "short":
@@ -115,8 +117,8 @@ function L(n, t, e) {
 function g(n) {
   return n == null ? "" : Array.isArray(n) ? n.map(g).join(", ") : n instanceof Date ? n.toISOString() : typeof n == "object" ? n.name ?? "" : String(n);
 }
-function lt(n, t, e) {
-  const [s, ...i] = t.split(":"), r = ct(i.join(":")), o = () => n instanceof Date ? n : new Date(String(n));
+function dt(n, t, e) {
+  const [s, ...i] = t.split(":"), r = lt(i.join(":")), o = () => n instanceof Date ? n : new Date(String(n));
   switch (s.trim()) {
     case "upper":
       return g(n).toUpperCase();
@@ -131,9 +133,9 @@ function lt(n, t, e) {
     case "default":
       return g(n) === "" ? r : n;
     case "date":
-      return isNaN(o().getTime()) ? "" : L(o(), r || "long", e.timezone);
+      return isNaN(o().getTime()) ? "" : H(o(), r || "long", e.timezone);
     case "time":
-      return isNaN(o().getTime()) ? "" : L(o(), r || "HH:mm", e.timezone);
+      return isNaN(o().getTime()) ? "" : H(o(), r || "HH:mm", e.timezone);
     case "join":
       return Array.isArray(n) ? n.map(g).join(r || ", ") : g(n);
     default:
@@ -141,29 +143,29 @@ function lt(n, t, e) {
   }
 }
 function $(n, t, e = {}) {
-  const [s, ...i] = at(n);
-  let r = ot(t, s, e);
-  for (const o of i) r = lt(r, o, e);
+  const [s, ...i] = ct(n);
+  let r = at(t, s, e);
+  for (const o of i) r = dt(r, o, e);
   return r;
 }
-function dt(n) {
+function ht(n) {
   return Array.isArray(n) ? n.length > 0 : !(n == null || n === !1 || n === "" || n === 0);
 }
-function I(n, t, e = {}) {
+function B(n, t, e = {}) {
   const s = n.trim();
   if (!s) return !0;
-  if (s.startsWith("not ")) return !I(s.slice(4), t, e);
+  if (s.startsWith("not ")) return !B(s.slice(4), t, e);
   const i = /^(.+?)\s*(==|!=)\s*(.+)$/.exec(s);
   if (i) {
     const r = g($(i[1], t, e)), o = g($(i[3], t, e));
     return i[2] === "==" ? r === o : r !== o;
   }
-  return dt($(s.replace(/^\{\{|\}\}$/g, ""), t, e));
+  return ht($(s.replace(/^\{\{|\}\}$/g, ""), t, e));
 }
-const ht = /(\{%\s*(?:if\s+[^%]+|else|endif)\s*%\}|\{\{[^}]*\}\})/g;
-function j(n, t, e = {}) {
+const ut = /(\{%\s*(?:if\s+[^%]+|else|endif)\s*%\}|\{\{[^}]*\}\})/g;
+function _(n, t, e = {}) {
   if (!n || !n.includes("{{") && !n.includes("{%")) return n ?? "";
-  const s = n.split(ht);
+  const s = n.split(ut);
   let i = 0;
   const r = (o) => {
     let a = "";
@@ -173,9 +175,9 @@ function j(n, t, e = {}) {
         const f = l[1].startsWith("if") ? "if" : l[1];
         if (o.includes(f)) return [a, f];
         if (f === "if") {
-          const h = I(l[2], t, e), [u, w] = r(["else", "endif"]);
-          let p = "";
-          w === "else" && (p = r(["endif"])[0]), a += h ? u : p;
+          const h = B(l[2], t, e), [u, v] = r(["else", "endif"]);
+          let m = "";
+          v === "else" && (m = r(["endif"])[0]), a += h ? u : m;
         }
       } else c.startsWith("{{") && c.endsWith("}}") ? a += g($(c.slice(2, -2), t, e)) : a += c;
     }
@@ -183,13 +185,64 @@ function j(n, t, e = {}) {
   };
   return r([])[0];
 }
+const j = {
+  E001: {
+    name: "Emergency exit (left hand)",
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 105.833 105.833"><path fill="#fff" d="M105.833 0H0v105.833h105.833z"/><path fill="#237f52" d="M103.187 2.646H2.646v100.541h100.541z"/><path d="M148.169 80.71v60.715c6.316.483 10.53 5.636 10.53 10.315v2.47l-2.468-.007-8.062-.018v12.739l6.082 5.985h-40.129l-7.432-7.12h-9.24l7.433 7.12H93.428l-6.082-5.985v-41.75H98.01c.084 0 .163.004.246.004.056 0 .083-.007.136-.008q.052 0 .103-.004c1.439-.028 1.75-.282 2.779-1.31l6.241-7.378c1.731 3.785 3.362 7.004 5.085 10.66.195.374.655 1.213.31 1.867l-17.153 34.636 6.292-.021c3.29.072 4.662-2.198 5.819-4.23 4.64-9.353 9.301-18.697 13.949-28.05l.877 16.643c.23 2.88 2.176 3.612 4.726 3.691l28.817.066c0-3.312-3.282-7.687-8.627-7.895 0 0-10.292.116-15.673.137-.682 0-.869-.38-.948-.948-.25-4.282-.488-8.591-.754-12.872-.166-2.126-.352-3.598-.969-5.207-2.01-4.31-4.022-8.6-6.035-12.895l7.364-.085c.193-.007.344.035.444.208l5.33 9.337c2.199 4.01 8.139 1.086 6.149-3.166l-6.537-10.933c-1.15-1.71-1.674-2.299-4.661-2.392 0 0-13.956-.022-20.945-.022-2.27-.05-2.53.661-3.614 1.817a649 649 0 0 1-8.95 10.79c-.395.473-.617.675-1.558.667a62 62 0 0 0-4.619.081h-4.288V80.71Zm-38.65 8.337c-4 0-7.067 3.075-7.067 7.097 0 4.03 3.067 7.104 7.068 7.104s7.075-3.075 7.075-7.104c0-4.022-3.075-7.097-7.075-7.097" display="inline" fill="#fff" fill-opacity="1" stroke-width=".264583" transform="translate(-65.617 -71.967)"/></svg>'
+  },
+  E002: {
+    name: "Emergency exit (right hand)",
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 105.833 105.833"><path fill="#fff" d="M0 0h105.833v105.833H0z"/><path fill="#237f52" d="M2.646 2.646h100.541v100.541H2.646z"/><path d="M88.898 80.71v60.715c-6.317.483-10.531 5.636-10.531 10.315v2.47l2.469-.007 8.062-.018v12.739l-6.082 5.985h40.129l7.432-7.12h9.239l-7.433 7.12h11.456l6.082-5.985v-41.75h-10.665c-.083 0-.162.004-.246.004-.055 0-.083-.007-.136-.008q-.051 0-.102-.004c-1.439-.028-1.75-.282-2.78-1.31l-6.24-7.378c-1.731 3.785-3.362 7.004-5.085 10.66-.195.374-.655 1.213-.31 1.867l17.153 34.636-6.293-.021c-3.29.072-4.661-2.198-5.818-4.23-4.64-9.353-9.302-18.697-13.949-28.05l-.877 16.643c-.23 2.88-2.176 3.612-4.726 3.691l-28.817.066c0-3.312 3.282-7.687 8.626-7.895 0 0 10.292.116 15.673.137.683 0 .87-.38.949-.948.25-4.282.488-8.591.753-12.872.167-2.126.353-3.598.97-5.207 2.01-4.31 4.022-8.6 6.035-12.895l-7.364-.085c-.194-.007-.344.035-.445.208l-5.33 9.337c-2.198 4.01-8.138 1.086-6.148-3.166l6.536-10.933c1.15-1.71 1.675-2.299 4.662-2.392 0 0 13.956-.022 20.945-.022 2.27-.05 2.529.661 3.614 1.817a649 649 0 0 0 8.95 10.79c.395.473.617.675 1.558.667a62 62 0 0 1 4.619.081h4.288V80.71Zm38.649 8.337c4 0 7.067 3.075 7.067 7.097 0 4.03-3.066 7.104-7.067 7.104-4 0-7.075-3.075-7.075-7.104 0-4.022 3.074-7.097 7.075-7.097" display="inline" fill="#fff" fill-opacity="1" stroke-width=".264583" transform="translate(-65.617 -71.967)"/></svg>'
+  },
+  E003: {
+    name: "First aid",
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><g stroke="none" fill-rule="nonzero"><path d="M0 0h200v200H0z" fill="#fff"/><path d="M5 5h190v190H5z" fill="#237f52"/><path d="M75 25h50v150H75z" fill="#fff"/><path d="M25 75h150v50H25z" fill="#fff"/></g></svg>'
+  },
+  E007: {
+    name: "Evacuation assembly point",
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path d="M0 0h200v200H0z" fill="#fff"/><path d="M5 5h190v190H5z" fill="#237f52"/><path d="m29.772 21.893-7.594 7.59 22.09 22.095h-22.08l10.066 10.065h29.682v-29.69l-10.081-10.06v22.09zM22.178 169.95l7.59 7.595 22.095-22.091v22.08l10.066-10.065v-29.682h-29.69l-10.061 10.08h22.09zM177.73 29.488l-7.59-7.594-22.095 22.09v-22.08L137.98 31.97v29.682h29.69l10.06-10.08h-22.09zm-7.6 148.052 7.595-7.59-22.092-22.096h22.08l-10.066-10.065h-29.682v29.69l10.081 10.061v-22.09zm-46.99-96.105h-12.701c-5.4-.159-8.488 3.05-9.195 7.41l-.074 19.594c.01 1.56.895 2.983 2.809 2.975 1.9-.009 2.772-1.426 2.786-2.975V90.46c.004-.261.73-.477 1.056-.481.329-.003.98.212.983.48v51.712c.01 1.78 1.62 3.42 3.804 3.413 2.18-.003 3.73-1.637 3.739-3.413l.013-29.91c.121-.26.698-.402.962-.398.26-.005.867.134.978.398l.017 29.91c.004 1.78 1.467 3.42 3.651 3.413 2.18-.003 3.872-1.637 3.876-3.413V90.458c.004-.26.67-.476.991-.48.33-.003 1.005.212 1.009.48v17.981c.01 1.56.768 2.983 2.682 2.975 1.9-.009 2.897-1.426 2.906-2.975l-.075-19.594c-.706-4.36-3.795-7.569-9.19-7.41m.113-8.735a6.932 6.932 0 1 0-6.933 6.934 6.936 6.936 0 0 0 6.933-6.934m-17.25-11.195a6.932 6.932 0 1 0-6.933 6.934 6.936 6.936 0 0 0 6.933-6.934m-18.398 19.93H75.931c-5.4-.159-8.488 3.05-9.195 7.41l-.074 19.594c.01 1.56.895 2.983 2.809 2.975 1.9-.009 2.772-1.426 2.786-2.975V90.46c.003-.261.73-.477 1.056-.481.329-.003.98.212.983.48v51.712c.01 1.78 1.62 3.42 3.804 3.413 2.18-.003 3.73-1.637 3.739-3.413l.013-29.91c.121-.26.698-.402.962-.398.26-.005.867.134.978.398l.017 29.91c.004 1.78 1.467 3.42 3.651 3.413 2.18-.003 3.872-1.637 3.876-3.413V90.458c.004-.26.67-.476.991-.48.33-.003 1.005.212 1.009.48v17.981c.01 1.56.768 2.983 2.682 2.975 1.9-.009 2.897-1.426 2.906-2.975l-.075-19.594c-.706-4.36-3.795-7.569-9.19-7.41m.122-8.735a6.932 6.932 0 1 0-6.933 6.934 6.936 6.936 0 0 0 6.933-6.934" fill="#fff" stroke="none"/></svg>'
+  },
+  W001: {
+    name: "General warning sign",
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 524"><path fill="#f9a800" stroke="#000" stroke-linejoin="round" stroke-width="32" d="m300 16 284 492H16z"/><path d="M337 192a37 37 0 0 0-74 0l11 143a26 26 0 0 0 52 0m12 85a38 38 0 1 1 0-1"/></svg>'
+  }
+}, ft = "#237f52", pt = ["ahead", "ahead_right", "right", "back_right", "back", "back_left", "left", "ahead_left"], mt = {
+  E001: "Emergency exit (left)",
+  E002: "Emergency exit (right)",
+  E003: "First aid",
+  E007: "Assembly point",
+  W001: "General warning",
+  arrow: "Direction"
+};
+function gt(n) {
+  const t = pt.indexOf(n);
+  return t < 0 ? 0 : t * 45;
+}
+function vt(n, t, e, s) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="${t}"
+ color="${s}" fill="currentColor"><rect width="100" height="100" rx="4" fill="${e}"/>${n}</svg>`;
+}
+function wt(n, t) {
+  return j[n].svg.replace(/^<svg\b/, `<svg role="img" aria-label="${t}"`);
+}
+function yt(n, t = "ahead") {
+  const e = mt[n] ?? "Safety sign";
+  if (n in j) return wt(n, e);
+  const s = gt(t);
+  return vt(
+    `<g transform="rotate(${s} 50 50)"><path d="M50 12 L80 46 H60 V88 H40 V46 H20 Z"/></g>`,
+    `${e}: ${String(t).replace("_", " ")}`,
+    ft,
+    "#fff"
+  );
+}
 var b = /* @__PURE__ */ ((n) => (n[n.Border = -1] = "Border", n[n.Data = 0] = "Data", n[n.Function = 1] = "Function", n[n.Position = 2] = "Position", n[n.Timing = 3] = "Timing", n[n.Alignment = 4] = "Alignment", n))(b || {});
-const ut = [0, 1], _ = [1, 0], q = [2, 3], H = [3, 2], ft = {
-  L: ut,
-  M: _,
-  Q: q,
-  H
-}, pt = /^\d*$/, mt = /^[A-Z0-9 $%*+./:-]*$/, P = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", D = 1, B = 40, T = 3, gt = 3, M = 40, wt = 10, U = [
+const bt = [0, 1], q = [1, 0], V = [2, 3], G = [3, 2], Ct = {
+  L: bt,
+  M: q,
+  Q: V,
+  H: G
+}, Et = /^\d*$/, xt = /^[A-Z0-9 $%*+./:-]*$/, k = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", I = 1, D = 40, T = 3, Mt = 3, M = 40, St = 10, U = [
   // Version: (note that index 0 is for padding, and is set to an illegal value)
   // 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
   [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
@@ -200,7 +253,7 @@ const ut = [0, 1], _ = [1, 0], q = [2, 3], H = [3, 2], ft = {
   // Quartile
   [-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
   // High
-], G = [
+], Z = [
   // Version: (note that index 0 is for padding, and is set to an illegal value)
   // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
   [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
@@ -212,7 +265,7 @@ const ut = [0, 1], _ = [1, 0], q = [2, 3], H = [3, 2], ft = {
   [-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81]
   // High
 ];
-class vt {
+class $t {
   /* -- Constructor (low level) and fields -- */
   // Creates a new QR Code with the given version number,
   // error correction level, data codeword bytes, and mask number.
@@ -231,7 +284,7 @@ class vt {
     // Immutable after constructor finishes. Accessed through getModule().
     E(this, "modules", []);
     E(this, "types", []);
-    if (this.version = t, this.ecc = e, t < D || t > B)
+    if (this.version = t, this.ecc = e, t < I || t > D)
       throw new RangeError("Version value out of range");
     if (i < -1 || i > 7)
       throw new RangeError("Mask value out of range");
@@ -279,14 +332,14 @@ class vt {
       s = s << 1 ^ (s >>> 9) * 1335;
     const i = (e << 10 | s) ^ 21522;
     for (let r = 0; r <= 5; r++)
-      this.setFunctionModule(8, r, v(i, r));
-    this.setFunctionModule(8, 7, v(i, 6)), this.setFunctionModule(8, 8, v(i, 7)), this.setFunctionModule(7, 8, v(i, 8));
+      this.setFunctionModule(8, r, w(i, r));
+    this.setFunctionModule(8, 7, w(i, 6)), this.setFunctionModule(8, 8, w(i, 7)), this.setFunctionModule(7, 8, w(i, 8));
     for (let r = 9; r < 15; r++)
-      this.setFunctionModule(14 - r, 8, v(i, r));
+      this.setFunctionModule(14 - r, 8, w(i, r));
     for (let r = 0; r < 8; r++)
-      this.setFunctionModule(this.size - 1 - r, 8, v(i, r));
+      this.setFunctionModule(this.size - 1 - r, 8, w(i, r));
     for (let r = 8; r < 15; r++)
-      this.setFunctionModule(8, this.size - 15 + r, v(i, r));
+      this.setFunctionModule(8, this.size - 15 + r, w(i, r));
     this.setFunctionModule(8, this.size - 8, !0);
   }
   // Draws two copies of the version bits (with its own error correction code),
@@ -299,7 +352,7 @@ class vt {
       t = t << 1 ^ (t >>> 11) * 7973;
     const e = this.version << 12 | t;
     for (let s = 0; s < 18; s++) {
-      const i = v(e, s), r = this.size - 11 + s % 3, o = Math.floor(s / 3);
+      const i = w(e, s), r = this.size - 11 + s % 3, o = Math.floor(s / 3);
       this.setFunctionModule(r, o, i), this.setFunctionModule(o, r, i);
     }
   }
@@ -336,24 +389,24 @@ class vt {
     const e = this.version, s = this.ecc;
     if (t.length !== A(e, s))
       throw new RangeError("Invalid argument");
-    const i = G[s[0]][e], r = U[s[0]][e], o = Math.floor(k(e) / 8), a = i - o % i, c = Math.floor(o / i), l = [], f = At(r);
-    for (let u = 0, w = 0; u < i; u++) {
-      const p = t.slice(w, w + c - r + (u < a ? 0 : 1));
-      w += p.length;
-      const Q = zt(p, f);
-      u < a && p.push(0), l.push(p.concat(Q));
+    const i = Z[s[0]][e], r = U[s[0]][e], o = Math.floor(N(e) / 8), a = i - o % i, c = Math.floor(o / i), l = [], f = Dt(r);
+    for (let u = 0, v = 0; u < i; u++) {
+      const m = t.slice(v, v + c - r + (u < a ? 0 : 1));
+      v += m.length;
+      const tt = Rt(m, f);
+      u < a && m.push(0), l.push(m.concat(tt));
     }
     const h = [];
     for (let u = 0; u < l[0].length; u++)
-      l.forEach((w, p) => {
-        (u !== c - r || p >= a) && h.push(w[u]);
+      l.forEach((v, m) => {
+        (u !== c - r || m >= a) && h.push(v[u]);
       });
     return h;
   }
   // Draws the given sequence of 8-bit codewords (data and error correction) onto the entire
   // data area of this QR Code. Function modules need to be marked off before this is called.
   drawCodewords(t) {
-    if (t.length !== Math.floor(k(this.version) / 8))
+    if (t.length !== Math.floor(N(this.version) / 8))
       throw new RangeError("Invalid argument");
     let e = 0;
     for (let s = this.size - 1; s >= 1; s -= 2) {
@@ -361,7 +414,7 @@ class vt {
       for (let i = 0; i < this.size; i++)
         for (let r = 0; r < 2; r++) {
           const o = s - r, c = (s + 1 & 2) === 0 ? this.size - 1 - i : i;
-          !this.types[c][o] && e < t.length * 8 && (this.modules[c][o] = v(t[e >>> 3], 7 - (e & 7)), e++);
+          !this.types[c][o] && e < t.length * 8 && (this.modules[c][o] = w(t[e >>> 3], 7 - (e & 7)), e++);
         }
     }
   }
@@ -428,13 +481,13 @@ class vt {
     for (let r = 0; r < this.size - 1; r++)
       for (let o = 0; o < this.size - 1; o++) {
         const a = this.modules[r][o];
-        a === this.modules[r][o + 1] && a === this.modules[r + 1][o] && a === this.modules[r + 1][o + 1] && (t += gt);
+        a === this.modules[r][o + 1] && a === this.modules[r + 1][o] && a === this.modules[r + 1][o + 1] && (t += Mt);
       }
     let e = 0;
     for (const r of this.modules)
       e = r.reduce((o, a) => o + (a ? 1 : 0), e);
     const s = this.size * this.size, i = Math.ceil(Math.abs(e * 20 - s * 10) / s) - 1;
-    return t += i * wt, t;
+    return t += i * St, t;
   }
   /* -- Private helper functions -- */
   // Returns an ascending list of positions of alignment patterns for this version number.
@@ -471,7 +524,7 @@ function y(n, t, e) {
   for (let s = t - 1; s >= 0; s--)
     e.push(n >>> s & 1);
 }
-function v(n, t) {
+function w(n, t) {
   return (n >>> t & 1) !== 0;
 }
 class R {
@@ -489,65 +542,65 @@ class R {
     return this.bitData.slice();
   }
 }
-const yt = [1, 10, 12, 14], bt = [2, 9, 11, 13], Ct = [4, 8, 16, 16];
-function V(n, t) {
+const At = [1, 10, 12, 14], zt = [2, 9, 11, 13], kt = [4, 8, 16, 16];
+function Y(n, t) {
   return n[Math.floor((t + 7) / 17) + 1];
 }
-function Y(n) {
+function X(n) {
   const t = [];
   for (const e of n)
     y(e, 8, t);
-  return new R(Ct, n.length, t);
+  return new R(kt, n.length, t);
 }
-function Et(n) {
-  if (!Z(n))
+function Pt(n) {
+  if (!J(n))
     throw new RangeError("String contains non-numeric characters");
   const t = [];
   for (let e = 0; e < n.length; ) {
     const s = Math.min(n.length - e, 3);
     y(Number.parseInt(n.substring(e, e + s), 10), s * 3 + 1, t), e += s;
   }
-  return new R(yt, n.length, t);
+  return new R(At, n.length, t);
 }
-function xt(n) {
-  if (!X(n))
+function Nt(n) {
+  if (!K(n))
     throw new RangeError("String contains unencodable characters in alphanumeric mode");
   const t = [];
   let e;
   for (e = 0; e + 2 <= n.length; e += 2) {
-    let s = P.indexOf(n.charAt(e)) * 45;
-    s += P.indexOf(n.charAt(e + 1)), y(s, 11, t);
+    let s = k.indexOf(n.charAt(e)) * 45;
+    s += k.indexOf(n.charAt(e + 1)), y(s, 11, t);
   }
-  return e < n.length && y(P.indexOf(n.charAt(e)), 6, t), new R(bt, n.length, t);
+  return e < n.length && y(k.indexOf(n.charAt(e)), 6, t), new R(zt, n.length, t);
 }
-function Mt(n) {
-  return n === "" ? [] : Z(n) ? [Et(n)] : X(n) ? [xt(n)] : [Y($t(n))];
+function Ft(n) {
+  return n === "" ? [] : J(n) ? [Pt(n)] : K(n) ? [Nt(n)] : [X(It(n))];
 }
-function Z(n) {
-  return pt.test(n);
+function J(n) {
+  return Et.test(n);
 }
-function X(n) {
-  return mt.test(n);
+function K(n) {
+  return xt.test(n);
 }
-function St(n, t) {
+function Bt(n, t) {
   let e = 0;
   for (const s of n) {
-    const i = V(s.mode, t);
+    const i = Y(s.mode, t);
     if (s.numChars >= 1 << i)
       return Number.POSITIVE_INFINITY;
     e += 4 + i + s.bitData.length;
   }
   return e;
 }
-function $t(n) {
+function It(n) {
   n = encodeURI(n);
   const t = [];
   for (let e = 0; e < n.length; e++)
     n.charAt(e) !== "%" ? t.push(n.charCodeAt(e)) : (t.push(Number.parseInt(n.substring(e + 1, e + 3), 16)), e += 2);
   return t;
 }
-function k(n) {
-  if (n < D || n > B)
+function N(n) {
+  if (n < I || n > D)
     throw new RangeError("Version number out of range");
   let t = (16 * n + 128) * n + 64;
   if (n >= 2) {
@@ -557,9 +610,9 @@ function k(n) {
   return t;
 }
 function A(n, t) {
-  return Math.floor(k(n) / 8) - U[t[0]][n] * G[t[0]][n];
+  return Math.floor(N(n) / 8) - U[t[0]][n] * Z[t[0]][n];
 }
-function At(n) {
+function Dt(n) {
   if (n < 1 || n > 255)
     throw new RangeError("Degree out of range");
   const t = [];
@@ -574,7 +627,7 @@ function At(n) {
   }
   return t;
 }
-function zt(n, t) {
+function Rt(n, t) {
   const e = t.map((s) => 0);
   for (const s of n) {
     const i = s ^ e.shift();
@@ -590,12 +643,12 @@ function F(n, t) {
     e = e << 1 ^ (e >>> 7) * 285, e ^= (t >>> s & 1) * n;
   return e;
 }
-function Pt(n, t, e = 1, s = 40, i = -1, r = !0) {
-  if (!(D <= e && e <= s && s <= B) || i < -1 || i > 7)
+function Lt(n, t, e = 1, s = 40, i = -1, r = !0) {
+  if (!(I <= e && e <= s && s <= D) || i < -1 || i > 7)
     throw new RangeError("Invalid value");
   let o, a;
   for (o = e; ; o++) {
-    const h = A(o, t) * 8, u = St(n, o);
+    const h = A(o, t) * 8, u = Bt(n, o);
     if (u <= h) {
       a = u;
       break;
@@ -603,11 +656,11 @@ function Pt(n, t, e = 1, s = 40, i = -1, r = !0) {
     if (o >= s)
       throw new RangeError("Data too long");
   }
-  for (const h of [_, q, H])
+  for (const h of [q, V, G])
     r && a <= A(o, h) * 8 && (t = h);
   const c = [];
   for (const h of n) {
-    y(h.mode[0], 4, c), y(h.numChars, V(h.mode, o), c);
+    y(h.mode[0], 4, c), y(h.numChars, Y(h.mode, o), c);
     for (const u of h.getData())
       c.push(u);
   }
@@ -616,9 +669,9 @@ function Pt(n, t, e = 1, s = 40, i = -1, r = !0) {
   for (let h = 236; c.length < l; h ^= 253)
     y(h, 8, c);
   const f = Array.from({ length: Math.ceil(c.length / 8) }, () => 0);
-  return c.forEach((h, u) => f[u >>> 3] |= h << 7 - (u & 7)), new vt(o, t, f, i);
+  return c.forEach((h, u) => f[u >>> 3] |= h << 7 - (u & 7)), new $t(o, t, f, i);
 }
-function Nt(n, t) {
+function Ot(n, t) {
   const {
     ecc: e = "L",
     boostEcc: s = !1,
@@ -626,17 +679,17 @@ function Nt(n, t) {
     maxVersion: r = 40,
     maskPattern: o = -1,
     border: a = 1
-  } = t || {}, c = typeof n == "string" ? Mt(n) : Array.isArray(n) ? [Y(n)] : void 0;
+  } = t || {}, c = typeof n == "string" ? Ft(n) : Array.isArray(n) ? [X(n)] : void 0;
   if (!c)
     throw new Error(`uqr only supports encoding string and binary data, but got: ${typeof n}`);
-  const l = Pt(
+  const l = Lt(
     c,
-    ft[e],
+    Ct[e],
     i,
     r,
     o,
     s
-  ), f = kt({
+  ), f = Ht({
     version: l.version,
     maskPattern: l.mask,
     size: l.size,
@@ -645,7 +698,7 @@ function Nt(n, t) {
   }, a);
   return t?.invert && (f.data = f.data.map((h) => h.map((u) => !u))), t?.onEncoded?.(f), f;
 }
-function kt(n, t = 1) {
+function Ht(n, t = 1) {
   if (!t)
     return n;
   const { size: e } = n, s = e + t * 2;
@@ -664,20 +717,20 @@ function kt(n, t = 1) {
     n.types.unshift(Array.from({ length: s }, (o) => i)), n.types.push(Array.from({ length: s }, (o) => i));
   return n;
 }
-const N = "http://www.w3.org/2000/svg";
-function Ft(n, t = document) {
-  const { data: e, size: s } = Nt(n, { ecc: "M", border: 2 }), i = t.createElementNS(N, "svg");
+const P = "http://www.w3.org/2000/svg";
+function Tt(n, t = document) {
+  const { data: e, size: s } = Ot(n, { ecc: "M", border: 2 }), i = t.createElementNS(P, "svg");
   i.setAttribute("viewBox", `0 0 ${s} ${s}`), i.setAttribute("shape-rendering", "crispEdges"), i.setAttribute("class", "qr");
-  const r = t.createElementNS(N, "rect");
+  const r = t.createElementNS(P, "rect");
   r.setAttribute("width", String(s)), r.setAttribute("height", String(s)), r.setAttribute("fill", "#fff"), i.appendChild(r);
   let o = "";
   e.forEach((c, l) => c.forEach((f, h) => {
     f && (o += `M${h} ${l}h1v1h-1z`);
   }));
-  const a = t.createElementNS(N, "path");
+  const a = t.createElementNS(P, "path");
   return a.setAttribute("d", o), a.setAttribute("fill", "#000"), i.appendChild(a), i;
 }
-class m extends HTMLElement {
+class p extends HTMLElement {
   constructor() {
     super(...arguments), this.timers = [], this.observers = [];
   }
@@ -695,7 +748,7 @@ class m extends HTMLElement {
     }
   }
   text(t) {
-    return j(String(t ?? ""), this.ctx.vars, { now: this.ctx.now, timezone: this.ctx.timezone });
+    return _(String(t ?? ""), this.ctx.vars, { now: this.ctx.now, timezone: this.ctx.timezone });
   }
   every(t, e) {
     this.timers.push(setInterval(() => this.safely(e), t));
@@ -715,7 +768,7 @@ class m extends HTMLElement {
     this.timers.splice(0).forEach(clearInterval), this.observers.splice(0).forEach((t) => t.disconnect());
   }
 }
-function It(n, t) {
+function Wt(n, t) {
   t.style.removeProperty("font-size");
   const e = parseFloat(getComputedStyle(t).fontSize) || 16, s = () => t.scrollHeight <= n.clientHeight + 1 && t.scrollWidth <= n.clientWidth + 1;
   if (!n.clientHeight || s()) return;
@@ -726,7 +779,7 @@ function It(n, t) {
   }
   t.style.fontSize = `${i}px`;
 }
-class Dt extends m {
+class _t extends p {
   draw() {
     const t = document.createElement("div");
     t.className = "evac-text";
@@ -737,7 +790,7 @@ class Dt extends m {
     } else
       t.textContent = e, s && (t.classList.add("evac-clamp"), t.style.setProperty("-webkit-line-clamp", String(s)));
     if (this.replaceChildren(t), this.props.autofit && !this.props.marquee) {
-      const i = () => It(this, t);
+      const i = () => Wt(this, t);
       requestAnimationFrame(i), document.fonts?.ready.then(i).catch(() => {
       }), this.observe(i);
     }
@@ -746,7 +799,7 @@ class Dt extends m {
     });
   }
 }
-class Bt extends m {
+class jt extends p {
   draw() {
     const t = document.createElement("div");
     t.className = "evac-richtext";
@@ -768,7 +821,7 @@ class Bt extends m {
     this.replaceChildren(t);
   }
 }
-function J(n, t, e) {
+function Q(n, t, e) {
   const s = document.createElement("picture");
   for (const [r, o] of [["avif", "image/avif"], ["webp", "image/webp"]])
     if (n.urls[r]) {
@@ -778,19 +831,19 @@ function J(n, t, e) {
   const i = document.createElement("img");
   return i.src = n.urls.original, i.alt = e || n.alt || "", i.decoding = "async", i.style.objectFit = t, s.appendChild(i), s;
 }
-class Rt extends m {
+class qt extends p {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Image");
-    this.replaceChildren(J(t, String(this.props.fit ?? "contain"), String(this.props.alt ?? "")));
+    this.replaceChildren(Q(t, String(this.props.fit ?? "contain"), String(this.props.alt ?? "")));
   }
 }
-class Ot extends m {
+class Vt extends p {
   draw() {
     const t = (Array.isArray(this.props.assets) ? this.props.assets : []).map((o) => this.asset(o)).filter((o) => !!o);
     if (!t.length) return this.placeholder("Slideshow");
     const e = String(this.props.fit ?? "cover"), s = t.map((o) => {
-      const a = J(o, e, "");
+      const a = Q(o, e, "");
       return a.className = "evac-slide", a;
     });
     this.replaceChildren(...s);
@@ -801,7 +854,7 @@ class Ot extends m {
     r(), this.every(500, r);
   }
 }
-class Lt extends m {
+class Gt extends p {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Video");
@@ -816,7 +869,7 @@ class Lt extends m {
     })), this.replaceChildren(e);
   }
 }
-class Tt extends m {
+class Ut extends p {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Audio");
@@ -825,33 +878,33 @@ class Tt extends m {
     e.src = t.urls.audio ?? t.urls.original, e.loop = this.props.loop !== !1, e.muted = this.ctx.audio?.enabled === !1, e.volume = Math.max(0, Math.min(1, (this.ctx.audio?.volume ?? 100) / 100)), e.autoplay = !0, this.replaceChildren(e);
   }
 }
-class Wt extends m {
+class Zt extends p {
   draw() {
     this.dataset.shape = String(this.props.shape ?? "rect"), this.replaceChildren();
   }
 }
-class jt extends m {
+class Yt extends p {
   draw() {
     const t = this.text(this.props.text);
     if (!t) return this.placeholder("QR code");
-    const e = Ft(t);
+    const e = Tt(t);
     e.setAttribute("role", "img"), e.setAttribute("aria-label", t), this.replaceChildren(e);
   }
 }
-const _t = {
+const Xt = {
   "HH:mm": { hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
   "HH:mm:ss": { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" },
   "h:mm a": { hour: "numeric", minute: "2-digit", hourCycle: "h12" }
 };
-class qt extends m {
+class Jt extends p {
   draw() {
-    const t = String(this.props.format ?? "HH:mm"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, s = new Intl.DateTimeFormat(t === "h:mm a" ? "en-US" : "en-GB", { ..._t[t], timeZone: e }), i = document.createElement("time"), r = () => {
+    const t = String(this.props.format ?? "HH:mm"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, s = new Intl.DateTimeFormat(t === "h:mm a" ? "en-US" : "en-GB", { ...Xt[t], timeZone: e }), i = document.createElement("time"), r = () => {
       i.textContent = s.format(new Date(this.ctx.now()));
     };
     r(), this.replaceChildren(i), this.every(1e3, r);
   }
 }
-class Ht extends m {
+class Kt extends p {
   draw() {
     const t = String(this.props.format ?? "long"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, s = {
       long: { weekday: "long", day: "numeric", month: "long" },
@@ -864,22 +917,22 @@ class Ht extends m {
     o(), this.replaceChildren(r), this.every(3e4, o);
   }
 }
-function Ut(n, t) {
+function Qt(n, t) {
   const e = Math.max(0, Math.floor(n / 1e3)), s = Math.floor(e / 86400), i = Math.floor(e % 86400 / 3600), r = Math.floor(e % 3600 / 60), o = e % 60, a = (c) => String(c).padStart(2, "0");
   return t === "days" ? `${s} ${s === 1 ? "day" : "days"}` : t === "ms" ? `${a(Math.floor(e / 60))}:${a(o)}` : t === "hms" || s === 0 ? `${a(i + s * 24)}:${a(r)}:${a(o)}` : `${s}d ${a(i)}:${a(r)}:${a(o)}`;
 }
-class Gt extends m {
+class te extends p {
   draw() {
     const t = new Date(this.text(this.props.target)).getTime();
     if (isNaN(t)) return this.placeholder("Countdown");
     const e = document.createElement("span"), s = () => {
       const i = t - this.ctx.now();
-      e.textContent = i <= 0 && this.props.finished ? this.text(this.props.finished) : Ut(i, String(this.props.format ?? "auto"));
+      e.textContent = i <= 0 && this.props.finished ? this.text(this.props.finished) : Qt(i, String(this.props.format ?? "auto"));
     };
     s(), this.replaceChildren(e), this.every(250, s);
   }
 }
-class Vt extends m {
+class ee extends p {
   constructor() {
     super(...arguments), this.frame = null, this.onMessage = (t) => {
       if (!this.frame || t.source !== this.frame.contentWindow || typeof t.data != "object" || !t.data) return;
@@ -891,7 +944,7 @@ class Vt extends m {
     const t = this.ctx.nonce ?? "";
     if (!t) return this.placeholder("Code (not available on this page)");
     const e = this.props, s = document.createElement("iframe");
-    s.setAttribute("sandbox", "allow-scripts"), s.setAttribute("referrerpolicy", "no-referrer"), s.setAttribute("allow", "autoplay"), s.setAttribute("title", this.el.name || "Code"), s.setAttribute("tabindex", "-1"), s.className = "evac-code-frame", s.srcdoc = st(e, t, location.origin, it(this)), this.frame = s, window.addEventListener("message", this.onMessage), this.replaceChildren(s), (e.data ?? []).includes("time") && this.every(1e4, () => this.send());
+    s.setAttribute("sandbox", "allow-scripts"), s.setAttribute("referrerpolicy", "no-referrer"), s.setAttribute("allow", "autoplay"), s.setAttribute("title", this.el.name || "Code"), s.setAttribute("tabindex", "-1"), s.className = "evac-code-frame", s.srcdoc = it(e, t, location.origin, rt(this)), this.frame = s, window.addEventListener("message", this.onMessage), this.replaceChildren(s), (e.data ?? []).includes("time") && this.every(1e4, () => this.send());
   }
   /** Only the kinds of data the element asked for (and that the server let it ask for). */
   send() {
@@ -913,25 +966,41 @@ class Vt extends m {
     window.removeEventListener("message", this.onMessage), this.frame = null, super.disconnectedCallback();
   }
 }
-const K = {
-  text: Dt,
-  richtext: Bt,
-  image: Rt,
-  slideshow: Ot,
-  video: Lt,
-  audio: Tt,
-  shape: Wt,
-  qr: jt,
-  clock: qt,
-  countdown: Gt,
-  date: Ht,
-  code: Vt
+const L = {
+  text: _t,
+  richtext: jt,
+  image: qt,
+  slideshow: Vt,
+  video: Gt,
+  audio: Ut,
+  shape: Zt,
+  qr: Yt,
+  clock: Jt,
+  countdown: te,
+  date: Kt,
+  code: ee
 };
-function Yt(n = customElements) {
-  for (const [t, e] of Object.entries(K))
+function ne(n = customElements) {
+  for (const [t, e] of Object.entries(L))
     n.get(`evac-${t}`) || n.define(`evac-${t}`, e);
 }
-class Zt {
+class se extends p {
+  draw() {
+    const t = String(this.props.code ?? "E002");
+    let e = String(this.props.direction ?? "auto");
+    if (e === "auto") {
+      const s = this.ctx.vars.evac;
+      if (t === "arrow" && !s?.arrow) {
+        this.replaceChildren(), this.hidden = !0;
+        return;
+      }
+      e = s?.arrow ?? "ahead";
+    }
+    this.hidden = !1, this.innerHTML = yt(t, e);
+  }
+}
+L.pictogram = se;
+class ie {
   constructor(t = {}) {
     this.data = t, this.listeners = /* @__PURE__ */ new Set();
   }
@@ -968,8 +1037,8 @@ function S(n, t) {
     return new Intl.DateTimeFormat("en-GB", i).format(s);
   }
 }
-const Xt = ["time", "title", "subtitle", "label", "value"];
-class Jt extends m {
+const re = ["time", "title", "subtitle", "label", "value"];
+class oe extends p {
   constructor() {
     super(...arguments), this.unsubscribe = null;
   }
@@ -990,7 +1059,7 @@ class Jt extends m {
   }
   /** template text with {{ data.first.title }}, {{ data.rows }}, {{ data.count }} next to the usual variables */
   tmpl(t, e) {
-    return j(
+    return _(
       t,
       { ...this.ctx.vars, data: {
         first: e.rows[0] ?? {},
@@ -1030,7 +1099,7 @@ const W = {
   },
   table(n, t, e) {
     if (x(n, t)) return;
-    const s = Xt.filter((o) => t.rows.some((a) => a[o] !== void 0 && a[o] !== null && a[o] !== "")), i = d("table", "evac-data-table"), r = d("tbody");
+    const s = re.filter((o) => t.rows.some((a) => a[o] !== void 0 && a[o] !== null && a[o] !== "")), i = d("table", "evac-data-table"), r = d("tbody");
     for (const o of t.rows) {
       const a = d("tr");
       for (const c of s) a.appendChild(d("td", `evac-data-${c}`, c === "time" ? S(o[c], e.tz) : o[c]));
@@ -1059,8 +1128,8 @@ const W = {
     const e = t.rows[0] ?? {}, s = C(e.value) ?? 0, i = C(t.options.minimum) ?? 0, r = C(t.options.maximum) ?? 100, o = Math.max(0, Math.min(1, (s - i) / (r - i || 1))), a = "http://www.w3.org/2000/svg", c = document.createElementNS(a, "svg");
     c.setAttribute("viewBox", "0 0 200 110"), c.setAttribute("class", "evac-data-gauge"), c.setAttribute("role", "img"), c.setAttribute("aria-label", `${s}${t.options.unit ? ` ${t.options.unit}` : ""}`);
     const l = (h, u) => {
-      const w = Math.PI * (1 - h), p = document.createElementNS(a, "path");
-      p.setAttribute("d", `M 20 100 A 80 80 0 0 1 ${100 + 80 * Math.cos(w)} ${100 - 80 * Math.sin(w)}`), p.setAttribute("class", u), c.appendChild(p);
+      const v = Math.PI * (1 - h), m = document.createElementNS(a, "path");
+      m.setAttribute("d", `M 20 100 A 80 80 0 0 1 ${100 + 80 * Math.cos(v)} ${100 - 80 * Math.sin(v)}`), m.setAttribute("class", u), c.appendChild(m);
     };
     l(1, "evac-gauge-track"), o > 0 && l(o, "evac-gauge-fill"), n.appendChild(c);
     const f = d("div", "evac-data-number", s.toLocaleString("en-GB"));
@@ -1082,30 +1151,30 @@ const W = {
     }), n.appendChild(i);
   }
 };
-K.data = Jt;
+L.data = oe;
 function z(n) {
   return n ? n.startsWith("token:") ? `var(--evac-color-${n.slice(6)})` : /^#[0-9a-fA-F]{6}$/.test(n) || n === "transparent" ? n : "" : "";
 }
-function Kt(n, t) {
+function ae(n, t) {
   return n ? n === "token:heading" ? "var(--evac-font-heading)" : n === "token:body" ? "var(--evac-font-body)" : t.fonts[n] ?? "" : "";
 }
-function Qt(n, t, e) {
+function ce(n, t, e) {
   const s = n.style;
   if (!t) return;
   const i = (r, o) => {
     o && s.setProperty(r, o);
   };
-  i("color", z(t.color)), i("background", z(t.background)), t.borderWidth && s.setProperty("border", `${t.borderWidth / 10}cqh solid ${z(t.borderColor) || "currentColor"}`), t.radius !== void 0 && s.setProperty("border-radius", `${t.radius}cqh`), t.padding !== void 0 && s.setProperty("padding", `${t.padding}cqh`), t.opacity !== void 0 && s.setProperty("opacity", String(t.opacity)), i("font-family", Kt(t.fontFamily, e)), t.fontSize && s.setProperty("font-size", `${t.fontSize}cqh`), t.fontWeight && s.setProperty("font-weight", String(t.fontWeight)), i("font-style", t.fontStyle ?? ""), i("text-align", t.textAlign ?? ""), t.verticalAlign && s.setProperty("justify-content", { top: "flex-start", middle: "center", bottom: "flex-end" }[t.verticalAlign]), t.lineHeight && s.setProperty("line-height", String(t.lineHeight)), t.letterSpacing !== void 0 && s.setProperty("letter-spacing", `${t.letterSpacing}em`), i("text-transform", t.textTransform ?? ""), t.tabularNumbers && s.setProperty("font-variant-numeric", "tabular-nums"), t.shadow && s.setProperty("box-shadow", "var(--evac-shadow)");
+  i("color", z(t.color)), i("background", z(t.background)), t.borderWidth && s.setProperty("border", `${t.borderWidth / 10}cqh solid ${z(t.borderColor) || "currentColor"}`), t.radius !== void 0 && s.setProperty("border-radius", `${t.radius}cqh`), t.padding !== void 0 && s.setProperty("padding", `${t.padding}cqh`), t.opacity !== void 0 && s.setProperty("opacity", String(t.opacity)), i("font-family", ae(t.fontFamily, e)), t.fontSize && s.setProperty("font-size", `${t.fontSize}cqh`), t.fontWeight && s.setProperty("font-weight", String(t.fontWeight)), i("font-style", t.fontStyle ?? ""), i("text-align", t.textAlign ?? ""), t.verticalAlign && s.setProperty("justify-content", { top: "flex-start", middle: "center", bottom: "flex-end" }[t.verticalAlign]), t.lineHeight && s.setProperty("line-height", String(t.lineHeight)), t.letterSpacing !== void 0 && s.setProperty("letter-spacing", `${t.letterSpacing}em`), i("text-transform", t.textTransform ?? ""), t.tabularNumbers && s.setProperty("font-variant-numeric", "tabular-nums"), t.shadow && s.setProperty("box-shadow", "var(--evac-shadow)");
 }
-function te(n, t) {
+function le(n, t) {
   const e = t.frame;
   n.style.left = `${e.x}%`, n.style.top = `${e.y}%`, n.style.width = `${e.w}%`, n.style.height = `${e.h}%`, n.style.transform = e.rotate ? `rotate(${e.rotate}deg)` : "";
 }
-function ee(n, t) {
-  const e = !n.visible_if || I(n.visible_if, t.vars, { now: t.now, timezone: t.timezone });
+function de(n, t) {
+  const e = !n.visible_if || B(n.visible_if, t.vars, { now: t.now, timezone: t.timezone });
   if (n.hidden && !t.editing || !e && !t.editing) return null;
   const s = document.createElement("div");
-  s.className = `evac-el evac-el-${n.type}`, s.dataset.id = n.id, (!e || n.hidden) && s.classList.add("evac-dimmed"), te(s, n), Qt(s, n.style, t);
+  s.className = `evac-el evac-el-${n.type}`, s.dataset.id = n.id, (!e || n.hidden) && s.classList.add("evac-dimmed"), le(s, n), ce(s, n.style, t);
   const i = n.animation;
   i?.enter && i.enter !== "none" && !t.reducedMotion && !t.editing && (s.classList.add(`evac-enter-${i.enter}`), s.style.animationDuration = `${i.duration ?? 600}ms`, s.style.animationDelay = `${i.delay ?? 0}ms`);
   const r = `evac-${n.type}`;
@@ -1114,8 +1183,8 @@ function ee(n, t) {
   const o = document.createElement(r);
   return o.className = "evac-widget", s.appendChild(o), o.configure(n, t), s;
 }
-function ne(n, t, e) {
-  Yt();
+function he(n, t, e) {
+  ne();
   const s = document.createElement("div");
   s.className = "evac-stage";
   const i = t.background;
@@ -1125,7 +1194,7 @@ function ne(n, t, e) {
   }
   const r = /* @__PURE__ */ new Map();
   for (const c of t.elements) {
-    const l = ee(c, e);
+    const l = de(c, e);
     l && (r.set(c.id, l), s.appendChild(l));
   }
   n.replaceChildren(s);
@@ -1145,25 +1214,25 @@ function ne(n, t, e) {
     }
   };
 }
-function se(n, t) {
+function ue(n, t) {
   const e = Date.now();
   n.replaceChildren(), n.style.aspectRatio = `${t.layout.width} / ${t.layout.height}`;
   for (const [s, i] of Object.entries(t.themeVariables ?? {})) n.style.setProperty(s, i);
-  n.classList.add("evac-preview-host"), ne(n, t.layout, {
+  n.classList.add("evac-preview-host"), he(n, t.layout, {
     vars: t.vars,
     now: () => t.at + (Date.now() - e),
     timezone: t.timezone,
     assets: t.assets,
     fonts: t.fonts,
     reducedMotion: !0,
-    nonce: rt(),
-    data: new Zt(t.data ?? {})
+    nonce: ot(),
+    data: new ie(t.data ?? {})
   });
 }
 if (typeof document < "u") {
   const n = document.getElementById("preview-config"), t = document.querySelector("[data-preview]");
-  n && t && se(t, JSON.parse(n.textContent || "{}"));
+  n && t && ue(t, JSON.parse(n.textContent || "{}"));
 }
 export {
-  se as mountPreview
+  ue as mountPreview
 };

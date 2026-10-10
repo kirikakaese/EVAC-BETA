@@ -8,6 +8,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
@@ -145,6 +146,12 @@ def _toggle(request, event=None):
     if not form.is_valid() or form.cleaned_data["key"] not in registry.ensure_loaded().modules:
         raise Http404
     key, value = form.cleaned_data["key"], form.cleaned_data["value"]
+    if event is not None and value != "off" and modules.acknowledgement_needed(key, event):
+        # switching it on here means accepting its statement (the evacuation safety statement), once per event
+        if request.POST.get("accept") != "on":
+            messages.error(request, _("Read the statement and tick the box to switch this module on."))
+            return
+        modules.acknowledge(event, key, user=request.user, request=request)
     try:
         if event is None:
             modules.set_instance(key, value == "on", user=request.user, request=request)
@@ -165,6 +172,30 @@ def instance_modules(request):
         _toggle(request)
         return redirect("portal:instance_modules")
     return render(request, "portal/modules.html", {"rows": modules.status(), "level": "instance"})
+
+
+@require_POST
+@event_view("events.view")
+def module_acknowledge(request, slug, key, *, event):
+    """Accept a module's statement for this event (``ModuleSpec.acknowledgement``)."""
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    from .shortcuts import can_acknowledge
+
+    spec = registry.ensure_loaded().modules.get(key)
+    if spec is None or not spec.acknowledgement:
+        raise Http404
+    if not can_acknowledge(request, event, key):
+        raise PermissionDenied
+    nxt = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        nxt = reverse("portal:event_modules", args=[event.slug])
+    if request.POST.get("accept") != "on":
+        messages.error(request, _("Tick the box to accept the statement."))
+        return redirect(nxt)
+    modules.acknowledge(event, key, user=request.user, request=request)
+    messages.success(request, _("Statement accepted for this event."))
+    return redirect(nxt)
 
 
 @event_view("modules.manage")
@@ -197,8 +228,12 @@ def _settings_page(request, ns_key, level, scope_id, *, event=None, back=None):
         else:
             messages.success(request, _("Settings saved."))
             return redirect(request.path)
+    spec = registry.ensure_loaded().modules.get(ns_key)
+    ack = None
+    if spec is not None and spec.acknowledgement and event is not None:
+        ack = {"spec": spec, "row": modules.acknowledgement(ns_key, event)}
     return render(request, "portal/settings_ns.html", {"ns": ns, "form": form, "level": level, "event": event,
-                                                       "back": back, "stored": stored})
+                                                       "back": back, "stored": stored, "ack": ack})
 
 
 @superuser_view

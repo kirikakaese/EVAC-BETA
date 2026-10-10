@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // EVAC player service worker, built from frontend/src with `npm run build` - do not edit.
 function o(a) {
-  return [...new Set([...a.matchAll(/(?:src|href)="(\/static\/[^"]+)"/g)].map((t) => t[1].replace(/&amp;/g, "&")))];
+  return [...new Set([...a.matchAll(/(?:src|href)="(\/static\/[^"]+)"/g)].map((e) => e[1].replace(/&amp;/g, "&")))];
 }
-const i = self, r = "evac-player-v3";
+const i = self, r = "evac-player-v4";
 async function h() {
-  const a = await caches.open(r), t = await fetch("/player/", { cache: "no-store", credentials: "omit" });
-  t.ok && (await a.put("/player/", t.clone()), await Promise.all(o(await t.text()).map((e) => a.add(e).catch(() => {
+  const a = await caches.open(r), e = await fetch("/player/", { cache: "no-store", credentials: "omit" });
+  e.ok && (await a.put("/player/", e.clone()), await Promise.all(o(await e.text()).map((t) => a.add(t).catch(() => {
   }))));
 }
 i.addEventListener("install", (a) => {
@@ -15,40 +15,40 @@ i.addEventListener("install", (a) => {
 });
 i.addEventListener("activate", (a) => {
   a.waitUntil((async () => {
-    for (const e of await caches.keys()) e !== r && await caches.delete(e);
+    for (const t of await caches.keys()) t !== r && await caches.delete(t);
     await i.clients.claim();
   })());
 });
 i.addEventListener("fetch", (a) => {
-  const t = a, e = new URL(t.request.url);
-  if (!(t.request.method !== "GET" || e.origin !== i.location.origin)) {
-    if (e.pathname.startsWith("/player/api/content/files/") || e.pathname.startsWith("/player/api/announcements/speech/")) {
-      t.respondWith((async () => {
-        const c = await caches.open(r), n = await c.match(t.request, { ignoreSearch: !0 });
-        if (n) return n;
-        const s = await fetch(t.request);
-        return s.ok && s.status === 200 && await c.put(t.request, s.clone()), s;
+  const e = a, t = new URL(e.request.url);
+  if (!(e.request.method !== "GET" || t.origin !== i.location.origin)) {
+    if (["/player/api/content/files/", "/player/api/announcements/speech/", "/player/api/evacuation/speech/"].some((n) => t.pathname.startsWith(n))) {
+      e.respondWith((async () => {
+        const n = await caches.open(r), c = await n.match(e.request, { ignoreSearch: !0 });
+        if (c) return c;
+        const s = await fetch(e.request);
+        return s.ok && s.status === 200 && await n.put(e.request, s.clone()), s;
       })());
       return;
     }
-    if (!e.pathname.startsWith("/player/api/")) {
-      if (e.pathname === "/player/" || e.pathname === "/player/index.html") {
-        t.respondWith((async () => {
-          const c = await caches.open(r);
+    if (!t.pathname.startsWith("/player/api/")) {
+      if (t.pathname === "/player/" || t.pathname === "/player/index.html") {
+        e.respondWith((async () => {
+          const n = await caches.open(r);
           try {
-            const n = await fetch(t.request);
-            return n.ok && await c.put("/player/", n.clone()), n;
+            const c = await fetch(e.request);
+            return c.ok && await n.put("/player/", c.clone()), c;
           } catch {
-            return await c.match("/player/") ?? Response.error();
+            return await n.match("/player/") ?? Response.error();
           }
         })());
         return;
       }
-      e.pathname.startsWith("/static/") && t.respondWith((async () => {
-        const c = await caches.open(r), n = await c.match(t.request);
-        if (n) return n;
-        const s = await fetch(t.request);
-        return s.ok && await c.put(t.request, s.clone()), s;
+      t.pathname.startsWith("/static/") && e.respondWith((async () => {
+        const n = await caches.open(r), c = await n.match(e.request);
+        if (c) return c;
+        const s = await fetch(e.request);
+        return s.ok && await n.put(e.request, s.clone()), s;
       })());
     }
   }

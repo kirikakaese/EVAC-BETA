@@ -6,6 +6,115 @@ released.
 
 ## [Unreleased]
 
+### Added — phase 3 acceptance tests and drill runbook (Phase 3, part 13)
+
+- Browser E2E `frontend/e2e/evacuation.mjs` (in `make e2e`): accept the statement, raise a drill with
+  hold-to-confirm, the screen takes over within 2 s, "1 of 1 screens confirmed", staff answer, all clear, back to
+  normal.
+- `make chaos` (CI job): the server is killed during an alarm; the screen stays in alarm, takes a bridge-signed
+  alarm from a fallback origin, refuses forged, stale and bridge-issued clears, survives a reload without the
+  server and follows the control room again afterwards (`scripts/chaos_fallback.py`).
+- `make load` (CI job): 500 WebSocket players receive an alarm raised through the API; p95 about 1.1 s locally.
+- [Drill runbook](docs/DRILL_RUNBOOK.md).
+
+### Fixed
+
+- Screens could not reach fallback origins: the player page's Content Security Policy now allows the configured
+  origins (strictly validated), and the player asks them as soon as it has no live connection, not only once it
+  gave up reconnecting.
+- Alarm pushes to hundreds of screens were slow (p95 5.4 s for 500): screen roles are resolved in one lookup, the
+  alarm key is loaded once per push, and messages go out in one batch (`channel.send_many`).
+
+### Added — safety acknowledgement (Phase 3, part 12)
+
+- The evacuation module's safety statement (supplementary system, not DIN 14675 / DIN VDE 0833 / EN 54) is
+  accepted once per event before the module works there. It is offered when switching the module on for the
+  event, on every evacuation page until accepted, on *Settings → Evacuation* (with who accepted it and when)
+  and in the first-run wizard. The REST API and hardware bridges refuse until it is accepted. Acceptance is
+  audit-logged and travels to venue nodes. Generic: `ModuleSpec.acknowledgement`.
+
+### Added — venue node and sync (Phase 3, part 11)
+
+- Venue nodes (ADR-0036): EVAC with `EVAC_MODE=node` runs a checked-out event at the venue without the uplink.
+  *Venue nodes* page (enrolment codes, revoke); per event *Venue node* (check out, request check-in, force
+  check-in). Nodes enrol with their own Ed25519/X25519 keys and sign every request.
+- Configuration snapshots with ETags (generic, declared per module with `r.sync`); people, second factors and
+  the alarm key travel sealed for the node; media files sync resumably with SHA-256 checks.
+- Live state (evacuation, announcements, overrides, audit) goes back through an idempotent op-log; audit entries
+  join central's chain with the node's hash. Alarms and decisions taken in central's control room are forwarded
+  to the node and run there; the check-in hands back the alarm counter.
+- `manage.py evac_node enrol|run|sync|status`, entrypoint role `node-sync`, systemd unit `evac-node-sync`,
+  compose profile `node`; `make node-e2e` (two real instances, also in CI).
+- Plugin API 2: `r.sync`, `r.node_action`, `r.layout_check`, `ExtensionSpec.secrets_on_site`.
+
+### Changed
+
+- Safety signs now use the official ISO 7010 artwork (E001, E002, E003, E007, W001), imported from
+  `@iso-safety-signs/core` (MIT) by `npm run iso7010` instead of EVAC's own drawings. Inline styles become SVG
+  attributes for the strict CSP. The build fails when the import is out of date.
+
+### Added — evacuation fail-safe (Phase 3, part 10)
+
+- *Readiness* page (ADR-0034): per screen whether it is online, has a current evacuation bundle, may play sound
+  and passed its last self-test; the alarm key; fallback origins and bridges. `manage.py evac_selftest <event>
+  --report` prints the same and exits 1 when a screen is not ready.
+- Self-test: screens render every stage off screen, check the signature, sound permission and fallback origins
+  and report back; optionally a visible test frame (never during an alarm). Button or `manage.py evac_selftest`.
+- Watchdog: during an alarm the control room is alerted once per message when screens have not confirmed it
+  within 30 s.
+- Alarm key management: rotate (previous key valid for 24 hours) and export for bridges and secondary nodes
+  (two-factor session, audit-logged), also `manage.py evac_alarm_key`.
+- Hardware bridge fail-safe: heartbeat answers carry the signed state and each input's policy; the reference bridge
+  serves the state to screens that lost the server and, with the exported key, signs an alarm itself when EVAC is
+  unreachable (execute at once, arm after its escalation time, never an all clear). The server adopts it when the
+  bridge reports back (`issued_seq`). Players reject an all clear issued by a bridge.
+- The player's service worker keeps the evacuation speech; players report their bundle version and sound
+  permission in the heartbeat.
+
+### Added — propagation and acknowledgements (Phase 3, part 9)
+
+- Screens acknowledge every evacuation message they render (seq, version, state, path, render time). The control
+  page has a *Screens reached* card: "X of Y screens confirmed", offline and waiting screens, per zone, screens
+  on the signed fallback, and the trigger-to-screen time (p95) for the current message and the last 24 hours,
+  with a warning above the 2 s target (ADR-0035). The screens table shows each screen's confirmation and latency.
+- Staff answers during an alarm from the staff app and the panic page: *I'm on it*, *Zone clear*, *Need help*
+  (zone and note optional). Audit-logged, webhook `evacuation.staff_ack`; *Need help* alerts the control room.
+- API: `GET /api/v1/events/<slug>/evacuation/coverage/`.
+
+### Fixed
+
+- Players' evacuation state requests and acknowledgements no longer fail with "database is locked" on SQLite:
+  they write the screen's row with a single statement outside the request transaction, and SQLite
+  transactions take the write lock when they start.
+- Trigger policy resolution picked between two equally specific rules by their order when they differed only
+  in an unused escalation time.
+
+### Added — evacuation content on screens (Phase 3, part 8)
+
+- ISO 7010 safety signs (`E001`, `E002`, `E003`, `E007`, `W001`, direction arrow with *auto*) as a layout
+  element; template variables `{{ evac.text }}`, `{{ evac.direction }}`, `{{ evac.stage }}`, `{{ evac.drill }}`.
+- Layout guardrails (ADR-0033) through a new plugin hook `r.layout_check`: required elements, text contrast and
+  letter height for the viewing distance. The editor lists findings; publishing is refused while an error
+  remains.
+- *Screen content* page: per stage a layout or the built-in one, texts in rotation with an optional signs-only
+  frame, sound and repeat time, spoken message pre-rendered with Piper.
+- Players take over on shelter, evacuate and all clear (banner for attention and on *info* screens, ignored on
+  *excluded* screens), above the dim overlay and in the screen's rotation, wake dimmed screens, loop the
+  alarm sound and mark drills. Payloads are signed per event (Ed25519) and pushed on every change, and the
+  built-in layout is used whenever an own layout fails.
+
+### Added — hardware bridge and MQTT (Phase 3, part 7)
+
+- Hardware bridges (ADR-0032): per-event bridges with their own token, inputs mapped to stage and zone, HTTPS
+  endpoints `/bridge/v1/heartbeat` and `/bridge/v1/input` with idempotent change ids. An active input raises its
+  stage through the *Hardware bridge* source (arm by default); a contact returning to rest only tells the control
+  room; wiring faults and bridges without a heartbeat for 30 s raise alerts, never public alarms.
+- *Hardware bridges* page (add, inputs, new token, live input states).
+- Reference software in `bridge/`: Raspberry Pi bridge (standard library, persistent queue, retries, heartbeat,
+  simulate mode) and an ESP32 sketch with supervised loops (end-of-line resistor).
+- MQTT extension (`extensions/mqtt`, off until configured): bridges over a broker you run; subscriber process
+  `manage.py evac_mqtt` (entrypoint role `mqtt`, compose profile `mqtt`, systemd `evac-mqtt`); `paho-mqtt` added.
+
 ### Added — evacuation triggers and policies (Phase 3, part 6)
 
 - Trigger sources with policies per source, stage and zone (ADR-0031): execute, arm (control room confirms; executes

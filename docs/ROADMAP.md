@@ -197,13 +197,13 @@ ADR-0003 must be accepted before implementation starts.** Both accepted 2026-10-
 | 3.3 | ✅ Evacuation state machine [§8.2] | persisted per event and zone, highest severity wins, drills, never auto-clear; 100 % transition tests; mypy strict (ADR-0029) |
 | 3.4 | ✅ Models: simple takeover, staged global, zones and routes [§8.1] | per-event switch; blocked exits recompute routes; partial evacuation (ADR-0030) |
 | 3.5 | ✅ Triggers + policies [§8.3] | web control room + PWA panic page with hold-to-confirm, two-person rule, API (MQTT with 3.6), scheduled drills, policy execute/arm/notify per source/stage/zone with auto-escalation (ADR-0031) |
-| 3.6 | Hardware bridge (`bridge/`) | Pi GPIO + ESP32 reference, authenticated MQTT/HTTPS, supervised line heartbeat |
-| 3.7 | Evacuation content [§8.4] | guardrail linter (contrast, size, required elements), non-deletable fallback layout (ISO 7010 + English), text rotation, arrows per screen with manual override, audio loop |
-| 3.8 | Propagation + acks [§8.5] | ≤ 2 s p95 on LAN, measured; X of Y confirmed / Z offline per zone; staff acks |
-| 3.9 | Fail-safe [§8.6] | evacuation bundle cached per screen; stays in alarm offline; signed state from secondary node/bridge (ADR-0003); watchdog; self-test |
-| 3.10 | Venue node + sync | `EVAC_MODE=node`, checkout/checkin, config snapshots with ETags, op-log with idempotency keys, resumable assets (ADR-0002) |
-| 3.11 | Safety acknowledgement | once per event when enabling the module; shown on settings page and in the wizard |
-| 3.12 | Tests [§8.7] | unit, property (routing), Playwright E2E, chaos (kill web/channels, partition), load (500 WS players); `make e2e load chaos` |
+| 3.6 | ✅ Hardware bridge (`bridge/`) | Pi GPIO + ESP32 reference, authenticated MQTT/HTTPS, supervised line heartbeat (ADR-0032) |
+| 3.7 | ✅ Evacuation content [§8.4] | guardrail linter (contrast, size, required elements), non-deletable fallback layout (ISO 7010 + English), text rotation, arrows per screen with manual override, audio loop (ADR-0033) |
+| 3.8 | ✅ Propagation + acks [§8.5] | ≤ 2 s p95 on LAN, measured; X of Y confirmed / Z offline per zone; staff acks (ADR-0035) |
+| 3.9 | ✅ Fail-safe [§8.6] | evacuation bundle cached per screen; stays in alarm offline; signed state from secondary node/bridge (ADR-0003); watchdog; self-test (ADR-0034) |
+| 3.10 | ✅ Venue node + sync | `EVAC_MODE=node`, checkout/checkin, config snapshots with ETags, op-log with idempotency keys, resumable assets (ADR-0002, ADR-0036) |
+| 3.11 | ✅ Safety acknowledgement | once per event when enabling the module; shown on settings page and in the wizard |
+| 3.12 | ✅ Tests [§8.7] | unit, property (routing), Playwright E2E, chaos (kill web/channels, partition), load (500 WS players); `make e2e load chaos`; [drill runbook](DRILL_RUNBOOK.md) |
 
 ## Phase 4 — DIAL extension ⬜ [§9]
 

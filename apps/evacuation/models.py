@@ -214,3 +214,144 @@ class ScheduledDrill(models.Model):
 
     def __str__(self) -> str:
         return f"Drill {self.state} at {self.at:%Y-%m-%d %H:%M}"
+
+
+class Bridge(models.Model):
+    """A hardware trigger bridge (Raspberry Pi GPIO, ESP32) of an event, ADR-0032.
+
+    ``inputs``: ``[{"key": "in1", "label": "Fire panel relay 3", "state": "evacuate", "zone": "<uuid>|"}]``.
+    ``status``: the last reported state per input (``rest``/``active``/``fault``) plus firmware/uptime.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_bridges")
+    name = models.CharField(max_length=100)
+    token_hash = models.CharField(max_length=64, unique=True)
+    token_prefix = models.CharField(max_length=16)
+    inputs = models.JSONField(default=list, blank=True)
+    status = models.JSONField(default=dict, blank=True)
+    online = models.BooleanField(default=False)
+    last_seen = models.DateTimeField(null=True, blank=True)
+    last_ip = models.GenericIPAddressField(null=True, blank=True)
+    transport = models.CharField(max_length=10, blank=True)  # https | mqtt
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+    def input(self, key: str) -> dict[str, Any] | None:
+        return next((i for i in self.inputs if i.get("key") == key), None)
+
+
+SOUNDS = [("siren", _("Siren")), ("gong", _("Gong")), ("alert", _("Alert tone")), ("none", _("No sound"))]
+
+
+class StageContent(models.Model):
+    """What screens show and play in a stage (ADR-0033). Without a layout the built-in fallback is used."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_content")
+    state = models.CharField(max_length=20, choices=STATE_CHOICES)
+    #: a content layout (no foreign key: the content module may be off or not installed)
+    layout_id = models.UUIDField(null=True, blank=True)
+    texts = models.JSONField(default=list, blank=True)
+    rotate_seconds = models.PositiveIntegerField(default=8)
+    pictograms_only = models.BooleanField(default=False)
+    sound = models.CharField(max_length=10, choices=SOUNDS, default="none")
+    sound_every = models.PositiveIntegerField(default=30)
+    speech_text = models.CharField(max_length=500, blank=True)
+    speech_file = models.CharField(max_length=100, blank=True)
+    speech_status = models.CharField(max_length=10, blank=True)  # "", pending, ready, failed
+    speech_detail = models.CharField(max_length=300, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["event", "state"], name="evac_content_event_state")]
+
+    def __str__(self) -> str:
+        return f"{self.state} content"
+
+
+class EventAlarm(models.Model):
+    """Per-event alarm counter and signing key (ADR-0003, ADR-0034): ``seq`` orders every message to screens."""
+
+    event = models.OneToOneField("events.Event", on_delete=models.CASCADE, primary_key=True, related_name="evac_alarm")
+    seq = models.PositiveBigIntegerField(default=0)
+    seq_at = models.DateTimeField(null=True, blank=True)  # when ``seq`` was last bumped (watchdog)
+    watchdog_seq = models.PositiveBigIntegerField(default=0)  # the last message the watchdog alerted about
+    public_key = models.CharField(max_length=100, blank=True)
+    private_key_encrypted = models.TextField(blank=True)
+    previous_public_key = models.CharField(max_length=100, blank=True)
+    previous_valid_until = models.DateTimeField(null=True, blank=True)
+    key_created_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"alarm #{self.seq}"
+
+
+class ScreenAck(models.Model):
+    """The latest evacuation payload a screen confirmed it rendered (roadmap 3.8): one row per screen."""
+
+    screen_id = models.UUIDField(primary_key=True)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_screen_acks")
+    seq = models.PositiveBigIntegerField(default=0)
+    version = models.CharField(max_length=32, blank=True)
+    state = models.CharField(max_length=20, blank=True)
+    drill = models.BooleanField(default=False)
+    via = models.CharField(max_length=20, blank=True)  # websocket | sse | poll | fetch | fallback
+    rendered_at = models.DateTimeField(null=True, blank=True)
+    latency_ms = models.PositiveIntegerField(null=True, blank=True)
+    received_at = models.DateTimeField(auto_now=True)
+    fallback = models.BooleanField(default=False)  # rendered the built-in fallback layout
+    detail = models.CharField(max_length=200, blank=True)
+    #: readiness (roadmap 3.9): the bundle version last served to the screen, and its last self-test
+    bundle_served = models.CharField(max_length=16, blank=True)
+    bundle_served_at = models.DateTimeField(null=True, blank=True)
+    selftest = models.JSONField(default=dict, blank=True)
+    selftest_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.screen_id} rendered {self.state} #{self.seq}"
+
+
+class LatencySample(models.Model):
+    """Trigger-to-render time of one screen for one change (for the p95 shown to the control room)."""
+
+    id = models.BigAutoField(primary_key=True)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="+")
+    seq = models.PositiveBigIntegerField()
+    screen_id = models.UUIDField()
+    latency_ms = models.PositiveIntegerField()
+    at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["seq", "screen_id", "event"], name="evac_latency_once")]
+        indexes = [models.Index(fields=["event", "-at"])]
+
+
+class StaffAck(models.Model):
+    """A staff member's answer to an alarm in the staff app: "I'm on it", "zone clear", "need help"."""
+
+    KINDS = [("on_it", _("I'm on it")), ("zone_clear", _("Zone clear")), ("need_help", _("Need help"))]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_staff_acks")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    user_repr = models.CharField(max_length=200)
+    kind = models.CharField(max_length=12, choices=KINDS)
+    zone = models.ForeignKey("venues.Zone", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    note = models.CharField(max_length=300, blank=True)
+    seq = models.PositiveBigIntegerField(default=0)  # the alarm message it answers
+    drill = models.BooleanField(default=False)
+    at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-at"]
+
+    def __str__(self) -> str:
+        return f"{self.user_repr}: {self.kind}"

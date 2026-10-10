@@ -53,7 +53,10 @@ def log(
     scope: dict[str, Any] | None = None,
     request=None,
     drill: bool = False,
+    imported: dict[str, Any] | None = None,
 ) -> AuditLog:
+    """Append one row to the chain. ``imported`` carries a row written on a venue node (ADR-0036): its actor,
+    target and node hash are kept in the new row, which joins this chain like any other."""
     if actor is None and request is not None and getattr(request, "user", None) is not None:
         actor = request.user if request.user.is_authenticated else None
     if event is None and target is not None:
@@ -81,6 +84,13 @@ def log(
         entry.target_type = f"{target._meta.app_label}.{target._meta.model_name}"
         entry.target_id = str(target.pk)
         entry.target_repr = str(target)[:300]
+    if imported:
+        entry.actor_id = imported.get("actor_id") or None
+        entry.actor_repr = str(imported.get("actor_repr") or "system")[:200]
+        entry.target_type = str(imported.get("target_type") or "")[:100]
+        entry.target_id = str(imported.get("target_id") or "")[:64]
+        entry.target_repr = str(imported.get("target_repr") or "")[:300]
+        entry.ip_address = imported.get("ip_address") or None
     with transaction.atomic():
         head, _ = AuditChainHead.objects.select_for_update().get_or_create(
             pk=1, defaults={"last_hash": hashchain.GENESIS}

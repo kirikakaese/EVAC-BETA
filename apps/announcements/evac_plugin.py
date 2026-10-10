@@ -20,6 +20,9 @@ SCOPES = ("venue", "zone", "room", "screen_group")
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     from . import api, services
 
     r.module(ModuleSpec(key="announcements", name=str(_("Announcements")), order=40, category="communication",

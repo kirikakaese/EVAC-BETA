@@ -81,6 +81,7 @@ EVAC_CORE_APPS = [
     "apps.extensions",
     "apps.api",
     "apps.portal",
+    "apps.nodes",
 ]
 EVAC_BUILTIN_PLUGINS = [
     "apps.screens",
@@ -92,6 +93,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.evacuation",
     "extensions.webhooks",
     "extensions.notify",
+    "extensions.mqtt",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
 
@@ -164,6 +166,10 @@ TEMPLATES = [
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 DATABASES["default"].setdefault("CONN_MAX_AGE", 60)
+if DATABASES["default"]["ENGINE"].endswith("sqlite3"):
+    # dev, tests and small venue nodes: take the write lock when a transaction starts, so two requests that read
+    # and then write wait for each other instead of one failing with "database is locked"
+    DATABASES["default"].setdefault("OPTIONS", {}).update({"transaction_mode": "IMMEDIATE", "timeout": 20})
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REDIS_URL = env("REDIS_URL")
@@ -294,7 +300,7 @@ SPECTACULAR_SETTINGS = {
 # prod settings refuse to start without explicit keys).
 EVAC_SECRETS_KEYS = env("EVAC_SECRETS_KEYS")
 EVAC_RATE_LIMITS = {"login": 20, "twofactor": 20, "setup": 10, "webhook": 600, "invite": 20, "early_access": 10,
-                    "pairing": 300}
+                    "pairing": 300, "bridge": 600, "node_enrol": 10}
 # Early-access gate (docs/adr/0012-early-access-gate.md): a shared password in front of the whole site while
 # a public server is not ready for everyone. Empty = off. Changing the password locks everybody out again.
 EVAC_EARLY_ACCESS_PASSWORD = env("EVAC_EARLY_ACCESS_PASSWORD")

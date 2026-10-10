@@ -9,25 +9,31 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.http import require_POST
 
+from apps.core import settings_store
 from apps.events import rbac
 from apps.portal.shortcuts import event_view
 
-from . import machine, policy, services, triggers
+from . import acks, feed, machine, policy, services, triggers
 from .forms import EVENT, ChangeForm, DrillForm, PolicyForm
 from .guidance import Arrow
 from .guidance import Kind as GuidanceKind
 from .machine import Model, State
-from .models import BlockedPoint, EvacPolicy, EvacRequest, EvacState, ScheduledDrill, StateChange
+from .models import BlockedPoint, Bridge, EvacPolicy, EvacRequest, EvacState, ScheduledDrill, StaffAck, StateChange
 
 MODULE = "evacuation"
 MODEL_LABELS = [(Model.SIMPLE, _lazy("Simple takeover")), (Model.STAGED, _lazy("Staged, global")),
                 (Model.ZONES, _lazy("Zones and routes"))]
 GLYPHS = {Arrow.AHEAD: "↑", Arrow.AHEAD_RIGHT: "↗", Arrow.RIGHT: "→", Arrow.BACK_RIGHT: "↘", Arrow.BACK: "↓",
           Arrow.BACK_LEFT: "↙", Arrow.LEFT: "←", Arrow.AHEAD_LEFT: "↖"}
+FORWARDED = _lazy("Sent to the venue node that holds this event. It runs there and shows up here once the node "
+                  "reports back.")
+#: brief §8.5: trigger to screen within 2 s (p95) on the venue LAN
+TARGET_MS = 2000
 ARROW_CHOICES = [("", _lazy("No arrow"))] + [(a.value, a.value.replace("_", " ")) for a in Arrow]
 
 
@@ -42,6 +48,8 @@ def _screen_rows(event: Any, cfg: services.Config) -> list[dict[str, Any]]:
     from apps.venues.models import Point
 
     views = services.screen_views(event)
+    seq = feed.current_seq(event)
+    screen_acks = acks.screen_acks(event)
     ids = {v.guidance.toward for v in views} | {v.guidance.target for v in views}
     names = {str(p.pk): p.name for p in Point.objects.filter(pk__in=[i for i in ids if i])}
     rows = []
@@ -53,7 +61,8 @@ def _screen_rows(event: Any, cfg: services.Config) -> list[dict[str, Any]]:
                      "arrow": g.arrow.value.replace("_", " ") if g.arrow else "", "text": g.text,
                      "toward": names.get(g.toward or ""), "target": names.get(g.target or ""),
                      "distance": g.distance, "hint": services.hint_of(event, v.screen),
-                     "follow_staff": g.kind is GuidanceKind.FOLLOW_STAFF})
+                     "follow_staff": g.kind is GuidanceKind.FOLLOW_STAFF,
+                     "ack": screen_acks.get(str(v.screen.pk)), "seq": seq})
     return rows
 
 
@@ -87,6 +96,15 @@ def _form(request: HttpRequest, event: Any, cfg: services.Config, zones: list[di
                       alarm_zones=alarm_zones, can_drill=can_drill)
 
 
+def _forwarded(request: HttpRequest, event: Any) -> bool:
+    from apps.nodes import guard
+
+    if guard.remote(event):
+        messages.info(request, FORWARDED)
+        return True
+    return False
+
+
 def _can_change(request: HttpRequest, event: Any) -> bool:
     return any(rbac.has_any(request.user, event, p, request=request)
                for p in (services.PERM_TRIGGER, services.PERM_CLEAR, services.PERM_DRILL))
@@ -113,8 +131,44 @@ def _page(request: HttpRequest, event: Any, form: ChangeForm | None = None) -> H
         "arrow_choices": ARROW_CHOICES, "pending": triggers.pending(event),
         "form": form or (_form(request, event, cfg, zones) if can_change else None),
         "history": StateChange.objects.filter(event=event).select_related("actor")[:15],
-        "labels": cfg.labels,
+        "labels": cfg.labels, **_propagation(event),
     }, status=400 if form is not None else 200)
+
+
+def _propagation(event: Any) -> dict[str, Any]:
+    cov = acks.coverage(event)
+    since = acks.alarm_since(event)
+    return {"cov": cov, "answers": acks.recent_staff(event, since) if since else [], "alarm_since": since,
+            "target_ms": TARGET_MS, "slow": cov.last_p95_ms is not None and cov.last_p95_ms > TARGET_MS}
+
+
+@event_view("evacuation.view", module=MODULE)
+def propagation(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    """The "screens reached" card, refreshed by the control page every few seconds."""
+    return render(request, "evacuation/_propagation.html", {"event": event, **_propagation(event)})
+
+
+@require_POST
+@event_view("evacuation.view", module=MODULE)
+def answer(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    """A staff member answers the running alarm: "I'm on it", "zone clear", "need help"."""
+    nxt = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()},
+                                           require_https=request.is_secure()):
+        nxt = ""
+    kind = request.POST.get("kind", "")
+    zone_id = request.POST.get("zone", "")
+    zone = next((z for z in services.zones_of(event) if str(z.pk) == zone_id), None)
+    if kind not in dict(StaffAck.KINDS):
+        messages.error(request, _("Unknown answer."))
+    elif zone_id and zone is None:
+        messages.error(request, _("Unknown zone."))
+    elif acks.alarm_since(event) is None:
+        messages.error(request, _("There is no alarm to answer."))
+    else:
+        acks.staff_ack(event, request.user, kind, zone=zone, note=request.POST.get("note", ""), request=request)
+        messages.success(request, _("Sent to the control room: %(answer)s") % {"answer": dict(StaffAck.KINDS)[kind]})
+    return redirect(nxt) if nxt else redirect("evacuation:index", event.slug)
 
 
 @require_POST
@@ -156,6 +210,8 @@ def _report(request: HttpRequest, out: triggers.Outcome, cfg: services.Config) -
                                     "yet.") % {"t": timezone.localtime(out.request.deadline).strftime("%H:%M:%S")})
     elif out.result == "armed":
         messages.warning(request, _("Armed: the control room has to confirm this alarm."))
+    elif out.result == "forwarded":
+        messages.info(request, FORWARDED)
     else:
         messages.info(request, _("The control room was notified."))
 
@@ -171,11 +227,15 @@ def end_all_clear(request: HttpRequest, slug: str, *, event: Any) -> HttpRespons
             messages.error(request, _("Unknown zone."))
             return redirect("evacuation:index", event.slug)
     try:
-        triggers.trigger(event, State.NORMAL, source=policy.WEB, zone=zone, actor=request.user, request=request)
+        out = triggers.trigger(event, State.NORMAL, source=policy.WEB, zone=zone, actor=request.user,
+                               request=request)
     except machine.Refused as err:
         messages.error(request, err.message)
     else:
-        messages.success(request, _("Back to normal."))
+        if out.result == "forwarded":
+            messages.info(request, FORWARDED)
+        else:
+            messages.success(request, _("Back to normal."))
     return redirect("evacuation:index", event.slug)
 
 
@@ -215,7 +275,11 @@ def block(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
                              reason=request.POST.get("reason", "")[:300])
     except PermissionDenied:
         messages.error(request, _("You may not block or open this point."))
+    except machine.Refused as err:
+        messages.error(request, err.message)
     else:
+        if _forwarded(request, event):
+            return redirect("evacuation:index", event.slug)
         messages.success(request, (_("%(p)s is blocked. Routes avoid it.") if blocked
                                    else _("%(p)s is open again.")) % {"p": point.name})
     return redirect("evacuation:index", event.slug)
@@ -255,10 +319,12 @@ def decide(request: HttpRequest, slug: str, pk: Any, verdict: str, *, event: Any
     try:
         if verdict == "confirm":
             triggers.confirm(req, actor=request.user, request=request)
-            messages.success(request, _("Confirmed."))
+            if not _forwarded(request, event):
+                messages.success(request, _("Confirmed."))
         else:
             triggers.reject(req, actor=request.user, request=request)
-            messages.success(request, _("Rejected. Nothing changed."))
+            if not _forwarded(request, event):
+                messages.success(request, _("Rejected. Nothing changed."))
     except machine.Refused as err:
         messages.error(request, err.message)
     except PermissionDenied:
@@ -298,7 +364,8 @@ def panic(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
     stages = sorted((s for s in cfg.enabled if s in machine.ALARMS), key=lambda s: -machine.SEVERITY[s])
     return render(request, "evacuation/panic.html", {
         "event": event, "ev": ev, "cfg": cfg, "zones": zones, "can_raise": can_raise, "can_drill": can_drill,
-        "stages": [(s.value, cfg.labels[s.value]) for s in stages], "pending": triggers.pending(event)})
+        "stages": [(s.value, cfg.labels[s.value]) for s in stages], "pending": triggers.pending(event),
+        "alarm": acks.alarm_since(event) is not None})
 
 
 @event_view("evacuation.manage", module=MODULE)
@@ -349,3 +416,144 @@ def policies(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
         "drills": ScheduledDrill.objects.filter(event=event).select_related("zone"),
         "two_person": [cfg.labels.get(s, s) for s in sorted(two)], "two_seconds": seconds,
         "escalate_default": policy.DEFAULT_ESCALATE}, status=400 if request.method == "POST" else 200)
+
+
+@event_view("evacuation.manage", module=MODULE)
+def bridges_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    from . import bridges
+
+    zones = {str(z.pk): z.name for z in services.zones_of(event)}
+    new_token = ""
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        what = request.POST.get("what")
+        pk = request.POST.get("pk", "")
+        bridge = Bridge.objects.filter(event=event, pk=pk).first() if _uuid(pk) else None
+        if what == "add":
+            name = request.POST.get("name", "").strip()
+            if not name:
+                errors["add"] = _("Give the bridge a name.")
+            else:
+                bridge, new_token = bridges.create(event, name, actor=request.user, request=request)
+        elif bridge is None:
+            messages.error(request, _("Unknown bridge."))
+            return redirect("evacuation:bridges", event.slug)
+        elif what == "inputs":
+            try:
+                parsed = bridges.parse_inputs(request.POST.get("inputs", ""), zones)
+            except ValueError as err:
+                errors[str(bridge.pk)] = str(err)
+            else:
+                bridges.set_inputs(bridge, parsed, actor=request.user, request=request)
+                messages.success(request, _("Inputs saved."))
+                return redirect("evacuation:bridges", event.slug)
+        elif what == "rotate":
+            new_token = bridges.rotate(bridge, actor=request.user, request=request)
+        elif what == "delete":
+            bridges.delete(bridge, actor=request.user, request=request)
+            messages.success(request, _("Bridge removed."))
+            return redirect("evacuation:bridges", event.slug)
+    rows = [{"b": b, "inputs_text": bridges.format_inputs(b, zones),
+             "states": [(i, (b.status.get("inputs") or {}).get(i["key"], "unknown")) for i in b.inputs],
+             "error": errors.get(str(b.pk), "")} for b in Bridge.objects.filter(event=event)]
+    return render(request, "evacuation/bridges.html", {
+        "event": event, "rows": rows, "new_token": new_token, "add_error": errors.get("add", ""),
+        "base_url": request.build_absolute_uri("/bridge/v1/"), "offline_after": bridges.OFFLINE_AFTER,
+        "heartbeat": bridges.HEARTBEAT_SECONDS}, status=400 if errors else 200)
+
+
+@event_view("evacuation.view", module=MODULE)
+def readiness_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    """Fail-safe readiness (roadmap 3.9): per screen bundle, sound, self-test; the alarm key; bridges."""
+    from apps.accounts import twofactor
+
+    from . import alarmkey, readiness
+
+    can_manage = rbac.has_any(request.user, event, "evacuation.manage", request=request)
+    exported = ""
+    if request.method == "POST":
+        if not can_manage:
+            raise PermissionDenied
+        what = request.POST.get("what")
+        if what == "selftest":
+            visible = request.POST.get("visible") == "on"
+            if visible and acks.alarm_since(event) is not None:
+                messages.error(request, _("No visible self-test during an alarm."))
+            else:
+                n = readiness.run_selftest(event, visible=visible, seconds=_int(request.POST.get("seconds"), 5),
+                                           actor=request.user, request=request)
+                messages.success(request, _("Self-test sent to %(n)s screens. Results appear here within a minute.")
+                                 % {"n": n})
+            return redirect("evacuation:readiness", event.slug)
+        if what in ("rotate", "export"):
+            if not twofactor.is_verified(request):
+                messages.error(request, _("The alarm key needs a session confirmed with two factors."))
+                return redirect("evacuation:readiness", event.slug)
+            if what == "rotate":
+                alarmkey.rotate(event, actor=request.user, request=request)
+                feed.push(event)
+                messages.success(request, _("New alarm key. Screens get it with their next bundle; the old key stays "
+                                            "valid for 24 hours. Give bridges and secondary nodes the new key."))
+                return redirect("evacuation:readiness", event.slug)
+            exported = alarmkey.export_private(event, actor=request.user, request=request,
+                                               purpose=request.POST.get("purpose", "")[:100])
+    rows = readiness.screens(event)
+    key = alarmkey.ensure(event)
+    return render(request, "evacuation/readiness.html", {
+        "event": event, "rows": rows, "summary": readiness.summary(rows), "can_manage": can_manage,
+        "key": key, "previous_valid": key.previous_public_key and key.previous_valid_until
+        and key.previous_valid_until > timezone.now(), "exported": exported,
+        "bridges": Bridge.objects.filter(event=event),
+        "origins": settings_store.get("evacuation", event=event).get("fallback_origins") or [],
+        "selftest_days": readiness.SELFTEST_MAX_AGE.days})
+
+
+@event_view("evacuation.manage", module=MODULE)
+def content_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    from . import content
+    from .models import SOUNDS, StageContent
+
+    cfg = services.config(event)
+    layouts = content.layouts_of(event)
+    by_id = {str(lay.pk): lay for lay in layouts}
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        state = request.POST.get("state", "")
+        if state in {s.value for s in content.STAGES}:
+            lay = by_id.get(request.POST.get("layout", ""))
+            try:
+                content.save(event, state, layout=lay, texts=request.POST.get("texts", "").splitlines(),
+                             rotate_seconds=_int(request.POST.get("rotate_seconds"), 8),
+                             pictograms_only=request.POST.get("pictograms_only") == "on",
+                             sound=request.POST.get("sound") if request.POST.get("sound") in dict(SOUNDS) else "none",
+                             sound_every=_int(request.POST.get("sound_every"), 30),
+                             speech_text=request.POST.get("speech_text", ""), actor=request.user, request=request)
+            except ValueError as err:
+                errors[state] = str(err)
+            else:
+                messages.success(request, _("Saved. Screens show it the next time this stage is active."))
+                return redirect("evacuation:content", event.slug)
+    rows = []
+    for stage in content.STAGES:
+        row = StageContent.objects.filter(event=event, state=stage.value).first()
+        lay = by_id.get(str(row.layout_id)) if row and row.layout_id else None
+        found = []
+        if lay is not None:
+            data = lay.published.data if lay.published_id else lay.data
+            found = content.findings(event, lay, data)
+        effective = feed.stage_content(event, stage.value)
+        rows.append({"state": stage.value, "label": cfg.labels.get(stage.value, stage.value), "row": row,
+                     "enabled": stage in cfg.enabled, "layout": lay, "findings": found,
+                     "texts": "\n".join(row.texts if row and row.texts else effective["texts"]),
+                     "default_texts": not (row and row.texts), "sound": effective["sound"],
+                     "error": errors.get(stage.value, "")})
+    return render(request, "evacuation/content.html", {
+        "event": event, "rows": rows, "layouts": layouts, "sounds": SOUNDS, "tts": content.tts_available(),
+        "zones_model": cfg.model is Model.ZONES}, status=400 if errors else 200)
+
+
+def _int(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default

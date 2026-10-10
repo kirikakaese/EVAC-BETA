@@ -6,8 +6,9 @@
   "description": "EVAC screen player, layout editor and map editor (served at /player/ and in the portal)",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && TARGET=player vite build && TARGET=sw vite build && TARGET=editor vite build && TARGET=preview vite build && TARGET=mapeditor vite build && node scripts/size-check.mjs",
+    "build": "node scripts/import-iso7010.mjs --check && tsc --noEmit && TARGET=player vite build && TARGET=sw vite build && TARGET=editor vite build && TARGET=preview vite build && TARGET=mapeditor vite build && node scripts/size-check.mjs",
     "typecheck": "tsc --noEmit",
+    "iso7010": "node scripts/import-iso7010.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -15,6 +16,7 @@
     "uqr": "0.1.3"
   },
   "devDependencies": {
+    "@iso-safety-signs/core": "1.1.0",
     "jsdom": "^26.1.0",
     "playwright-core": "1.56.1",
     "typescript": "~5.9.0",

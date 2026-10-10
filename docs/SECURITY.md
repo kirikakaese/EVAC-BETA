@@ -34,6 +34,12 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 - Signed state messages; screens accept only monotonic sequence numbers; a stale "all clear" is never
   applied; no auto-clear ([ADR-0003](adr/0003-alarm-delivery-redundancy.md)).
 - Inbound trigger webhooks (DIAL, bridges) need HMAC signatures and are idempotent.
+- The per-event alarm key's private half is stored encrypted and leaves the server only through an audit-logged
+  export (two-factor session) for bridges and secondary nodes; rotation keeps the old public key for 24 hours.
+  A message a bridge signed itself may raise alarms but never clear them; players enforce this
+  ([ADR-0034](adr/0034-evacuation-fail-safe.md)).
+- Hardware bridges have their own tokens (`evacb_…`, hashed); their inputs arm by default and never end alarms
+  ([ADR-0032](adr/0032-hardware-bridge.md)).
 
 ### Other threats
 
@@ -50,6 +56,15 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 | Audit tampering | Hash chain + immutable rows + PostgreSQL trigger; verify on demand |
 | Dependency vulnerabilities | `pip-audit` in CI (nightly too) |
 | OIDC token substitution | PKCE, state, nonce, `iss`/`aud`/`azp`/`exp` validation, linking only by verified e-mail |
+
+### Venue nodes ([ADR-0036](adr/0036-venue-node-sync.md))
+
+- Enrolment needs a one-time code (24 h, hashed, rate-limited). The node creates its own keys; every request is
+  signed with Ed25519 over method, path, timestamp and body hash (5-minute window) and carries a hashed token.
+- Secrets reach the node sealed for its X25519 key (TOTP secrets, alarm key, feed headers, extensions marked
+  `secrets_on_site`) and are re-encrypted there; other extension secrets never leave central.
+- Central accepts from a node only changes of live state of the event checked out to it; audit entries join
+  central's chain as imported rows that keep the node's hash. A lost node is revoked after a forced check-in.
 
 ## Privacy (GDPR)
 

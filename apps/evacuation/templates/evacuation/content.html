@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Screen content" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Screen content" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'evacuation:index' event.slug %}">{% trans "Control page" %}</a></div></div>
+<p class="muted">{% blocktrans %}What participating screens show in each stage. Without an own layout, screens use the built-in layout (ISO 7010 sign, direction, the texts below, drill marker), which every screen keeps in its cache and also falls back to when an own layout cannot be shown. Texts rotate; built-in texts are English, add your own variants for other languages.{% endblocktrans %}</p>
+{% for r in rows %}<form method="post" class="card evac-stage-content" id="stage-{{ r.state }}">{% csrf_token %}<input type="hidden" name="state" value="{{ r.state }}">
+<h2><span class="badge badge-evac badge-evac-{{ r.state }}">{{ r.label }}</span>{% if not r.enabled %} <span class="badge badge-muted">{% trans "switched off" %}</span>{% endif %}</h2>
+{% if r.error %}<div class="alert alert-error" role="alert">{% trans "Not saved:" %} {{ r.error }}</div>{% endif %}
+<div class="grid-2">
+<div class="field"><label for="layout-{{ r.state }}">{% trans "Layout" %}</label><select id="layout-{{ r.state }}" name="layout"><option value="">{% trans "Built-in layout" %}</option>{% for l in layouts %}<option value="{{ l.pk }}"{% if r.layout and r.layout.pk == l.pk %} selected{% endif %}>{{ l.name }}{% if not l.published_id %} ({% trans "not published" %}){% endif %}</option>{% endfor %}</select>
+<p class="help">{% if zones_model %}{% trans "Needs a safety sign, a text and a direction (arrow sign or {{ evac.direction }})." %}{% else %}{% trans "Needs a safety sign and a text." %}{% endif %} {% trans "Texts can use {{ evac.text }}, {{ evac.direction }}, {{ evac.stage }} and {{ evac.drill }}." %}</p></div>
+<div class="field"><label for="texts-{{ r.state }}">{% trans "Texts (one per line, shown in turn)" %}</label><textarea id="texts-{{ r.state }}" name="texts" rows="3">{{ r.texts }}</textarea>{% if r.default_texts %}<p class="help">{% trans "Built-in English texts. Saving keeps them as your own." %}</p>{% endif %}</div>
+</div>
+{% if r.findings %}<ul class="plain evac-findings">{% for f in r.findings %}<li><span class="badge {% if f.level == 'error' %}badge-err{% else %}badge-warn{% endif %}">{% if f.level == "error" %}{% trans "error" %}{% else %}{% trans "warning" %}{% endif %}</span> {{ f.message }}</li>{% endfor %}</ul>{% endif %}
+<div class="grid-3">
+<div class="field"><label for="rot-{{ r.state }}">{% trans "Next text after (seconds)" %}</label><input id="rot-{{ r.state }}" name="rotate_seconds" type="number" min="3" max="120" value="{{ r.row.rotate_seconds|default:8 }}"></div>
+<div class="field"><label for="sound-{{ r.state }}">{% trans "Sound" %}</label><select id="sound-{{ r.state }}" name="sound">{% for v, l in sounds %}<option value="{{ v }}"{% if v == r.sound %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+<div class="field"><label for="every-{{ r.state }}">{% trans "Repeat every (seconds)" %}</label><input id="every-{{ r.state }}" name="sound_every" type="number" min="5" max="600" value="{{ r.row.sound_every|default:30 }}"></div>
+</div>
+<div class="field"><label><input type="checkbox" name="pictograms_only"{% if r.row.pictograms_only %} checked{% endif %}> {% trans "Add a frame with signs only (no text)" %}</label></div>
+<div class="field"><label for="speech-{{ r.state }}">{% trans "Spoken message (played after the sound)" %}</label><input id="speech-{{ r.state }}" name="speech_text" maxlength="500" value="{{ r.row.speech_text|default:'' }}">
+<p class="help">{% if tts %}{% if r.row.speech_status == "ready" %}{% trans "Ready." %}{% elif r.row.speech_status == "pending" %}{% trans "Being prepared…" %}{% elif r.row.speech_status == "failed" %}{% trans "Failed:" %} {{ r.row.speech_detail }}{% else %}{% trans "Prepared on the server when saved." %}{% endif %}{% else %}{% trans "Needs offline speech (Piper) on the server; see Announcements → speech." %}{% endif %}</p></div>
+<div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button></div>
+</form>{% endfor %}
+{% endblock %}

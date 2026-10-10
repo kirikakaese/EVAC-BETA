@@ -41,6 +41,9 @@ def _assembly_choices(event):
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     from . import transfer
 
     r.module(ModuleSpec(key="venues", name=str(_("Venues")), order=10, category="venue",
