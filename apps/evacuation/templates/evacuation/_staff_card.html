@@ -1,0 +1,5 @@
+{% load i18n %}<section class="card staff-evacuation"><h2>{% trans "Evacuation" %}</h2>
+<p><span class="badge badge-evac badge-evac-{{ ctx.state }}">{{ ctx.label }}</span>{% if ctx.drill and ctx.state != "normal" %} <span class="badge badge-evac-drill">{{ ctx.drill_text }}</span>{% endif %}</p>
+{% if ctx.pending %}<p><span class="badge badge-warn">{% blocktrans count n=ctx.pending %}{{ n }} alarm waits for a decision{% plural %}{{ n }} alarms wait for a decision{% endblocktrans %}</span></p>{% endif %}
+<div class="staff-actions">{% if ctx.can_raise %}<a class="btn btn-danger btn-lg" href="{% url 'evacuation:panic' event.slug %}">{% trans "Raise an alarm" %}</a>{% endif %}
+<a class="btn" href="{% url 'evacuation:index' event.slug %}">{% trans "Control page" %}</a></div></section>

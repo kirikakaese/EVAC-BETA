@@ -4,11 +4,13 @@ from typing import Any
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    EvacTriggerSpec,
     ModuleSpec,
     NavEntry,
     PermissionSpec,
     PluginManifest,
     SettingsNamespace,
+    StaffCardSpec,
     WebhookEventSpec,
 )
 from apps.core.registry import Registry
@@ -55,6 +57,17 @@ def register(r: Registry) -> None:
                               "minimum": 0, "maximum": 240,
                               "description": "Then screens return to normal content. Nothing else ever returns "
                                              "to normal on its own."},
+        "two_person_states": {"type": "array", "title": "Two-person rule for", "default": [],
+                              "items": {"type": "string", "enum": ["staff_alert", "attention", "shelter_in_place",
+                                                                   "evacuate", "all_clear"],
+                                        "x-enum-labels": ["Staff alert", "Attention", "Shelter in place",
+                                                          "Evacuate", "All clear"]},
+                              "description": "A person's change into these states waits until a second "
+                                             "authorised person confirms it."},
+        "two_person_seconds": {"type": "integer", "title": "Second person must confirm within (seconds)",
+                               "default": 60, "minimum": 10, "maximum": 600,
+                               "description": "Otherwise the request expires, nothing changes and the control "
+                                              "room is alerted."},
         "drill_text": {"type": "string", "title": "Drill marker", "default": "DRILL", "maxLength": 40,
                        "description": "Shown on screens and prefixed to notifications during drills."},
     }
@@ -84,3 +97,14 @@ def register(r: Registry) -> None:
     r.webhook_event(WebhookEventSpec(key="evacuation.state_changed", module="evacuation",
                                      description="The evacuation state of the event or a zone changed "
                                                  "(includes the drill flag)."))
+    from . import api, staff
+
+    r.staff_card(StaffCardSpec(key="evacuation", title=str(_("Evacuation")), module="evacuation",
+                               template="evacuation/_staff_card.html", context=staff.card, order=5))
+    for key, name, desc in [
+        ("api", _("API / external systems"), _("Authenticated HTTPS trigger (service token, idempotency key).")),
+        ("bridge", _("Hardware bridge"), _("Dry contacts, buttons and key switches via the bridge (3.6).")),
+    ]:
+        r.evac_trigger(EvacTriggerSpec(key=key, name=str(name), description=str(desc), module="evacuation"))
+    for prefix, viewset, basename in api.ROUTES:
+        r.api_route(prefix, viewset, basename)

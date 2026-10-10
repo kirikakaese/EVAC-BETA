@@ -196,7 +196,7 @@ ADR-0003 must be accepted before implementation starts.** Both accepted 2026-10-
 | 3.2 | Map editor (`mapeditor/`) | upload PDF/SVG/PNG, measure scale; draw zones, exits, waypoints, screens with facing ✅ (ADR-0027); georeference, OSM tiles cached offline ✅ (ADR-0028) |
 | 3.3 | ✅ Evacuation state machine [§8.2] | persisted per event and zone, highest severity wins, drills, never auto-clear; 100 % transition tests; mypy strict (ADR-0029) |
 | 3.4 | ✅ Models: simple takeover, staged global, zones and routes [§8.1] | per-event switch; blocked exits recompute routes; partial evacuation (ADR-0030) |
-| 3.5 | Triggers + policies [§8.3] | web control room + PWA panic page with hold-to-confirm, two-person rule, API/MQTT, scheduled drills, policy execute/arm/notify per source/stage/zone with auto-escalation |
+| 3.5 | ✅ Triggers + policies [§8.3] | web control room + PWA panic page with hold-to-confirm, two-person rule, API (MQTT with 3.6), scheduled drills, policy execute/arm/notify per source/stage/zone with auto-escalation (ADR-0031) |
 | 3.6 | Hardware bridge (`bridge/`) | Pi GPIO + ESP32 reference, authenticated MQTT/HTTPS, supervised line heartbeat |
 | 3.7 | Evacuation content [§8.4] | guardrail linter (contrast, size, required elements), non-deletable fallback layout (ISO 7010 + English), text rotation, arrows per screen with manual override, audio loop |
 | 3.8 | Propagation + acks [§8.5] | ≤ 2 s p95 on LAN, measured; X of Y confirmed / Z offline per zone; staff acks |

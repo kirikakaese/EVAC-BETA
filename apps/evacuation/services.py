@@ -126,6 +126,21 @@ def payload_of(event: Any, row: EvacState, kind: Kind | None = None) -> dict[str
             "version": row.version, "kind": kind.value if kind else None}
 
 
+def check(event: Any, target: State | str, *, zone: Any = None, drill: bool = False) -> machine.Change:
+    """Would this change be accepted now? Raises :class:`Refused`; writes nothing (for armed requests)."""
+    target = State(target)
+    if zone is not None and not zones_of(event).filter(pk=zone.pk).exists():
+        raise Refused("zone", "This zone is not part of the event.")
+    cfg = config(event)
+    now = timezone.now()
+    rows = list(EvacState.objects.filter(event=event))
+    own = next((r.status for r in rows if r.zone_id == (zone.pk if zone else None)), machine.NORMAL)
+    zone_pk = zone.pk if zone else None
+    elsewhere = any(machine.current(r.status, now).real_alarm for r in rows if r.zone_id != zone_pk)
+    return machine.transition(own, target, drill=drill, now=now, enabled=cfg.enabled, clear_seconds=cfg.clear_seconds,
+                              real_alarm_elsewhere=elsewhere, model=cfg.model, zone=zone is not None)
+
+
 def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = False, actor: Any = None,
            request: Any = None, source: str = "web", reason: str = "", clear_zones: list[str] | None = None,
            check_perms: bool = True) -> list[StateChange]:

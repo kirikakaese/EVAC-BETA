@@ -101,3 +101,13 @@ evac --json events show demo
 
 Installed with the package (`pip install .` provides the `evac` script) or run as
 `python -m apps.api.cli`. Plugins add sub-commands (`CliCommandSpec`), e.g. `evac drill` in phase 3.
+
+## Evacuation
+
+- `GET /api/v1/events/<slug>/evacuation/`: model, event and zone states (with drill flag), requests waiting for a
+  decision, blocked points. Scope `evacuation:read`.
+- `POST /api/v1/events/<slug>/evacuation/trigger/` with `{"state": "evacuate", "zone": "<uuid>", "drill": false,
+  "reason": "...", "key": "<idempotency key>", "source": "api"}`. Scope `evacuation:write`; the token must be created
+  in a two-factor session and its owner needs `evacuation.trigger` (or `evacuation.drill`). The source's policy
+  applies (default *arm*); the answer says `executed`, `armed`, `notified` or `duplicate`. The API cannot end
+  alarms. See [ADR-0031](adr/0031-evacuation-triggers-and-policies.md).

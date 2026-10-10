@@ -1,0 +1,10 @@
+{% load i18n %}{% if pending %}<section class="card evac-pending" aria-labelledby="evac-pending-title" role="alert">
+<h2 id="evac-pending-title">{% trans "Waiting for a decision" %}</h2>
+<ul class="plain">{% for r in pending %}<li class="evac-request">
+<p><span class="badge badge-warn">{% if r.kind == "second" %}{% trans "second person needed" %}{% else %}{% trans "armed" %}{% endif %}</span>
+<strong>{{ r.get_state_display }}</strong> · {{ r.zone.name|default:_("whole event") }}{% if r.drill %} · <span class="badge badge-evac-drill">{% trans "drill" %}</span>{% endif %}</p>
+<p class="small muted">{% if r.requested_by %}{% blocktrans with s=r.source who=r.requested_repr t=r.created_at|date:"H:i:s" %}From {{ s }} ({{ who }}) at {{ t }}{% endblocktrans %}{% else %}{% blocktrans with s=r.source t=r.created_at|date:"H:i:s" %}From {{ s }} at {{ t }}{% endblocktrans %}{% endif %}{% if r.reason %} · “{{ r.reason }}”{% endif %}<br>
+{% if r.deadline %}{% if r.kind == "second" %}{% blocktrans with t=r.deadline|date:"H:i:s" %}Expires at {{ t }} if nobody confirms.{% endblocktrans %}{% else %}{% blocktrans with t=r.deadline|date:"H:i:s" %}Executes by itself at {{ t }} if nobody decides.{% endblocktrans %}{% endif %}{% else %}{% trans "Waits for a person." %}{% endif %}</p>
+<div class="actions"><form method="post" action="{% url 'evacuation:confirm' event.slug r.pk %}" class="inline">{% csrf_token %}{% if back %}<input type="hidden" name="next" value="{{ back }}">{% endif %}<button class="btn btn-danger" data-hold="1500" data-hold-label="{% trans 'Keep holding…' %}">{% trans "Hold to confirm" %}</button></form>
+<form method="post" action="{% url 'evacuation:reject' event.slug r.pk %}" class="inline">{% csrf_token %}{% if back %}<input type="hidden" name="next" value="{{ back }}">{% endif %}<button class="btn" data-confirm="{% trans 'Reject this alarm? Nothing will change.' %}">{% trans "Reject" %}</button></form></div>
+</li>{% endfor %}</ul></section>{% endif %}
