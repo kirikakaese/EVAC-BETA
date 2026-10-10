@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -78,6 +79,7 @@ class Coverage:
     last_p95_ms: int | None
     samples: int
     fallback: int
+    missing: list[str]  # names of screens that have not confirmed (offline ones marked)
 
 
 def coverage(event: Any) -> Coverage:
@@ -96,6 +98,7 @@ def coverage(event: Any) -> Coverage:
     acks = {str(a.screen_id): a for a in ScreenAck.objects.filter(event=event)}
     per_zone: dict[str, dict[str, Any]] = {}
     total = confirmed = offline = fallback = 0
+    missing: list[str] = []
     for s in screens:
         if feed._role(s) == "excluded":
             continue
@@ -106,6 +109,8 @@ def coverage(event: Any) -> Coverage:
         confirmed += ok
         offline += off
         fallback += bool(ok and a and a.fallback)
+        if not ok:
+            missing.append(f"{s.name} (offline)" if off else s.name)
         zone_names = [s.zone.name] if s.zone_id else []
         if s.room_id:
             zone_names += [z.name for z in s.room.zones.all() if z.name not in zone_names]
@@ -118,7 +123,8 @@ def coverage(event: Any) -> Coverage:
                   .values_list("latency_ms", flat=True)[:5000])
     last = list(LatencySample.objects.filter(event=event, seq=seq).values_list("latency_ms", flat=True))
     return Coverage(total, confirmed, offline, total - confirmed - offline, sorted(per_zone.values(),
-                    key=lambda r: r["zone"]), seq, p95(recent), p95(last), len(recent), fallback)
+                    key=lambda r: r["zone"]), seq, p95(recent), p95(last), len(recent), fallback,
+                    sorted(missing))
 
 
 def staff_ack(event: Any, user: Any, kind: str, *, zone: Any = None, note: str = "", request: Any = None) -> StaffAck:
@@ -176,6 +182,66 @@ def alarm_since(event: Any) -> Any:
         if start is not None:
             starts.append(start)
     return min(starts) if starts else None
+
+
+#: the watchdog alerts the control room when screens have not confirmed an alarm message after this long
+WATCHDOG_SECONDS = 30
+
+
+def watchdog(event: Any = None, now: Any = None) -> int:
+    """During an alarm: alert the control room once per message when screens have not confirmed it within
+    ``WATCHDOG_SECONDS`` (Celery beat, roadmap 3.9). Returns the number of alerts."""
+    from django.urls import reverse
+
+    from apps.core.notify import notify
+
+    from . import triggers
+    from .models import EventAlarm
+
+    now = now or timezone.now()
+    qs = EventAlarm.objects.filter(seq_at__lte=now - timedelta(seconds=WATCHDOG_SECONDS),
+                                   watchdog_seq__lt=models.F("seq")).select_related("event")
+    if event is not None:
+        qs = qs.filter(event=event)
+    alerts = 0
+    for row in qs:
+        ev = row.event
+        if EventAlarm.objects.filter(pk=row.pk, watchdog_seq__lt=row.seq).update(watchdog_seq=row.seq) != 1:
+            continue  # another worker took it
+        if alarm_since(ev) is None:
+            continue
+        cov = coverage(ev)
+        if cov.seq != row.seq or not cov.missing:
+            continue
+        names = ", ".join(cov.missing[:10]) + (" …" if len(cov.missing) > 10 else "")
+        notify(triggers.control_room(ev), _("%(n)s of %(t)s screens did not confirm the alarm")
+               % {"n": len(cov.missing), "t": cov.total}, body=names, level="err", event=ev,
+               url=reverse("evacuation:index", args=[ev.slug]))
+        audit.log(action="evacuation.watchdog", event=ev, message=f"#{row.seq}: {len(cov.missing)} screens missing",
+                  changes={"missing": [None, cov.missing[:50]]})
+        alerts += 1
+    return alerts
+
+
+def bundle_served(screen: Any, version: str) -> None:
+    ScreenAck.objects.update_or_create(screen_id=screen.pk, defaults={
+        "event": screen.event, "bundle_served": version[:16], "bundle_served_at": timezone.now()})
+
+
+def record_selftest(screen: Any, data: dict[str, Any]) -> ScreenAck:
+    """Keep a whitelisted copy of a player's self-test result."""
+    def strs(value: Any) -> dict[str, str]:
+        return {str(k)[:200]: str(v)[:120] for k, v in list((value or {}).items())[:40]} \
+            if isinstance(value, dict) else {}
+
+    clean = {"ok": bool(data.get("ok")), "bundle": str(data.get("bundle") or "")[:16],
+             "keys": int(data.get("keys") or 0) if str(data.get("keys") or "0").isdigit() else 0,
+             "signature": str(data.get("signature") or "")[:20], "audio": str(data.get("audio") or "")[:20],
+             "stages": strs(data.get("stages")), "origins": strs(data.get("origins")),
+             "visible": bool(data.get("visible")), "ms": data.get("ms") if isinstance(data.get("ms"), int) else None}
+    ack: ScreenAck = ScreenAck.objects.update_or_create(screen_id=screen.pk, defaults={
+        "event": screen.event, "selftest": clean, "selftest_at": timezone.now()})[0]
+    return ack
 
 
 def screen_acks(event: Any) -> dict[str, ScreenAck]:

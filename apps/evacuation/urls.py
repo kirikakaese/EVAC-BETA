@@ -20,6 +20,7 @@ urlpatterns = [
     path("policies/", views.policies, name="policies"),
     path("bridges/", views.bridges_page, name="bridges"),
     path("content/", views.content_page, name="content"),
+    path("readiness/", views.readiness_page, name="readiness"),
     path("requests/<uuid:pk>/confirm/", views.decide, {"verdict": "confirm"}, name="confirm"),
     path("requests/<uuid:pk>/reject/", views.decide, {"verdict": "reject"}, name="reject"),
     path("screens/<uuid:pk>/direction/", views.hint, name="hint"),

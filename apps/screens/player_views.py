@@ -37,6 +37,8 @@ def player_strings() -> dict[str, str]:
         "no_server": _("EVAC server not reachable"),
         "retrying": _("Retrying automatically."),
         "Follow the instructions of the staff": _("Follow the instructions of the staff"),
+        "Self-test": _("Self-test"), "This is a test. There is no alarm.": _("This is a test. There is no alarm."),
+        "TEST": _("TEST"),
     }
 
 

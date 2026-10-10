@@ -58,6 +58,8 @@ def input_changed(request: HttpRequest) -> JsonResponse:
         return err
     assert body is not None
     key, state = str(body.get("input", "")), str(body.get("state", ""))
-    res = bridges.report(bridge, key, state, event_key=str(body.get("id", ""))[:60])
+    issued = body.get("issued_seq")
+    res = bridges.report(bridge, key, state, event_key=str(body.get("id", ""))[:60],
+                         issued_seq=issued if isinstance(issued, int) and not isinstance(issued, bool) else None)
     status = 404 if res.result == "unknown_input" else 400 if res.result == "bad_state" else 200
     return JsonResponse({"result": res.result, "request": res.request, "detail": res.detail}, status=status)

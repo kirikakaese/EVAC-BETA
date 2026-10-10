@@ -79,28 +79,39 @@ export function effective(statuses: Status[], now: number): Status {
   return best;
 }
 
-/** A payload built from a signed fallback message and the cached bundle (the server is unreachable). */
-export function fromFallback(sig: Signed, bundle: EvacBundle, now: number): EvacPayload | null {
-  const core = verifySigned(bundle.keys, sig) as null | { e: string; seq: number; ia: number; ev: Status;
-                                                          z: Record<string, Status>; b?: string[] };
-  if (!core || core.e !== bundle.event || typeof core.seq !== "number" || !core.ev || typeof core.ev.st !== "string") {
-    return null;
-  }
-  const shown = effective([core.ev, ...bundle.zones.map((z) => core.z?.[z]).filter((s): s is Status => !!s)], now);
-  const stage = bundle.stages[shown.st];
-  const dir = bundle.directions[(core.b ?? []).slice().sort().join(",")];
-  const status = [core.ev, ...Object.values(core.z ?? {})].find((s) => s.st === shown.st && s.cu);
+/** A payload for ``state`` from the cached bundle alone (fallback messages, self-test). */
+export function stagePayload(bundle: EvacBundle, state: string, drill: boolean, blocked: string[] = []): EvacPayload {
+  const stage = bundle.stages[state];
+  const dir = bundle.directions[blocked.slice().sort().join(",")];
   return {
-    event: bundle.event, screen: bundle.screen, seq: core.seq, v: `fb-${core.seq}-${shown.st}-${shown.d}`,
-    state: shown.st, label: bundle.labels[shown.st] ?? stage?.label ?? shown.st, drill: shown.d,
-    drill_text: bundle.drill_text, since: null, clear_until: status?.cu ? new Date(status.cu).toISOString() : null,
-    takeover: stage?.takeover ?? false, role: bundle.role, model: bundle.model,
+    event: bundle.event, screen: bundle.screen, seq: 0, v: "", state, label: bundle.labels[state] ?? stage?.label ?? state,
+    drill, drill_text: bundle.drill_text, since: null, clear_until: null, takeover: stage?.takeover ?? false,
+    role: bundle.role, model: bundle.model,
     guidance: dir ? { kind: dir.kind, arrow: dir.arrow, text: dir.text, target: dir.target }
       : { kind: bundle.model === "zones" ? "follow_staff" : "none", arrow: null, text: "", target: "" },
     direction: dir?.direction ?? "", texts: stage?.texts ?? [], rotate_seconds: stage?.rotate_seconds ?? 8,
     pictograms_only: stage?.pictograms_only ?? false, sound: stage?.sound ?? "none",
     sound_every: stage?.sound_every ?? 30, speech: stage?.speech ?? "", layout: stage?.layout ?? null,
-    issued: core.ia * 1000, sig, via: "fallback",
+  };
+}
+
+interface FallbackCore { e: string; seq: number; ia: number; ev: Status; z: Record<string, Status>; b?: string[];
+                         is?: string }
+
+/** A payload built from a signed fallback message and the cached bundle (the server is unreachable).
+ *  Messages a bridge issued on its own (``is`` set) may raise alarms but never carry an all clear (ADR-0034). */
+export function fromFallback(sig: Signed, bundle: EvacBundle, now: number): EvacPayload | null {
+  const core = verifySigned(bundle.keys, sig) as null | FallbackCore;
+  if (!core || core.e !== bundle.event || typeof core.seq !== "number" || !core.ev || typeof core.ev.st !== "string") {
+    return null;
+  }
+  const all = [core.ev, ...Object.values(core.z ?? {})];
+  if (core.is && all.some((s) => !isAlarm(s.st) && s.st !== "normal")) return null;
+  const shown = effective([core.ev, ...bundle.zones.map((z) => core.z?.[z]).filter((s): s is Status => !!s)], now);
+  const status = all.find((s) => s.st === shown.st && s.cu);
+  return {
+    ...stagePayload(bundle, shown.st, shown.d, core.b ?? []), seq: core.seq, v: `fb-${core.seq}-${shown.st}-${shown.d}`,
+    clear_until: status?.cu ? new Date(status.cu).toISOString() : null, issued: core.ia * 1000, sig, via: "fallback",
   };
 }
 
@@ -191,6 +202,78 @@ export class EvacController {
     if (!this.bundle) return false;
     const p = fromFallback(sig, this.bundle, this.opts.now());
     return p ? this.offer(p, "fallback") : false;
+  }
+
+  /** Self-test (ADR-0034): render every stage off screen (own layout and built-in), check the signature of the
+   *  current message, the audio permission and each fallback origin. ``visible`` also shows a test frame for
+   *  ``seconds`` (never over a running alarm). */
+  async selfTest(opts: { visible: boolean; seconds: number; fetcher?: typeof fetch }): Promise<SelfTestResult> {
+    const started = this.opts.now();
+    const b = this.bundle;
+    const stages: Record<string, string> = {};
+    const box = document.createElement("div");
+    box.className = "evac-selftest-host";
+    box.setAttribute("aria-hidden", "true");
+    document.body.append(box);
+    try {
+      for (const state of Object.keys(b?.stages ?? {})) stages[state] = this.testStage(box, stagePayload(b!, state, false));
+    } finally {
+      box.remove();
+    }
+    const sig = this.payload?.sig;
+    const signature = !sig ? "missing" : b && verifySigned(b.keys, sig) ? "ok" : "invalid";
+    const origins: Record<string, string> = {};
+    for (const origin of b?.fallback_origins ?? []) origins[origin] = await probeOrigin(origin, b!, opts.fetcher);
+    const audio = this.opts.audio().enabled ? await probeAudio() : "off";
+    let visible = false;
+    if (opts.visible && b && !this.active) {
+      visible = true;
+      this.showTest(b, opts.seconds);
+    }
+    const ok = !!b && !Object.values(stages).some((v) => v.startsWith("error")) && signature !== "invalid"
+      && !Object.values(origins).some((v) => v !== "ok");
+    return { ok, at: started, ms: Math.round(this.opts.now() - started), bundle: b?.version ?? null,
+             keys: b?.keys.length ?? 0, signature, stages, audio, origins, visible };
+  }
+
+  private testStage(box: HTMLElement, p: EvacPayload): string {
+    const host = document.createElement("div");
+    host.className = "evac-takeover";
+    box.replaceChildren(host);
+    let result = "ok";
+    if (p.layout) {
+      let failed = "";
+      try {
+        const ctx = this.opts.context();
+        renderLayout(host, p.layout, { ...ctx, vars: this.vars(p, p.texts[0] ?? ""),
+          onError: (id, err) => { failed = failed || `${id}: ${String(err)}`; } }).destroy();
+      } catch (err) {
+        failed = String(err);
+      }
+      if (failed) result = `fallback (${failed})`.slice(0, 120);
+    }
+    try {
+      host.replaceChildren(this.fallbackLayout(p, p.state, p.texts[0] ?? ""));
+      if (!host.querySelector("svg")) return "error: no sign";
+    } catch (err) {
+      return `error: ${String(err)}`.slice(0, 120);
+    }
+    return result;
+  }
+
+  private showTest(b: EvacBundle, seconds: number): void {
+    const p = { ...stagePayload(b, "evacuate", true), label: this.t("Self-test"),
+                texts: [this.t("This is a test. There is no alarm.")], drill_text: this.t("TEST") };
+    this.stop();
+    this.layer.replaceChildren();
+    this.layer.hidden = false;
+    this.layer.dataset.mode = "test";
+    const host = document.createElement("div");
+    host.className = "evac-takeover evac-stage-test";
+    host.append(this.fallbackLayout(p, "evacuate", p.texts[0]));
+    this.layer.append(host);
+    this.drawDrill(p);
+    this.expiry = setTimeout(() => this.render(true), Math.max(2, Math.min(seconds || 5, 60)) * 1000);
   }
 
   /** Whether the screen is taken over (normal content is hidden). */
@@ -358,6 +441,46 @@ export class EvacController {
     this.rendered?.destroy();
     this.rendered = null;
     this.frame = 0;
+  }
+}
+
+export interface SelfTestResult {
+  ok: boolean; at: number; ms: number; bundle: string | null; keys: number; signature: string;
+  stages: Record<string, string>; audio: string; origins: Record<string, string>; visible: boolean;
+}
+
+/** Whether this browser lets the page play sound without a click: "running", "suspended" (autoplay blocked),
+ *  "unavailable". Kiosks set up with deploy/kiosk allow autoplay. */
+export async function probeAudio(): Promise<string> {
+  if (typeof AudioContext === "undefined") return "unavailable";
+  let ctx: AudioContext;
+  try {
+    ctx = new AudioContext();
+  } catch {
+    return "unavailable";
+  }
+  try {
+    if (ctx.state === "suspended") await Promise.race([ctx.resume(), new Promise((r) => setTimeout(r, 300))]);
+    return ctx.state === "running" ? "running" : "suspended";
+  } finally {
+    void ctx.close().catch(() => undefined);
+  }
+}
+
+/** A fallback origin answers with a message signed by the event's key: "ok", "bad signature", "http 404",
+ *  "unreachable". */
+export async function probeOrigin(origin: string, b: EvacBundle, fetcher: typeof fetch = fetch): Promise<string> {
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = setTimeout(() => ctrl?.abort(), 3000);
+  try {
+    const res = await fetcher(`${origin}/evac/${b.event}/state`, { cache: "no-store", signal: ctrl?.signal });
+    if (!res.ok) return `http ${res.status}`;
+    const body = await res.json() as { sig?: Signed };
+    return body.sig && verifySigned(b.keys, body.sig) ? "ok" : "bad signature";
+  } catch {
+    return "unreachable";
+  } finally {
+    clearTimeout(timer);
   }
 }
 

@@ -6,6 +6,24 @@ released.
 
 ## [Unreleased]
 
+### Added — evacuation fail-safe (Phase 3, part 10)
+
+- *Readiness* page (ADR-0034): per screen whether it is online, has a current evacuation bundle, may play sound
+  and passed its last self-test; the alarm key; fallback origins and bridges. `manage.py evac_selftest <event>
+  --report` prints the same and exits 1 when a screen is not ready.
+- Self-test: screens render every stage off screen, check the signature, sound permission and fallback origins
+  and report back; optionally a visible test frame (never during an alarm). Button or `manage.py evac_selftest`.
+- Watchdog: during an alarm the control room is alerted once per message when screens have not confirmed it
+  within 30 s.
+- Alarm key management: rotate (previous key valid for 24 hours) and export for bridges and secondary nodes
+  (two-factor session, audit-logged), also `manage.py evac_alarm_key`.
+- Hardware bridge fail-safe: heartbeat answers carry the signed state and each input's policy; the reference bridge
+  serves the state to screens that lost the server and, with the exported key, signs an alarm itself when EVAC is
+  unreachable (execute at once, arm after its escalation time, never an all clear). The server adopts it when the
+  bridge reports back (`issued_seq`). Players reject an all clear issued by a bridge.
+- The player's service worker keeps the evacuation speech; players report their bundle version and sound
+  permission in the heartbeat.
+
 ### Added — propagation and acknowledgements (Phase 3, part 9)
 
 - Screens acknowledge every evacuation message they render (seq, version, state, path, render time). The control

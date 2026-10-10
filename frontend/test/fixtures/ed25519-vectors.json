@@ -22,5 +22,12 @@
   "state_key": "_RckOFqgx1tk-3jNYC-h2ZH96_drE8WO1wLqyDXp9hg",
   "state_m": "{\"b\":[],\"e\":\"demo\",\"ev\":{\"d\":false,\"st\":\"attention\"},\"ia\":1791633600,\"sc\":\"*\",\"seq\":42,\"z\":{\"z1\":{\"d\":false,\"st\":\"evacuate\"}}}",
   "state_s": "2ZPkzcemaRNlIcfhhYLVSYUTDDky_jYOczkt4DUmPrHmSbj5k6tKVLl_yq4_mtm8hATa_XCv5_wtAO94KL1DDg"
+ },
+ {
+  "bridge_key": "lQcAKZ87Mv8N1PzvraVUhFI6zjGni21-yg5ZIrW33wM",
+  "bridge_alarm_m": "{\"b\":[],\"e\":\"demo\",\"ev\":{\"d\":false,\"st\":\"normal\"},\"ia\":1791633600,\"is\":\"bridge:panel\",\"sc\":\"*\",\"seq\":43,\"z\":{\"z1\":{\"d\":false,\"st\":\"evacuate\"}}}",
+  "bridge_alarm_s": "eI0QoSZC3kovGC4aSVzcN2PiU6JMhw_4wjrvXzPH5mjKZVCkBtlMa8dLPInV9DwSH7QrqiLrG2FVUrsLWv1LCQ",
+  "bridge_clear_m": "{\"b\":[],\"e\":\"demo\",\"ev\":{\"cu\":1791634200000,\"d\":false,\"st\":\"all_clear\"},\"ia\":1791633600,\"is\":\"bridge:panel\",\"sc\":\"*\",\"seq\":44,\"z\":{}}",
+  "bridge_clear_s": "CnxRqtHpu6oZJ2ubPJtZoXqwmUO-3SA4tJQh4ZK6cRoVQNWVmTXufKqXMdjmuCQnCEsG9AAXdH_RPdqcIjO7CA"
  }
 ]

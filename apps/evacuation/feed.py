@@ -40,7 +40,7 @@ TAKEOVER = frozenset({State.SHELTER, State.EVACUATE, State.ALL_CLEAR})
 def bump(event: Any) -> int:
     """Next message number of the event (monotonic, survives restarts; ADR-0003)."""
     EventAlarm.objects.get_or_create(event=event)
-    EventAlarm.objects.filter(event=event).update(seq=F("seq") + 1)
+    EventAlarm.objects.filter(event=event).update(seq=F("seq") + 1, seq_at=timezone.now())
     return int(EventAlarm.objects.values_list("seq", flat=True).get(event=event))
 
 

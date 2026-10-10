@@ -14,6 +14,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.http import require_POST
 
+from apps.core import settings_store
 from apps.events import rbac
 from apps.portal.shortcuts import event_view
 
@@ -437,6 +438,52 @@ def bridges_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse
         "event": event, "rows": rows, "new_token": new_token, "add_error": errors.get("add", ""),
         "base_url": request.build_absolute_uri("/bridge/v1/"), "offline_after": bridges.OFFLINE_AFTER,
         "heartbeat": bridges.HEARTBEAT_SECONDS}, status=400 if errors else 200)
+
+
+@event_view("evacuation.view", module=MODULE)
+def readiness_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    """Fail-safe readiness (roadmap 3.9): per screen bundle, sound, self-test; the alarm key; bridges."""
+    from apps.accounts import twofactor
+
+    from . import alarmkey, readiness
+
+    can_manage = rbac.has_any(request.user, event, "evacuation.manage", request=request)
+    exported = ""
+    if request.method == "POST":
+        if not can_manage:
+            raise PermissionDenied
+        what = request.POST.get("what")
+        if what == "selftest":
+            visible = request.POST.get("visible") == "on"
+            if visible and acks.alarm_since(event) is not None:
+                messages.error(request, _("No visible self-test during an alarm."))
+            else:
+                n = readiness.run_selftest(event, visible=visible, seconds=_int(request.POST.get("seconds"), 5),
+                                           actor=request.user, request=request)
+                messages.success(request, _("Self-test sent to %(n)s screens. Results appear here within a minute.")
+                                 % {"n": n})
+            return redirect("evacuation:readiness", event.slug)
+        if what in ("rotate", "export"):
+            if not twofactor.is_verified(request):
+                messages.error(request, _("The alarm key needs a session confirmed with two factors."))
+                return redirect("evacuation:readiness", event.slug)
+            if what == "rotate":
+                alarmkey.rotate(event, actor=request.user, request=request)
+                feed.push(event)
+                messages.success(request, _("New alarm key. Screens get it with their next bundle; the old key stays "
+                                            "valid for 24 hours. Give bridges and secondary nodes the new key."))
+                return redirect("evacuation:readiness", event.slug)
+            exported = alarmkey.export_private(event, actor=request.user, request=request,
+                                               purpose=request.POST.get("purpose", "")[:100])
+    rows = readiness.screens(event)
+    key = alarmkey.ensure(event)
+    return render(request, "evacuation/readiness.html", {
+        "event": event, "rows": rows, "summary": readiness.summary(rows), "can_manage": can_manage,
+        "key": key, "previous_valid": key.previous_public_key and key.previous_valid_until
+        and key.previous_valid_until > timezone.now(), "exported": exported,
+        "bridges": Bridge.objects.filter(event=event),
+        "origins": settings_store.get("evacuation", event=event).get("fallback_origins") or [],
+        "selftest_days": readiness.SELFTEST_MAX_AGE.days})
 
 
 @event_view("evacuation.manage", module=MODULE)

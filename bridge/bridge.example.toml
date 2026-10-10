@@ -10,6 +10,18 @@ transport = "https"                            # or "mqtt" (needs paho-mqtt and 
 queue_file = "/var/lib/evac-bridge/queue.json"  # changes waiting for EVAC survive restarts
 debounce_ms = 200
 
+# Fail-safe (optional, ADR-0034): serve the signed alarm state to screens that lost the server and, with the
+# event's alarm key, sign alarms here when EVAC is unreachable (never an all clear). Export the key in EVAC:
+# Evacuation -> Readiness -> Alarm key -> Export (two-factor session; audit-logged). Keep this file chmod 600.
+# Add the URL to Settings -> Evacuation -> Fallback origins, e.g. https://bridge-hall-a.venue.lan:8443
+# [fallback]
+# name = "hall-a"
+# state_file = "/var/lib/evac-bridge/state.json"
+# listen_port = 8443
+# cert_file = "/etc/evac-bridge/cert.pem"   # players on an https page can only reach an https origin
+# key_file = "/etc/evac-bridge/key.pem"
+# alarm_key = "..."                         # or the environment variable EVAC_BRIDGE_ALARM_KEY
+
 # One [[inputs]] block per wired input. The keys must match the inputs configured in EVAC.
 [[inputs]]
 key = "in1"        # fire alarm panel relay (normally open contact to ground)

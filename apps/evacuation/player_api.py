@@ -4,6 +4,7 @@
 - ``GET state/``: the screen's current payload plus its *evacuation bundle* (everything needed to show every
   stage offline: texts, layouts, sounds, the event's public keys, precomputed directions, fallback origins).
 - ``POST ack/``: the screen rendered payload ``v`` (latency and "X of Y confirmed", roadmap 3.8).
+- ``POST selftest/``: the result of a self-test the control room asked for (roadmap 3.9).
 - ``GET speech/<name>``: a spoken message (signed per screen, so ``<audio>`` and the service worker can fetch it).
 - ``GET /evac/state``: the event-wide signed state for fallback origins (no token; the signature is the trust).
 """
@@ -40,8 +41,37 @@ def state(request: HttpRequest) -> JsonResponse:
     if not modules.is_enabled("evacuation", screen.event):
         return JsonResponse({"enabled": False})
     body = feed.payloads(screen.event, [screen]).get(str(screen.pk))
+    bundle = feed.bundle(screen)
+    from . import acks
+
+    acks.bundle_served(screen, bundle["version"])
     return JsonResponse({"enabled": True, "payload": feed.sign(screen.event, body) if body else None,
-                         "bundle": feed.bundle(screen)})
+                         "bundle": bundle})
+
+
+def _json(request: HttpRequest) -> dict[str, Any] | JsonResponse:
+    try:
+        data = json.loads(request.body or b"{}")
+    except ValueError:
+        return JsonResponse({"error": "body must be JSON"}, status=400)
+    if not isinstance(data, dict):
+        return JsonResponse({"error": "body must be a JSON object"}, status=400)
+    return data
+
+
+@csrf_exempt
+@require_POST
+def selftest(request: HttpRequest) -> JsonResponse:
+    screen = _screen(request)
+    if screen is None:
+        return _unauthorized()
+    data = _json(request)
+    if isinstance(data, JsonResponse):
+        return data
+    from . import acks
+
+    acks.record_selftest(screen, data)
+    return JsonResponse({"ok": True})
 
 
 @csrf_exempt
@@ -50,12 +80,9 @@ def ack(request: HttpRequest) -> JsonResponse:
     screen = _screen(request)
     if screen is None:
         return _unauthorized()
-    try:
-        data = json.loads(request.body or b"{}")
-    except ValueError:
-        return JsonResponse({"error": "body must be JSON"}, status=400)
-    if not isinstance(data, dict):
-        return JsonResponse({"error": "body must be a JSON object"}, status=400)
+    data = _json(request)
+    if isinstance(data, JsonResponse):
+        return data
     from . import acks
 
     acks.record(screen, data)

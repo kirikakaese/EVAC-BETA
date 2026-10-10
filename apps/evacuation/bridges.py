@@ -10,6 +10,12 @@ HTTPS (``/bridge/v1/...``) or MQTT (``extensions/mqtt``); both end here.
   Only people end alarms.
 - ``fault`` (broken loop, end-of-line resistor out of range) and a missing heartbeat (30 s): a loud alert to the
   control room and the bridge page, never a public alarm.
+
+Fail-safe (ADR-0034): every heartbeat answer carries the event's signed state and each input's policy. A bridge
+holding the exported alarm key serves that state to screens that lost the server and, when an input fires while
+it cannot reach the server, applies the policy itself and signs an alarm (never an all clear). When it reaches
+the server again it reports the change with ``issued_seq``: the server adopts the alarm (it is already public),
+moves its message counter past the bridge's, and tells the control room.
 """
 from __future__ import annotations
 
@@ -117,9 +123,20 @@ def set_inputs(bridge: Bridge, inputs: list[dict[str, str]], *, actor: Any = Non
 
 
 def config_for(bridge: Bridge) -> dict[str, Any]:
-    """What the bridge needs to know (answer to every heartbeat)."""
+    """What the bridge needs to know (answer to every heartbeat): its inputs with the policy that applies to
+    them, and the event's signed state for screens that lost the server."""
+    from . import alarmkey
+
+    rules = triggers.rules(bridge.event)
+
+    def pol(i: dict[str, Any]) -> dict[str, Any]:
+        d = policy.resolve(rules, policy.BRIDGE, i["state"], i.get("zone") or "")
+        return {"action": d.action.value, "escalate_seconds": d.escalate_seconds}
+
     return {"name": bridge.name, "event": bridge.event.slug, "heartbeat_seconds": HEARTBEAT_SECONDS,
-            "inputs": [{"key": i["key"], "label": i.get("label", ""), "state": i["state"]} for i in bridge.inputs]}
+            "inputs": [{"key": i["key"], "label": i.get("label", ""), "state": i["state"], "zone": i.get("zone") or "",
+                        "policy": pol(i)} for i in bridge.inputs],
+            "state": alarmkey.state_message(bridge.event), "keys": alarmkey.public_keys(bridge.event)}
 
 
 def _alert(bridge: Bridge, title: str, body: str = "", level: str = "err") -> None:
@@ -161,8 +178,26 @@ class Result:
     detail: str = ""
 
 
-def report(bridge: Bridge, key: str, state: str, *, event_key: str = "", at: str = "") -> Result:
-    """An input changed. ``event_key`` is the bridge's idempotency id of this change."""
+#: an ``issued_seq`` further ahead than this is ignored (a broken bridge must not exhaust the counter)
+MAX_SEQ_JUMP = 10_000
+
+
+def adopt_seq(event: Any, issued_seq: int) -> bool:
+    """Move the event's message counter to at least ``issued_seq`` (a message a bridge signed itself)."""
+    from . import feed
+    from .models import EventAlarm
+
+    current = feed.current_seq(event)
+    if issued_seq <= current or issued_seq > current + MAX_SEQ_JUMP:
+        return False
+    EventAlarm.objects.filter(event=event, seq__lt=issued_seq).update(seq=issued_seq)
+    return True
+
+
+def report(bridge: Bridge, key: str, state: str, *, event_key: str = "", at: str = "",
+           issued_seq: int | None = None) -> Result:
+    """An input changed. ``event_key`` is the bridge's idempotency id of this change; ``issued_seq`` is set when
+    the bridge already showed the alarm on screens itself (it could not reach the server)."""
     bridge.refresh_from_db()
     spec = bridge.input(key)
     if spec is None:
@@ -199,9 +234,17 @@ def report(bridge: Bridge, key: str, state: str, *, event_key: str = "", at: str
 
         zone = Zone.objects.filter(pk=spec["zone"]).first()
     idem = f"bridge:{bridge.pk}:{event_key}"[:100] if event_key else ""
+    adopted = bool(issued_seq) and adopt_seq(bridge.event, int(issued_seq or 0))
+    if issued_seq:
+        audit.log(action="evacuation.bridge_issued", event=bridge.event, target=bridge,
+                  message=f"{bridge.name}: {label}: alarm #{issued_seq} shown by the bridge while the server was "
+                          "unreachable", scope={"adopted_seq": adopted})
+        _alert(bridge, _("Alarm raised by the bridge on its own: %(b)s · %(i)s") % {"b": bridge.name, "i": label},
+               _("The server was unreachable; screens that also lost the server showed it. It is now raised here."))
     try:
         out = triggers.trigger(bridge.event, State(spec["state"]), source=policy.BRIDGE, zone=zone,
-                               reason=f"{bridge.name}: {label}", key=idem, check_perms=False)
+                               reason=f"{bridge.name}: {label}" + (" (issued by the bridge)" if issued_seq else ""),
+                               key=idem, check_perms=False, execute=bool(issued_seq))
     except Refused as err:
         # e.g. the state is already active: nothing to do, but the control room should know the input fired
         audit.log(action="evacuation.bridge_trigger_refused", event=bridge.event, target=bridge,

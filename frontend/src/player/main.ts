@@ -23,7 +23,7 @@ import { bootCheck, installLifecycle, markAlive, memoryPressure, safeReload } fr
 import { canCapture, captureScreenshot, clearCaches, upload } from "./remote";
 import { applyRoot, applyState, displayState, localHHMM, type DisplaySettings } from "./screen-settings";
 import { getConfig, getToken, setConfig, setToken } from "./storage";
-import { EvacController, type EvacBundle, type EvacPayload } from "./evac";
+import { EvacController, probeAudio, type EvacBundle, type EvacPayload } from "./evac";
 import type { Signed } from "./ed25519";
 
 const PAIR_POLL_MS = 3000;
@@ -70,6 +70,7 @@ export class Player {
   private lastDailyReload = "";
   private evac: EvacController | null = null;
   private evacAck = "";
+  private evacAudio = "";
   private evacTimer: ReturnType<typeof setInterval> | null = null;
   private fallbackTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -161,6 +162,7 @@ export class Player {
     await this.loadProgram(token);
     this.show();
     void this.loadEvac(token);
+    void probeAudio().then((a) => { this.evacAudio = a; });
     this.evacTimer = setInterval(() => void this.loadEvac(token), EVAC_REFRESH_MS);
     this.fallbackTimer = setInterval(() => void this.pollFallback(), FALLBACK_POLL_MS);
     stage("play: online");
@@ -173,7 +175,8 @@ export class Player {
       heartbeatSeconds: this.config?.settings.heartbeat_seconds ?? 10, since: this.config?.seq ?? 0,
       report: () => report({ version: this.env.version, slide: this.slide, lastSync: this.lastSync,
                              online: this.transport !== "offline", displayState: this.displayState,
-                             capture: canCapture(), recovered: this.recovered, evacAck: this.evacAck }),
+                             capture: canCapture(), recovered: this.recovered, evacAck: this.evacAck,
+                             evacBundle: this.evac?.bundle?.version, evacAudio: this.evacAudio }),
       onMessage: (m) => void this.handle(m, token),
       onTransport: (tr) => {
         if (tr !== this.transport) {
@@ -236,6 +239,18 @@ export class Player {
       case "evac.bundle":
         void this.loadEvac(token);
         break;
+      case "evac.selftest": {
+        if (!this.evac) break;
+        await this.loadEvac(token);
+        const result = await this.evac.selfTest({ visible: !!msg.data.visible, seconds: Number(msg.data.seconds) || 5 });
+        this.evacAudio = result.audio;
+        log("info", `evacuation self-test: ${result.ok ? "ok" : "problems"}`);
+        await fetch(`${this.env.api}evacuation/selftest/`, {
+          method: "POST", headers: { Authorization: `Screen ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(result),
+        }).catch((e) => recordError(`self-test report: ${String(e)}`));
+        break;
+      }
       case "reload":
         safeReload("requested by staff", { force: true });
         break;
@@ -336,6 +351,9 @@ export class Player {
       if (!body.enabled) return;
       this.evac?.setBundle(body.bundle ?? null);
       this.evac?.offer(body.payload, "fetch");
+      // the spoken messages of every stage are fetched now, so they play without the server
+      const speech = Object.values(body.bundle?.stages ?? {}).map((s) => s.speech).filter((u) => !!u);
+      if (speech.length) void prefetchSpeech(speech);
     } catch {
       // offline: the fallback origins and the cached state take over
     }

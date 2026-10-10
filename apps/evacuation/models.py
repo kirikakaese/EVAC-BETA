@@ -282,6 +282,8 @@ class EventAlarm(models.Model):
 
     event = models.OneToOneField("events.Event", on_delete=models.CASCADE, primary_key=True, related_name="evac_alarm")
     seq = models.PositiveBigIntegerField(default=0)
+    seq_at = models.DateTimeField(null=True, blank=True)  # when ``seq`` was last bumped (watchdog)
+    watchdog_seq = models.PositiveBigIntegerField(default=0)  # the last message the watchdog alerted about
     public_key = models.CharField(max_length=100, blank=True)
     private_key_encrypted = models.TextField(blank=True)
     previous_public_key = models.CharField(max_length=100, blank=True)
@@ -307,6 +309,11 @@ class ScreenAck(models.Model):
     received_at = models.DateTimeField(auto_now=True)
     fallback = models.BooleanField(default=False)  # rendered the built-in fallback layout
     detail = models.CharField(max_length=200, blank=True)
+    #: readiness (roadmap 3.9): the bundle version last served to the screen, and its last self-test
+    bundle_served = models.CharField(max_length=16, blank=True)
+    bundle_served_at = models.DateTimeField(null=True, blank=True)
+    selftest = models.JSONField(default=dict, blank=True)
+    selftest_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.screen_id} rendered {self.state} #{self.seq}"

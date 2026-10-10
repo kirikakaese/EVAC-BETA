@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Readiness" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Readiness" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'evacuation:index' event.slug %}">{% trans "Control page" %}</a></div></div>
+<p class="muted">{% blocktrans %}Can every screen show an alarm without the server? Each screen keeps an evacuation bundle (every stage's content, directions and the alarm key's public half), stays in alarm when it loses the connection and asks the fallback origins for signed state.{% endblocktrans %}</p>
+
+<section class="card" aria-labelledby="ready-screens"><h2 id="ready-screens">{% trans "Screens" %}</h2>
+<p class="evac-coverage" role="status"><strong>{% blocktrans with r=summary.ready t=summary.total %}{{ r }} of {{ t }} screens ready{% endblocktrans %}</strong>
+{% if summary.problems %} · <span class="badge badge-err">{% blocktrans count n=summary.problems %}{{ n }} with problems{% plural %}{{ n }} with problems{% endblocktrans %}</span>{% endif %}
+{% if summary.warnings %} · <span class="badge badge-warn">{% blocktrans count n=summary.warnings %}{{ n }} with warnings{% plural %}{{ n }} with warnings{% endblocktrans %}</span>{% endif %}</p>
+{% if rows %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Bundle" %}</th><th scope="col">{% trans "Sound" %}</th><th scope="col">{% trans "Last self-test" %}</th></tr></thead>
+<tbody>{% for r in rows %}<tr><th scope="row">{{ r.screen.name }}{% if r.role != "participant" %} <span class="small muted">({{ r.role }})</span>{% endif %}</th>
+<td>{% if r.role == "excluded" %}<span class="badge badge-muted">{% trans "excluded" %}</span>{% elif r.ready %}<span class="badge badge-ok">{% trans "ready" %}</span>{% else %}<span class="badge badge-err">{% trans "problem" %}</span>{% endif %}
+{% if r.problems or r.warnings %}<ul class="plain small">{% for p in r.problems %}<li>{{ p }}</li>{% endfor %}{% for w in r.warnings %}<li class="muted">{{ w }}</li>{% endfor %}</ul>{% endif %}</td>
+<td class="small">{% if r.ack.bundle_served %}<code>{{ r.ack.bundle_served|slice:":8" }}</code> · {{ r.ack.bundle_served_at|date:"H:i" }}{% else %}–{% endif %}</td>
+<td class="small">{{ r.audio|default:"–" }}</td>
+<td class="small">{% if r.ack.selftest_at %}{% if r.ack.selftest.ok %}<span class="badge badge-ok">{% trans "ok" %}</span>{% else %}<span class="badge badge-err">{% trans "problems" %}</span>{% endif %} {{ r.ack.selftest_at|date:"D j M H:i" }}{% if r.ack.selftest.ms is not None %} · {{ r.ack.selftest.ms }} ms{% endif %}{% else %}–{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No paired screens." %}</p>{% endif %}
+{% if can_manage %}<form method="post" class="evac-selftest">{% csrf_token %}<input type="hidden" name="what" value="selftest">
+<h3>{% trans "Self-test" %}</h3>
+<p class="small muted">{% blocktrans with d=selftest_days %}Each screen renders every stage off screen, checks the signature, its sound permission and the fallback origins, and reports back. Run it before every event and at least every {{ d }} days.{% endblocktrans %}</p>
+<div class="field"><label><input type="checkbox" name="visible"> {% trans "Also show a test frame on the screens (not during an alarm)" %}</label></div>
+<div class="field"><label for="selftest-seconds">{% trans "Seconds the test frame stays" %}</label><input id="selftest-seconds" name="seconds" type="number" min="2" max="60" value="5" class="input-sm"></div>
+<div class="form-actions"><button class="btn btn-primary">{% trans "Run self-test" %}</button></div></form>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="ready-key"><h2 id="ready-key">{% trans "Alarm key" %}</h2>
+<p>{% blocktrans with k=key.public_key|slice:":8" t=key.key_created_at|date:"D j M Y H:i" %}Key <code>{{ k }}…</code>, created {{ t }}.{% endblocktrans %}
+{% if previous_valid %}<br><span class="small muted">{% blocktrans with k=key.previous_public_key|slice:":8" t=key.previous_valid_until|date:"D j M H:i" %}Previous key {{ k }}… stays valid until {{ t }}.{% endblocktrans %}</span>{% endif %}</p>
+<p class="small muted">{% blocktrans %}Screens accept alarm state only when it is signed with this key. Bridges and secondary nodes that stand in for the server need its private half: export it for them, keep it like a password, and rotate the key when a device holding it is lost.{% endblocktrans %}</p>
+{% if exported %}<div class="alert alert-warn" role="alert"><p><strong>{% trans "Private alarm key (shown once, the export is in the audit log):" %}</strong></p>
+<p><code class="token" id="alarm-key">{{ exported }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#alarm-key" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></p></div>{% endif %}
+{% if can_manage %}<div class="actions"><form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="export">
+<label class="sr-only" for="export-purpose">{% trans "For which device" %}</label><input id="export-purpose" name="purpose" maxlength="100" placeholder="{% trans 'For which device' %}" class="input-sm">
+<button class="btn btn-sm" data-hold="1000" data-hold-label="{% trans 'Keep holding…' %}">{% trans "Export private key" %}</button></form>
+<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="rotate"><button class="btn btn-sm btn-danger" data-confirm="{% trans 'Create a new alarm key? Bridges and secondary nodes need the new key.' %}">{% trans "Rotate key" %}</button></form></div>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="ready-fallback"><h2 id="ready-fallback">{% trans "Fallback origins" %}</h2>
+{% if origins %}<ul class="plain">{% for o in origins %}<li><code>{{ o }}</code></li>{% endfor %}</ul>{% else %}<p class="muted">{% trans "None. Screens that lose the server keep their last state but cannot learn of new alarms." %}</p>{% endif %}
+{% if bridges %}<ul class="plain">{% for b in bridges %}<li>{% if b.online %}<span class="badge badge-ok">{% trans "online" %}</span>{% else %}<span class="badge badge-err">{% trans "offline" %}</span>{% endif %} {{ b.name }}</li>{% endfor %}</ul>{% endif %}
+{% if can_manage %}<p class="small"><a href="{% url 'portal:settings_ns' event.slug 'evacuation' %}">{% trans "Change in Settings → Evacuation" %}</a> · <a href="{% url 'evacuation:bridges' event.slug %}">{% trans "Hardware bridges" %}</a></p>{% endif %}
+</section>
+{% endblock %}

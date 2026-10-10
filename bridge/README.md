@@ -44,6 +44,20 @@ in EVAC, see [docs/extensions/mqtt.md](../docs/extensions/mqtt.md)).
 
 ## When EVAC is unreachable
 
-The bridge keeps the changes and retries with backoff (1 s up to 30 s). Issuing signed alarm messages straight to
-the screens when no node is reachable (ADR-0003) needs the event's alarm key and is part of the fail-safe design
-([docs/EVACUATION.md](../docs/EVACUATION.md)).
+The bridge keeps the changes and retries with backoff (1 s up to 30 s).
+
+With a `[fallback]` section (see `bridge.example.toml`, ADR-0034) the Raspberry Pi bridge also stands in for the
+server towards the screens:
+
+- It keeps the signed alarm state from every heartbeat (on disk) and serves it at `/evac/<event>/state` on
+  `listen_port`. Add its URL to *Settings → Evacuation → Fallback origins*. Players on an HTTPS page can only
+  reach an HTTPS origin: give the bridge a certificate the kiosks trust (`cert_file`, `key_file`).
+- With the event's alarm key (*Evacuation → Readiness → Export private key*, or `manage.py evac_alarm_key <event>
+  export`) it signs an alarm itself when an input fires and EVAC cannot be reached. It follows the input's policy:
+  *execute* at once, *arm* after its escalation time, *notify* never. It never signs an all clear. When EVAC is
+  back, the change is delivered with the sequence number the bridge used; EVAC adopts the alarm and alerts the
+  control room.
+- Keep the configuration file `chmod 600`, or pass the key as `EVAC_BRIDGE_ALARM_KEY`. If a bridge is lost,
+  rotate the alarm key.
+
+The ESP32 sketch only reports; it does not serve or sign.

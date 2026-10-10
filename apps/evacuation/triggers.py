@@ -88,7 +88,9 @@ def _who(actor: Any, source: str) -> str:
 
 def trigger(event: Any, target: State | str, *, source: str, zone: Any = None, drill: bool = False,
             actor: Any = None, request: Any = None, reason: str = "", key: str = "",
-            clear_zones: list[str] | None = None, check_perms: bool = True) -> Outcome:
+            clear_zones: list[str] | None = None, check_perms: bool = True, execute: bool = False) -> Outcome:
+    """Raise or change a state through ``source``'s policy. ``execute`` skips the policy and the two-person rule:
+    only for alarms already shown publicly (a bridge that issued it while the server was unreachable)."""
     target = State(target)
     if source == policy.SCHEDULE:
         drill = True
@@ -112,14 +114,14 @@ def trigger(event: Any, target: State | str, *, source: str, zone: Any = None, d
     base = {"event": event, "source": source, "state": target.value, "drill": drill, "zone": zone,
             "reason": reason[:300], "requested_by": user, "requested_repr": _who(actor, source), "created_at": now,
             "key": key[:100], "clear_zones": clear_zones}
-    if source in policy.PERSON_SOURCES and user is not None and target.value in states:
+    if source in policy.PERSON_SOURCES and user is not None and target.value in states and not execute:
         req = EvacRequest.objects.create(kind=policy.RequestKind.SECOND, deadline=now + timedelta(seconds=seconds),
                                          **base)
         _log(req, "evacuation.second_requested", user, request)
         _alert(event, req, _("Second person needed: %(s)s") % {"s": req.get_state_display()})
         return Outcome("waiting", [], req)
     decision = policy.resolve(rules(event), source, target.value, str(zone.pk) if zone else "") \
-        if target in machine.ALARMS else policy.Decision(policy.Action.EXECUTE)
+        if target in machine.ALARMS and not execute else policy.Decision(policy.Action.EXECUTE)
     if decision.action is policy.Action.EXECUTE:
         changes = services.change(event, target, zone=zone, drill=drill, actor=actor, request=request,
                                   source=source, reason=reason, clear_zones=clear_zones, check_perms=False)
@@ -223,6 +225,9 @@ def process_due(event: Any = None, now: Any = None) -> int:
                 continue
             done += 1
     done += start_due_drills(event, now)
+    from . import acks
+
+    done += acks.watchdog(event, now)
     if event is None:
         from . import bridges
 

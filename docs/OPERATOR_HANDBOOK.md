@@ -186,8 +186,21 @@ in [EVACUATION.md](EVACUATION.md) first: EVAC supplements, and never replaces, t
 - **Fixed direction** per screen (any model): choose an arrow and a text such as "Exit B" in the *Screens* table;
   it overrides the computed route.
 
-Screens, notifications, trigger sources (panic page, hardware bridge, DIAL, API) and the drill runbook arrive
-with the next parts of phase 3.
+- **Hardware bridges** (*Triggers & drills → Hardware bridges*): add a bridge, copy its token (shown once) into
+  the bridge's configuration and list its inputs (`key; label; stage; zone`). See `bridge/README.md`.
+- **Screen content**: per stage a layout or the built-in one, the texts shown in turn, sound and spoken message.
+  Evacuation layouts must pass the guardrails (signs, text, direction, contrast and letter size for the viewing
+  distance set in *Settings → Evacuation*). Per screen, *Settings → Screens → Evacuation role* chooses whether it
+  takes part, only shows a banner (info) or is excluded.
+- **Screens reached** on the control page: how many screens confirmed the current message, which are offline or
+  still waiting, per zone, and how long it took (p95; target ≤ 2 s on the venue LAN). Staff answer from the staff
+  app or panic page: *I'm on it*, *Zone clear*, *Need help* (alerts the control room).
+- **Readiness** (button on the control page): before every event, run the **self-test** and fix each screen marked
+  *problem*: offline, evacuation bundle not current, sound blocked by the browser (set the kiosk up with
+  `deploy/kiosk`), self-test failures. The **alarm key** is managed here: export it for hardware bridges and
+  secondary nodes that serve the signed state to screens without the server, and rotate it when such a device
+  is lost.
+- During an alarm the **watchdog** alerts the control room when screens have not confirmed it after 30 s.
 
 ## 5a. Screens
 

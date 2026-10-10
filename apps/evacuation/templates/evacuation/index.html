@@ -5,6 +5,7 @@
 <div class="actions"><a class="btn" href="{% url 'evacuation:panic' event.slug %}">{% trans "Panic page" %}</a>
 {% if can_manage %}<a class="btn" href="{% url 'evacuation:content' event.slug %}">{% trans "Screen content" %}</a>
 <a class="btn" href="{% url 'evacuation:policies' event.slug %}">{% trans "Triggers & drills" %}</a>{% endif %}
+<a class="btn" href="{% url 'evacuation:readiness' event.slug %}">{% trans "Readiness" %}</a>
 <a class="btn" href="{% url 'evacuation:history' event.slug %}">{% trans "History" %}</a></div></div>
 <p class="alert alert-info small">{% blocktrans %}EVAC is a supplementary information system. It is not a certified fire alarm, voice alarm or evacuation system and does not replace them, nor the procedures required for your venue.{% endblocktrans %}</p>
 

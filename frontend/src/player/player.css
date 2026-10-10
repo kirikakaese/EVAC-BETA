@@ -113,3 +113,7 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
 .evac-drill { position: absolute; top: 2vmin; right: 2vmin; z-index: 2; background: #1d4ed8; color: #fff;
               border: .6vmin dashed #fff; padding: 1vmin 3vmin; font-size: 6vmin; font-weight: 900; letter-spacing: .1em; }
 #evac-layer[data-mode="banner"] .evac-drill { top: auto; bottom: 2vmin; }
+#evac-layer[data-mode="test"] { background: #000; }
+.evac-stage-test .evac-fb { background: #3a3f4b; }
+.evac-selftest-host { position: fixed; left: -10000px; top: 0; width: 1920px; height: 1080px; visibility: hidden;
+                      pointer-events: none; }

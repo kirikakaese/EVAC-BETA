@@ -56,8 +56,10 @@ def handle(topic: str, payload: bytes, prefix: str = "evac") -> tuple[str, dict[
                                 transport="mqtt")
         return reply, cfg
     if kind == "input":
+        issued = body.get("issued_seq")
         res = bridges.report(bridge, str(body.get("input", "")), str(body.get("state", "")),
-                             event_key=str(body.get("id", ""))[:60])
+                             event_key=str(body.get("id", ""))[:60],
+                             issued_seq=issued if isinstance(issued, int) and not isinstance(issued, bool) else None)
         return f"{prefix}/bridge/{ident}/result", {"id": body.get("id"), "result": res.result}
     return None
 

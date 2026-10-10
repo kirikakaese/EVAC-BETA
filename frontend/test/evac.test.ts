@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { accepts, currentState, EvacController, effective, frames, fromFallback, mainSign, STALE_CLEAR_MS,
-         type EvacBundle, type EvacPayload } from "../src/player/evac";
+import { accepts, currentState, EvacController, effective, frames, fromFallback, mainSign, probeAudio, probeOrigin,
+         STALE_CLEAR_MS, stagePayload, type EvacBundle, type EvacPayload } from "../src/player/evac";
 import { arrowAngle, pictogram } from "../src/renderer/pictograms";
 import vectors from "./fixtures/ed25519-vectors.json";
 
@@ -207,5 +207,98 @@ describe("controller", () => {
               "fetch");
     expect(acks[acks.length - 1]?.fallback).toBe(true);
     expect(layer.querySelector(".evac-fb")).not.toBeNull();
+  });
+});
+
+const br = vectors.find((v) => "bridge_key" in v) as unknown as { bridge_key: string; bridge_alarm_m: string;
+  bridge_alarm_s: string; bridge_clear_m: string; bridge_clear_s: string };
+
+describe("fail-safe (ADR-0034)", () => {
+  it("accepts an alarm a bridge signed but never an all clear from it", () => {
+    const b = bundle({ keys: [br.bridge_key] });
+    const p = fromFallback({ kid: "bridge", m: br.bridge_alarm_m, s: br.bridge_alarm_s }, b, NOW) as EvacPayload;
+    expect(p.state).toBe("evacuate");
+    expect(p.seq).toBe(43);
+    expect(fromFallback({ kid: "bridge", m: br.bridge_clear_m, s: br.bridge_clear_s }, b, NOW)).toBeNull();
+  });
+
+  it("builds a stage from the bundle alone", () => {
+    const p = stagePayload(bundle(), "evacuate", true, []);
+    expect(p.drill).toBe(true);
+    expect(p.direction).toBe("Meadow");
+    expect(p.takeover).toBe(true);
+    const missing = stagePayload(bundle({ model: "staged" }), "attention", false, ["x"]);
+    expect(missing.texts).toEqual([]);
+    expect(missing.guidance.kind).toBe("none");
+  });
+
+  it("checks fallback origins", async () => {
+    const b = bundle({ keys: [st.state_key] });
+    const ok = (async () => new Response(JSON.stringify({ sig: stateSig }))) as unknown as typeof fetch;
+    const forged = (async () => new Response(JSON.stringify({ sig: { ...stateSig, s: vec.s } }))) as unknown as typeof fetch;
+    const missing = (async () => new Response("", { status: 404 })) as unknown as typeof fetch;
+    const down = (async () => { throw new TypeError("network"); }) as unknown as typeof fetch;
+    expect(await probeOrigin("http://o", b, ok)).toBe("ok");
+    expect(await probeOrigin("http://o", b, forged)).toBe("bad signature");
+    expect(await probeOrigin("http://o", b, missing)).toBe("http 404");
+    expect(await probeOrigin("http://o", b, down)).toBe("unreachable");
+  });
+
+  it("reports the audio permission", async () => {
+    expect(await probeAudio()).toBe("unavailable"); // jsdom has no AudioContext
+    class Ctx { state = "suspended"; resume() { this.state = "running"; return Promise.resolve(); }
+                close() { return Promise.resolve(); } }
+    vi.stubGlobal("AudioContext", Ctx);
+    expect(await probeAudio()).toBe("running");
+    class Blocked extends Ctx { resume() { return Promise.resolve(); } }
+    vi.stubGlobal("AudioContext", Blocked);
+    expect(await probeAudio()).toBe("suspended");
+    vi.stubGlobal("AudioContext", class { constructor() { throw new Error("no"); } });
+    expect(await probeAudio()).toBe("unavailable");
+    vi.unstubAllGlobals();
+  });
+
+  it("self-tests every stage off screen and shows a test frame on request", async () => {
+    document.body.replaceChildren();
+    localStorage.clear();
+    const ctl = new EvacController({ now: () => Date.now(), speaker: { say: () => true } as never,
+                                     audio: () => ({ enabled: false, volume: 0 }), strings: { "Self-test": "Self-test" },
+                                     context: () => ({ vars: {}, now: () => Date.now(), assets: {}, fonts: {} }),
+                                     onRendered: () => undefined });
+    const empty = await ctl.selfTest({ visible: true, seconds: 5 });
+    expect(empty.ok).toBe(false);
+    expect(empty.bundle).toBeNull();
+    const broken = { format: 1 as const, width: 1920, height: 1080,
+                     elements: [{ id: "x", type: "nope", frame: { x: 0, y: 0, w: 1, h: 1 } }] };
+    const b = bundle({ keys: [st.state_key], fallback_origins: [] });
+    b.stages.attention = { ...b.stages.evacuate, takeover: false, layout: broken as never };
+    ctl.setBundle(b);
+    ctl.offerFallback(stateSig);
+    vi.useFakeTimers();
+    const res = await ctl.selfTest({ visible: true, seconds: 3 });
+    expect(res.stages.evacuate).toBe("ok");
+    expect(res.stages.attention).toMatch(/^fallback/);
+    expect(res.signature).toBe("ok");
+    expect(res.audio).toBe("off");
+    expect(res.ok).toBe(true);
+    expect(res.visible).toBe(false); // the screen is in alarm: no test frame
+    expect(document.querySelector(".evac-selftest-host")).toBeNull();
+    // after the all clear has run out, the visible test frame shows and goes away again
+    localStorage.clear();
+    document.body.replaceChildren();
+    const idle = new EvacController({ now: () => Date.now(), speaker: { say: () => true } as never,
+                                      audio: () => ({ enabled: false, volume: 0 }), strings: {},
+                                      context: () => ({ vars: {}, now: () => Date.now(), assets: {}, fonts: {} }),
+                                      onRendered: () => undefined });
+    idle.setBundle(b);
+    const shown = await idle.selfTest({ visible: true, seconds: 3 });
+    const layer = document.getElementById("evac-layer") as HTMLElement;
+    expect(shown.visible).toBe(true);
+    expect(shown.signature).toBe("missing");
+    expect(layer.dataset.mode).toBe("test");
+    expect(layer.querySelector(".evac-drill")?.textContent).toBe("TEST");
+    vi.advanceTimersByTime(3100);
+    expect(layer.hidden).toBe(true);
+    vi.useRealTimers();
   });
 });

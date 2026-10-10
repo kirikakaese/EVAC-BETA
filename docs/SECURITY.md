@@ -34,6 +34,12 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 - Signed state messages; screens accept only monotonic sequence numbers; a stale "all clear" is never
   applied; no auto-clear ([ADR-0003](adr/0003-alarm-delivery-redundancy.md)).
 - Inbound trigger webhooks (DIAL, bridges) need HMAC signatures and are idempotent.
+- The per-event alarm key's private half is stored encrypted and leaves the server only through an audit-logged
+  export (two-factor session) for bridges and secondary nodes; rotation keeps the old public key for 24 hours.
+  A message a bridge signed itself may raise alarms but never clear them; players enforce this
+  ([ADR-0034](adr/0034-evacuation-fail-safe.md)).
+- Hardware bridges have their own tokens (`evacb_…`, hashed); their inputs arm by default and never end alarms
+  ([ADR-0032](adr/0032-hardware-bridge.md)).
 
 ### Other threats
 

@@ -30,7 +30,7 @@ from .models import (
 REPORTED_KEYS = {
     "version": 40, "resolution": 20, "orientation": 20, "uptime": 0, "slide": 200, "errors": 0, "memory": 0,
     "last_sync": 40, "evac_ack": 40, "online": 0, "user_agent": 300, "content_version": 64,
-    "display_state": 20, "capture": 0, "recovered": 200,
+    "display_state": 20, "capture": 0, "recovered": 200, "evac_bundle": 16, "evac_audio": 20,
 }
 
 

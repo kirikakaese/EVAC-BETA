@@ -104,6 +104,19 @@ procedures of the venue. Operators must acknowledge this once per event when ena
 - During an alarm staff answer from the staff app or the panic page: *I'm on it*, *Zone clear*, *Need help*.
   The answers appear on the control page; *Need help* also alerts the control room.
 
+## Fail-safe (roadmap 3.9, [ADR-0034](adr/0034-evacuation-fail-safe.md))
+
+- Every screen keeps an **evacuation bundle**: every stage's content, its directions, the alarm key's public half
+  and the fallback origins. It stays in alarm without the server and never returns to normal on its own.
+- **Fallback origins** (Settings → Evacuation): bridges or secondary nodes that serve the signed state. Screens
+  that lose the server ask them every 3 s and accept only messages signed with the event's alarm key. A bridge
+  holding the exported key can raise its inputs' alarms there by itself, following the input's policy, but never
+  the all clear.
+- **Watchdog**: screens that have not confirmed an alarm after 30 s are reported to the control room.
+- **Readiness** page and **self-test**: run the self-test before every event; fix every screen marked *problem*
+  (offline, bundle not current, sound blocked, self-test failures).
+- **Alarm key**: rotate it when a device that held it is lost; export it only for bridges and secondary nodes.
+
 ## What phase 0 already provides
 
 - **Permissions with two-factor gates**: alarm permissions will be registered as *sensitive*; they only work
