@@ -90,7 +90,8 @@ ok(/3 clicks waiting|Offline/.test(pendingText), `offline door keeps its clicks:
 await door2.screenshot({ path: `${OUT}/crowd-counter-offline.png` });
 await click(door1, 2);  // 6 counted on the server
 await door1.waitForTimeout(500);
-ok(!(await player.$(".ann-banner")), "no banner below the limit");
+const foyerBanner = () => player.evaluate(() => !!document.querySelector(".ann-banner")?.textContent?.includes("Foyer"));
+ok(!(await foyerBanner()), "no Foyer banner below the limit");
 
 // 4. door 2 comes back: its 3 clicks arrive, plus one more = 10 → full
 await door2.context().setOffline(false);
@@ -130,10 +131,11 @@ await control.screenshot({ path: `${OUT}/control-room.png`, fullPage: true });
 // 6. hysteresis: 9 (90 %) keeps "full", 7 (70 %) opens again
 await click(door1, 1, '[data-count="-1"]');
 await door1.waitForTimeout(1500);
-ok(!!(await player.$(".ann-banner")), "at 9 of 10 the banner stays (opens again below 80 %)");
+ok(await foyerBanner(), "at 9 of 10 the banner stays (opens again below 80 %)");
 await click(door1, 2, '[data-count="-1"]');
-await player.waitForFunction(() => !document.querySelector(".ann-banner"), null, { timeout: 10000 }).catch(() => null);
-ok(!(await player.$(".ann-banner")), "at 7 of 10 the banner is gone");
+await player.waitForFunction(() => !document.querySelector(".ann-banner")?.textContent?.includes("Foyer"), null,
+                             { timeout: 10000 }).catch(() => null);
+ok(!(await foyerBanner()), "at 7 of 10 the Foyer banner is gone");
 
 // 7. an incident reported from the staff app while offline
 const crew = await login("security@evac.local", { width: 412, height: 860 });
