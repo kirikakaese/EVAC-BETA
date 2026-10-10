@@ -223,6 +223,10 @@ def process_due(event: Any = None, now: Any = None) -> int:
                 continue
             done += 1
     done += start_due_drills(event, now)
+    if event is None:
+        from . import bridges
+
+        done += bridges.sweep(now)
     return done
 
 

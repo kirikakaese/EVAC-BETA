@@ -6,6 +6,18 @@ released.
 
 ## [Unreleased]
 
+### Added — hardware bridge and MQTT (Phase 3, part 7)
+
+- Hardware bridges (ADR-0032): per-event bridges with their own token, inputs mapped to stage and zone, HTTPS
+  endpoints `/bridge/v1/heartbeat` and `/bridge/v1/input` with idempotent change ids. An active input raises its
+  stage through the *Hardware bridge* source (arm by default); a contact returning to rest only tells the control
+  room; wiring faults and bridges without a heartbeat for 30 s raise alerts, never public alarms.
+- *Hardware bridges* page (add, inputs, new token, live input states).
+- Reference software in `bridge/`: Raspberry Pi bridge (standard library, persistent queue, retries, heartbeat,
+  simulate mode) and an ESP32 sketch with supervised loops (end-of-line resistor).
+- MQTT extension (`extensions/mqtt`, off until configured): bridges over a broker you run; subscriber process
+  `manage.py evac_mqtt` (entrypoint role `mqtt`, compose profile `mqtt`, systemd `evac-mqtt`); `paho-mqtt` added.
+
 ### Added — evacuation triggers and policies (Phase 3, part 6)
 
 - Trigger sources with policies per source, stage and zone (ADR-0031): execute, arm (control room confirms; executes

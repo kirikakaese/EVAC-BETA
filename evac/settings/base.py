@@ -92,6 +92,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.evacuation",
     "extensions.webhooks",
     "extensions.notify",
+    "extensions.mqtt",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
 
@@ -294,7 +295,7 @@ SPECTACULAR_SETTINGS = {
 # prod settings refuse to start without explicit keys).
 EVAC_SECRETS_KEYS = env("EVAC_SECRETS_KEYS")
 EVAC_RATE_LIMITS = {"login": 20, "twofactor": 20, "setup": 10, "webhook": 600, "invite": 20, "early_access": 10,
-                    "pairing": 300}
+                    "pairing": 300, "bridge": 600}
 # Early-access gate (docs/adr/0012-early-access-gate.md): a shared password in front of the whole site while
 # a public server is not ready for everyone. Empty = off. Changing the password locks everybody out again.
 EVAC_EARLY_ACCESS_PASSWORD = env("EVAC_EARLY_ACCESS_PASSWORD")

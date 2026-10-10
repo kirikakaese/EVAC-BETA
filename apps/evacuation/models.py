@@ -214,3 +214,35 @@ class ScheduledDrill(models.Model):
 
     def __str__(self) -> str:
         return f"Drill {self.state} at {self.at:%Y-%m-%d %H:%M}"
+
+
+class Bridge(models.Model):
+    """A hardware trigger bridge (Raspberry Pi GPIO, ESP32) of an event, ADR-0032.
+
+    ``inputs``: ``[{"key": "in1", "label": "Fire panel relay 3", "state": "evacuate", "zone": "<uuid>|"}]``.
+    ``status``: the last reported state per input (``rest``/``active``/``fault``) plus firmware/uptime.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_bridges")
+    name = models.CharField(max_length=100)
+    token_hash = models.CharField(max_length=64, unique=True)
+    token_prefix = models.CharField(max_length=16)
+    inputs = models.JSONField(default=list, blank=True)
+    status = models.JSONField(default=dict, blank=True)
+    online = models.BooleanField(default=False)
+    last_seen = models.DateTimeField(null=True, blank=True)
+    last_ip = models.GenericIPAddressField(null=True, blank=True)
+    transport = models.CharField(max_length=10, blank=True)  # https | mqtt
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+    def input(self, key: str) -> dict[str, Any] | None:
+        return next((i for i in self.inputs if i.get("key") == key), None)

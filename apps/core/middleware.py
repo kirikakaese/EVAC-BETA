@@ -56,6 +56,7 @@ RATE_LIMITED_PATHS = {
     "/api/v1/extensions/": "webhook",
     "/early-access/": "early_access",
     "/player/api/pair/": "pairing",
+    "/bridge/": "bridge",
 }
 
 

@@ -35,7 +35,7 @@ cov:
 	$(PY) -m coverage report --include='apps/evacuation/*' --fail-under=95 --skip-covered
 
 lint:
-	.venv/bin/ruff check apps evac extensions conftest.py scripts
+	.venv/bin/ruff check apps evac extensions bridge conftest.py scripts
 
 typecheck:
 	.venv/bin/mypy

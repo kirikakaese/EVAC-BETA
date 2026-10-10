@@ -59,7 +59,7 @@ jobs:
           pip install -r requirements-ci.txt
 
       - name: Ruff
-        run: ruff check apps evac extensions conftest.py scripts
+        run: ruff check apps evac extensions bridge conftest.py scripts
 
       - name: Mypy (strict core modules)
         run: mypy

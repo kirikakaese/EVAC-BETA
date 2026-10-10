@@ -39,6 +39,11 @@ case "$1" in
     wait_for_db
     exec celery -A evac worker -l "${LOG_LEVEL:-info}" --concurrency "${WORKER_CONCURRENCY:-4}"
     ;;
+  mqtt)
+    wait_for_db
+    # Optional: MQTT subscriber for hardware bridges (extensions/mqtt); idles until the extension is configured
+    exec python manage.py evac_mqtt
+    ;;
   beat)
     wait_for_db
     exec celery -A evac beat -l "${LOG_LEVEL:-info}" --schedule /tmp/celerybeat-schedule

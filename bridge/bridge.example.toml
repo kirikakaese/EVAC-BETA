@@ -1,0 +1,29 @@
+# EVAC hardware bridge configuration (copy to /etc/evac-bridge.toml, chmod 600: it holds the bridge token)
+
+[evac]
+url = "https://evac.example.org/bridge/v1/"   # your EVAC server or venue node
+token = "evacb_..."                            # shown once in EVAC: Evacuation -> Triggers & drills -> Hardware bridges
+transport = "https"                            # or "mqtt" (needs paho-mqtt and the MQTT extension in EVAC)
+# ca_file = "/etc/evac-bridge/ca.pem"          # for a node with its own certificate authority
+
+[bridge]
+queue_file = "/var/lib/evac-bridge/queue.json"  # changes waiting for EVAC survive restarts
+debounce_ms = 200
+
+# One [[inputs]] block per wired input. The keys must match the inputs configured in EVAC.
+[[inputs]]
+key = "in1"        # fire alarm panel relay (normally open contact to ground)
+pin = 17
+active_high = false
+
+[[inputs]]
+key = "btn1"       # mushroom button in the control room
+pin = 27
+
+# [mqtt]
+# host = "broker.venue.lan"
+# port = 8883
+# tls = true
+# username = "bridge-hall-a"
+# password = "..."
+# topic_prefix = "evac"

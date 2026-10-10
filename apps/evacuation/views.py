@@ -21,7 +21,7 @@ from .forms import EVENT, ChangeForm, DrillForm, PolicyForm
 from .guidance import Arrow
 from .guidance import Kind as GuidanceKind
 from .machine import Model, State
-from .models import BlockedPoint, EvacPolicy, EvacRequest, EvacState, ScheduledDrill, StateChange
+from .models import BlockedPoint, Bridge, EvacPolicy, EvacRequest, EvacState, ScheduledDrill, StateChange
 
 MODULE = "evacuation"
 MODEL_LABELS = [(Model.SIMPLE, _lazy("Simple takeover")), (Model.STAGED, _lazy("Staged, global")),
@@ -349,3 +349,47 @@ def policies(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
         "drills": ScheduledDrill.objects.filter(event=event).select_related("zone"),
         "two_person": [cfg.labels.get(s, s) for s in sorted(two)], "two_seconds": seconds,
         "escalate_default": policy.DEFAULT_ESCALATE}, status=400 if request.method == "POST" else 200)
+
+
+@event_view("evacuation.manage", module=MODULE)
+def bridges_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    from . import bridges
+
+    zones = {str(z.pk): z.name for z in services.zones_of(event)}
+    new_token = ""
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        what = request.POST.get("what")
+        pk = request.POST.get("pk", "")
+        bridge = Bridge.objects.filter(event=event, pk=pk).first() if _uuid(pk) else None
+        if what == "add":
+            name = request.POST.get("name", "").strip()
+            if not name:
+                errors["add"] = _("Give the bridge a name.")
+            else:
+                bridge, new_token = bridges.create(event, name, actor=request.user, request=request)
+        elif bridge is None:
+            messages.error(request, _("Unknown bridge."))
+            return redirect("evacuation:bridges", event.slug)
+        elif what == "inputs":
+            try:
+                parsed = bridges.parse_inputs(request.POST.get("inputs", ""), zones)
+            except ValueError as err:
+                errors[str(bridge.pk)] = str(err)
+            else:
+                bridges.set_inputs(bridge, parsed, actor=request.user, request=request)
+                messages.success(request, _("Inputs saved."))
+                return redirect("evacuation:bridges", event.slug)
+        elif what == "rotate":
+            new_token = bridges.rotate(bridge, actor=request.user, request=request)
+        elif what == "delete":
+            bridges.delete(bridge, actor=request.user, request=request)
+            messages.success(request, _("Bridge removed."))
+            return redirect("evacuation:bridges", event.slug)
+    rows = [{"b": b, "inputs_text": bridges.format_inputs(b, zones),
+             "states": [(i, (b.status.get("inputs") or {}).get(i["key"], "unknown")) for i in b.inputs],
+             "error": errors.get(str(b.pk), "")} for b in Bridge.objects.filter(event=event)]
+    return render(request, "evacuation/bridges.html", {
+        "event": event, "rows": rows, "new_token": new_token, "add_error": errors.get("add", ""),
+        "base_url": request.build_absolute_uri("/bridge/v1/"), "offline_after": bridges.OFFLINE_AFTER,
+        "heartbeat": bridges.HEARTBEAT_SECONDS}, status=400 if errors else 200)

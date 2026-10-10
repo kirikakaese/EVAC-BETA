@@ -132,6 +132,17 @@ services:
       web:
         condition: service_started
 
+  # Optional MQTT transport for hardware bridges (extensions/mqtt): docker compose --profile mqtt up -d
+  mqtt:
+    <<: *evac-service
+    command: ["mqtt"]
+    profiles: ["mqtt"]
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_started
+
 volumes:
   pgdata:
   redisdata:

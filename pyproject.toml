@@ -33,6 +33,8 @@ dependencies = [
     "Pillow>=11.2",
     "fonttools[woff]>=4.53",
     "defusedxml>=0.7",
+    # MQTT transport for hardware bridges (extensions/mqtt, off until configured; pure Python, ~200 kB)
+    "paho-mqtt>=2.1",
 ]
 
 [project.optional-dependencies]
@@ -66,7 +68,7 @@ include = ["apps*", "evac*", "extensions*"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "evac.settings.test"
 python_files = ["test_*.py", "tests.py"]
-testpaths = ["apps", "extensions", "tests"]
+testpaths = ["apps", "extensions", "bridge", "tests"]
 addopts = "-q"
 filterwarnings = ["ignore::DeprecationWarning"]
 
