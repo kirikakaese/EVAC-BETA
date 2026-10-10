@@ -23,6 +23,8 @@ import { bootCheck, installLifecycle, markAlive, memoryPressure, safeReload } fr
 import { canCapture, captureScreenshot, clearCaches, upload } from "./remote";
 import { applyRoot, applyState, displayState, localHHMM, type DisplaySettings } from "./screen-settings";
 import { getConfig, getToken, setConfig, setToken } from "./storage";
+import { EvacController, type EvacBundle, type EvacPayload } from "./evac";
+import type { Signed } from "./ed25519";
 
 const PAIR_POLL_MS = 3000;
 
@@ -38,6 +40,10 @@ const PROGRAM_REFRESH_MS = 3_600_000;
 const WIDGET_DATA_REFRESH_MS = 300_000;
 /** housekeeping: display state, daily reload, memory, stalled timers */
 const TICK_MS = 15_000;
+/** evacuation state is fetched this often besides pushes (cheap; catches missed messages) */
+const EVAC_REFRESH_MS = 60_000;
+/** without a connection to the server, fallback origins are asked this often for the signed alarm state */
+const FALLBACK_POLL_MS = 3_000;
 
 export class Player {
   readonly clock = new Clock();
@@ -62,6 +68,10 @@ export class Player {
   private lastTick = Date.now();
   private reloadAtNextSlide = "";
   private lastDailyReload = "";
+  private evac: EvacController | null = null;
+  private evacAck = "";
+  private evacTimer: ReturnType<typeof setInterval> | null = null;
+  private fallbackTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(private env: PlayerEnv, private root: HTMLElement) {
     this.display = new Display(root, this.clock);
@@ -114,6 +124,10 @@ export class Player {
   // ---------------------------------------------------------------- playing
   private async play(token: string): Promise<void> {
     const cached = getConfig<ScreenConfig>();
+    // an alarm that was showing before a restart or power cut shows again at once, even without the server
+    this.evac = this.evac ?? this.makeEvac(token);
+    if (cached) applyRoot(this.evac.layer, cached.display ?? {});
+    this.evac.render(true);
     // offline first: show the last known state at once; the network refreshes it in the background (a hanging
     // network must never keep a screen blank)
     stage(cached ? "play: cached config" : "play: no cached config");
@@ -146,6 +160,9 @@ export class Player {
     await this.loadContent(token);
     await this.loadProgram(token);
     this.show();
+    void this.loadEvac(token);
+    this.evacTimer = setInterval(() => void this.loadEvac(token), EVAC_REFRESH_MS);
+    this.fallbackTimer = setInterval(() => void this.pollFallback(), FALLBACK_POLL_MS);
     stage("play: online");
     this.refresher = setInterval(() => void this.loadProgram(token).then(() => this.show()), PROGRAM_REFRESH_MS);
     void this.loadWidgetData(token);
@@ -156,10 +173,14 @@ export class Player {
       heartbeatSeconds: this.config?.settings.heartbeat_seconds ?? 10, since: this.config?.seq ?? 0,
       report: () => report({ version: this.env.version, slide: this.slide, lastSync: this.lastSync,
                              online: this.transport !== "offline", displayState: this.displayState,
-                             capture: canCapture(), recovered: this.recovered }),
+                             capture: canCapture(), recovered: this.recovered, evacAck: this.evacAck }),
       onMessage: (m) => void this.handle(m, token),
       onTransport: (tr) => {
-        if (tr !== this.transport) log("info", `connection: ${tr}`);
+        if (tr !== this.transport) {
+          log("info", `connection: ${tr}`);
+          // back online: catch up on the evacuation state at once
+          if (this.transport === "offline" || this.transport === "connecting") void this.loadEvac(token);
+        }
         this.transport = tr;
       },
       onUnauthorized: () => this.unpair(),
@@ -208,6 +229,12 @@ export class Player {
       }
       case "data.changed":
         await this.loadWidgetData(token);
+        break;
+      case "evac.state":
+        this.evac?.offer(msg.data as unknown as EvacPayload, this.transport);
+        break;
+      case "evac.bundle":
+        void this.loadEvac(token);
         break;
       case "reload":
         safeReload("requested by staff", { force: true });
@@ -272,6 +299,64 @@ export class Player {
     }
   }
 
+  // ---------------------------------------------------------------- evacuation (ADR-0033/0034)
+  private makeEvac(token: string): EvacController {
+    return new EvacController({
+      now: () => this.clock.now(),
+      speaker: this.speaker,
+      audio: () => ({ enabled: this.config?.display?.audio !== false, volume: this.config?.display?.volume ?? 100 }),
+      strings: this.env.strings,
+      context: () => ({ vars: this.config ? this.vars() : {}, now: () => this.clock.now(),
+                        timezone: this.config?.event.timezone, assets: this.bundle?.assets ?? {},
+                        fonts: this.bundle?.fonts ?? {}, nonce: pageNonce(), data: this.widgetData,
+                        onError: (id, err) => recordError(`evac ${id}: ${String(err)}`) }),
+      onRendered: (p, info) => {
+        this.evacAck = `${p.seq}:${p.v}`.slice(0, 40);
+        log("info", `evacuation: ${p.state}${p.drill ? " (drill)" : ""} #${p.seq} via ${p.via ?? "cache"}`);
+        void fetch(`${this.env.api}evacuation/ack/`, {
+          method: "POST", headers: { Authorization: `Screen ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ seq: p.seq, v: p.v, state: p.state, drill: p.drill, rendered_at: info.rendered_at,
+                                 issued: p.issued ?? null, via: p.via ?? "cache", fallback: info.fallback }),
+        }).catch(() => undefined);
+      },
+      onChange: () => {
+        this.updateDisplayState();
+        this.shown = "";
+        this.show();
+      },
+    });
+  }
+
+  private async loadEvac(token: string): Promise<void> {
+    try {
+      const res = await fetch(`${this.env.api}evacuation/state/`, { headers: { Authorization: `Screen ${token}` } });
+      if (res.status === 401) return this.unpair();
+      if (!res.ok) return;
+      const body = await res.json() as { enabled: boolean; payload?: EvacPayload | null; bundle?: EvacBundle };
+      if (!body.enabled) return;
+      this.evac?.setBundle(body.bundle ?? null);
+      this.evac?.offer(body.payload, "fetch");
+    } catch {
+      // offline: the fallback origins and the cached state take over
+    }
+  }
+
+  /** Without a connection, ask the fallback origins (secondary node, bridge) for the signed alarm state. */
+  private async pollFallback(): Promise<void> {
+    const b = this.evac?.bundle;
+    if (this.transport !== "offline" || !b?.fallback_origins.length) return;
+    for (const origin of b.fallback_origins) {
+      try {
+        const res = await fetch(`${origin}/evac/${b.event}/state`, { cache: "no-store" });
+        if (!res.ok) continue;
+        const body = await res.json() as { sig?: Signed };
+        if (body.sig && this.evac?.offerFallback(body.sig)) return;
+      } catch {
+        // try the next origin
+      }
+    }
+  }
+
   private vars(): Record<string, unknown> {
     const cfg = this.config as ScreenConfig;
     const s = cfg.screen;
@@ -323,12 +408,14 @@ export class Player {
       }
     }
     const audio = { enabled: cfg.display?.audio !== false, volume: cfg.display?.volume ?? 100 };
-    // a full-screen announcement (or, later, an evacuation) hides the overlays
-    const takeover = !!slide && (slide.entry.startsWith("announcement:") || slide.entry.startsWith("evacuation"));
+    // a full-screen announcement or an evacuation hides the overlays and keeps quiet
+    const evacuating = !!this.evac?.active;
+    const takeover = evacuating || (!!slide && (slide.entry.startsWith("announcement:")
+                                                || slide.entry.startsWith("evacuation")));
     this.overlays.update(this.program?.overlays, now, { hidden: takeover, audio });
     // a full-screen announcement speaks once per appearance (after its alert tone, if any)
     const entry = slide ? this.program?.entries.find((e) => e.id === slide?.entry) : undefined;
-    if (entry?.speech && audio.enabled) {
+    if (entry?.speech && audio.enabled && !evacuating) {
       this.speaker.say(`${entry.id}@${slide?.start ?? 0}`, entry.speech, { volume: audio.volume,
                                                                          delayMs: SPEECH_DELAY_MS });
     }
@@ -358,12 +445,16 @@ export class Player {
   private applySettings(): void {
     const s: DisplaySettings = this.config?.display ?? {};
     applyRoot(this.root, s);
+    // the evacuation layer lives outside #player (above the dim overlay) but turns and fits like it
+    if (this.evac) applyRoot(this.evac.layer, s);
     this.updateDisplayState();
   }
 
   private updateDisplayState(): void {
     const s: DisplaySettings = this.config?.display ?? {};
-    const state = displayState(s, localHHMM(this.clock.now(), this.config?.event.timezone));
+    // an evacuation always wakes the screen (brief §5.2)
+    const state = this.evac?.active ? "on"
+      : displayState(s, localHHMM(this.clock.now(), this.config?.event.timezone));
     if (state !== this.displayState) log("info", `display ${state}`);
     this.displayState = state;
     applyState(state, s);
@@ -396,7 +487,9 @@ export class Player {
     if (this.timer) clearTimeout(this.timer);
     if (this.refresher) clearInterval(this.refresher);
     if (this.dataRefresher) clearInterval(this.dataRefresher);
-    this.timer = this.refresher = this.dataRefresher = null;
+    if (this.evacTimer) clearInterval(this.evacTimer);
+    if (this.fallbackTimer) clearInterval(this.fallbackTimer);
+    this.timer = this.refresher = this.dataRefresher = this.evacTimer = this.fallbackTimer = null;
     clearWidgetData();
     this.widgetData.set({});
     clearProgram();

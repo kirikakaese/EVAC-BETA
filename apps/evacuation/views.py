@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from apps.events import rbac
 from apps.portal.shortcuts import event_view
 
-from . import machine, policy, services, triggers
+from . import feed, machine, policy, services, triggers
 from .forms import EVENT, ChangeForm, DrillForm, PolicyForm
 from .guidance import Arrow
 from .guidance import Kind as GuidanceKind
@@ -393,3 +393,54 @@ def bridges_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse
         "event": event, "rows": rows, "new_token": new_token, "add_error": errors.get("add", ""),
         "base_url": request.build_absolute_uri("/bridge/v1/"), "offline_after": bridges.OFFLINE_AFTER,
         "heartbeat": bridges.HEARTBEAT_SECONDS}, status=400 if errors else 200)
+
+
+@event_view("evacuation.manage", module=MODULE)
+def content_page(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    from . import content
+    from .models import SOUNDS, StageContent
+
+    cfg = services.config(event)
+    layouts = content.layouts_of(event)
+    by_id = {str(lay.pk): lay for lay in layouts}
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        state = request.POST.get("state", "")
+        if state in {s.value for s in content.STAGES}:
+            lay = by_id.get(request.POST.get("layout", ""))
+            try:
+                content.save(event, state, layout=lay, texts=request.POST.get("texts", "").splitlines(),
+                             rotate_seconds=_int(request.POST.get("rotate_seconds"), 8),
+                             pictograms_only=request.POST.get("pictograms_only") == "on",
+                             sound=request.POST.get("sound") if request.POST.get("sound") in dict(SOUNDS) else "none",
+                             sound_every=_int(request.POST.get("sound_every"), 30),
+                             speech_text=request.POST.get("speech_text", ""), actor=request.user, request=request)
+            except ValueError as err:
+                errors[state] = str(err)
+            else:
+                messages.success(request, _("Saved. Screens show it the next time this stage is active."))
+                return redirect("evacuation:content", event.slug)
+    rows = []
+    for stage in content.STAGES:
+        row = StageContent.objects.filter(event=event, state=stage.value).first()
+        lay = by_id.get(str(row.layout_id)) if row and row.layout_id else None
+        found = []
+        if lay is not None:
+            data = lay.published.data if lay.published_id else lay.data
+            found = content.findings(event, lay, data)
+        effective = feed.stage_content(event, stage.value)
+        rows.append({"state": stage.value, "label": cfg.labels.get(stage.value, stage.value), "row": row,
+                     "enabled": stage in cfg.enabled, "layout": lay, "findings": found,
+                     "texts": "\n".join(row.texts if row and row.texts else effective["texts"]),
+                     "default_texts": not (row and row.texts), "sound": effective["sound"],
+                     "error": errors.get(stage.value, "")})
+    return render(request, "evacuation/content.html", {
+        "event": event, "rows": rows, "layouts": layouts, "sounds": SOUNDS, "tts": content.tts_available(),
+        "zones_model": cfg.model is Model.ZONES}, status=400 if errors else 200)
+
+
+def _int(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default

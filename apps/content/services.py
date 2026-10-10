@@ -461,13 +461,27 @@ def save_layout(layout, data: dict, *, actor, request=None, expected_version: in
 
 
 @transaction.atomic
+def layout_findings(layout, data=None) -> list[dict]:
+    """Findings of the registered layout checks (e.g. evacuation guardrails, ADR-0033) for ``data`` (the draft)."""
+    from apps.core.registry import registry
+
+    out: list[dict] = []
+    for check in registry.ensure_loaded().layout_checks:
+        out.extend(check(layout, data if data is not None else layout.data))
+    return out
+
+
 def publish_layout(layout, *, actor, request=None, version=None, at=None):
-    """Publish the current draft (or ``version``) now, or schedule it for ``at``."""
+    """Publish the current draft (or ``version``) now, or schedule it for ``at``. Refuses (``ValidationError``)
+    when a layout check reports an error (evacuation layouts that fail the guardrails)."""
     from django.utils import timezone
 
     if version is None:
         version = layout.versions.filter(number=layout.version).first() or layout.versions.create(
             number=layout.version, data=layout.data, created_by=actor)
+    errors = [f["message"] for f in layout_findings(layout, version.data) if f.get("level") == "error"]
+    if errors:
+        raise ValidationError(errors)
     if at is not None and at > timezone.now():
         version.publish_at = at
         version.save(update_fields=["publish_at"])
@@ -493,7 +507,14 @@ def publish_due(now=None) -> int:
     now = now or timezone.now()
     done = 0
     for v in LayoutVersion.objects.filter(publish_at__lte=now).select_related("layout", "created_by"):
-        publish_layout(v.layout, actor=v.created_by, version=v)
+        try:
+            publish_layout(v.layout, actor=v.created_by, version=v)
+        except ValidationError as exc:
+            v.publish_at = None
+            v.save(update_fields=["publish_at"])
+            log(action="layout.publish_refused", actor=v.created_by, target=v.layout, event=v.layout.event,
+                message=f"Layout {v.layout.name} v{v.number} not published: {'; '.join(exc.messages)}")
+            continue
         done += 1
     return done
 

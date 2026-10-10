@@ -30,12 +30,15 @@ interface EditorConfig {
   /** offered by other modules (custom widgets: list and their current rows) */
   choices?: { dataWidgets?: { value: string; label: string; visual: string }[];
               widgetData?: Record<string, WidgetData> };
+  findings?: Finding[];
 }
+
+export interface Finding { level: "error" | "warning"; message: string; element?: string | null }
 
 const TYPE_LABELS: Record<string, string> = {
   text: "Text", richtext: "Rich text", image: "Image", slideshow: "Slideshow", video: "Video", audio: "Audio",
   shape: "Shape", qr: "QR code", clock: "Clock", countdown: "Countdown", date: "Date", code: "Code",
-  data: "Data widget",
+  data: "Data widget", pictogram: "Safety sign",
 };
 const TOKENS = ["primary", "accent", "text", "muted", "surface", "background", "success", "warning", "danger"];
 const TOKEN_LABELS: Record<string, string> = {
@@ -78,7 +81,7 @@ type Drag = { mode: "move" | "resize"; handle?: string; x0: number; y0: number; 
 export class LayoutEditor extends LitElement {
   static properties = {
     data: { state: true }, selected: { state: true }, status: { state: true }, zoom: { state: true },
-    guides: { state: true }, error: { state: true },
+    guides: { state: true }, error: { state: true }, findings: { state: true },
   };
 
   data!: LayoutData;
@@ -87,6 +90,8 @@ export class LayoutEditor extends LitElement {
   zoom = 0; // 0 = fit
   guides: { x: number | null; y: number | null } = { x: null, y: null };
   error = "";
+  /** results of the server's layout checks (evacuation guardrails); errors block publishing */
+  findings: Finding[] = [];
 
   private cfg = readJson<EditorConfig>("editor-config", {} as EditorConfig);
   private strings = readJson<Record<string, string>>("editor-strings", {});
@@ -105,6 +110,7 @@ export class LayoutEditor extends LitElement {
     super.connectedCallback();
     this.data = clone(this.cfg.layout.data);
     this.version = this.cfg.layout.version;
+    this.findings = this.cfg.findings ?? [];
     this.tabIndex = 0;
     this.addEventListener("keydown", (e) => this.onKey(e));
     window.addEventListener("beforeunload", (e) => { if (this.status === "dirty") e.preventDefault(); });
@@ -181,6 +187,7 @@ export class LayoutEditor extends LitElement {
       if (res.ok && body.ok) {
         this.version = body.version;
         this.status = "saved";
+        this.findings = body.findings ?? [];
         return true;
       }
       this.status = "error";
@@ -199,7 +206,9 @@ export class LayoutEditor extends LitElement {
       method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf() },
     });
     const body = await res.json().catch(() => ({}));
-    this.error = res.ok ? `${this.t("Published")}: v${body.published}` : this.t("The layout could not be saved.");
+    if (body.findings) this.findings = body.findings;
+    this.error = res.ok ? `${this.t("Published")}: v${body.published}`
+      : [this.t("Not published."), ...(body.errors ?? [])].join(" ");
   }
 
   // ---------------------------------------------------------------- keyboard
@@ -351,6 +360,10 @@ export class LayoutEditor extends LitElement {
           <h2 class="ed-h">${this.t("Add")}</h2>
           <div class="ed-add">${(this.cfg.types ?? []).filter((type) => type !== "code" || this.cfg.canCode).map((type) => html`
             <button class="btn btn-sm" @click=${() => this.add(type)}>${this.t(TYPE_LABELS[type] ?? type)}</button>`)}</div>
+          ${this.findings.length ? html`<h2 class="ed-h">${this.t("Checks")}</h2>
+          <ul class="ed-findings" role="status">${this.findings.map((f) => html`
+            <li class="ed-finding ed-finding-${f.level}"><button class="ed-layer" @click=${() => f.element && this.select(f.element, false)}>
+              ${f.level === "error" ? "✕ " : "! "}${f.message}</button></li>`)}</ul>` : nothing}
           <h2 class="ed-h">${this.t("Layers")}</h2>
           <ol class="ed-layers">${[...this.elements].reverse().map((el) => html`
             <li class=${this.selected.has(el.id) ? "selected" : ""}>
@@ -561,6 +574,14 @@ export class LayoutEditor extends LitElement {
                            ["iso", "ISO"]], (v) => this.setProp("format", v));
       case "code":
         return this.codeFields(p);
+      case "pictogram":
+        return html`${this.choice("Sign", String(p.code ?? "E002"), [["E001", "E001 Emergency exit (left)"],
+            ["E002", "E002 Emergency exit (right)"], ["E007", "E007 Assembly point"], ["E003", "E003 First aid"],
+            ["W001", "W001 General warning"], ["arrow", "Direction arrow"]], (v) => this.setProp("code", v))}
+          ${p.code === "arrow" ? this.choice("Direction", String(p.direction ?? "auto"), [["auto", "Automatic (the screen's way out)"],
+            ["ahead", "Ahead"], ["ahead_right", "Ahead right"], ["right", "Right"], ["back_right", "Back right"], ["back", "Back"],
+            ["back_left", "Back left"], ["left", "Left"], ["ahead_left", "Ahead left"]], (v) => this.setProp("direction", v))
+            : nothing}`;
       case "data": {
         const widgets = this.cfg.choices?.dataWidgets ?? [];
         return html`${this.choice("Widget", String(p.widget ?? ""),

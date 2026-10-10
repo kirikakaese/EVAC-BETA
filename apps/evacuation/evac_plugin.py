@@ -68,6 +68,16 @@ def register(r: Registry) -> None:
                                "default": 60, "minimum": 10, "maximum": 600,
                                "description": "Otherwise the request expires, nothing changes and the control "
                                               "room is alerted."},
+        "fallback_origins": {"type": "array", "title": "Fallback origins for screens", "default": [],
+                             "items": {"type": "string", "format": "uri", "maxLength": 200}, "maxItems": 3,
+                             "description": "Up to three base URLs (secondary node, hardware bridge) that serve the "
+                                            "signed alarm state when the main server is unreachable, e.g. "
+                                            "http://10.0.0.5:8088. One per line."},
+        "viewing_distance_m": {"type": "number", "title": "Viewing distance for evacuation text (m)", "default": 8,
+                               "minimum": 1, "maximum": 100,
+                               "description": "Used by the layout checks: letters at least 1/250 of this high."},
+        "screen_height_m": {"type": "number", "title": "Typical screen height (m)", "default": 0.6, "minimum": 0.1,
+                            "maximum": 10},
         "drill_text": {"type": "string", "title": "Drill marker", "default": "DRILL", "maxLength": 40,
                        "description": "Shown on screens and prefixed to notifications during drills."},
     }
@@ -108,3 +118,10 @@ def register(r: Registry) -> None:
         r.evac_trigger(EvacTriggerSpec(key=key, name=str(name), description=str(desc), module="evacuation"))
     for prefix, viewset, basename in api.ROUTES:
         r.api_route(prefix, viewset, basename)
+    from . import content
+
+    r.layout_check(content.layout_check)
+    r.outbox_handler(content.SPEECH_JOB, content.render_speech)
+    r.webhook_event(WebhookEventSpec(key="evacuation.staff_ack", module="evacuation",
+                                     description="A staff member answered an alarm in the staff app (on it, zone "
+                                                 "clear, need help)."))

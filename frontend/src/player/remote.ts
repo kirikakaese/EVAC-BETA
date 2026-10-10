@@ -68,13 +68,16 @@ export async function upload(api: string, token: string, kind: string, body: Blo
 }
 
 /** Delete cached files, the content bundle and program, and the service worker (the device token stays). */
+const KEEP = new Set(["evac.player.token", "evac.player.evac", "evac.player.evacbundle", "evac.player.evacseq"]);
+
 export async function clearCaches(): Promise<void> {
   try {
     if (typeof caches !== "undefined") for (const key of await caches.keys()) await caches.delete(key);
   } catch { /* ignore */ }
   try {
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith("evac.player.") && key !== "evac.player.token") localStorage.removeItem(key);
+      // the token and the evacuation state survive: a screen in alarm stays in alarm (ADR-0034)
+      if (key.startsWith("evac.player.") && !KEEP.has(key)) localStorage.removeItem(key);
     }
   } catch { /* ignore */ }
   try {

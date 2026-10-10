@@ -27,6 +27,11 @@ from .models import Asset, Layout, LayoutVersion, owner_q
 
 #: every string the editor shows (frontend/src/editor uses them as keys; a test keeps both in sync)
 EDITOR_STRINGS = [
+    # safety signs and checks (ADR-0033)
+    "Ahead", "Ahead left", "Ahead right", "Automatic (the screen's way out)", "Back left",
+    "Back right", "Checks", "Direction", "Direction arrow", "E001 Emergency exit (left)",
+    "E002 Emergency exit (right)", "E003 First aid", "E007 Assembly point", "Not published.",
+    "Safety sign", "Sign", "W001 General warning",
     "Data widget", "Widget",
     "Add", "Text", "Rich text", "Image", "Slideshow", "Video", "Audio", "Shape", "QR code", "Clock", "Countdown",
     "Date", "Layers", "Properties", "Layout", "Width", "Height", "Background", "Background image", "None",
@@ -139,7 +144,11 @@ def editor_config(request, event, obj: Layout) -> dict:
                         if v != "system"],
         "themeVariables": tok.css_variables(values, families=services.font_stacks(event), urls=images),
         "vars": {"event": {"name": event.name, "slug": event.slug},
-                 "screen": {"name": "Screen", "zone": "Zone", "room": "Room", "venue": "Venue", "tags": []}},
+                 "screen": {"name": "Screen", "zone": "Zone", "room": "Room", "venue": "Venue", "tags": []},
+                 # sample values for evacuation layouts (ADR-0033); screens fill in their own
+                 "evac": {"stage": "Evacuate", "text": "Please leave the building now via the nearest exit.",
+                          "direction": "Exit East", "target": "Assembly point Meadow", "arrow": "ahead_left",
+                          "drill": ""}},
         "timezone": event.timezone,
         "urls": {"save": reverse("content:layout_save", args=[event.slug, obj.pk]),
                  "publish": reverse("content:layout_publish", args=[event.slug, obj.pk]),
@@ -149,6 +158,7 @@ def editor_config(request, event, obj: Layout) -> dict:
         "canCode": services.may_write_code(request.user, event, request),
         "types": list(layout_format.ELEMENT_TYPES),
         "choices": editor_choices(event),
+        "findings": services.layout_findings(obj),
     }
 
 
@@ -210,12 +220,17 @@ def layout_save(request, slug, pk, *, event):
     except ValidationError as exc:
         return JsonResponse({"ok": False, "errors": exc.messages}, status=400)
     services.mark_editing(obj, request.user)
-    return JsonResponse({"ok": True, "version": obj.version, "saved_at": timezone.now().isoformat()})
+    return JsonResponse({"ok": True, "version": obj.version, "saved_at": timezone.now().isoformat(),
+                         "findings": services.layout_findings(obj)})
 
 
 @require_POST
 @event_view("content.publish", module="content")
 def layout_publish(request, slug, pk, *, event):
     obj = _layout(event, pk)
-    version = services.publish_layout(obj, actor=request.user, request=request)
+    try:
+        version = services.publish_layout(obj, actor=request.user, request=request)
+    except ValidationError as exc:
+        return JsonResponse({"ok": False, "errors": exc.messages, "findings": services.layout_findings(obj)},
+                            status=400)
     return JsonResponse({"ok": True, "published": version.number})

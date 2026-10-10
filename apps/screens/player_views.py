@@ -36,6 +36,7 @@ def player_strings() -> dict[str, str]:
         "pair_waiting": _("Waiting for pairing…"),
         "no_server": _("EVAC server not reachable"),
         "retrying": _("Retrying automatically."),
+        "Follow the instructions of the staff": _("Follow the instructions of the staff"),
     }
 
 

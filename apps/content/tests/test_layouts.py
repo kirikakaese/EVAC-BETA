@@ -119,7 +119,7 @@ def test_portal_pages_and_editor(client, admin, event, layout):
     data = layout_format.starter()
     data["elements"][0]["props"]["text"] = "Hello"
     ok = client.post(save, json.dumps({"data": data, "version": 1}), content_type="application/json")
-    assert ok.json() == {"ok": True, "version": 2, "saved_at": ok.json()["saved_at"]}
+    assert ok.json() == {"ok": True, "version": 2, "saved_at": ok.json()["saved_at"], "findings": []}
     stale = client.post(save, json.dumps({"data": data, "version": 1}), content_type="application/json")
     assert stale.status_code == 409 and stale.json()["conflict"]
     bad = client.post(save, json.dumps({"data": {"format": 1}, "version": 2}), content_type="application/json")

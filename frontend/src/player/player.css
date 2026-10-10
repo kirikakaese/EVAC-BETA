@@ -84,3 +84,32 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
 @keyframes ann-in { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes ann-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%); } }
 @media (prefers-reduced-motion: reduce) { .ann-banner, .ann-card { animation: none; } .ann-track { animation-duration: calc(var(--ann-duration, 20s) * 2); } }
+
+/* ---------------------------------------------------------------- evacuation (ADR-0033): above everything */
+#evac-layer { position: fixed; inset: 0; z-index: 60; font-family: var(--evac-font-body, system-ui, sans-serif);
+              color: #fff; }
+#evac-layer.evac-root { inset: auto; left: 50%; top: 50%; transform-origin: center; overflow: hidden; }
+#evac-layer[data-mode="banner"] { pointer-events: none; }
+#evac-layer[data-mode="takeover"] { background: #000; }
+.evac-takeover { position: absolute; inset: var(--evac-overscan, 0); container-type: size; }
+.evac-fb { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+           justify-content: center; gap: 3.5cqh; padding: 4cqh 5cqw; text-align: center; background: #00843d; }
+.evac-fb-shelter_in_place, .evac-fb-attention { background: #111; }
+.evac-fb-all_clear { background: #0b3d1f; }
+.evac-fb-all_clear .evac-fb-signs svg { border: 0; }
+.evac-fb-signs { display: flex; gap: 4cqw; justify-content: center; }
+.evac-fb-signs svg { width: min(34cqh, 30cqw); height: min(34cqh, 30cqw); border: .6cqh solid #fff; border-radius: 1cqh; }
+.evac-fb-label { margin: 0; font-size: 11cqh; line-height: 1; font-weight: 800; letter-spacing: .02em;
+                 text-transform: uppercase; }
+.evac-fb-text { margin: 0; font-size: 6.5cqh; line-height: 1.15; font-weight: 700; max-width: 90cqw; }
+.evac-fb-dir { margin: 0; font-size: 7cqh; font-weight: 800; background: #fff; color: #00843d; padding: 1cqh 3cqw;
+               border-radius: 1cqh; }
+.evac-banner { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 2vmin;
+               padding: 2vmin 3vmin; background: #f9a800; color: #000; font-size: 4.2vmin; font-weight: 700;
+               box-shadow: 0 .6vmin 2vmin rgba(0, 0, 0, .5); }
+.evac-banner.evac-stage-evacuate { background: #00843d; color: #fff; }
+.evac-banner-icon svg { width: 9vmin; height: 9vmin; display: block; }
+.evac-banner strong { text-transform: uppercase; white-space: nowrap; }
+.evac-drill { position: absolute; top: 2vmin; right: 2vmin; z-index: 2; background: #1d4ed8; color: #fff;
+              border: .6vmin dashed #fff; padding: 1vmin 3vmin; font-size: 6vmin; font-weight: 900; letter-spacing: .1em; }
+#evac-layer[data-mode="banner"] .evac-drill { top: auto; bottom: 2vmin; }

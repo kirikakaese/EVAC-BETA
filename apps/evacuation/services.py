@@ -187,6 +187,9 @@ def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = F
                     sub = machine.transition(other.status, State.ALL_CLEAR, drill=other.drill, now=now,
                                              clear_seconds=cfg.clear_seconds)
                     out.append(_record(event, other, sub, **kw))
+        from . import feed
+
+        feed.push(event)
     return out
 
 
@@ -228,6 +231,9 @@ def set_blocked(event: Any, point: Any, blocked: bool, *, actor: Any = None, req
         payload = {"event": event.slug, "point": str(point.pk), "point_name": point.name, "kind": point.kind,
                    "blocked": blocked, "reason": reason[:300]}
         transaction.on_commit(lambda: webhooks.emit(ROUTES_CHANGED, payload, event=event))
+        from . import feed
+
+        feed.push(event)
     return True
 
 
@@ -256,18 +262,20 @@ def hint_of(event: Any, screen: Any) -> tuple[str, str]:
     return str(cfg.get("hint_text") or ""), str(cfg.get("hint_arrow") or "")
 
 
-def screen_views(event: Any, now: Any = None) -> list[ScreenView]:
-    """Every screen of the event with the state it shows and the way it sends people (ADR-0030)."""
+def screen_views(event: Any, now: Any = None, *, blocked: set[str] | None = None,
+                 screens: list[Any] | None = None) -> list[ScreenView]:
+    """Every screen of the event with the state it shows and the way it sends people (ADR-0030). ``blocked``
+    replaces the live blocked points (to precompute routes for the evacuation bundle)."""
     from apps.venues import graph as venue_graph
     from apps.venues import routing
 
     now = now or timezone.now()
     cfg = config(event)
     ev, zones = statuses(event)
-    blocked = blocked_ids(event)
+    blocked = blocked_ids(event) if blocked is None else blocked
     tables: dict[str, tuple[routing.Graph, dict[str, routing.Route], dict[str, list[str]]]] = {}
     out = []
-    for screen in _screens(event):
+    for screen in (_screens(event) if screens is None else screens):
         zone_ids = [str(screen.zone_id)] if screen.zone_id else []
         if screen.room_id:
             zone_ids += [str(z.pk) for z in screen.room.zones.all() if str(z.pk) not in zone_ids]

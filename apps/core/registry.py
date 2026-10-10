@@ -22,6 +22,7 @@ from .plugins import (
     EvacTriggerSpec,
     EventHook,
     ExtensionSpec,
+    LayoutCheck,
     MapLayerSpec,
     ModuleSpec,
     NavEntry,
@@ -72,6 +73,7 @@ class Registry:
         self.outbox_handlers: dict[str, OutboxHandler] = {}
         self.webhook_sinks: list[WebhookSink] = []
         self.program_sources: list[ProgramSource] = []
+        self.layout_checks: list[LayoutCheck] = []
         self.staff_cards: dict[str, StaffCardSpec] = {}
         self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
         self.pack_sections: dict[str, PackSectionSpec] = {}
@@ -184,6 +186,11 @@ class Registry:
     def program_source(self, fn: ProgramSource) -> None:
         """Contribute entries/overlays to every screen's program (see ``plugins.ProgramSource``)."""
         self.program_sources.append(fn)
+
+    def layout_check(self, fn: LayoutCheck) -> None:
+        """Check a layout on save and publish: ``fn(layout, data) -> [{"level": "error"|"warning", "message",
+        "element"?}]``. Errors block publishing (the evacuation guardrails use this, ADR-0033)."""
+        self.layout_checks.append(fn)
 
     def editor_choices(self, key: str, fn: Callable[[Any], Any], *, module: str = "core") -> None:
         """Choices for the layout editor (``config.choices[key] = fn(event)``, only while ``module`` is on), e.g.

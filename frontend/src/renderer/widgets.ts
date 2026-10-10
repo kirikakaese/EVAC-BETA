@@ -3,6 +3,7 @@
 // Every widget renders inside an error boundary: a failing widget shows nothing on a public screen (and an
 // outline in the editor) - never a broken or blank screen.
 import { codeDocument, themeVariables, type CodeProps } from "./code";
+import { pictogram } from "./pictograms";
 import { qrSvg } from "./qr";
 import { render as renderTemplate } from "./template";
 import type { AssetEntry, LayoutElement, RenderContext } from "./types";
@@ -386,3 +387,23 @@ export function defineWidgets(registry: CustomElementRegistry = customElements):
     if (!registry.get(`evac-${type}`)) registry.define(`evac-${type}`, cls);
   }
 }
+
+/** ISO 7010 safety sign; an "arrow" with direction "auto" follows the screen's way out (``evac.arrow``). */
+export class PictogramWidget extends EvacWidget {
+  draw(): void {
+    const code = String(this.props.code ?? "E002");
+    let direction = String(this.props.direction ?? "auto");
+    if (direction === "auto") {
+      const evac = (this.ctx.vars as { evac?: { arrow?: string | null } }).evac;
+      if (code === "arrow" && !evac?.arrow) {
+        this.replaceChildren();
+        this.hidden = true;
+        return;
+      }
+      direction = evac?.arrow ?? "ahead";
+    }
+    this.hidden = false;
+    this.innerHTML = pictogram(code, direction);
+  }
+}
+WIDGETS.pictogram = PictogramWidget;
