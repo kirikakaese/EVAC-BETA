@@ -136,6 +136,13 @@ def test_pages_lend_with_signature_and_return(client, event, admin, radio):
     assert Category.objects.filter(name="Tools").exists()
 
 
+def test_label_sheet_with_many_codes_is_accessible(client, event, admin):
+    services.save_item(Item(event=event, name="Radio"), actor=admin, copies=3)
+    c = login_2fa(client, admin)
+    html = c.get(f"/e/{event.slug}/inventory/labels/").content.decode()
+    assert html.count("<svg") == 3 and check_html(html) == []
+
+
 def test_permissions_dashboard_staff_card(client, event, user, member, radio, admin):
     client.force_login(user)  # viewer: sees, may not lend or edit
     assert client.get(f"/e/{event.slug}/inventory/").status_code == 200
