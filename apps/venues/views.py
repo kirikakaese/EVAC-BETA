@@ -14,15 +14,18 @@ from apps.events import rbac
 from apps.portal.forms import VenueForm
 from apps.portal.shortcuts import event_view
 
-from . import access, forms
-from .models import Building, Floor, Room, Venue, Zone
+from . import access, forms, graph
+from .models import Building, Edge, Floor, Point, Room, Venue, Zone
 
 PARTS = {
     "building": (Building, forms.BuildingForm, gettext_lazy("Building")),
     "floor": (Floor, forms.FloorForm, gettext_lazy("Floor")),
     "zone": (Zone, forms.ZoneForm, gettext_lazy("Zone")),
     "room": (Room, forms.RoomForm, gettext_lazy("Room")),
+    "point": (Point, forms.PointForm, gettext_lazy("Exit, assembly point or waypoint")),
+    "edge": (Edge, forms.EdgeForm, gettext_lazy("Route connection")),
 }
+NEEDS_VENUE = ("floor", "room", "point", "edge")
 
 
 def _venue(request, event, venue_slug):
@@ -63,7 +66,7 @@ def detail(request, slug, venue_slug, *, event):
     part_forms = {}
     if can_edit:
         for key, (_model, form_cls, label) in PARTS.items():
-            kwargs = {"venue": venue} if key in ("floor", "room") else {}
+            kwargs = {"venue": venue} if key in NEEDS_VENUE else {}
             bound = request.method == "POST" and request.POST.get("part") == key
             part_forms[key] = (label, form_cls(request.POST if bound else None, prefix=key, **kwargs))
     if request.method == "POST":
@@ -95,6 +98,8 @@ def detail(request, slug, venue_slug, *, event):
         "buildings": venue.buildings.prefetch_related("floors"), "zones": venue.zones.all(),
         "rooms": venue.rooms.select_related("floor__building").prefetch_related("zones"),
         "shared_with": venue.events.exclude(pk=event.pk).count(),
+        "points": venue.points.select_related("floor__building", "zone", "room"),
+        "edges": venue.edges.select_related("a", "b"), "routes": graph.report(venue),
     })
 
 

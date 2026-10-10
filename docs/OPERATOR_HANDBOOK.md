@@ -96,7 +96,8 @@ The wizard cannot be re-run once an account exists.
   invitation link (valid 7 days, `EVAC_INVITATION_TTL_HOURS`).
 - **Built-in roles**: admin, orga, control-room, security, helpdesk, crew, viewer. Custom roles combine
   permissions with patterns such as `screens.*`, `*.view` or `!events.delete`.
-- **Scopes**: a role can be limited to a venue, zone or room ("may control screens in Hall B only").
+- **Scopes**: a role can be limited to a venue, zone, room or assembly point ("may control screens in Hall B
+  only", "marshal of assembly point Car park").
 - **Two-factor authentication** (authenticator app or security key, plus recovery codes) is **required**
   for admin, orga, control-room and security by default. Without it those roles are inactive and a banner
   says so. Alarm-relevant (*sensitive*) permissions always need a two-factor verified session, also for
@@ -112,6 +113,21 @@ The wizard cannot be re-run once an account exists.
   back to the instance setting) per event. Pages, navigation and API of a module disappear when it is off.
 - **Settings** are typed and inherited: instance → venue → event → screen group → screen. Pages show
   whether a value is *overridden here* or *inherited*.
+
+## 4a. Venues, exits and routes
+
+*Venues* lists the event's venues (shared with other events at the same place). A venue page holds buildings,
+floors, zones and rooms, and the **route graph** used for evacuation arrows and wayfinding:
+
+1. Add **points**: exits, assembly points, doors, waypoints, stairs and lifts, with their floor, zone and
+   position in metres on the floor plan (the map editor will place them by clicking). Untick *step-free* for
+   stairs and other places a wheelchair cannot pass.
+2. Add **route connections** between points (both ways, or one way for exit-only doors). Without a length the
+   straight distance is used, plus 5 m per floor.
+3. **Ways out** shows, for every point, the next point and the nearest assembly point (or exit) with the
+   distance, and the step-free alternative. Warnings list points without a way out.
+
+During an evacuation, blocked exits are taken out and the routes recompute at once.
 
 ## 5a. Screens
 

@@ -15,6 +15,8 @@ router.register("buildings", views.BuildingViewSet, basename="building")
 router.register("floors", views.FloorViewSet, basename="floor")
 router.register("zones", views.ZoneViewSet, basename="zone")
 router.register("rooms", views.RoomViewSet, basename="room")
+router.register("points", views.PointViewSet, basename="point")
+router.register("edges", views.EdgeViewSet, basename="edge")
 router.register("tokens", views.TokenViewSet, basename="token")
 for prefix, viewset, basename in registry.ensure_loaded().api_routes:
     router.register(prefix, viewset, basename=basename)

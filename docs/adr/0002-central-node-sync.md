@@ -1,6 +1,6 @@
 # ADR-0002: Central/node sync
 
-- Status: **Proposed — needs review before Phase 3 implementation** (brief §3.2)
+- Status: Accepted (2026-10-10, open questions resolved below)
 - Date: 2026-10-02
 
 ## Context
@@ -10,7 +10,7 @@ One permanent central service hosts many events. A venue may run an **EVAC venue
 at the venue talk to the node. Only outbound HTTPS from the node is allowed (no inbound ports at the
 venue). DIAL solved a similar problem with a venue agent pulling versioned snapshots with ETags.
 
-## Decision (proposed)
+## Decision
 
 **Authority split per event**
 
@@ -24,8 +24,11 @@ venue). DIAL solved a similar problem with a venue agent pulling versioned snaps
 1. An admin checks an event out to a registered node (node identity = Ed25519 key pair generated on the
    node, public key registered at central with a one-time enrolment code; requests are signed and carry a
    node token).
-2. Checkout freezes *live-state writes* for that event on central (central UI shows "checked out to node
-   X since …"; live controls are disabled with a link to the node). Config stays editable on central.
+2. Checkout makes the node the only writer of live state. Central shows "checked out to node X since …"
+   and **proxies live actions** (announcements, overrides, alarms) to the node over the node's outbound
+   connection while it is up; the node applies them like local actions (same permissions, audit) and the
+   result comes back through the op-log. With the link down, central shows the last known state read-only
+   and points to the node. Config stays editable on central.
 3. Check-in: the node pushes everything pending, central confirms the op-log position, the node becomes
    a read-only replica of that event until the next checkout.
 4. Emergency: if central is unreachable the node keeps working indefinitely; if the node is lost, an
@@ -68,10 +71,11 @@ not timestamps.
 - CRDTs for all state: overkill; single-writer per data class avoids conflicts.
 - Node as pure cache of central: fails the "venue keeps working without uplink" requirement.
 
-## Open questions for review
+## Resolved questions (review 2026-10-10)
 
-1. Is freezing live-state writes on central during checkout acceptable for remote control rooms (e.g.
-   an orga at home)? Alternative: proxy live actions through central → node when the link is up.
-2. Should secrets of extensions be synced to nodes (needed e.g. for DIAL broadcast from the node)? Proposal:
-   yes, re-encrypted with the node's public key, per extension opt-in.
-3. Polling intervals and limits for 200 screens per Pi 5–class node.
+1. Remote control rooms during a checkout: **proxy live actions through central to the node** while the
+   link is up (decision above); read-only on central when it is down.
+2. Extension secrets on nodes: **opt-in per extension** ("needed on site", e.g. DIAL broadcast); those
+   secrets are re-encrypted with the node's public key, all others stay on central.
+3. Polling intervals and limits for 200 screens per Pi 5-class node: settled by the load tests of 3.12; the
+   defaults above (30 s snapshot poll, change hints) stay until measured.

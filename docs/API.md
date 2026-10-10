@@ -32,7 +32,8 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `GET /events/<slug>/modules/`, `PATCH …/modules/<key>/` | module states; `{"event": true|false|null}` | `events.view` / `modules.manage` |
 | `GET /events/<slug>/audit/` | audit entries (filters `action`, `drill`, `target_type`, search) | `audit.view` |
 | `GET /audit/verify/` | verify the hash chain | instance admin |
-| `/venues/`, `/buildings/`, `/floors/`, `/zones/`, `/rooms/` | venue structure (`?venue=<slug>`) | `venues.view` / `venues.manage` (scoped) |
+| `/venues/`, `/buildings/`, `/floors/`, `/zones/`, `/rooms/`, `/points/`, `/edges/` | venue structure and route graph (`?venue=<slug>`) | `venues.view` / `venues.manage` (scoped) |
+| `/venues/<slug>/routes/` | the way out from every point (`?blocked=<ids>&step_free=1`) | `venues.view` |
 | `/tokens/` | your tokens | authenticated |
 | `GET /extensions/[?event=<slug>]` | extensions and status | instance admin / `extensions.manage` |
 | `POST /extensions/<key>/<id>/webhook/` | inbound webhooks (HMAC) | signature |

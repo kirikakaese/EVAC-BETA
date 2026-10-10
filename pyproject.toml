@@ -103,5 +103,6 @@ files = [
     "apps/core/settings_schema.py",
     "apps/events/permissions.py",
     "apps/playlists/engine.py",
+    "apps/venues/routing.py",
 ]
 strict = true

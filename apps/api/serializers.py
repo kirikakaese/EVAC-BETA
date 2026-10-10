@@ -6,7 +6,7 @@ from rest_framework import serializers
 from apps.accounts.models import ServiceToken, User
 from apps.core.models import AuditLog
 from apps.events.models import Event, Membership, Role, RoleAssignment
-from apps.venues.models import Building, Floor, Room, Venue, Zone
+from apps.venues.models import Building, Edge, Floor, Point, Room, Venue, Zone
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -141,6 +141,37 @@ class ZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Zone
         fields = ["id", "venue", "name", "outdoor", "capacity", "color"]
+
+
+class PointSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Point
+        fields = ["id", "venue", "kind", "name", "floor", "zone", "room", "x", "y", "capacity", "step_free", "note"]
+
+    def validate(self, attrs):
+        venue = attrs.get("venue") or getattr(self.instance, "venue", None)
+        floor, zone, room = attrs.get("floor"), attrs.get("zone"), attrs.get("room")
+        venues = {floor.building.venue_id if floor else None, zone.venue_id if zone else None,
+                  room.venue_id if room else None} - {None}
+        if venue is not None and venues - {venue.pk}:
+            raise serializers.ValidationError("Floor, zone and room must belong to the point's venue.")
+        return attrs
+
+
+class EdgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Edge
+        fields = ["id", "venue", "a", "b", "one_way", "length_m", "step_free"]
+
+    def validate(self, attrs):
+        venue = attrs.get("venue") or getattr(self.instance, "venue", None)
+        a = attrs.get("a") or getattr(self.instance, "a", None)
+        b = attrs.get("b") or getattr(self.instance, "b", None)
+        if venue is not None and any(p is not None and p.venue_id != venue.pk for p in (a, b)):
+            raise serializers.ValidationError("Both points must belong to the edge's venue.")
+        if a is not None and a == b:
+            raise serializers.ValidationError("An edge needs two different points.")
+        return attrs
 
 
 class RoomSerializer(serializers.ModelSerializer):

@@ -185,14 +185,14 @@ declared data kinds, `content.code` permission, audit with hashes).
 | 2.9 | ✅ Custom widget builder (no-code) | HTTP JSON, RSS, iCal, CSV sources and data sources; JSONPath mapping; visuals (ADR-0023); MQTT moved to phase 6 |
 | 2.10 | ✅ `.evacpack` import/export (signed) | layouts, themes, files, fonts, widget configs, playlists (screen packs); gallery; URL import (ADR-0024) |
 
-## Phase 3 — Venue + evacuation ⬜
+## Phase 3 — Venue + evacuation 🚧
 
 **Gate:** all tests in brief §8.7 pass; a documented drill runbook works end to end. **ADR-0002 and
-ADR-0003 must be accepted before implementation starts.**
+ADR-0003 must be accepted before implementation starts.** Both accepted 2026-10-10.
 
 | ID | Ticket | Acceptance criteria |
 |---|---|---|
-| 3.1 | Exits, assembly points, doors/waypoints, route graph [§10] | models + API + scope kinds |
+| 3.1 | ✅ Exits, assembly points, doors/waypoints, route graph [§10] | models + API + scope kinds (ADR-0026) |
 | 3.2 | Map editor (`mapeditor/`) | upload PDF/SVG/PNG, georeference, OSM tiles cached offline; draw zones, exits, waypoints, screens with facing |
 | 3.3 | Evacuation state machine [§8.2] | persisted per event and zone, highest severity wins, drills, never auto-clear; 100 % transition tests; mypy strict |
 | 3.4 | Models: simple takeover, staged global, zones and routes [§8.1] | per-event switch; blocked exits recompute routes; partial evacuation |
