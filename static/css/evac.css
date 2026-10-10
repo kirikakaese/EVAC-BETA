@@ -889,3 +889,13 @@ pre.logs { max-height: 22rem; overflow: auto; font-size: .78rem; background: var
 .pack-card h3 { margin: 0; }
 .pack-card p, .pack-card ul { margin: 0; }
 .pack-card form { margin-top: auto; }
+
+/* program (ADR-0038) */
+.tabular { font-variant-numeric: tabular-nums; }
+.live-actions > summary { list-style: none; cursor: pointer; }
+.live-actions > summary::-webkit-details-marker { display: none; }
+.live-actions[open] > summary { margin-bottom: var(--space-2); }
+.live-actions .inline { flex-wrap: wrap; }
+.program-table tbody th[scope="row"] { color: var(--fg); font-size: inherit; text-transform: none; letter-spacing: normal;
+  white-space: normal; background: transparent; font-weight: 600; }
+.program-table tbody th[scope="row"] .small { font-weight: 400; }

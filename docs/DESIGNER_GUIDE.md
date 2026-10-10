@@ -76,6 +76,7 @@ layout or playlist at once. *Preview* shows any screen at any time with the same
 | QR code | for any text or link (template variables allowed) |
 | Clock, Date | in the event time zone (or another one), synchronised with the server |
 | Countdown | to a date and time, with a text when it is over |
+| Program | *now and next* on a stage (automatic: the stage in the screen's room), *the day's sessions* or *live changes*; delays, cancellations and room changes show as badges (Program module) |
 
 A widget that fails (missing file, wrong input) shows nothing on a public screen; the editor outlines it.
 

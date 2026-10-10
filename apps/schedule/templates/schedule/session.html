@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if is_saved %}{{ obj.title }}{% else %}{% trans "New session" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if is_saved %}{{ obj.title }}{% else %}{% trans "New session" %}{% endif %}</h1>
+<div class="actions"><a class="btn" href="{% url 'schedule:index' event.slug %}">{% trans "Program" %}</a></div></div>
+{% if obj.source %}<div class="alert alert-info" role="note"><p>{% blocktrans with s=obj.source %}Imported from {{ s }}. Fields you change here keep your value when the source syncs again.{% endblocktrans %}{% if obj.overrides %} {% blocktrans with f=obj.overrides|join:", " %}Changed here: {{ f }}.{% endblocktrans %}{% endif %}</p></div>{% endif %}
+<section class="card"><form method="post">{% csrf_token %}
+{% include "portal/_form.html" with form=form %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button></div></form></section>
+{% if is_saved %}<section class="card"><h2>{% trans "Delete" %}</h2>
+<form method="post" action="{% url 'schedule:delete' event.slug obj.pk %}">{% csrf_token %}<button class="btn btn-danger" data-confirm="{% trans 'Delete this session?' %}">{% trans "Delete session" %}</button></form></section>{% endif %}
+{% endblock %}

@@ -48,6 +48,8 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `/events/<slug>/schedules/` | schedule rules: `playlist` or `layout`, `all_screens`/`groups`/`screens`, `weekdays` (0 = Monday), `start_time`/`end_time` (event time zone), `start_date`/`end_date`, `priority` 0–99 | `playlists.view` / `playlists.edit` |
 | `/events/<slug>/overrides/` | live overrides (`?current=1`); `POST` pushes (`title`, `level` `urgent`/`override`/`emergency`, `message` or `layout`/`playlist`, targets, `starts_at`, `expires_at` empty = until cancelled); `POST …/<id>/cancel/` | `playlists.view` / `playlists.override` (scoped), `playlists.emergency` |
 | `GET /events/<slug>/now-playing/` | what every paired screen shows now (source, entry, layout, until) | `playlists.view` |
+| `GET /events/<slug>/sessions/` (`?day=YYYY-MM-DD`) | program sessions with stage, track, speakers, `planned_start`, `delay_minutes`, `status`, `overrides` | `program.view`, token scope `program` |
+| `POST /events/<slug>/sessions/<id>/live/` | live change `{action: delay|cancel|move|restore, minutes, stage, note, shift_following}` | `program.live` |
 | `/events/<slug>/assets/` | asset library (`?kind=image`); `POST` multipart `upload` (+ `name`, `folder`); `urls` per variant | `content.view` / `content.edit` |
 
 ### Screen player API
@@ -66,8 +68,9 @@ Used by `/player/`, authenticated with the per-screen device token (`Authorizati
 | `GET /player/api/content/theme/` | resolved theme: tokens, CSS variables, `@font-face` rules of the fonts it uses |
 | `GET /player/api/content/bundle/` | offline bundle: theme, fonts, published layouts, asset entries with per-screen signed URLs |
 | `GET /player/api/playlists/program/` | the screen's program for 7 days: entries with priority and time windows, playlists, layout durations, message layouts (ADR-0016) |
+| `GET /player/api/schedule/` | program sessions from 12 h ago to 48 h ahead, stages, recent changes, the screen's room (refetched on `schedule.changed`) |
 | `GET /player/api/content/files/<sha>/<name>` | asset and font files of the screen's event or the shared library |
-| WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages (`config.changed`, `program.changed`, `identify`, `reload`, `clear_cache`, `test_pattern`, `screenshot`, `logs`), `revoked` |
+| WebSocket `/ws/screen/` | first message `{"type": "auth", "token": …, "since": <seq>}`; then `heartbeat`, `ping`; server sends `hello`, `heartbeat.ack`, messages (`config.changed`, `program.changed`, `schedule.changed`, `identify`, `reload`, `clear_cache`, `test_pattern`, `screenshot`, `logs`), `revoked` |
 
 ## Webhooks out
 

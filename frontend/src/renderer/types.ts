@@ -69,6 +69,8 @@ export interface RenderContext {
   nonce?: string;
   /** rows of custom widgets ("data" elements) */
   data?: DataStore;
+  /** the event's program ("program" elements, ADR-0038) */
+  program?: import("./program").ProgramStore;
   /** screen audio settings: off mutes every media widget */
   audio?: { enabled: boolean; volume: number };
   onError?: (elementId: string, error: unknown) => void;

@@ -6,6 +6,43 @@ released.
 
 ## [Unreleased]
 
+### Added — Program (Phase 5)
+
+- Program module (`apps/schedule`, module `program`, ADR-0038):
+  - stages (linked to venue rooms), tracks with colours, speakers and sessions;
+  - day view with *on the stages now*;
+  - session form, *Stages and tracks* page;
+  - permissions `program.view`, `program.live`, `program.edit`.
+- Live changes:
+  - delay (optionally also the later sessions on the stage), move to another stage, cancel, reschedule, *Back to
+    plan*;
+  - each is recorded as a change, audited (`program.*`), pushed to screens (`schedule.changed`) and emitted as the
+    webhook/realtime event `program.session_changed`;
+  - refused while the event is checked out to a venue node.
+- Sessions are announcement anchors: announcements timed relative to a session follow its delays (roadmap 2.3).
+- Public program page `/public/<slug>/program/` (setting *Public program page*, off by default) with `program.ics`,
+  `program.json` and frab `schedule.xml`. Non-public sessions stay internal.
+- API `GET /api/v1/events/<slug>/sessions/` (`?day=`) and `POST …/<id>/live/`; player endpoint
+  `/player/api/schedule/`.
+- Program layout element (`program`):
+  - views *now and next* (stage chosen, or automatically the stage in the screen's room), *the day's sessions* and
+    *live changes*;
+  - badges for delays, cancellations and room changes;
+  - works out "now" itself and keeps the data offline;
+  - the editor and the playlist preview show the real program.
+- Extensions *pretalx*, *frab / Pentabarf* and *iCal* (`extensions/program_import`,
+  [docs](docs/extensions/program-import.md)):
+  - test connection, *Sync now*, periodic sync (beat task `program-import-sync-due`), purge;
+  - local edits and live changes survive a re-sync (*Follow the source again* resets them);
+  - sessions changed here and removed upstream are kept and flagged.
+- `EVAC_IMPORT_ALLOW_PRIVATE` lets imports reach a pretalx or calendar on the venue network.
+- Demo seed: a two-day demo program on three stages.
+- Phase 5 gate as `frontend/e2e/phase5.mjs` (`make e2e`; `E2E_ONLY=phase5` runs one test).
+
+### Fixed
+
+- Extension *Test connection* results showed their ✓/✕ glyph twice.
+
 ### Added — DIAL extension (Phase 4)
 
 - `extensions/dial` ([extensions/dial.md](docs/extensions/dial.md), ADR-0037): links an event to a DIAL event (DIAL

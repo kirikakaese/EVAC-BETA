@@ -176,7 +176,7 @@ declared data kinds, `content.code` permission, audit with hashes).
 |---|---|---|
 | 2.1 | ✅ Priority levels (configurable) [§6] | display style, sound, min display time, repetition, default channels |
 | 2.2 | ✅ Templates with variables + optional layout | English built-ins |
-| 2.3 | Scheduling incl. relative to program items | start/end, daily/weekly ✅; relative to anchors ✅ (ADR-0025); program items as anchors with 5.1 |
+| 2.3 | ✅ Scheduling incl. relative to program items | start/end, daily/weekly; relative to anchors (ADR-0025); program sessions as anchors (ADR-0038) |
 | 2.4 | ✅ Targeting (venues, zones, rooms, groups, screens, audiences) | scoped permissions respected; places ✅, audiences ✅ (roles; crew teams and attendee groups with their modules, ADR-0025) |
 | 2.5 | ✅ Approval workflow | draft → approve/edit/reject; emergency bypass for permitted roles |
 | 2.6 | `apps/notify` channel adapters | screens, public feed, Web Push (VAPID), ntfy, e-mail, Matrix, Telegram, Mastodon, webhook; per-channel text; outbox delivery report — ✅ (Web Push with 2.8, ADR-0021) |
@@ -219,13 +219,16 @@ announcement → approval queue; DIAL widgets render. ✅ `make dial-e2e` (CI jo
 | 4.4 | ✅ Data sources + widgets: phonebook, important numbers, info pages, DECT status, "call X for Y" |
 | 4.5 | ✅ Shared OIDC IdP docs; manual DIAL-role → EVAC-role mapping table |
 
-## Phase 5 — Program ⬜ [§11.1]
-**Gate:** imported schedule shows now/next on screens; live change propagates < 5 s.
+## Phase 5 — Program ✅ [§11.1]
+**Gate:** imported schedule shows now/next on screens; live change propagates < 5 s. ✅ `frontend/e2e/phase5.mjs`
+(`make e2e`, CI): frab import → now/next on a screen in the stage's room → a delay reaches the screen in about
+0.25 s. [ADR-0038](adr/0038-program-module.md), [extensions/program-import.md](extensions/program-import.md).
+
 | ID | Ticket |
 |---|---|
-| 5.1 | Program module (rooms/stages, sessions, speakers, tracks, live changes, public page, iCal/JSON/frab export); sessions as announcement anchors (ADR-0025) |
-| 5.2 | pretalx, frab/Pentabarf, iCal extensions with conflict handling |
-| 5.3 | Program widgets |
+| 5.1 | ✅ Program module (rooms/stages, sessions, speakers, tracks, live changes, public page, iCal/JSON/frab export); sessions as announcement anchors (ADR-0025) |
+| 5.2 | ✅ pretalx, frab/Pentabarf, iCal extensions with conflict handling (local changes survive a re-sync) |
+| 5.3 | ✅ Program widgets (now/next, the day, live changes; offline on the screen) |
 
 ## Phase 6 — Ops + crowd ⬜ [§11.3, §11.4]
 **Gate:** "Room full" appears automatically at the threshold.

@@ -48,6 +48,7 @@ env = environ.Env(
     EVAC_TTS_VOICES_DIR=(str, ""),
     EVAC_OIDC_ALLOW_PASSWORD_LOGIN=(bool, True),
     EVAC_OIDC_TRUST_MFA=(bool, False),
+    EVAC_IMPORT_ALLOW_PRIVATE=(bool, False),
     EVAC_WEBAUTHN_RP_ID=(str, ""),
     EVAC_WEBAUTHN_RP_NAME=(str, "EVAC"),
     SENTRY_DSN=(str, ""),
@@ -89,12 +90,14 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.playlists",
     "apps.announcements",
     "apps.widgets",
+    "apps.schedule",
     "apps.packs",
     "apps.evacuation",
     "extensions.webhooks",
     "extensions.notify",
     "extensions.mqtt",
     "extensions.dial",
+    "extensions.program_import",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
 
@@ -260,6 +263,7 @@ CELERY_BEAT_SCHEDULE = {
     "content-publish-due-layouts": {"task": "apps.content.tasks.publish_due_layouts", "schedule": 30.0},
     "announcements-publish-due": {"task": "apps.announcements.tasks.publish_due", "schedule": 15.0},
     "widgets-fetch-due": {"task": "apps.widgets.tasks.fetch_due", "schedule": 30.0},
+    "program-import-sync-due": {"task": "extensions.program_import.tasks.sync_due", "schedule": 60.0},
     "packs-cleanup": {"task": "apps.packs.tasks.cleanup", "schedule": 3600.0},
     "evacuation-process-due": {"task": "apps.evacuation.tasks.process_due", "schedule": 5.0},
 }
@@ -329,6 +333,8 @@ EVAC_TTS_VOICES_DIR = env("EVAC_TTS_VOICES_DIR")
 EVAC_OIDC_ALLOW_PASSWORD_LOGIN = env("EVAC_OIDC_ALLOW_PASSWORD_LOGIN")
 # Treat an IdP login with MFA (amr claim) as two-factor verified in EVAC
 EVAC_OIDC_TRUST_MFA = env("EVAC_OIDC_TRUST_MFA")
+# program imports (pretalx, frab, iCal) may fetch from private networks (a pretalx on the venue LAN)
+EVAC_IMPORT_ALLOW_PRIVATE = env("EVAC_IMPORT_ALLOW_PRIVATE")
 # WebAuthn relying party; empty RP ID = host of EVAC_PUBLIC_URL
 EVAC_WEBAUTHN_RP_ID = env("EVAC_WEBAUTHN_RP_ID")
 EVAC_WEBAUTHN_RP_NAME = env("EVAC_WEBAUTHN_RP_NAME")

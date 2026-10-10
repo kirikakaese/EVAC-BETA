@@ -9,6 +9,7 @@ import { condition } from "./template";
 import type { LayoutData, LayoutElement, RenderContext } from "./types";
 import { defineWidgets, EvacWidget } from "./widgets";
 import "./data";  // registers the "data" element (custom widgets)
+import "./program";  // registers the "program" element (ADR-0038)
 
 export interface RenderedLayout {
   stage: HTMLElement;

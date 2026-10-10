@@ -10,6 +10,7 @@ import { directive, Directive, type ElementPart, type PartInfo, PartType } from 
 import { pageNonce } from "../renderer/code";
 import { frameStyle, renderLayout, type RenderedLayout } from "../renderer/render";
 import { MemoryStore } from "../renderer/data";
+import { type ProgramData, ProgramStore } from "../renderer/program";
 import type { AssetEntry, ElementStyle, LayoutData, LayoutElement, RenderContext, WidgetData } from "../renderer/types";
 import {
   align, type AlignMode, clone, createElement, duplicate, guidesFor, History, r2, reorder, resize, snapMove,
@@ -29,7 +30,8 @@ interface EditorConfig {
   types: string[];
   /** offered by other modules (custom widgets: list and their current rows) */
   choices?: { dataWidgets?: { value: string; label: string; visual: string }[];
-              widgetData?: Record<string, WidgetData> };
+              widgetData?: Record<string, WidgetData>;
+              programStages?: { value: string; label: string }[]; programData?: ProgramData };
   findings?: Finding[];
 }
 
@@ -38,7 +40,7 @@ export interface Finding { level: "error" | "warning"; message: string; element?
 const TYPE_LABELS: Record<string, string> = {
   text: "Text", richtext: "Rich text", image: "Image", slideshow: "Slideshow", video: "Video", audio: "Audio",
   shape: "Shape", qr: "QR code", clock: "Clock", countdown: "Countdown", date: "Date", code: "Code",
-  data: "Data widget", pictogram: "Safety sign",
+  data: "Data widget", pictogram: "Safety sign", program: "Program",
 };
 const TOKENS = ["primary", "accent", "text", "muted", "surface", "background", "success", "warning", "danger"];
 const TOKEN_LABELS: Record<string, string> = {
@@ -249,7 +251,8 @@ export class LayoutEditor extends LitElement {
   private get ctx(): RenderContext {
     return { vars: this.cfg.vars, now: () => Date.now(), timezone: this.cfg.timezone, assets: this.cfg.assets,
              fonts: this.cfg.fonts, editing: true, nonce: pageNonce(),
-             data: new MemoryStore(this.cfg.choices?.widgetData ?? {}) };
+             data: new MemoryStore(this.cfg.choices?.widgetData ?? {}),
+             program: new ProgramStore(this.cfg.choices?.programData ?? null) };
   }
 
   updated(): void {
@@ -588,6 +591,17 @@ export class LayoutEditor extends LitElement {
             [["", widgets.length ? "Choose…" : "No custom widgets yet (Data & widgets)"],
              ...widgets.map((w): [string, string] => [w.value, w.label])], (v) => this.setProp("widget", v))}
           ${text("Heading (empty: the widget's)", "title", 1)}`;
+      }
+      case "program": {
+        const stages = this.cfg.choices?.programStages ?? [];
+        return html`${this.choice("Show", String(p.view ?? "now_next"), [["now_next", "Now and next"],
+            ["day", "The day's sessions"], ["changes", "Live changes"]], (v) => this.setProp("view", v))}
+          ${p.view === "changes" ? nothing : this.choice("Stage", String(p.stage ?? ""),
+            [["", "Automatic: the screen's room, else all stages"],
+             ...stages.map((s): [string, string] => [s.value, s.label])], (v) => this.setProp("stage", v))}
+          ${p.view === "now_next" || !p.view ? nothing : this.num("Rows", Number(p.count ?? 6), (v) => this.setProp("count",
+            Math.max(1, Math.min(20, Math.round(v ?? 6)))), { min: 1, max: 20, step: 1 })}
+          ${text("Heading", "title", 1)}`;
       }
       default:
         return html``;

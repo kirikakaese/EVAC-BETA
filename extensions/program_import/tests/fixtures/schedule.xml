@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schedule>
+  <version>1.0</version>
+  <conference>
+    <acronym>camp</acronym>
+    <title>Demo Camp</title>
+    <time_zone_name>Europe/Berlin</time_zone_name>
+  </conference>
+  <day index="1" date="2026-07-01" start="2026-07-01T06:00:00+02:00" end="2026-07-02T06:00:00+02:00">
+    <room name="Hall A">
+      <event guid="0b7b7a4e-1111-4c4f-9a4e-000000000001" id="101">
+        <date>2026-07-01T10:00:00+02:00</date>
+        <start>10:00</start>
+        <duration>00:45</duration>
+        <room>Hall A</room>
+        <title>Opening</title>
+        <subtitle>Welcome to camp</subtitle>
+        <track>Main</track>
+        <type>lecture</type>
+        <language>en</language>
+        <abstract>Everything you need to know.</abstract>
+        <persons><person id="7" guid="p-7">Ada Lovelace</person></persons>
+      </event>
+      <event id="102">
+        <start>11:00</start>
+        <duration>01:00</duration>
+        <title>CANCELLED: Soldering</title>
+      </event>
+    </room>
+    <room name="Tent">
+      <event guid="0b7b7a4e-1111-4c4f-9a4e-000000000003">
+        <date>2026-07-01T23:30:00+02:00</date>
+        <duration>01:30</duration>
+        <room>Tent</room>
+        <title>Late night</title>
+        <persons/>
+      </event>
+    </room>
+  </day>
+</schedule>

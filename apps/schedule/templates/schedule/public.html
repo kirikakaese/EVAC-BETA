@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% blocktrans with e=event.name %}Program · {{ e }}{% endblocktrans %}{% endblock %}
+{% block head %}<link rel="alternate" type="text/calendar" title="{% trans 'Program (iCal)' %}" href="{% url 'schedule_public:ics' event.slug %}">
+<meta http-equiv="refresh" content="60">{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% blocktrans with e=event.name %}Program · {{ e }}{% endblocktrans %}</h1>
+<div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'schedule_public:ics' event.slug %}">{% trans "Calendar (iCal)" %}</a> <a class="btn btn-ghost btn-sm" href="{% url 'schedule_public:json' event.slug %}">JSON</a> <a class="btn btn-ghost btn-sm" href="{% url 'schedule_public:frab' event.slug %}">frab XML</a></div></div>
+{% for day, items in days %}<section class="card" aria-labelledby="d-{{ forloop.counter }}"><h2 id="d-{{ forloop.counter }}">{{ day|date:"l, j F" }}</h2>
+<div class="table-wrap"><table class="program-table"><thead><tr><th scope="col">{% trans "Time" %}</th><th scope="col">{% trans "Where" %}</th><th scope="col">{% trans "Session" %}</th></tr></thead>
+<tbody>{% for s in items %}<tr{% if s.status == "cancelled" %} class="muted"{% endif %}><td class="nowrap tabular">{{ s.starts_at|time:"H:i" }}–{{ s.ends_at|time:"H:i" }}{% if s.status != "cancelled" and s.delay_minutes %}<br><span class="badge badge-warn">{% if s.delay_minutes > 0 %}+{% endif %}{{ s.delay_minutes }} min</span> <span class="small muted">{% trans "planned" %} <s>{{ s.planned_start|time:"H:i" }}</s></span>{% endif %}{% if s.starts_at <= now and s.ends_at > now and s.status != "cancelled" %}<br><span class="badge badge-ok">{% trans "now" %}</span>{% endif %}</td>
+<td>{{ s.stage.name|default:"–" }}{% if s.moved %}<br><span class="badge badge-warn">{% trans "room changed" %}</span>{% endif %}</td>
+<th scope="row">{% if s.status == "cancelled" %}<span class="badge badge-err">{% trans "cancelled" %}</span> {% endif %}{{ s.title }}{% if s.subtitle %}<br><span class="small">{{ s.subtitle }}</span>{% endif %}
+{% if s.speakers.all %}<br><span class="small muted">{{ s.speakers.all|join:", " }}</span>{% endif %}
+{% if s.note %}<br><span class="small"><strong>{{ s.note }}</strong></span>{% endif %}</th></tr>{% endfor %}</tbody></table></div></section>
+{% empty %}<p class="card muted">{% trans "The program is not published yet." %}</p>{% endfor %}
+{% endblock %}

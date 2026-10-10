@@ -48,7 +48,7 @@ failed).
 |---|---|---|
 | Webhooks (generic, in/out) | 0 | [webhooks](extensions/webhooks.md) |
 | DIAL — DECT & IP Administration Layer | 4 | [dial](extensions/dial.md) |
-| pretalx / frab / iCal | 5 | – |
+| pretalx / frab / iCal | 5 | [program-import](extensions/program-import.md) |
 | pretix | 8 | – |
 | Engelsystem | 7 | – |
 | Matrix, Telegram, ntfy, Mastodon, SMTP | 2 | – |

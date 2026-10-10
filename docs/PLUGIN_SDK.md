@@ -130,5 +130,9 @@ The DIAL extension (`extensions/dial/`) is a complete example: event-scoped link
 `delivery_id`, an evacuation trigger source, a webhook sink, announcement channels, data sources and outbox jobs
 ([extensions/dial.md](extensions/dial.md), [ADR-0037](adr/0037-dial-extension.md)).
 
+An import extension that offers a feature with the key `sync` and a custom view `x/sync/` gets a *Sync now* button
+on the Program page (see `extensions/program_import`, [ADR-0038](adr/0038-program-module.md)). Module data that
+other plugins may show in the layout editor is offered with `r.editor_choices(key, fn, module=...)`.
+
 Use `apps.extensions.services.effective(key, event)` to get the configuration that applies to an event
 (own connection or the instance-wide one) and `config.feature_enabled("rooms")` before doing work.

@@ -57,6 +57,8 @@ const DEFAULTS: Record<string, Partial<LayoutElement>> = {
                props: { target: "", format: "auto", finished: "Now!" } },
   date: { frame: { x: 5, y: 5, w: 40, h: 8 }, style: { fontSize: 4 }, props: { format: "long" } },
   data: { frame: { x: 10, y: 15, w: 45, h: 60 }, style: { fontSize: 4.5 }, props: { widget: "" } },
+  program: { frame: { x: 5, y: 15, w: 55, h: 70 }, style: { fontSize: 4 },
+             props: { view: "now_next", stage: "", count: 6, title: "" } },
   pictogram: { frame: { x: 5, y: 10, w: 20, h: 35 }, props: { code: "E002", direction: "auto" } },
   code: { frame: { x: 10, y: 10, w: 40, h: 30 },
           props: { html: '<div class="box"><span id="t"></span></div>',

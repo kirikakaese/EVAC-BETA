@@ -33,6 +33,9 @@ EDITOR_STRINGS = [
     "E002 Emergency exit (right)", "E003 First aid", "E007 Assembly point", "Not published.",
     "Safety sign", "Sign", "W001 General warning",
     "Data widget", "Widget",
+    # program element (ADR-0038)
+    "Program", "Show", "Now and next", "The day's sessions", "Live changes", "Stage",
+    "Automatic: the screen's room, else all stages", "Rows", "Heading",
     "Add", "Text", "Rich text", "Image", "Slideshow", "Video", "Audio", "Shape", "QR code", "Clock", "Countdown",
     "Date", "Layers", "Properties", "Layout", "Width", "Height", "Background", "Background image", "None",
     "Undo", "Redo", "Delete", "Duplicate", "Bring forward", "Send backward", "Save", "Saving…", "Saved",

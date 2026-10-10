@@ -13,6 +13,8 @@ import { nextOverlayChange, OverlayLayer, SPEECH_DELAY_MS } from "./overlays";
 import { prefetchSpeech, Speaker } from "./speech";
 import { MemoryStore } from "../renderer/data";
 import { cachedWidgetData, clearWidgetData, refreshWidgetData } from "./widgetdata";
+import { cachedSchedule, clearSchedule, refreshSchedule } from "./scheduledata";
+import { ProgramStore } from "../renderer/program";
 import { nextChange, slideAt, type Program, type Slide } from "../program/engine";
 import { pageNonce } from "../renderer/code";
 import type { LayoutData } from "../renderer/types";
@@ -50,6 +52,8 @@ export class Player {
   private display: Display;
   private speaker = new Speaker();
   private widgetData = new MemoryStore(cachedWidgetData());
+  /** the event's sessions for "program" elements (ADR-0038) */
+  private schedule = new ProgramStore(cachedSchedule());
   private dataRefresher: ReturnType<typeof setInterval> | null = null;
   private overlays = new OverlayLayer(this.speaker);
   private conn: Connection | null = null;
@@ -168,7 +172,11 @@ export class Player {
     stage("play: online");
     this.refresher = setInterval(() => void this.loadProgram(token).then(() => this.show()), PROGRAM_REFRESH_MS);
     void this.loadWidgetData(token);
-    this.dataRefresher = setInterval(() => void this.loadWidgetData(token), WIDGET_DATA_REFRESH_MS);
+    void this.loadSchedule(token);
+    this.dataRefresher = setInterval(() => {
+      void this.loadWidgetData(token);
+      void this.loadSchedule(token);
+    }, WIDGET_DATA_REFRESH_MS);
     this.housekeeping = setInterval(() => this.tick(), TICK_MS);
     this.conn = new Connection({
       api: this.env.api, ws: wsUrl(this.env), token, clock: this.clock,
@@ -232,6 +240,9 @@ export class Player {
       }
       case "data.changed":
         await this.loadWidgetData(token);
+        break;
+      case "schedule.changed":
+        await this.loadSchedule(token);
         break;
       case "evac.state":
         this.evac?.offer(msg.data as unknown as EvacPayload, this.transport);
@@ -305,6 +316,15 @@ export class Player {
     if (speech.length) void prefetchSpeech(speech);
   }
 
+  /** The program: "program" elements redraw themselves when the store changes. */
+  private async loadSchedule(token: string): Promise<void> {
+    try {
+      await refreshSchedule(this.env.api, token, this.schedule);
+    } catch (err) {
+      if (err instanceof Unauthorized) this.unpair();
+    }
+  }
+
   /** Custom widget rows: "data" elements redraw themselves when the store changes. */
   private async loadWidgetData(token: string): Promise<void> {
     try {
@@ -324,6 +344,7 @@ export class Player {
       context: () => ({ vars: this.config ? this.vars() : {}, now: () => this.clock.now(),
                         timezone: this.config?.event.timezone, assets: this.bundle?.assets ?? {},
                         fonts: this.bundle?.fonts ?? {}, nonce: pageNonce(), data: this.widgetData,
+                        program: this.schedule,
                         onError: (id, err) => recordError(`evac ${id}: ${String(err)}`) }),
       onRendered: (p, info) => {
         this.evacAck = `${p.seq}:${p.v}`.slice(0, 40);
@@ -448,7 +469,7 @@ export class Player {
       this.display.layout(data, {
         vars: this.vars(), now: () => this.clock.now(), timezone: cfg.event.timezone, assets: this.bundle.assets,
         fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches, audio,
-        nonce: pageNonce(), data: this.widgetData,
+        nonce: pageNonce(), data: this.widgetData, program: this.schedule,
         onError: (id, err) => recordError(`${id}: ${String(err)}`),
         onLog: (id, message) => log("info", `${id}: ${message}`),
       }, variables);
@@ -511,6 +532,8 @@ export class Player {
     this.timer = this.refresher = this.dataRefresher = this.evacTimer = this.fallbackTimer = null;
     clearWidgetData();
     this.widgetData.set({});
+    clearSchedule();
+    this.schedule.set(null);
     clearProgram();
     this.program = null;
     this.shown = "";
