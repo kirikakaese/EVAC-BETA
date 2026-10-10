@@ -302,3 +302,27 @@ describe("fail-safe (ADR-0034)", () => {
     vi.useRealTimers();
   });
 });
+
+describe("ISO 7010 signs (imported)", () => {
+  it("renders the imported artwork, CSP-safe and labelled", async () => {
+    const { ISO7010, ISO7010_SOURCE } = await import("../src/renderer/iso7010.generated");
+    expect(ISO7010_SOURCE).toBe("@iso-safety-signs/core@1.1.0");
+    for (const code of ["E001", "E002", "E003", "E007", "W001"]) {
+      const out = pictogram(code);
+      expect(out).toBe(ISO7010[code].svg.replace(/^<svg\b/, out.slice(0, out.indexOf(" xmlns"))));
+      expect(out).toMatch(/^<svg role="img" aria-label="[^"]+"/);
+      expect(out).not.toMatch(/style=|<script|\son\w+=/);
+    }
+    expect(pictogram("E002")).toContain("#237f52");
+  });
+
+  it("the import refuses active content and unknown styles", async () => {
+    // @ts-expect-error - a plain .mjs script without types
+    const { cspSafe } = await import("../scripts/import-iso7010.mjs");
+    expect(cspSafe('<svg width="4" height="4" viewBox="0 0 1 1"><path style="fill:#fff;stroke:none"/></svg>', "X"))
+      .toBe('<svg viewBox="0 0 1 1"><path fill="#fff" stroke="none"/></svg>');
+    expect(() => cspSafe('<svg><script>x</script></svg>', "X")).toThrow(/active content/);
+    expect(() => cspSafe('<svg onload="x"></svg>', "X")).toThrow(/active content/);
+    expect(() => cspSafe('<svg><path style="filter:url(#a)"/></svg>', "X")).toThrow(/no attribute form/);
+  });
+});

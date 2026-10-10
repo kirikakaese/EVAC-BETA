@@ -6,6 +6,12 @@ released.
 
 ## [Unreleased]
 
+### Changed
+
+- Safety signs now use the official ISO 7010 artwork (E001, E002, E003, E007, W001), imported from
+  `@iso-safety-signs/core` (MIT) by `npm run iso7010` instead of EVAC's own drawings. Inline styles become SVG
+  attributes for the strict CSP. The build fails when the import is out of date.
+
 ### Added — evacuation fail-safe (Phase 3, part 10)
 
 - *Readiness* page (ADR-0034): per screen whether it is online, has a current evacuation bundle, may play sound

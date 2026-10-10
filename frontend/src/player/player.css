@@ -96,9 +96,8 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
            justify-content: center; gap: 3.5cqh; padding: 4cqh 5cqw; text-align: center; background: #00843d; }
 .evac-fb-shelter_in_place, .evac-fb-attention { background: #111; }
 .evac-fb-all_clear { background: #0b3d1f; }
-.evac-fb-all_clear .evac-fb-signs svg { border: 0; }
 .evac-fb-signs { display: flex; gap: 4cqw; justify-content: center; }
-.evac-fb-signs svg { width: min(34cqh, 30cqw); height: min(34cqh, 30cqw); border: .6cqh solid #fff; border-radius: 1cqh; }
+.evac-fb-signs svg { width: min(34cqh, 30cqw); height: min(34cqh, 30cqw); }  /* ISO 7010 artwork has its own white edge */
 .evac-fb-label { margin: 0; font-size: 11cqh; line-height: 1; font-weight: 800; letter-spacing: .02em;
                  text-transform: uppercase; }
 .evac-fb-text { margin: 0; font-size: 6.5cqh; line-height: 1.15; font-weight: 700; max-width: 90cqw; }

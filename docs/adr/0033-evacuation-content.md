@@ -16,8 +16,13 @@ Roadmap 3.7 and brief §8.4:
 ## Decision
 
 - **Safety signs** are a renderer element `pictogram` (`E001`/`E002` emergency exit, `E003` first aid, `E007`
-  assembly point, `W001` general warning, `arrow`). EVAC draws them as SVG after the standard's geometry
-  (simplified, our own drawings, no third-party artwork). The `arrow` sign with direction `auto` shows the
+  assembly point, `W001` general warning, `arrow`). The ISO 7010 signs are the published artwork, imported
+  from the npm package `@iso-safety-signs/core` (MIT, pinned dev dependency) by
+  `frontend/scripts/import-iso7010.mjs` into `src/renderer/iso7010.generated.ts`. The import only turns inline
+  `style` declarations into SVG attributes, because the strict CSP blocks inline styles, and it refuses any
+  other active content. The build checks that the generated file is current, and the bundles carry the licence
+  notice. The direction arrow and the all-clear check mark are not ISO 7010 signs and are drawn by EVAC. The
+  `arrow` sign with direction `auto` shows the
   screen's computed way out and hides itself without one. Templates get `{{ evac.text }}`,
   `{{ evac.direction }}`, `{{ evac.stage }}`, `{{ evac.target }}` and `{{ evac.drill }}`.
 - **Guardrails** (`apps/evacuation/lint.py`, pure, mypy strict) check every layout used by a stage:
@@ -50,6 +55,6 @@ Roadmap 3.7 and brief §8.4:
 
 ## Consequences
 
-- Our pictograms are faithful in meaning and layout but are not certified artwork; operators who need the
-  official files can upload them as images in their own layouts.
+- Screens show the official sign artwork. A new sign means adding its code to the import script and running
+  `npm run iso7010`.
 - Audio needs the kiosk's autoplay permission (ADR-0017); a refused autoplay is skipped silently.
