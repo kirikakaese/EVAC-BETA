@@ -370,7 +370,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="presence",
             constraint=models.UniqueConstraint(
-                fields=("attendee", "zone"), name="access_presence"
+                fields=("attendee", "zone"), name="access_presence_unique"
             ),
         ),
         migrations.AddIndex(

@@ -113,7 +113,7 @@ class Presence(models.Model):
     since = models.DateTimeField()
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["attendee", "zone"], name="access_presence")]
+        constraints = [models.UniqueConstraint(fields=["attendee", "zone"], name="access_presence_unique")]
 
 
 class Scan(models.Model):
