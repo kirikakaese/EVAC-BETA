@@ -8,7 +8,8 @@ from django.utils import timezone
 
 from apps.events import rbac
 
-from . import machine, services, triggers
+from . import acks, machine, services, triggers
+from .models import StaffAck
 
 
 def card(request: Any, event: Any) -> dict[str, Any] | None:
@@ -19,5 +20,7 @@ def card(request: Any, event: Any) -> dict[str, Any] | None:
     now = machine.current(ev, timezone.now())
     return {"state": now.state.value, "label": cfg.labels[now.state.value], "drill": now.drill,
             "drill_text": cfg.drill_text, "pending": len(triggers.pending(event)),
+            "alarm": acks.alarm_since(event) is not None, "kinds": StaffAck.KINDS,
+            "zones": list(services.zones_of(event)) if cfg.model is machine.Model.ZONES else [],
             "can_raise": any(rbac.has_any(request.user, event, p, request=request)
                              for p in (services.PERM_TRIGGER, services.PERM_DRILL))}

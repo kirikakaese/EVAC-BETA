@@ -6,6 +6,35 @@ released.
 
 ## [Unreleased]
 
+### Added — propagation and acknowledgements (Phase 3, part 9)
+
+- Screens acknowledge every evacuation message they render (seq, version, state, path, render time). The control
+  page has a *Screens reached* card: "X of Y screens confirmed", offline and waiting screens, per zone, screens
+  on the signed fallback, and the trigger-to-screen time (p95) for the current message and the last 24 hours,
+  with a warning above the 2 s target (ADR-0035). The screens table shows each screen's confirmation and latency.
+- Staff answers during an alarm from the staff app and the panic page: *I'm on it*, *Zone clear*, *Need help*
+  (zone and note optional). Audit-logged, webhook `evacuation.staff_ack`; *Need help* alerts the control room.
+- API: `GET /api/v1/events/<slug>/evacuation/coverage/`.
+
+### Fixed
+
+- Trigger policy resolution picked between two equally specific rules by their order when they differed only
+  in an unused escalation time.
+
+### Added — evacuation content on screens (Phase 3, part 8)
+
+- ISO 7010 safety signs (`E001`, `E002`, `E003`, `E007`, `W001`, direction arrow with *auto*) as a layout
+  element; template variables `{{ evac.text }}`, `{{ evac.direction }}`, `{{ evac.stage }}`, `{{ evac.drill }}`.
+- Layout guardrails (ADR-0033) through a new plugin hook `r.layout_check`: required elements, text contrast and
+  letter height for the viewing distance. The editor lists findings; publishing is refused while an error
+  remains.
+- *Screen content* page: per stage a layout or the built-in one, texts in rotation with an optional signs-only
+  frame, sound and repeat time, spoken message pre-rendered with Piper.
+- Players take over on shelter, evacuate and all clear (banner for attention and on *info* screens, ignored on
+  *excluded* screens), above the dim overlay and in the screen's rotation, wake dimmed screens, loop the
+  alarm sound and mark drills. Payloads are signed per event (Ed25519) and pushed on every change, and the
+  built-in layout is used whenever an own layout fails.
+
 ### Added — hardware bridge and MQTT (Phase 3, part 7)
 
 - Hardware bridges (ADR-0032): per-event bridges with their own token, inputs mapped to stage and zone, HTTPS

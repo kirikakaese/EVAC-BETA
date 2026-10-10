@@ -1,0 +1,6 @@
+{% load i18n %}<form method="post" action="{% url 'evacuation:answer' event.slug %}" class="evac-answer">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+{% if zones %}<div class="field"><label for="answer-zone-{{ prefix }}">{% trans "Zone" %}</label><select id="answer-zone-{{ prefix }}" name="zone"><option value="">{% trans "Not zone-specific" %}</option>{% for z in zones %}<option value="{{ z.pk }}">{{ z.venue.name }} · {{ z.name }}</option>{% endfor %}</select></div>{% endif %}
+<div class="field"><label for="answer-note-{{ prefix }}">{% trans "Note (optional)" %}</label><input id="answer-note-{{ prefix }}" name="note" maxlength="300"></div>
+<div class="evac-answer-buttons"><button class="btn btn-lg" name="kind" value="on_it">{% trans "I'm on it" %}</button>
+<button class="btn btn-lg" name="kind" value="zone_clear">{% trans "Zone clear" %}</button>
+<button class="btn btn-lg btn-danger" name="kind" value="need_help">{% trans "Need help" %}</button></div></form>

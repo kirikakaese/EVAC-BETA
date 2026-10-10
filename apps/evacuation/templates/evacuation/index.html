@@ -20,6 +20,8 @@
 {% if ev.state == "all_clear" and can_change %}<form method="post" action="{% url 'evacuation:end_all_clear' event.slug %}">{% csrf_token %}<button class="btn btn-sm">{% trans "Back to normal now" %}</button></form>{% endif %}
 </section>
 
+{% include "evacuation/_propagation.html" %}
+
 {% if zones or zones_model %}<section class="card"><h2>{% trans "Zones" %}</h2>
 {% if zones %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Own state" %}</th><th scope="col">{% trans "Screens show" %}</th><th scope="col">{% trans "Since" %}</th></tr></thead>
 <tbody>{% for z in zones %}<tr><th scope="row">{{ z.zone.venue.name }} · {{ z.zone.name }}</th>
@@ -42,9 +44,10 @@
 {% else %}<p class="muted">{% trans "No exits or assembly points yet: draw them on the venue map." %}</p>{% endif %}</section>{% endif %}
 
 <section class="card"><h2>{% trans "Screens" %}</h2>
-{% if screens %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Shows" %}</th><th scope="col">{% trans "Direction" %}</th>{% if can_manage %}<th scope="col">{% trans "Fixed direction (overrides the route)" %}</th>{% endif %}</tr></thead>
+{% if screens %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Screen" %}</th><th scope="col">{% trans "Shows" %}</th><th scope="col">{% trans "Confirmed" %}</th><th scope="col">{% trans "Direction" %}</th>{% if can_manage %}<th scope="col">{% trans "Fixed direction (overrides the route)" %}</th>{% endif %}</tr></thead>
 <tbody>{% for row in screens %}<tr><th scope="row">{{ row.screen.name }}</th>
 <td>{% include "evacuation/_state.html" with s=row.shown drill_text=cfg.drill_text %}</td>
+<td>{% if row.ack and row.ack.seq >= row.seq %}<span class="badge badge-ok">{% trans "yes" %}</span>{% if row.ack.latency_ms is not None %} <span class="small muted">{{ row.ack.latency_ms }} ms</span>{% endif %}{% if row.ack.fallback %} <span class="badge badge-warn">{% trans "fallback" %}</span>{% endif %}{% elif row.ack %}<span class="badge badge-warn">{% trans "older message" %}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
 <td>{% if row.kind == "route" %}{% if row.glyph %}<span class="evac-arrow" aria-hidden="true">{{ row.glyph }}</span> {{ row.arrow }} · {% endif %}{% blocktrans with t=row.toward g=row.target d=row.distance %}towards {{ t }}, to {{ g }} ({{ d }} m){% endblocktrans %}{% if not row.glyph %} <span class="small muted">({% trans "set the facing on the map for an arrow" %})</span>{% endif %}
 {% elif row.kind == "hint" %}{% if row.glyph %}<span class="evac-arrow" aria-hidden="true">{{ row.glyph }}</span> {{ row.arrow }}{% endif %}{% if row.text %} “{{ row.text }}”{% endif %} <span class="badge badge-info">{% trans "fixed" %}</span>
 {% elif row.follow_staff %}<span class="badge badge-warn">{% trans "Follow staff instructions" %}</span> <span class="small muted">{% trans "no route: place the screen on the map and connect exits" %}</span>

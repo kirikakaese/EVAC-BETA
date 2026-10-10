@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.http import require_POST
@@ -16,18 +17,20 @@ from django.views.decorators.http import require_POST
 from apps.events import rbac
 from apps.portal.shortcuts import event_view
 
-from . import feed, machine, policy, services, triggers
+from . import acks, feed, machine, policy, services, triggers
 from .forms import EVENT, ChangeForm, DrillForm, PolicyForm
 from .guidance import Arrow
 from .guidance import Kind as GuidanceKind
 from .machine import Model, State
-from .models import BlockedPoint, Bridge, EvacPolicy, EvacRequest, EvacState, ScheduledDrill, StateChange
+from .models import BlockedPoint, Bridge, EvacPolicy, EvacRequest, EvacState, ScheduledDrill, StaffAck, StateChange
 
 MODULE = "evacuation"
 MODEL_LABELS = [(Model.SIMPLE, _lazy("Simple takeover")), (Model.STAGED, _lazy("Staged, global")),
                 (Model.ZONES, _lazy("Zones and routes"))]
 GLYPHS = {Arrow.AHEAD: "↑", Arrow.AHEAD_RIGHT: "↗", Arrow.RIGHT: "→", Arrow.BACK_RIGHT: "↘", Arrow.BACK: "↓",
           Arrow.BACK_LEFT: "↙", Arrow.LEFT: "←", Arrow.AHEAD_LEFT: "↖"}
+#: brief §8.5: trigger to screen within 2 s (p95) on the venue LAN
+TARGET_MS = 2000
 ARROW_CHOICES = [("", _lazy("No arrow"))] + [(a.value, a.value.replace("_", " ")) for a in Arrow]
 
 
@@ -42,6 +45,8 @@ def _screen_rows(event: Any, cfg: services.Config) -> list[dict[str, Any]]:
     from apps.venues.models import Point
 
     views = services.screen_views(event)
+    seq = feed.current_seq(event)
+    screen_acks = acks.screen_acks(event)
     ids = {v.guidance.toward for v in views} | {v.guidance.target for v in views}
     names = {str(p.pk): p.name for p in Point.objects.filter(pk__in=[i for i in ids if i])}
     rows = []
@@ -53,7 +58,8 @@ def _screen_rows(event: Any, cfg: services.Config) -> list[dict[str, Any]]:
                      "arrow": g.arrow.value.replace("_", " ") if g.arrow else "", "text": g.text,
                      "toward": names.get(g.toward or ""), "target": names.get(g.target or ""),
                      "distance": g.distance, "hint": services.hint_of(event, v.screen),
-                     "follow_staff": g.kind is GuidanceKind.FOLLOW_STAFF})
+                     "follow_staff": g.kind is GuidanceKind.FOLLOW_STAFF,
+                     "ack": screen_acks.get(str(v.screen.pk)), "seq": seq})
     return rows
 
 
@@ -113,8 +119,45 @@ def _page(request: HttpRequest, event: Any, form: ChangeForm | None = None) -> H
         "arrow_choices": ARROW_CHOICES, "pending": triggers.pending(event),
         "form": form or (_form(request, event, cfg, zones) if can_change else None),
         "history": StateChange.objects.filter(event=event).select_related("actor")[:15],
-        "labels": cfg.labels,
+        "labels": cfg.labels, **_propagation(event),
     }, status=400 if form is not None else 200)
+
+
+def _propagation(event: Any) -> dict[str, Any]:
+    cov = acks.coverage(event)
+    since = acks.alarm_since(event)
+    return {"cov": cov, "answers": acks.recent_staff(event, since) if since else [], "alarm_since": since,
+            "target_ms": TARGET_MS, "slow": cov.last_p95_ms is not None and cov.last_p95_ms > TARGET_MS}
+
+
+@event_view("evacuation.view", module=MODULE)
+def propagation(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    """The "screens reached" card, refreshed by the control page every few seconds."""
+    return render(request, "evacuation/_propagation.html", {"event": event, **_propagation(event)})
+
+
+@require_POST
+@event_view("evacuation.view", module=MODULE)
+def answer(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    """A staff member answers the running alarm: "I'm on it", "zone clear", "need help"."""
+    nxt = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()},
+                                           require_https=request.is_secure()):
+        nxt = ""
+    kind = request.POST.get("kind", "")
+    zone_id = request.POST.get("zone", "")
+    zone = next((z for z in services.zones_of(event) if str(z.pk) == zone_id), None)
+    if kind not in dict(StaffAck.KINDS):
+        messages.error(request, _("Unknown answer."))
+    elif zone_id and zone is None:
+        messages.error(request, _("Unknown zone."))
+    elif acks.alarm_since(event) is None:
+        messages.error(request, _("There is no alarm to answer."))
+    else:
+        row = acks.staff_ack(event, request.user, kind, zone=zone, note=request.POST.get("note", ""),
+                             request=request)
+        messages.success(request, _("Sent to the control room: %(answer)s") % {"answer": row.get_kind_display()})
+    return redirect(nxt) if nxt else redirect("evacuation:index", event.slug)
 
 
 @require_POST
@@ -298,7 +341,8 @@ def panic(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
     stages = sorted((s for s in cfg.enabled if s in machine.ALARMS), key=lambda s: -machine.SEVERITY[s])
     return render(request, "evacuation/panic.html", {
         "event": event, "ev": ev, "cfg": cfg, "zones": zones, "can_raise": can_raise, "can_drill": can_drill,
-        "stages": [(s.value, cfg.labels[s.value]) for s in stages], "pending": triggers.pending(event)})
+        "stages": [(s.value, cfg.labels[s.value]) for s in stages], "pending": triggers.pending(event),
+        "alarm": acks.alarm_since(event) is not None})
 
 
 @event_view("evacuation.manage", module=MODULE)

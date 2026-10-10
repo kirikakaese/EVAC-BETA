@@ -497,6 +497,9 @@ audio { max-width: 100%; }
 .evac-pending { border-color: var(--warn); }
 .evac-request + .evac-request { border-top: 1px solid var(--border); padding-top: .75rem; margin-top: .75rem; }
 .evac-panic-buttons { display: grid; gap: .75rem; }
+.evac-answer-buttons { display: flex; flex-wrap: wrap; gap: .5rem; }
+.evac-answers { list-style: none; padding: 0; margin: 0; display: grid; gap: .35rem; }
+.evac-coverage { font-size: 1.15rem; }
 .evac-panic-btn { width: 100%; min-height: 4rem; font-size: 1.25rem; justify-content: flex-start; gap: .75rem; }
 .evac-panic-btn .badge { font-size: 1.2rem; padding: .2rem .5rem; }
 .evac-panic-evacuate { border-color: var(--err); color: var(--err); }

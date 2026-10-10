@@ -58,18 +58,20 @@ _FIRMNESS = {Action.EXECUTE: 2, Action.ARM: 1, Action.NOTIFY: 0}
 
 
 def resolve(rules: Iterable[Rule], source: str, state: str, zone: str = "") -> Decision:
-    best: tuple[int, int, int, Rule] | None = None
+    best: tuple[int, int, int, int, Rule] | None = None
     for r in rules:
         if r.source != source or r.state not in ("", state) or r.zone not in ("", zone):
             continue
         rank = (2 if r.state else 0) + (1 if r.zone else 0)
         # among equals: firmer action, then a shorter (or any) escalation
         esc = -(r.escalate_seconds if r.escalate_seconds is not None else 10 ** 9)
-        key = (rank, _FIRMNESS[r.action], esc if r.action is Action.ARM else 0, r)
-        if best is None or key[:3] > best[:3]:
+        # last: any total order, so the chosen rule never depends on the order of the rules
+        tie = -(r.escalate_seconds if r.escalate_seconds is not None else -1)
+        key = (rank, _FIRMNESS[r.action], esc if r.action is Action.ARM else 0, tie, r)
+        if best is None or key[:4] > best[:4]:
             best = key
     if best is not None:
-        r = best[3]
+        r = best[4]
         return Decision(r.action, r.escalate_seconds if r.action is Action.ARM else None, r)
     action = DEFAULTS.get(source, Action.ARM)
     return Decision(action, DEFAULT_ESCALATE if action is Action.ARM else None)

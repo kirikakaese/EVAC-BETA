@@ -66,7 +66,7 @@ procedures of the venue. Operators must acknowledge this once per event when ena
 | Control room page | execute | hold-to-confirm |
 | Panic page (staff app) | execute | hold-to-confirm, big buttons, zone choice |
 | API / external systems | arm | service token with `evacuation:write`, created with two factors; idempotency `key` |
-| Hardware bridge | arm | ADR-0003; the bridge itself arrives in 3.6 |
+| Hardware bridge | arm | ADR-0003, ADR-0032 |
 | Scheduled drills | execute | always drills; not during a real alarm; not more than 15 minutes late |
 
 - **Execute** switches at once. **Arm** shows the alarm on the control page ("Waiting for a decision") and alerts
@@ -77,6 +77,32 @@ procedures of the venue. Operators must acknowledge this once per event when ena
   else with the permission confirms. After the set time (default 60 s) it expires, nothing changes and the
   control room is alerted.
 - Policies never end alarms. Only people end alarms, from the control or panic page, with the all clear.
+
+## Hardware bridge (roadmap 3.6, [ADR-0032](adr/0032-hardware-bridge.md))
+
+- A *Hardware bridge* (page *Triggers & drills → Hardware bridges*) has its own token (`evacb_…`) and a list of
+  inputs: `key; label; stage; zone`. It reports over HTTPS (`/bridge/v1/heartbeat`, `/bridge/v1/input`) or MQTT
+  (optional extension, [docs](extensions/mqtt.md)).
+- An input becoming active raises its stage through the *Hardware bridge* source (arm by default). A contact
+  returning to rest only tells the control room; wiring faults and a bridge silent for 30 s raise alerts,
+  never public alarms.
+- Reference software: `bridge/` (Raspberry Pi with a persistent retry queue; ESP32 sketch).
+
+## Screen content (roadmap 3.7, [ADR-0033](adr/0033-evacuation-content.md))
+
+- *Screen content*: per stage a layout or the built-in one, rotating texts, signs-only frame, sound, spoken
+  message. Layouts used for evacuation must pass the guardrails (signs, text, direction, contrast, letter
+  height for the viewing distance in Settings → Evacuation).
+- Shelter, evacuate and all clear take over participating screens; attention is a banner. Per screen the
+  display setting *Evacuation role* chooses participant, info (banner only) or excluded.
+
+## Screens reached and staff answers (roadmap 3.8, [ADR-0035](adr/0035-evacuation-acknowledgements.md))
+
+- Every screen confirms each message it renders. The control page shows **"X of Y screens confirmed"**, offline
+  and waiting screens per zone, and the time from trigger to screen (p95; target ≤ 2 s on the venue LAN).
+  Offline screens keep showing the last state they had and their cached evacuation bundle (3.9).
+- During an alarm staff answer from the staff app or the panic page: *I'm on it*, *Zone clear*, *Need help*.
+  The answers appear on the control page; *Need help* also alerts the control room.
 
 ## What phase 0 already provides
 

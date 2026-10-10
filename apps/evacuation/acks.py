@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from apps.core import audit
 
@@ -130,6 +131,17 @@ def staff_ack(event: Any, user: Any, kind: str, *, zone: Any = None, note: str =
                                   note=note[:300], seq=feed.current_seq(event), drill=shown.drill)
     audit.log(action=f"evacuation.staff_{kind}", actor=user, event=event, target=row, request=request,
               drill=shown.drill, message=f"{user}: {row.get_kind_display()}" + (f" ({zone.name})" if zone else ""))
+    if kind == "need_help":
+        from django.urls import reverse
+
+        from apps.core.notify import notify
+
+        from . import triggers
+
+        notify([u for u in triggers.control_room(event, zone) if u != user],
+               str(_("Need help: %(who)s") % {"who": user}),
+               body=(zone.name if zone else str(_("whole event"))) + (f" · {note[:300]}" if note else ""),
+               level="err", event=event, url=reverse("evacuation:index", args=[event.slug]))
     from apps.core import webhooks
 
     webhooks.emit("evacuation.staff_ack", {"event": event.slug, "kind": kind, "zone": str(zone.pk) if zone else None,
@@ -142,3 +154,29 @@ def recent_staff(event: Any, since: Any = None) -> list[StaffAck]:
     if since is not None:
         qs = qs.filter(at__gte=since)
     return list(qs[:50])
+
+
+def alarm_since(event: Any) -> Any:
+    """When the running alarm started: per scope in alarm, its last change from a non-alarm state into an
+    alarm (stepping up or down between alarm stages keeps the start); the earliest of those. ``None`` without
+    an alarm."""
+    from . import machine, services
+    from .models import StateChange
+
+    now = timezone.now()
+    ev, zones = services.statuses(event)
+    alarms = [s.value for s in machine.ALARMS]
+    starts: list[datetime] = []
+    for zone_id, status in [(None, ev), *zones.items()]:
+        if not machine.current(status, now).alarm:
+            continue
+        change = (StateChange.objects.filter(event=event, zone_id=zone_id, to_state__in=alarms)
+                  .exclude(from_state__in=alarms).order_by("-at").first())
+        start = change.at if change else status.since
+        if start is not None:
+            starts.append(start)
+    return min(starts) if starts else None
+
+
+def screen_acks(event: Any) -> dict[str, ScreenAck]:
+    return {str(a.screen_id): a for a in ScreenAck.objects.filter(event=event)}
