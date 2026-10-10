@@ -218,10 +218,13 @@ failed, with recipients and retries).
   the blanks. Built in: lost child, doors open soon, severe weather warning, keep exits clear, lost and found.
   A template can use a layout for its full-screen look (`{{ announcement.title }}`, `{{ announcement.text }}`).
 - **Where**: everywhere, or chosen venues, zones, rooms, screen groups or screens. Staff limited to a zone or a
-  screen group (role scope) can only address those.
+  screen group (role scope) can only address those. *Only these people* limits the staff notifications (bell and
+  phone) to members with the chosen roles; screens and public channels are not affected.
 - **When**: now or at a time, until a time (empty: the level's display time, or until cancelled when the level
   repeats), once, daily or weekly until a day. Screens know scheduled announcements in advance and show them on
-  time without network.
+  time without network. Once a module offers time anchors (the program, phase 5), *Relative to* sends an
+  announcement e.g. 10 minutes before an item starts and follows the item when it moves; `{{anchor}}` in the text
+  becomes the item's name.
 - **Approval**: the helpdesk role may write drafts; they wait under *Waiting for approval* until someone else
   with the approve permission (control room, orga) approves or rejects them with a note. Tick *Every announcement
   needs approval* under *Settings → Announcements* to require it for everyone, or per level. Emergency

@@ -16,6 +16,7 @@ from typing import Any, TypeVar
 
 from .plugins import (
     API_VERSION,
+    AudienceSpec,
     CliCommandSpec,
     DataSourceSpec,
     EvacTriggerSpec,
@@ -32,6 +33,7 @@ from .plugins import (
     ScopeKind,
     SettingsNamespace,
     StaffCardSpec,
+    TimeAnchorSpec,
     WebhookEventSpec,
     WebhookSink,
     WidgetSpec,
@@ -72,6 +74,8 @@ class Registry:
         self.staff_cards: dict[str, StaffCardSpec] = {}
         self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
         self.pack_sections: dict[str, PackSectionSpec] = {}
+        self.anchor_sources: dict[str, TimeAnchorSpec] = {}
+        self.audiences: dict[str, AudienceSpec] = {}
         self.websocket_routes: list[Any] = []
         self.api_routes: list[tuple[str, Any, str]] = []
 
@@ -187,6 +191,14 @@ class Registry:
     def pack_section(self, spec: PackSectionSpec) -> None:
         """A kind of content in ``.evacpack`` files (ADR-0024)."""
         self._add(self.pack_sections, spec.key, spec, "pack section")
+
+    def anchor_source(self, spec: TimeAnchorSpec) -> None:
+        """Time anchors announcements can be scheduled relative to (ADR-0025)."""
+        self._add(self.anchor_sources, spec.key, spec, "anchor source")
+
+    def audience(self, spec: AudienceSpec) -> None:
+        """Groups of people for channels that reach people (ADR-0025)."""
+        self._add(self.audiences, spec.key, spec, "audience")
 
     def staff_card(self, spec: StaffCardSpec) -> None:
         """A card on the staff page (PWA)."""

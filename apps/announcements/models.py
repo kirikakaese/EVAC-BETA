@@ -128,6 +128,13 @@ class Announcement(TimeStampedModel):
     #: optional text per channel key (shorter for social media, ...); empty: the default text
     channel_texts = models.JSONField(default=dict, blank=True)
     # timing
+    #: limits channels that reach people (staff app, notifications) to these groups: ["roles:<id>", ...] (ADR-0025)
+    audiences = models.JSONField(_("audiences"), default=list, blank=True)
+    #: relative scheduling: "<anchor source>:<id>"; starts_at follows the anchor while not yet sent (ADR-0025)
+    anchor = models.CharField(_("relative to"), max_length=200, blank=True)
+    anchor_edge = models.CharField(max_length=5, choices=[("start", _("start")), ("end", _("end"))], default="start")
+    anchor_offset = models.IntegerField(default=0, help_text="minutes; negative = before")
+    anchor_label = models.CharField(max_length=200, blank=True)
     starts_at = models.DateTimeField(_("send at"), default=timezone.now)
     ends_at = models.DateTimeField(_("show until"), null=True, blank=True,
                                    help_text=_("Empty: the level's display time (or until cancelled when "

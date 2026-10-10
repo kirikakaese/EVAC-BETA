@@ -20,7 +20,8 @@
 <section class="card"><h2>{% trans "Details" %}</h2><dl class="kv small">
 <dt>{% trans "Where" %}</dt><dd>{{ ann.target_label }}</dd>
 <dt>{% trans "Channels" %}</dt><dd>{{ channel_names|join:", " }}</dd>
-<dt>{% trans "Send at" %}</dt><dd><time datetime="{{ ann.starts_at|date:'c' }}">{{ ann.starts_at|date:"D j M Y H:i" }}</time></dd>
+{% if audiences %}<dt>{% trans "Only these people" %}</dt><dd>{{ audiences|join:", " }}</dd>{% endif %}
+<dt>{% trans "Send at" %}</dt><dd><time datetime="{{ ann.starts_at|date:'c' }}">{{ ann.starts_at|date:"D j M Y H:i" }}</time>{% if anchor_text %}<br><span class="muted">{{ anchor_text }}</span>{% endif %}</dd>
 <dt>{% trans "Until" %}</dt><dd>{% if ann.ends_at %}{{ ann.ends_at|date:"D j M Y H:i" }}{% elif ann.level.repeat_every_minutes %}{% trans "until cancelled" %}{% else %}{% blocktrans with s=ann.level.min_display_seconds %}{{ s }} seconds on screens{% endblocktrans %}{% endif %}</dd>
 {% if ann.recurrence %}<dt>{% trans "Repeats" %}</dt><dd>{{ ann.get_recurrence_display }}{% if ann.recurrence_until %} {% blocktrans with d=ann.recurrence_until|date:"j M Y" %}until {{ d }}{% endblocktrans %}{% endif %}</dd>{% endif %}
 <dt>{% trans "Written by" %}</dt><dd>{{ ann.created_by|default:"–" }}</dd>

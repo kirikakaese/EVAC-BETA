@@ -54,7 +54,7 @@ announcement > schedules > default).
 - Text substitution is plain (no markup, no logic); unknown variables stay visible as `{{name}}` so a missing
   value is noticed instead of silently dropped.
 - Announcements "relative to program items" (ticket 2.3) and audiences other than places are not part of
-  this step.
+  this step; see [ADR-0025](0025-audiences-and-time-anchors.md).
 
 ## Alternatives considered
 

@@ -213,6 +213,45 @@ class PackSectionSpec:
 
 
 @dataclass(frozen=True)
+class Anchor:
+    """A point in an event's timeline that announcements can be scheduled relative to (ADR-0025)."""
+
+    start: Any  # aware datetime
+    end: Any = None
+    label: str = ""
+
+
+@dataclass(frozen=True)
+class TimeAnchorSpec:
+    """A source of time anchors, e.g. program items (phase 5): "10 min before <talk>".
+
+    ``choices(event) -> [(id, label)]`` lists upcoming anchors; ``resolve(event, id) -> Anchor | None`` gives the
+    current times (None: gone). When an anchor moves, send ``apps.core.signals.anchor_moved`` (sender = the
+    spec key, ``event=``, ``anchor_id=``) so scheduled announcements follow it."""
+
+    key: str
+    title: str
+    choices: Callable[[Any], list[tuple[str, str]]]
+    resolve: Callable[[Any, str], Anchor | None]
+    module: str = "core"
+    order: int = 100
+
+
+@dataclass(frozen=True)
+class AudienceSpec:
+    """A group of people that channels reaching people (staff app, notifications) can be limited to, e.g. roles,
+    crew teams or attendee groups (ADR-0025). ``choices(event) -> [(id, label)]``; ``members(event, ids) ->
+    iterable of users``."""
+
+    key: str
+    title: str
+    choices: Callable[[Any], list[tuple[str, str]]]
+    members: Callable[[Any, set[str]], Any]
+    module: str = "core"
+    order: int = 100
+
+
+@dataclass(frozen=True)
 class EvacTriggerSpec:
     """A source that can raise an evacuation/alarm state change (consumed by the Phase 3 module)."""
 

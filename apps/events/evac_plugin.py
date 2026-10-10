@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import DataSourceSpec, NavEntry, PermissionSpec, PluginManifest
+from apps.core.plugins import AudienceSpec, DataSourceSpec, NavEntry, PermissionSpec, PluginManifest
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="events", name="Events", version="0.1.0", kind="core")
@@ -15,7 +15,21 @@ def _event_info(event) -> dict:
             "venues": [{"name": v.name} for v in event.venues.all()]}
 
 
+def _role_choices(event) -> list[tuple[str, str]]:
+    return [(str(pk), name) for pk, name in event.roles.order_by("order", "name").values_list("pk", "name")]
+
+
+def _role_members(event, ids: set[str]):
+    """Audience "roles": active members who hold one of these roles (in any scope)."""
+    from .models import RoleAssignment
+
+    return {a.membership.user for a in RoleAssignment.objects.filter(
+        membership__event=event, role_id__in=ids, membership__user__is_active=True).select_related("membership__user")}
+
+
 def register(r: Registry) -> None:
+    r.audience(AudienceSpec(key="roles", title=str(_("Role")), choices=_role_choices, members=_role_members,
+                            order=10))
     r.data_source(DataSourceSpec(key="event.info", name=str(_("Event details")), fetch=_event_info,
                                  description=str(_("Name, dates, state, description and venues of the event."))))
     r.permissions_([

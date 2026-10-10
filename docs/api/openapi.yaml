@@ -3859,6 +3859,14 @@ paths:
           description: No response body
 components:
   schemas:
+    AnchorEdgeEnum:
+      enum:
+      - start
+      - end
+      type: string
+      description: |-
+        * `start` - start
+        * `end` - end
     Announcement:
       type: object
       properties:
@@ -3914,10 +3922,26 @@ components:
             format: uuid
         channels: {}
         channel_texts: {}
+        audiences: {}
         starts_at:
           type: string
           format: date-time
           title: Send at
+        anchor:
+          type: string
+          title: Relative to
+          maxLength: 200
+        anchor_edge:
+          $ref: '#/components/schemas/AnchorEdgeEnum'
+        anchor_offset:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: minutes; negative = before
+        anchor_label:
+          type: string
+          readOnly: true
         ends_at:
           type: string
           format: date-time
@@ -3962,6 +3986,7 @@ components:
           format: date-time
           readOnly: true
       required:
+      - anchor_label
       - created_at
       - decision_note
       - deliveries
@@ -4023,10 +4048,23 @@ components:
             format: uuid
         channels: {}
         channel_texts: {}
+        audiences: {}
         starts_at:
           type: string
           format: date-time
           title: Send at
+        anchor:
+          type: string
+          title: Relative to
+          maxLength: 200
+        anchor_edge:
+          $ref: '#/components/schemas/AnchorEdgeEnum'
+        anchor_offset:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: minutes; negative = before
         ends_at:
           type: string
           format: date-time
@@ -5770,10 +5808,23 @@ components:
             format: uuid
         channels: {}
         channel_texts: {}
+        audiences: {}
         starts_at:
           type: string
           format: date-time
           title: Send at
+        anchor:
+          type: string
+          title: Relative to
+          maxLength: 200
+        anchor_edge:
+          $ref: '#/components/schemas/AnchorEdgeEnum'
+        anchor_offset:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          description: minutes; negative = before
         ends_at:
           type: string
           format: date-time
