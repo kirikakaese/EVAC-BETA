@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if a %}{{ a.name }}{% else %}{% trans "New attendee" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if a %}{{ a.name }}{% else %}{% trans "New attendee" %}{% endif %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'access:index' event.slug %}">{% trans "Attendees" %}</a>
+{% if a and can_manage %}<a class="btn btn-ghost" href="{% url 'access:badges' event.slug %}?attendee={{ a.pk }}">{% trans "Print badge" %}</a>{% endif %}</div></div>
+<div class="grid-2">
+{% if a %}<section class="card" aria-labelledby="tk-h"><h2 id="tk-h">{% trans "Ticket" %}</h2>
+<dl class="kv"><dt>{% trans "Ticket type" %}</dt><dd><span class="swatch" data-color="{{ a.ticket_type.colour }}" aria-hidden="true"></span> {{ a.ticket_type.name }}</dd>
+<dt>{% trans "Status" %}</dt><dd>{% if a.status != "valid" %}<span class="badge badge-err">{{ a.get_status_display }}</span>{% elif a.checked_in_at %}<span class="badge badge-ok">{% trans "checked in" %}</span> <span class="tabular">{{ a.checked_in_at|date:"D j M H:i" }}</span>{% else %}<span class="badge badge-muted">{% trans "not checked in" %}</span>{% endif %}</dd>
+<dt>{% trans "Code" %}</dt><dd class="mono url-text">{{ a.code }}</dd>
+{% if a.source %}<dt>{% trans "Source" %}</dt><dd>{{ a.source }}{% if a.external_id %} <span class="mono small">#{{ a.external_id }}</span>{% endif %}</dd>{% endif %}
+{% for p in presence %}<dt>{{ p.zone.name }}</dt><dd>{% if p.inside %}{% trans "inside since" %}{% else %}{% trans "left at" %}{% endif %} <span class="tabular">{{ p.since|time:"H:i" }}</span></dd>{% endfor %}</dl>
+<div class="qr-box small-qr" role="img" aria-label="{% trans 'Ticket QR code' %}">{{ qr|safe }}</div>
+{% if can_manage %}<form method="post" class="inline">{% csrf_token %}{% if a.status != "valid" %}<button class="btn btn-sm" name="status" value="valid">{% trans "Make valid again" %}</button>{% else %}<button class="btn btn-sm btn-ghost" name="status" value="blocked" data-confirm="{% trans 'Block this ticket? Scanners will refuse it.' %}">{% trans "Block" %}</button> <button class="btn btn-sm btn-ghost" name="status" value="cancelled" data-confirm="{% trans 'Cancel this ticket?' %}">{% trans "Cancel" %}</button>{% endif %}</form>{% endif %}</section>{% endif %}
+{% if form %}<section class="card" aria-labelledby="ed-h"><h2 id="ed-h">{% if a %}{% trans "Edit" %}{% else %}{% trans "Details" %}{% endif %}</h2>
+<form method="post">{% csrf_token %}{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Save" %}</button></form></section>{% endif %}</div>
+{% if a %}<section class="card" aria-labelledby="sc-h"><h2 id="sc-h">{% trans "Scans" %}</h2>
+{% if scans %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "When" %}</th><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Result" %}</th></tr></thead>
+<tbody>{% for s in scans %}<tr><td class="tabular nowrap">{{ s.at|date:"D H:i:s" }}</td><td>{{ s.zone.name }} {% if s.direction == "out" %}({% trans "out" %}){% endif %}</td><td>{% include "access/_result.html" with result=s.result label=s.get_result_display %}{% if s.offline %} <span class="small muted">{% trans "scanned offline" %}</span>{% endif %}{% if s.device %} <span class="small muted">{{ s.device }}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "Not scanned yet." %}</p>{% endif %}</section>{% endif %}
+{% endblock %}

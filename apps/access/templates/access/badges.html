@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% trans "Badges" %}{% endblock %}
+{% block head %}{% if groups %}<link rel="stylesheet" href="{% static 'editor/preview.css' %}?v={{ editor_version }}">{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header no-print"><h1>{% trans "Badges" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'access:index' event.slug %}">{% trans "Attendees" %}</a><button type="button" class="btn" data-action="print">{% trans "Print" %}</button>
+{% if count %}<form method="post" class="inline">{% csrf_token %}<button class="btn btn-primary">{% blocktrans count n=count %}Mark {{ n }} as printed{% plural %}Mark {{ n }} as printed{% endblocktrans %}</button></form>{% endif %}</div></div>
+{% if not count %}<p class="muted">{% trans "No badges to print." %}</p>{% endif %}
+{% for g in groups %}<section aria-label="{{ g.layout.name }}" class="badge-group">{{ g.config|json_script:"preview-config" }}<div data-preview-pages></div></section>{% endfor %}
+{% if plain %}<ul class="plain badge-sheet" aria-label="{% trans 'Badges' %}">{% for b in plain %}<li class="badge-card"><div class="badge-band" data-color="{{ b.a.ticket_type.colour }}" data-contrast><span>{{ event.name }}</span></div>
+<p class="badge-name">{{ b.a.name }}</p>{% if b.a.company %}<p class="badge-company">{{ b.a.company }}</p>{% endif %}
+<div class="qr-box" role="img" aria-label="{% blocktrans with n=b.a.name %}Ticket QR code of {{ n }}{% endblocktrans %}">{{ b.qr|safe }}</div>
+<p class="badge-type">{{ b.a.ticket_type.name }}{% if b.zones %}<br><span class="small">{{ b.zones }}</span>{% endif %}</p></li>{% endfor %}</ul>{% endif %}
+{% endblock %}
+{% block scripts %}{% if groups %}<script type="module" nonce="{{ csp_nonce }}" src="{% static 'editor/preview.js' %}?v={{ editor_version }}"></script>{% endif %}{% endblock %}

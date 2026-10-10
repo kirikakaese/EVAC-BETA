@@ -93,6 +93,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.schedule",
     "apps.ops",
     "apps.crowd",
+    "apps.access",
     "apps.crew",
     "apps.inventory",
     "apps.helpdesk",
@@ -104,6 +105,7 @@ EVAC_BUILTIN_PLUGINS = [
     "extensions.dial",
     "extensions.program_import",
     "extensions.engelsystem",
+    "extensions.pretix",
 ]
 _disabled = set(env("EVAC_DISABLED_PLUGINS"))
 
@@ -274,6 +276,7 @@ CELERY_BEAT_SCHEDULE = {
     "crew-mark-no-shows": {"task": "apps.crew.tasks.mark_no_shows", "schedule": 60.0},
     "inventory-remind-overdue": {"task": "apps.inventory.tasks.remind_overdue", "schedule": 300.0},
     "engelsystem-sync-due": {"task": "extensions.engelsystem.tasks.sync_due", "schedule": 60.0},
+    "pretix-sync-due": {"task": "extensions.pretix.tasks.sync_due", "schedule": 60.0},
     "packs-cleanup": {"task": "apps.packs.tasks.cleanup", "schedule": 3600.0},
     "evacuation-process-due": {"task": "apps.evacuation.tasks.process_due", "schedule": 5.0},
 }

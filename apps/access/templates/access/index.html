@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Attendees" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Attendees" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'access:types' event.slug %}">{% trans "Ticket types and zones" %}</a>
+<a class="btn btn-ghost" href="{% url 'access:stations' event.slug %}">{% trans "Check-in" %}</a>
+{% if can_manage %}<a class="btn btn-ghost" href="{% url 'access:import' event.slug %}">{% trans "Import CSV" %}</a>
+<a class="btn btn-ghost" href="{% url 'access:badges' event.slug %}?new=1">{% trans "Print new badges" %}</a>
+<a class="btn btn-primary" href="{% url 'access:attendee_new' event.slug %}">{% trans "New attendee" %}</a>{% endif %}</div></div>
+<section class="card" aria-labelledby="st-h"><h2 id="st-h">{% trans "Check-in" %}</h2>
+<p class="panel-figures"><b class="tabular">{{ stats.checked_in }}</b> {% blocktrans with t=stats.total %}of {{ t }} checked in{% endblocktrans %}{% if stats.refused %} · <b class="tabular">{{ stats.refused }}</b> {% trans "scans refused" %}{% endif %}</p>
+{% if stats.zones %}<ul class="plain zone-list">{% for z in stats.zones %}<li><strong>{{ z.name }}</strong> <span class="tabular">{{ z.n }}</span> {% trans "inside" %}</li>{% endfor %}</ul>{% endif %}
+{% if recent %}<h3>{% trans "Latest scans" %}</h3><ul class="plain">{% for s in recent %}<li>{% include "access/_result.html" with result=s.result label=s.get_result_display %} <span class="tabular small">{{ s.at|time:"H:i:s" }}</span> {{ s.zone.name }} {% if s.direction == "out" %}↤{% else %}↦{% endif %} {% if s.attendee %}<a href="{% url 'access:attendee' event.slug s.attendee_id %}">{{ s.attendee.name }}</a>{% else %}<span class="muted mono">…{{ s.code_hint }}</span>{% endif %}{% if s.offline %} <span class="small muted">{% trans "offline" %}</span>{% endif %}{% if s.device %} <span class="small muted">{{ s.device }}</span>{% endif %}</li>{% endfor %}</ul>{% endif %}</section>
+<section class="card" aria-labelledby="at-h"><h2 id="at-h">{% trans "Attendees" %}</h2>
+<form method="get" class="inline filters"><label for="f-q">{% trans "Search" %}</label><input id="f-q" type="search" name="q" value="{{ q }}" placeholder="{% trans 'Name, e-mail, organisation, code' %}">
+<label for="f-type">{% trans "Ticket type" %}</label><select id="f-type" name="type"><option value="">{% trans "All" %}</option>{% for t in types %}<option value="{{ t.pk }}"{% if type == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }}</option>{% endfor %}</select>
+<label for="f-st">{% trans "Status" %}</label><select id="f-st" name="status"><option value="">{% trans "Any" %}</option><option value="in"{% if status == "in" %} selected{% endif %}>{% trans "Checked in" %}</option><option value="out"{% if status == "out" %} selected{% endif %}>{% trans "Not yet" %}</option><option value="cancelled"{% if status == "cancelled" %} selected{% endif %}>{% trans "Cancelled" %}</option><option value="blocked"{% if status == "blocked" %} selected{% endif %}>{% trans "Blocked" %}</option></select>
+<button class="btn btn-sm">{% trans "Show" %}</button>{% if can_manage %} <a class="btn btn-sm btn-ghost" href="{% url 'access:export' event.slug %}?{{ request.GET.urlencode }}">{% trans "Export CSV" %}</a>{% endif %}</form>
+{% if attendees %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Name" %}</th><th scope="col">{% trans "Ticket" %}</th><th scope="col">{% trans "Status" %}</th></tr></thead>
+<tbody>{% for a in attendees %}<tr><td><a href="{% url 'access:attendee' event.slug a.pk %}"><strong>{{ a.name }}</strong></a>{% if a.company %} <span class="small muted">{{ a.company }}</span>{% endif %}</td>
+<td><span class="swatch" data-color="{{ a.ticket_type.colour }}" aria-hidden="true"></span> {{ a.ticket_type.name }}</td>
+<td>{% if a.status != "valid" %}<span class="badge badge-err">{{ a.get_status_display }}</span>{% elif a.checked_in_at %}<span class="badge badge-ok">{% trans "checked in" %}</span> <span class="small muted tabular">{{ a.checked_in_at|date:"D H:i" }}</span>{% else %}<span class="badge badge-muted">{% trans "not yet" %}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No attendees." %}</p>{% endif %}</section>
+{% if sources %}<section class="card" aria-labelledby="src-h"><h2 id="src-h">{% trans "Imported from" %}</h2>
+<ul class="plain">{% for src in sources %}<li><a href="{{ src.detail }}">{{ src.name }}</a> ·
+{% if src.config.last_error %}<span class="badge badge-err">{% trans "error" %}</span> <span class="small">{{ src.config.last_error }}</span>{% elif src.config.last_sync_at %}<span class="small muted">{% blocktrans with t=src.config.last_sync_at|date:"D H:i" %}last sync {{ t }}{% endblocktrans %}</span>{% else %}<span class="small muted">{% trans "not synced yet" %}</span>{% endif %}
+{% if can_manage %}<form method="post" action="{{ src.sync }}" class="inline">{% csrf_token %}<button class="btn btn-sm">{% trans "Sync now" %}</button></form>{% endif %}</li>{% endfor %}</ul>
+<p class="small muted">{% trans "Zones, badges and notes set here stay when the source syncs again; tickets gone from the source are cancelled, not deleted." %}</p></section>{% endif %}
+{% endblock %}

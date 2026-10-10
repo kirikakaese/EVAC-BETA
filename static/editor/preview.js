@@ -2,10 +2,10 @@
 // EVAC slide preview, built from frontend/src with `npm run build` - do not edit.
 // Includes ISO 7010 safety signs from @iso-safety-signs/core (Copyright (c) Karl Norling, MIT,
 // https://github.com/karlnorling/iso-safety-signs).
-var it = Object.defineProperty;
-var rt = (s, t, e) => t in s ? it(s, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[t] = e;
-var E = (s, t, e) => rt(s, typeof t != "symbol" ? t + "" : t, e);
-const ot = `(() => {
+var rt = Object.defineProperty;
+var ot = (s, t, e) => t in s ? rt(s, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[t] = e;
+var E = (s, t, e) => ot(s, typeof t != "symbol" ? t + "" : t, e);
+const at = `(() => {
   let data = {}, received = 0;
   const listeners = [];
   const post = (m) => parent.postMessage(m, "*");
@@ -30,7 +30,7 @@ const ot = `(() => {
 function H(s) {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
-function at(s, t, e, n = "") {
+function ct(s, t, e, n = "") {
   const i = H(t), r = e ? ` ${e}` : "", o = [
     "default-src 'none'",
     `script-src 'nonce-${t}'`,
@@ -44,9 +44,9 @@ function at(s, t, e, n = "") {
     "frame-src 'none'",
     "worker-src 'none'"
   ].join("; "), a = String(s.css ?? "").replace(/<\/style/gi, "<\\/style"), c = String(s.js ?? "").replace(/<\/script/gi, "<\\/script");
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${H(o)}"><style nonce="${i}">html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--evac-color-text,#fff);font-family:var(--evac-font-body,system-ui,sans-serif)}${n}</style><style nonce="${i}">${a}</style><script nonce="${i}">${ot}<\/script></head><body>${String(s.html ?? "")}` + (c.trim() ? `<script nonce="${i}">${c}<\/script>` : "") + "</body></html>";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${H(o)}"><style nonce="${i}">html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--evac-color-text,#fff);font-family:var(--evac-font-body,system-ui,sans-serif)}${n}</style><style nonce="${i}">${a}</style><script nonce="${i}">${at}<\/script></head><body>${String(s.html ?? "")}` + (c.trim() ? `<script nonce="${i}">${c}<\/script>` : "") + "</body></html>";
 }
-function ct(s) {
+function lt(s) {
   const t = [];
   try {
     const e = getComputedStyle(s);
@@ -61,11 +61,11 @@ function ct(s) {
   }
   return t.length ? `:root{${t.join(";")}}` : "";
 }
-function lt(s = document) {
+function dt(s = document) {
   const t = s.querySelector("script[nonce]");
   return t?.nonce || t?.getAttribute("nonce") || "";
 }
-function dt(s, t, e) {
+function ht(s, t, e) {
   const n = t.trim();
   if (n === "now") return new Date(e.now ? e.now() : Date.now());
   if (/^".*"$|^'.*'$/.test(n)) return n.slice(1, -1);
@@ -77,14 +77,14 @@ function dt(s, t, e) {
   }
   return i;
 }
-function ht(s) {
+function ut(s) {
   const t = [];
   let e = "", n = "";
   for (const i of s)
     n ? (i === n && (n = ""), e += i) : i === '"' || i === "'" ? (n = i, e += i) : i === "|" ? (t.push(e), e = "") : e += i;
   return t.push(e), t.map((i) => i.trim());
 }
-function ut(s) {
+function ft(s) {
   if (!s) return "";
   const t = s.trim();
   return /^".*"$|^'.*'$/.test(t) ? t.slice(1, -1) : t;
@@ -117,8 +117,8 @@ function W(s, t, e) {
 function v(s) {
   return s == null ? "" : Array.isArray(s) ? s.map(v).join(", ") : s instanceof Date ? s.toISOString() : typeof s == "object" ? s.name ?? "" : String(s);
 }
-function ft(s, t, e) {
-  const [n, ...i] = t.split(":"), r = ut(i.join(":")), o = () => s instanceof Date ? s : new Date(String(s));
+function pt(s, t, e) {
+  const [n, ...i] = t.split(":"), r = ft(i.join(":")), o = () => s instanceof Date ? s : new Date(String(s));
   switch (n.trim()) {
     case "upper":
       return v(s).toUpperCase();
@@ -142,13 +142,13 @@ function ft(s, t, e) {
       return s;
   }
 }
-function A(s, t, e = {}) {
-  const [n, ...i] = ht(s);
-  let r = dt(t, n, e);
-  for (const o of i) r = ft(r, o, e);
+function z(s, t, e = {}) {
+  const [n, ...i] = ut(s);
+  let r = ht(t, n, e);
+  for (const o of i) r = pt(r, o, e);
   return r;
 }
-function pt(s) {
+function mt(s) {
   return Array.isArray(s) ? s.length > 0 : !(s == null || s === !1 || s === "" || s === 0);
 }
 function R(s, t, e = {}) {
@@ -157,15 +157,15 @@ function R(s, t, e = {}) {
   if (n.startsWith("not ")) return !R(n.slice(4), t, e);
   const i = /^(.+?)\s*(==|!=)\s*(.+)$/.exec(n);
   if (i) {
-    const r = v(A(i[1], t, e)), o = v(A(i[3], t, e));
+    const r = v(z(i[1], t, e)), o = v(z(i[3], t, e));
     return i[2] === "==" ? r === o : r !== o;
   }
-  return pt(A(n.replace(/^\{\{|\}\}$/g, ""), t, e));
+  return mt(z(n.replace(/^\{\{|\}\}$/g, ""), t, e));
 }
-const mt = /(\{%\s*(?:if\s+[^%]+|else|endif)\s*%\}|\{\{[^}]*\}\})/g;
+const gt = /(\{%\s*(?:if\s+[^%]+|else|endif)\s*%\}|\{\{[^}]*\}\})/g;
 function G(s, t, e = {}) {
   if (!s || !s.includes("{{") && !s.includes("{%")) return s ?? "";
-  const n = s.split(mt);
+  const n = s.split(gt);
   let i = 0;
   const r = (o) => {
     let a = "";
@@ -179,7 +179,7 @@ function G(s, t, e = {}) {
           let g = "";
           w === "else" && (g = r(["endif"])[0]), a += h ? f : g;
         }
-      } else c.startsWith("{{") && c.endsWith("}}") ? a += v(A(c.slice(2, -2), t, e)) : a += c;
+      } else c.startsWith("{{") && c.endsWith("}}") ? a += v(z(c.slice(2, -2), t, e)) : a += c;
     }
     return [a, ""];
   };
@@ -206,7 +206,7 @@ const V = {
     name: "General warning sign",
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 524"><path fill="#f9a800" stroke="#000" stroke-linejoin="round" stroke-width="32" d="m300 16 284 492H16z"/><path d="M337 192a37 37 0 0 0-74 0l11 143a26 26 0 0 0 52 0m12 85a38 38 0 1 1 0-1"/></svg>'
   }
-}, gt = "#237f52", vt = ["ahead", "ahead_right", "right", "back_right", "back", "back_left", "left", "ahead_left"], wt = {
+}, vt = "#237f52", wt = ["ahead", "ahead_right", "right", "back_right", "back", "back_left", "left", "ahead_left"], yt = {
   E001: "Emergency exit (left)",
   E002: "Emergency exit (right)",
   E003: "First aid",
@@ -214,35 +214,35 @@ const V = {
   W001: "General warning",
   arrow: "Direction"
 };
-function yt(s) {
-  const t = vt.indexOf(s);
+function bt(s) {
+  const t = wt.indexOf(s);
   return t < 0 ? 0 : t * 45;
 }
-function bt(s, t, e, n) {
+function Ct(s, t, e, n) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="${t}"
  color="${n}" fill="currentColor"><rect width="100" height="100" rx="4" fill="${e}"/>${s}</svg>`;
 }
-function Ct(s, t) {
+function xt(s, t) {
   return V[s].svg.replace(/^<svg\b/, `<svg role="img" aria-label="${t}"`);
 }
-function xt(s, t = "ahead") {
-  const e = wt[s] ?? "Safety sign";
-  if (s in V) return Ct(s, e);
-  const n = yt(t);
-  return bt(
+function Et(s, t = "ahead") {
+  const e = yt[s] ?? "Safety sign";
+  if (s in V) return xt(s, e);
+  const n = bt(t);
+  return Ct(
     `<g transform="rotate(${n} 50 50)"><path d="M50 12 L80 46 H60 V88 H40 V46 H20 Z"/></g>`,
     `${e}: ${String(t).replace("_", " ")}`,
-    gt,
+    vt,
     "#fff"
   );
 }
 var C = /* @__PURE__ */ ((s) => (s[s.Border = -1] = "Border", s[s.Data = 0] = "Data", s[s.Function = 1] = "Function", s[s.Position = 2] = "Position", s[s.Timing = 3] = "Timing", s[s.Alignment = 4] = "Alignment", s))(C || {});
-const Et = [0, 1], U = [1, 0], Z = [2, 3], Y = [3, 2], Mt = {
-  L: Et,
+const Mt = [0, 1], U = [1, 0], Z = [2, 3], Y = [3, 2], St = {
+  L: Mt,
   M: U,
   Q: Z,
   H: Y
-}, St = /^\d*$/, $t = /^[A-Z0-9 $%*+./:-]*$/, D = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", L = 1, O = 40, _ = 3, zt = 3, S = 40, At = 10, K = [
+}, $t = /^\d*$/, At = /^[A-Z0-9 $%*+./:-]*$/, D = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", L = 1, O = 40, _ = 3, zt = 3, S = 40, kt = 10, J = [
   // Version: (note that index 0 is for padding, and is set to an illegal value)
   // 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
   [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
@@ -253,7 +253,7 @@ const Et = [0, 1], U = [1, 0], Z = [2, 3], Y = [3, 2], Mt = {
   // Quartile
   [-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
   // High
-], X = [
+], K = [
   // Version: (note that index 0 is for padding, and is set to an illegal value)
   // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
   [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
@@ -265,7 +265,7 @@ const Et = [0, 1], U = [1, 0], Z = [2, 3], Y = [3, 2], Mt = {
   [-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81]
   // High
 ];
-class kt {
+class Nt {
   /* -- Constructor (low level) and fields -- */
   // Creates a new QR Code with the given version number,
   // error correction level, data codeword bytes, and mask number.
@@ -389,12 +389,12 @@ class kt {
     const e = this.version, n = this.ecc;
     if (t.length !== k(e, n))
       throw new RangeError("Invalid argument");
-    const i = X[n[0]][e], r = K[n[0]][e], o = Math.floor(B(e) / 8), a = i - o % i, c = Math.floor(o / i), l = [], u = Ot(r);
+    const i = K[n[0]][e], r = J[n[0]][e], o = Math.floor(B(e) / 8), a = i - o % i, c = Math.floor(o / i), l = [], u = Tt(r);
     for (let f = 0, w = 0; f < i; f++) {
       const g = t.slice(w, w + c - r + (f < a ? 0 : 1));
       w += g.length;
-      const st = Tt(g, u);
-      f < a && g.push(0), l.push(g.concat(st));
+      const it = Ht(g, u);
+      f < a && g.push(0), l.push(g.concat(it));
     }
     const h = [];
     for (let f = 0; f < l[0].length; f++)
@@ -487,7 +487,7 @@ class kt {
     for (const r of this.modules)
       e = r.reduce((o, a) => o + (a ? 1 : 0), e);
     const n = this.size * this.size, i = Math.ceil(Math.abs(e * 20 - n * 10) / n) - 1;
-    return t += i * At, t;
+    return t += i * kt, t;
   }
   /* -- Private helper functions -- */
   // Returns an ascending list of positions of alignment patterns for this version number.
@@ -542,17 +542,17 @@ class T {
     return this.bitData.slice();
   }
 }
-const Nt = [1, 10, 12, 14], Pt = [2, 9, 11, 13], Dt = [4, 8, 16, 16];
-function J(s, t) {
+const Pt = [1, 10, 12, 14], Dt = [2, 9, 11, 13], Ft = [4, 8, 16, 16];
+function X(s, t) {
   return s[Math.floor((t + 7) / 17) + 1];
 }
 function Q(s) {
   const t = [];
   for (const e of s)
     b(e, 8, t);
-  return new T(Dt, s.length, t);
+  return new T(Ft, s.length, t);
 }
-function Ft(s) {
+function Bt(s) {
   if (!tt(s))
     throw new RangeError("String contains non-numeric characters");
   const t = [];
@@ -560,9 +560,9 @@ function Ft(s) {
     const n = Math.min(s.length - e, 3);
     b(Number.parseInt(s.substring(e, e + n), 10), n * 3 + 1, t), e += n;
   }
-  return new T(Nt, s.length, t);
+  return new T(Pt, s.length, t);
 }
-function Bt(s) {
+function It(s) {
   if (!et(s))
     throw new RangeError("String contains unencodable characters in alphanumeric mode");
   const t = [];
@@ -571,28 +571,28 @@ function Bt(s) {
     let n = D.indexOf(s.charAt(e)) * 45;
     n += D.indexOf(s.charAt(e + 1)), b(n, 11, t);
   }
-  return e < s.length && b(D.indexOf(s.charAt(e)), 6, t), new T(Pt, s.length, t);
+  return e < s.length && b(D.indexOf(s.charAt(e)), 6, t), new T(Dt, s.length, t);
 }
-function It(s) {
-  return s === "" ? [] : tt(s) ? [Ft(s)] : et(s) ? [Bt(s)] : [Q(Lt(s))];
+function Rt(s) {
+  return s === "" ? [] : tt(s) ? [Bt(s)] : et(s) ? [It(s)] : [Q(Ot(s))];
 }
 function tt(s) {
-  return St.test(s);
-}
-function et(s) {
   return $t.test(s);
 }
-function Rt(s, t) {
+function et(s) {
+  return At.test(s);
+}
+function Lt(s, t) {
   let e = 0;
   for (const n of s) {
-    const i = J(n.mode, t);
+    const i = X(n.mode, t);
     if (n.numChars >= 1 << i)
       return Number.POSITIVE_INFINITY;
     e += 4 + i + n.bitData.length;
   }
   return e;
 }
-function Lt(s) {
+function Ot(s) {
   s = encodeURI(s);
   const t = [];
   for (let e = 0; e < s.length; e++)
@@ -610,9 +610,9 @@ function B(s) {
   return t;
 }
 function k(s, t) {
-  return Math.floor(B(s) / 8) - K[t[0]][s] * X[t[0]][s];
+  return Math.floor(B(s) / 8) - J[t[0]][s] * K[t[0]][s];
 }
-function Ot(s) {
+function Tt(s) {
   if (s < 1 || s > 255)
     throw new RangeError("Degree out of range");
   const t = [];
@@ -627,7 +627,7 @@ function Ot(s) {
   }
   return t;
 }
-function Tt(s, t) {
+function Ht(s, t) {
   const e = t.map((n) => 0);
   for (const n of s) {
     const i = n ^ e.shift();
@@ -643,12 +643,12 @@ function I(s, t) {
     e = e << 1 ^ (e >>> 7) * 285, e ^= (t >>> n & 1) * s;
   return e;
 }
-function Ht(s, t, e = 1, n = 40, i = -1, r = !0) {
+function Wt(s, t, e = 1, n = 40, i = -1, r = !0) {
   if (!(L <= e && e <= n && n <= O) || i < -1 || i > 7)
     throw new RangeError("Invalid value");
   let o, a;
   for (o = e; ; o++) {
-    const h = k(o, t) * 8, f = Rt(s, o);
+    const h = k(o, t) * 8, f = Lt(s, o);
     if (f <= h) {
       a = f;
       break;
@@ -660,7 +660,7 @@ function Ht(s, t, e = 1, n = 40, i = -1, r = !0) {
     r && a <= k(o, h) * 8 && (t = h);
   const c = [];
   for (const h of s) {
-    b(h.mode[0], 4, c), b(h.numChars, J(h.mode, o), c);
+    b(h.mode[0], 4, c), b(h.numChars, X(h.mode, o), c);
     for (const f of h.getData())
       c.push(f);
   }
@@ -669,9 +669,9 @@ function Ht(s, t, e = 1, n = 40, i = -1, r = !0) {
   for (let h = 236; c.length < l; h ^= 253)
     b(h, 8, c);
   const u = Array.from({ length: Math.ceil(c.length / 8) }, () => 0);
-  return c.forEach((h, f) => u[f >>> 3] |= h << 7 - (f & 7)), new kt(o, t, u, i);
+  return c.forEach((h, f) => u[f >>> 3] |= h << 7 - (f & 7)), new Nt(o, t, u, i);
 }
-function Wt(s, t) {
+function _t(s, t) {
   const {
     ecc: e = "L",
     boostEcc: n = !1,
@@ -679,17 +679,17 @@ function Wt(s, t) {
     maxVersion: r = 40,
     maskPattern: o = -1,
     border: a = 1
-  } = t || {}, c = typeof s == "string" ? It(s) : Array.isArray(s) ? [Q(s)] : void 0;
+  } = t || {}, c = typeof s == "string" ? Rt(s) : Array.isArray(s) ? [Q(s)] : void 0;
   if (!c)
     throw new Error(`uqr only supports encoding string and binary data, but got: ${typeof s}`);
-  const l = Ht(
+  const l = Wt(
     c,
-    Mt[e],
+    St[e],
     i,
     r,
     o,
     n
-  ), u = _t({
+  ), u = jt({
     version: l.version,
     maskPattern: l.mask,
     size: l.size,
@@ -698,7 +698,7 @@ function Wt(s, t) {
   }, a);
   return t?.invert && (u.data = u.data.map((h) => h.map((f) => !f))), t?.onEncoded?.(u), u;
 }
-function _t(s, t = 1) {
+function jt(s, t = 1) {
   if (!t)
     return s;
   const { size: e } = s, n = e + t * 2;
@@ -718,8 +718,8 @@ function _t(s, t = 1) {
   return s;
 }
 const F = "http://www.w3.org/2000/svg";
-function jt(s, t = document) {
-  const { data: e, size: n } = Wt(s, { ecc: "M", border: 2 }), i = t.createElementNS(F, "svg");
+function qt(s, t = document) {
+  const { data: e, size: n } = _t(s, { ecc: "M", border: 2 }), i = t.createElementNS(F, "svg");
   i.setAttribute("viewBox", `0 0 ${n} ${n}`), i.setAttribute("shape-rendering", "crispEdges"), i.setAttribute("class", "qr");
   const r = t.createElementNS(F, "rect");
   r.setAttribute("width", String(n)), r.setAttribute("height", String(n)), r.setAttribute("fill", "#fff"), i.appendChild(r);
@@ -768,7 +768,7 @@ class m extends HTMLElement {
     this.timers.splice(0).forEach(clearInterval), this.observers.splice(0).forEach((t) => t.disconnect());
   }
 }
-function qt(s, t) {
+function Gt(s, t) {
   t.style.removeProperty("font-size");
   const e = parseFloat(getComputedStyle(t).fontSize) || 16, n = () => t.scrollHeight <= s.clientHeight + 1 && t.scrollWidth <= s.clientWidth + 1;
   if (!s.clientHeight || n()) return;
@@ -779,7 +779,7 @@ function qt(s, t) {
   }
   t.style.fontSize = `${i}px`;
 }
-class Gt extends m {
+class Vt extends m {
   draw() {
     const t = document.createElement("div");
     t.className = "evac-text";
@@ -790,7 +790,7 @@ class Gt extends m {
     } else
       t.textContent = e, n && (t.classList.add("evac-clamp"), t.style.setProperty("-webkit-line-clamp", String(n)));
     if (this.replaceChildren(t), this.props.autofit && !this.props.marquee) {
-      const i = () => qt(this, t);
+      const i = () => Gt(this, t);
       requestAnimationFrame(i), document.fonts?.ready.then(i).catch(() => {
       }), this.observe(i);
     }
@@ -799,7 +799,7 @@ class Gt extends m {
     });
   }
 }
-class Vt extends m {
+class Ut extends m {
   draw() {
     const t = document.createElement("div");
     t.className = "evac-richtext";
@@ -831,14 +831,14 @@ function nt(s, t, e) {
   const i = document.createElement("img");
   return i.src = s.urls.original, i.alt = e || s.alt || "", i.decoding = "async", i.style.objectFit = t, n.appendChild(i), n;
 }
-class Ut extends m {
+class Zt extends m {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Image");
     this.replaceChildren(nt(t, String(this.props.fit ?? "contain"), String(this.props.alt ?? "")));
   }
 }
-class Zt extends m {
+class Yt extends m {
   draw() {
     const t = (Array.isArray(this.props.assets) ? this.props.assets : []).map((o) => this.asset(o)).filter((o) => !!o);
     if (!t.length) return this.placeholder("Slideshow");
@@ -854,7 +854,7 @@ class Zt extends m {
     r(), this.every(500, r);
   }
 }
-class Yt extends m {
+class Jt extends m {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Video");
@@ -883,28 +883,28 @@ class Xt extends m {
     this.dataset.shape = String(this.props.shape ?? "rect"), this.replaceChildren();
   }
 }
-class Jt extends m {
+class Qt extends m {
   draw() {
     const t = this.text(this.props.text);
     if (!t) return this.placeholder("QR code");
-    const e = jt(t);
+    const e = qt(t);
     e.setAttribute("role", "img"), e.setAttribute("aria-label", t), this.replaceChildren(e);
   }
 }
-const Qt = {
+const te = {
   "HH:mm": { hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
   "HH:mm:ss": { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" },
   "h:mm a": { hour: "numeric", minute: "2-digit", hourCycle: "h12" }
 };
-class te extends m {
+class ee extends m {
   draw() {
-    const t = String(this.props.format ?? "HH:mm"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, n = new Intl.DateTimeFormat(t === "h:mm a" ? "en-US" : "en-GB", { ...Qt[t], timeZone: e }), i = document.createElement("time"), r = () => {
+    const t = String(this.props.format ?? "HH:mm"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, n = new Intl.DateTimeFormat(t === "h:mm a" ? "en-US" : "en-GB", { ...te[t], timeZone: e }), i = document.createElement("time"), r = () => {
       i.textContent = n.format(new Date(this.ctx.now()));
     };
     r(), this.replaceChildren(i), this.every(1e3, r);
   }
 }
-class ee extends m {
+class ne extends m {
   draw() {
     const t = String(this.props.format ?? "long"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, n = {
       long: { weekday: "long", day: "numeric", month: "long" },
@@ -917,22 +917,22 @@ class ee extends m {
     o(), this.replaceChildren(r), this.every(3e4, o);
   }
 }
-function ne(s, t) {
+function se(s, t) {
   const e = Math.max(0, Math.floor(s / 1e3)), n = Math.floor(e / 86400), i = Math.floor(e % 86400 / 3600), r = Math.floor(e % 3600 / 60), o = e % 60, a = (c) => String(c).padStart(2, "0");
   return t === "days" ? `${n} ${n === 1 ? "day" : "days"}` : t === "ms" ? `${a(Math.floor(e / 60))}:${a(o)}` : t === "hms" || n === 0 ? `${a(i + n * 24)}:${a(r)}:${a(o)}` : `${n}d ${a(i)}:${a(r)}:${a(o)}`;
 }
-class se extends m {
+class ie extends m {
   draw() {
     const t = new Date(this.text(this.props.target)).getTime();
     if (isNaN(t)) return this.placeholder("Countdown");
     const e = document.createElement("span"), n = () => {
       const i = t - this.ctx.now();
-      e.textContent = i <= 0 && this.props.finished ? this.text(this.props.finished) : ne(i, String(this.props.format ?? "auto"));
+      e.textContent = i <= 0 && this.props.finished ? this.text(this.props.finished) : se(i, String(this.props.format ?? "auto"));
     };
     n(), this.replaceChildren(e), this.every(250, n);
   }
 }
-class ie extends m {
+class re extends m {
   constructor() {
     super(...arguments), this.frame = null, this.onMessage = (t) => {
       if (!this.frame || t.source !== this.frame.contentWindow || typeof t.data != "object" || !t.data) return;
@@ -944,7 +944,7 @@ class ie extends m {
     const t = this.ctx.nonce ?? "";
     if (!t) return this.placeholder("Code (not available on this page)");
     const e = this.props, n = document.createElement("iframe");
-    n.setAttribute("sandbox", "allow-scripts"), n.setAttribute("referrerpolicy", "no-referrer"), n.setAttribute("allow", "autoplay"), n.setAttribute("title", this.el.name || "Code"), n.setAttribute("tabindex", "-1"), n.className = "evac-code-frame", n.srcdoc = at(e, t, location.origin, ct(this)), this.frame = n, window.addEventListener("message", this.onMessage), this.replaceChildren(n), (e.data ?? []).includes("time") && this.every(1e4, () => this.send());
+    n.setAttribute("sandbox", "allow-scripts"), n.setAttribute("referrerpolicy", "no-referrer"), n.setAttribute("allow", "autoplay"), n.setAttribute("title", this.el.name || "Code"), n.setAttribute("tabindex", "-1"), n.className = "evac-code-frame", n.srcdoc = ct(e, t, location.origin, lt(this)), this.frame = n, window.addEventListener("message", this.onMessage), this.replaceChildren(n), (e.data ?? []).includes("time") && this.every(1e4, () => this.send());
   }
   /** Only the kinds of data the element asked for (and that the server let it ask for). */
   send() {
@@ -967,24 +967,24 @@ class ie extends m {
   }
 }
 const P = {
-  text: Gt,
-  richtext: Vt,
-  image: Ut,
-  slideshow: Zt,
-  video: Yt,
+  text: Vt,
+  richtext: Ut,
+  image: Zt,
+  slideshow: Yt,
+  video: Jt,
   audio: Kt,
   shape: Xt,
-  qr: Jt,
-  clock: te,
-  countdown: se,
-  date: ee,
-  code: ie
+  qr: Qt,
+  clock: ee,
+  countdown: ie,
+  date: ne,
+  code: re
 };
-function re(s = customElements) {
+function oe(s = customElements) {
   for (const [t, e] of Object.entries(P))
     s.get(`evac-${t}`) || s.define(`evac-${t}`, e);
 }
-class oe extends m {
+class ae extends m {
   draw() {
     const t = String(this.props.code ?? "E002");
     let e = String(this.props.direction ?? "auto");
@@ -996,11 +996,11 @@ class oe extends m {
       }
       e = n?.arrow ?? "ahead";
     }
-    this.hidden = !1, this.innerHTML = xt(t, e);
+    this.hidden = !1, this.innerHTML = Et(t, e);
   }
 }
-P.pictogram = oe;
-class ae {
+P.pictogram = ae;
+class ce {
   constructor(t = {}) {
     this.data = t, this.listeners = /* @__PURE__ */ new Set();
   }
@@ -1037,8 +1037,8 @@ function $(s, t) {
     return new Intl.DateTimeFormat("en-GB", i).format(n);
   }
 }
-const ce = ["time", "title", "subtitle", "label", "value"];
-class le extends m {
+const le = ["time", "title", "subtitle", "label", "value"];
+class de extends m {
   constructor() {
     super(...arguments), this.unsubscribe = null;
   }
@@ -1099,7 +1099,7 @@ const j = {
   },
   table(s, t, e) {
     if (M(s, t)) return;
-    const n = ce.filter((o) => t.rows.some((a) => a[o] !== void 0 && a[o] !== null && a[o] !== "")), i = d("table", "evac-data-table"), r = d("tbody");
+    const n = le.filter((o) => t.rows.some((a) => a[o] !== void 0 && a[o] !== null && a[o] !== "")), i = d("table", "evac-data-table"), r = d("tbody");
     for (const o of t.rows) {
       const a = d("tr");
       for (const c of n) a.appendChild(d("td", `evac-data-${c}`, c === "time" ? $(o[c], e.tz) : o[c]));
@@ -1151,8 +1151,8 @@ const j = {
     }), s.appendChild(i);
   }
 };
-P.data = le;
-class de {
+P.data = de;
+class he {
   constructor(t = null) {
     this.data = t, this.listeners = /* @__PURE__ */ new Set();
   }
@@ -1170,7 +1170,7 @@ function p(s, t = "", e) {
   const n = document.createElement(s);
   return t && (n.className = t), e != null && e !== "" && (n.textContent = String(e)), n;
 }
-function z(s, t) {
+function A(s, t) {
   const e = new Date(s);
   if (Number.isNaN(e.getTime())) return "";
   const n = { hour: "2-digit", minute: "2-digit", hour12: !1 };
@@ -1187,14 +1187,14 @@ function q(s, t) {
     return new Date(s).toISOString().slice(0, 10);
   }
 }
-function he(s, t, e) {
+function ue(s, t, e) {
   const n = s.filter((o) => (t === null || o.stage === t) && o.status !== "cancelled").sort((o, a) => Date.parse(o.start) - Date.parse(a.start)), i = n.find((o) => Date.parse(o.start) <= e && Date.parse(o.end) > e) ?? null, r = n.find((o) => Date.parse(o.start) > e) ?? null;
   return { now: i, next: r };
 }
-function ue(s, t) {
+function fe(s, t) {
   return t || (s.screen_room ? s.stages.find((e) => e.room === s.screen_room)?.id ?? null : null);
 }
-class fe extends m {
+class pe extends m {
   constructor() {
     super(...arguments), this.unsubscribe = null, this.ticking = !1;
   }
@@ -1213,7 +1213,7 @@ class fe extends m {
     this.classList.remove("evac-placeholder");
     const n = p("div", `evac-program evac-program-${e}`), i = String(this.props.title ?? "");
     i && n.appendChild(p("div", "evac-program-heading", i));
-    const r = this.ctx.now(), o = ue(t, String(this.props.stage ?? "")), a = Math.max(1, Math.min(20, Number(this.props.count) || 6));
+    const r = this.ctx.now(), o = fe(t, String(this.props.stage ?? "")), a = Math.max(1, Math.min(20, Number(this.props.count) || 6));
     e === "changes" ? this.changes(n, t, a) : e === "day" ? this.day(n, t, o, r, a) : this.nowNext(n, t, o, r), this.replaceChildren(n);
   }
   badge(t) {
@@ -1223,7 +1223,7 @@ class fe extends m {
     const i = p("div", `evac-program-session${t.status === "cancelled" ? " is-cancelled" : ""}`);
     t.colour && i.style.setProperty("--evac-track", t.colour);
     const r = p("div", "evac-program-when");
-    e && r.appendChild(p("span", "evac-program-label", e)), r.appendChild(p("span", "evac-program-time", `${z(t.start, this.tz)}–${z(t.end, this.tz)}`)), t.planned_start && t.delay && r.appendChild(p("s", "evac-program-was", z(t.planned_start, this.tz)));
+    e && r.appendChild(p("span", "evac-program-label", e)), r.appendChild(p("span", "evac-program-time", `${A(t.start, this.tz)}–${A(t.end, this.tz)}`)), t.planned_start && t.delay && r.appendChild(p("s", "evac-program-was", A(t.planned_start, this.tz)));
     const o = this.badge(t);
     o && r.appendChild(o), i.appendChild(r), i.appendChild(p("div", "evac-program-title", t.title));
     const a = [n ? t.stage_name : "", t.speakers.join(", ")].filter(Boolean).join(" · ");
@@ -1233,7 +1233,7 @@ class fe extends m {
     const r = n ? e.stages.filter((c) => c.id === n) : e.stages;
     let o = 0;
     for (const c of r) {
-      const { now: l, next: u } = he(e.sessions, c.id, i);
+      const { now: l, next: u } = ue(e.sessions, c.id, i);
       if (!l && !u) continue;
       const h = p("div", "evac-program-stage");
       n || h.appendChild(p("div", "evac-program-stage-name", c.name)), l && h.appendChild(this.session(l, "Now", !1)), u && h.appendChild(this.session(u, "Next", !1)), t.appendChild(h), o++;
@@ -1261,7 +1261,7 @@ class fe extends m {
     const i = p("ul", "evac-program-changes");
     for (const r of e.changes.slice(0, n)) {
       const o = p("li", `evac-program-change evac-program-change-${r.kind}`);
-      o.appendChild(p("span", "evac-program-time", z(r.at, this.tz))), o.appendChild(p("span", "evac-program-change-text", r.text)), i.appendChild(o);
+      o.appendChild(p("span", "evac-program-time", A(r.at, this.tz))), o.appendChild(p("span", "evac-program-change-text", r.text)), i.appendChild(o);
     }
     t.appendChild(i);
   }
@@ -1269,30 +1269,30 @@ class fe extends m {
     this.unsubscribe?.(), this.unsubscribe = null, this.ticking = !1, super.disconnectedCallback();
   }
 }
-P.program = fe;
+P.program = pe;
 function N(s) {
   return s ? s.startsWith("token:") ? `var(--evac-color-${s.slice(6)})` : /^#[0-9a-fA-F]{6}$/.test(s) || s === "transparent" ? s : "" : "";
 }
-function pe(s, t) {
+function me(s, t) {
   return s ? s === "token:heading" ? "var(--evac-font-heading)" : s === "token:body" ? "var(--evac-font-body)" : t.fonts[s] ?? "" : "";
 }
-function me(s, t, e) {
+function ge(s, t, e) {
   const n = s.style;
   if (!t) return;
   const i = (r, o) => {
     o && n.setProperty(r, o);
   };
-  i("color", N(t.color)), i("background", N(t.background)), t.borderWidth && n.setProperty("border", `${t.borderWidth / 10}cqh solid ${N(t.borderColor) || "currentColor"}`), t.radius !== void 0 && n.setProperty("border-radius", `${t.radius}cqh`), t.padding !== void 0 && n.setProperty("padding", `${t.padding}cqh`), t.opacity !== void 0 && n.setProperty("opacity", String(t.opacity)), i("font-family", pe(t.fontFamily, e)), t.fontSize && n.setProperty("font-size", `${t.fontSize}cqh`), t.fontWeight && n.setProperty("font-weight", String(t.fontWeight)), i("font-style", t.fontStyle ?? ""), i("text-align", t.textAlign ?? ""), t.verticalAlign && n.setProperty("justify-content", { top: "flex-start", middle: "center", bottom: "flex-end" }[t.verticalAlign]), t.lineHeight && n.setProperty("line-height", String(t.lineHeight)), t.letterSpacing !== void 0 && n.setProperty("letter-spacing", `${t.letterSpacing}em`), i("text-transform", t.textTransform ?? ""), t.tabularNumbers && n.setProperty("font-variant-numeric", "tabular-nums"), t.shadow && n.setProperty("box-shadow", "var(--evac-shadow)");
+  i("color", N(t.color)), i("background", N(t.background)), t.borderWidth && n.setProperty("border", `${t.borderWidth / 10}cqh solid ${N(t.borderColor) || "currentColor"}`), t.radius !== void 0 && n.setProperty("border-radius", `${t.radius}cqh`), t.padding !== void 0 && n.setProperty("padding", `${t.padding}cqh`), t.opacity !== void 0 && n.setProperty("opacity", String(t.opacity)), i("font-family", me(t.fontFamily, e)), t.fontSize && n.setProperty("font-size", `${t.fontSize}cqh`), t.fontWeight && n.setProperty("font-weight", String(t.fontWeight)), i("font-style", t.fontStyle ?? ""), i("text-align", t.textAlign ?? ""), t.verticalAlign && n.setProperty("justify-content", { top: "flex-start", middle: "center", bottom: "flex-end" }[t.verticalAlign]), t.lineHeight && n.setProperty("line-height", String(t.lineHeight)), t.letterSpacing !== void 0 && n.setProperty("letter-spacing", `${t.letterSpacing}em`), i("text-transform", t.textTransform ?? ""), t.tabularNumbers && n.setProperty("font-variant-numeric", "tabular-nums"), t.shadow && n.setProperty("box-shadow", "var(--evac-shadow)");
 }
-function ge(s, t) {
+function ve(s, t) {
   const e = t.frame;
   s.style.left = `${e.x}%`, s.style.top = `${e.y}%`, s.style.width = `${e.w}%`, s.style.height = `${e.h}%`, s.style.transform = e.rotate ? `rotate(${e.rotate}deg)` : "";
 }
-function ve(s, t) {
+function we(s, t) {
   const e = !s.visible_if || R(s.visible_if, t.vars, { now: t.now, timezone: t.timezone });
   if (s.hidden && !t.editing || !e && !t.editing) return null;
   const n = document.createElement("div");
-  n.className = `evac-el evac-el-${s.type}`, n.dataset.id = s.id, (!e || s.hidden) && n.classList.add("evac-dimmed"), ge(n, s), me(n, s.style, t);
+  n.className = `evac-el evac-el-${s.type}`, n.dataset.id = s.id, (!e || s.hidden) && n.classList.add("evac-dimmed"), ve(n, s), ge(n, s.style, t);
   const i = s.animation;
   i?.enter && i.enter !== "none" && !t.reducedMotion && !t.editing && (n.classList.add(`evac-enter-${i.enter}`), n.style.animationDuration = `${i.duration ?? 600}ms`, n.style.animationDelay = `${i.delay ?? 0}ms`);
   const r = `evac-${s.type}`;
@@ -1301,8 +1301,8 @@ function ve(s, t) {
   const o = document.createElement(r);
   return o.className = "evac-widget", n.appendChild(o), o.configure(s, t), n;
 }
-function we(s, t, e) {
-  re();
+function ye(s, t, e) {
+  oe();
   const n = document.createElement("div");
   n.className = "evac-stage";
   const i = t.background;
@@ -1312,7 +1312,7 @@ function we(s, t, e) {
   }
   const r = /* @__PURE__ */ new Map();
   for (const c of t.elements) {
-    const l = ve(c, e);
+    const l = we(c, e);
     l && (r.set(c.id, l), n.appendChild(l));
   }
   s.replaceChildren(n);
@@ -1332,26 +1332,33 @@ function we(s, t, e) {
     }
   };
 }
-function ye(s, t) {
+function st(s, t) {
   const e = Date.now();
   s.replaceChildren(), s.style.aspectRatio = `${t.layout.width} / ${t.layout.height}`;
   for (const [n, i] of Object.entries(t.themeVariables ?? {})) s.style.setProperty(n, i);
-  s.classList.add("evac-preview-host"), we(s, t.layout, {
+  s.classList.add("evac-preview-host"), ye(s, t.layout, {
     vars: t.vars,
     now: () => t.at + (Date.now() - e),
     timezone: t.timezone,
     assets: t.assets,
     fonts: t.fonts,
     reducedMotion: !0,
-    nonce: lt(),
-    data: new ae(t.data ?? {}),
-    program: new de(t.program ?? null)
+    nonce: dt(),
+    data: new ce(t.data ?? {}),
+    program: new he(t.program ?? null)
+  });
+}
+function be(s, t) {
+  s.replaceChildren(), (t.pages ?? []).forEach((e, n) => {
+    const i = document.createElement("div");
+    i.className = "evac-print-page", i.setAttribute("role", "img"), i.setAttribute("aria-label", t.pageLabels?.[n] ?? ""), s.appendChild(i), st(i, { ...t, vars: { ...t.vars, ...e } });
   });
 }
 if (typeof document < "u") {
-  const s = document.getElementById("preview-config"), t = document.querySelector("[data-preview]");
-  s && t && ye(t, JSON.parse(s.textContent || "{}"));
+  const s = document.getElementById("preview-config"), t = document.querySelector("[data-preview]"), e = document.querySelector("[data-preview-pages]");
+  s && t && st(t, JSON.parse(s.textContent || "{}")), s && e && be(e, JSON.parse(s.textContent || "{}"));
 }
 export {
-  ye as mountPreview
+  be as mountPages,
+  st as mountPreview
 };

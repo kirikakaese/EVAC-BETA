@@ -49,7 +49,7 @@ failed).
 | Webhooks (generic, in/out) | 0 | [webhooks](extensions/webhooks.md) |
 | DIAL — DECT & IP Administration Layer | 4 | [dial](extensions/dial.md) |
 | pretalx / frab / iCal | 5 | [program-import](extensions/program-import.md) |
-| pretix | 8 | – |
+| pretix | 8 | [pretix](extensions/pretix.md) |
 | Engelsystem | 7 | [engelsystem](extensions/engelsystem.md) |
 | Matrix, Telegram, ntfy, Mastodon, SMTP | 2 | – |
 | MQTT broker, Open-Meteo, info-beamer hosted, OIDC IdP | later | – |

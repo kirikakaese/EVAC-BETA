@@ -451,6 +451,128 @@ paths:
               schema:
                 $ref: '#/components/schemas/Event'
           description: ''
+  /api/v1/events/{event_slug}/access-zones/:
+    get:
+      operationId: events_access_zones_list
+      description: |-
+        Access zones with how many are inside; ``POST …/<id>/scan/`` scans a ticket (hardware scanners, turnstiles;
+        permission ``access.scan``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAccessZoneList'
+          description: ''
+  /api/v1/events/{event_slug}/access-zones/{id}/:
+    get:
+      operationId: events_access_zones_retrieve
+      description: |-
+        Access zones with how many are inside; ``POST …/<id>/scan/`` scans a ticket (hardware scanners, turnstiles;
+        permission ``access.scan``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this access zone.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessZone'
+          description: ''
+  /api/v1/events/{event_slug}/access-zones/{id}/scan/:
+    post:
+      operationId: events_access_zones_scan_create
+      description: |-
+        Access zones with how many are inside; ``POST …/<id>/scan/`` scans a ticket (hardware scanners, turnstiles;
+        permission ``access.scan``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this access zone.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScanRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScanRequestRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResult'
+          description: ''
   /api/v1/events/{event_slug}/announcement-levels/:
     get:
       operationId: events_announcement_levels_list
@@ -1085,6 +1207,182 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/events/{event_slug}/attendees/:
+    get:
+      operationId: events_attendees_list
+      description: |-
+        Attendees (``?search=``, ``?status=valid``, ``?ticket_type=``). ``POST`` adds one (an empty code gets a
+        random one), ``PATCH`` edits.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: source
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - blocked
+          - cancelled
+          - valid
+        description: |-
+          * `valid` - Valid
+          * `cancelled` - Cancelled
+          * `blocked` - Blocked
+      - in: query
+        name: ticket_type
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAttendeeList'
+          description: ''
+    post:
+      operationId: events_attendees_create
+      description: |-
+        Attendees (``?search=``, ``?status=valid``, ``?ticket_type=``). ``POST`` adds one (an empty code gets a
+        random one), ``PATCH`` edits.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttendeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendeeRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendee'
+          description: ''
+  /api/v1/events/{event_slug}/attendees/{id}/:
+    get:
+      operationId: events_attendees_retrieve
+      description: |-
+        Attendees (``?search=``, ``?status=valid``, ``?ticket_type=``). ``POST`` adds one (an empty code gets a
+        random one), ``PATCH`` edits.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this attendee.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendee'
+          description: ''
+    patch:
+      operationId: events_attendees_partial_update
+      description: |-
+        Attendees (``?search=``, ``?status=valid``, ``?ticket_type=``). ``POST`` adds one (an empty code gets a
+        random one), ``PATCH`` edits.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this attendee.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendeeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendeeRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendee'
+          description: ''
   /api/v1/events/{event_slug}/audit/:
     get:
       operationId: events_audit_list
@@ -4320,6 +4618,81 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/events/{event_slug}/ticket-types/:
+    get:
+      operationId: events_ticket_types_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTicketTypeList'
+          description: ''
+  /api/v1/events/{event_slug}/ticket-types/{id}/:
+    get:
+      operationId: events_ticket_types_retrieve
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this ticket type.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketType'
+          description: ''
   /api/v1/events/{slug}/:
     get:
       operationId: events_retrieve
@@ -5553,6 +5926,56 @@ paths:
           description: No response body
 components:
   schemas:
+    AccessZone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: e.g. Main entrance, Backstage, Crew area
+        open_to_all:
+          type: boolean
+          readOnly: true
+          title: Every valid ticket
+          description: 'Off: only the ticket types that grant this zone.'
+        checkin:
+          type: boolean
+          readOnly: true
+          title: Checks in
+          description: The first scan into this zone checks the attendee in (the entrance).
+        reentry:
+          type: boolean
+          readOnly: true
+          title: Re-entry allowed
+          description: 'Off: a ticket that is already inside is refused.'
+        room:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        area_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Occupancy area
+          description: Scans in and out count people in this occupancy area.
+        inside:
+          type: integer
+          readOnly: true
+      required:
+      - area_id
+      - checkin
+      - id
+      - inside
+      - name
+      - open_to_all
+      - reentry
+      - room
     ActionEnum:
       enum:
       - delay
@@ -6074,6 +6497,104 @@ components:
       required:
       - id
       - role
+    Attendee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          title: E-mail
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        company:
+          type: string
+          title: Organisation
+          maxLength: 150
+        ticket_type:
+          type: string
+          format: uuid
+        ticket_type_name:
+          type: string
+          readOnly: true
+        code:
+          type: string
+          title: Ticket code
+          description: 'Empty: a new random code.'
+          maxLength: 128
+        status:
+          $ref: '#/components/schemas/AttendeeStatusEnum'
+        checked_in_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        source:
+          type: string
+          readOnly: true
+        external_id:
+          type: string
+          maxLength: 100
+      required:
+      - checked_in_at
+      - id
+      - name
+      - source
+      - ticket_type
+      - ticket_type_name
+    AttendeeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          title: E-mail
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        company:
+          type: string
+          title: Organisation
+          maxLength: 150
+        ticket_type:
+          type: string
+          format: uuid
+        code:
+          type: string
+          title: Ticket code
+          description: 'Empty: a new random code.'
+          maxLength: 128
+        status:
+          $ref: '#/components/schemas/AttendeeStatusEnum'
+        external_id:
+          type: string
+          maxLength: 100
+      required:
+      - name
+      - ticket_type
+    AttendeeStatusEnum:
+      enum:
+      - valid
+      - cancelled
+      - blocked
+      type: string
+      description: |-
+        * `valid` - Valid
+        * `cancelled` - Cancelled
+        * `blocked` - Blocked
     Audit:
       type: object
       properties:
@@ -6253,6 +6774,14 @@ components:
         * `sent` - Delivered
         * `failed` - Failed
         * `skipped` - Skipped
+    DirectionEnum:
+      enum:
+      - in
+      - out
+      type: string
+      description: |-
+        * `in` - in
+        * `out` - out
     DisplayEnum:
       enum:
       - banner
@@ -7754,6 +8283,29 @@ components:
           description: 'Empty: until cancelled.'
       required:
       - title
+    PaginatedAccessZoneList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessZone'
     PaginatedAnnouncementList:
       type: object
       required:
@@ -7823,6 +8375,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Asset'
+    PaginatedAttendeeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attendee'
     PaginatedAuditList:
       type: object
       required:
@@ -8513,6 +9088,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Ticket'
+    PaginatedTicketTypeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketType'
     PaginatedTokenList:
       type: object
       required:
@@ -8721,6 +9319,38 @@ components:
           type: string
           format: binary
           writeOnly: true
+    PatchedAttendeeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          title: E-mail
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        company:
+          type: string
+          title: Organisation
+          maxLength: 150
+        ticket_type:
+          type: string
+          format: uuid
+        code:
+          type: string
+          title: Ticket code
+          description: 'Empty: a new random code.'
+          maxLength: 128
+        status:
+          $ref: '#/components/schemas/AttendeeStatusEnum'
+        external_id:
+          type: string
+          maxLength: 100
     PatchedBuildingRequest:
       type: object
       properties:
@@ -9624,6 +10254,35 @@ components:
       required:
       - name
       - venue
+    ScanRequestRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        id:
+          type: string
+          minLength: 1
+        device:
+          type: string
+          minLength: 1
+      required:
+      - code
+    ScanResult:
+      type: object
+      properties:
+        result:
+          type: string
+        message:
+          type: string
+        name:
+          type: string
+      required:
+      - message
+      - name
+      - result
     Schedule:
       type: object
       properties:
@@ -10435,6 +11094,42 @@ components:
         * `open` - In progress
         * `waiting` - Waiting
         * `done` - Done
+    TicketType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: e.g. Day ticket, Crew, Artist
+        colour:
+          type: string
+          readOnly: true
+          description: Wristband or badge colour.
+        zones:
+          type: array
+          items:
+            type: string
+            format: uuid
+            title: Grants zones
+          readOnly: true
+          title: Grants zones
+        source:
+          type: string
+          readOnly: true
+        external_id:
+          type: string
+          readOnly: true
+      required:
+      - colour
+      - external_id
+      - id
+      - name
+      - source
+      - zones
     Token:
       type: object
       properties:

@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Check-in" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Check-in" %}</h1></div>
+<section class="card"><p>{% trans "Choose where this device scans. The ticket list is kept on the device, so scanning goes on without network; scans are sent when it is back." %}</p>
+{% if zones %}<ul class="plain station-list">{% for z in zones %}<li><strong>{{ z.name }}</strong>{% if z.checkin %} <span class="small muted">{% trans "checks in" %}</span>{% endif %}
+<span class="actions"><a class="btn btn-primary" href="{% url 'access:scanner' event.slug z.pk %}">{% trans "Entry" %}</a> <a class="btn" href="{% url 'access:scanner' event.slug z.pk %}?dir=out">{% trans "Exit" %}</a></span></li>{% endfor %}</ul>
+{% else %}<p class="muted">{% trans "No access zones you may scan." %}</p>{% endif %}</section>
+{% endblock %}

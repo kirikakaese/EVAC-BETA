@@ -16,6 +16,10 @@ interface PreviewConfig {
   data?: Record<string, WidgetData>;
   /** program sessions ("program" elements) */
   program?: ProgramData | null;
+  /** a print sheet: one page per entry, each rendered with these variables merged over ``vars`` (badges) */
+  pages?: Record<string, unknown>[];
+  /** accessible name of each page (e.g. "Badge of Ada Lovelace") */
+  pageLabels?: string[];
 }
 
 export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
@@ -31,8 +35,23 @@ export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
   });
 }
 
+/** A print sheet: the same layout once per page, each with its own variables (badges of the access module). */
+export function mountPages(sheet: HTMLElement, cfg: PreviewConfig): void {
+  sheet.replaceChildren();
+  (cfg.pages ?? []).forEach((vars, i) => {
+    const page = document.createElement("div");
+    page.className = "evac-print-page";
+    page.setAttribute("role", "img");
+    page.setAttribute("aria-label", cfg.pageLabels?.[i] ?? "");
+    sheet.appendChild(page);
+    mountPreview(page, { ...cfg, vars: { ...cfg.vars, ...vars } });
+  });
+}
+
 if (typeof document !== "undefined") {
   const data = document.getElementById("preview-config");
   const host = document.querySelector<HTMLElement>("[data-preview]");
+  const sheet = document.querySelector<HTMLElement>("[data-preview-pages]");
   if (data && host) mountPreview(host, JSON.parse(data.textContent || "{}") as PreviewConfig);
+  if (data && sheet) mountPages(sheet, JSON.parse(data.textContent || "{}") as PreviewConfig);
 }

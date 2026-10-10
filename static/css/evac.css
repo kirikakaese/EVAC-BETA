@@ -1024,3 +1024,32 @@ pre.logs { max-height: 22rem; overflow: auto; font-size: .78rem; background: var
 .match-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; padding: .35rem 0; border-bottom: 1px solid var(--border); }
 .reply { border-left: 3px solid var(--info); padding-left: .75rem; margin: .75rem 0; }
 .url-text { overflow-wrap: anywhere; }
+/* access: check-in app, badges */
+.scanner { max-width: 34rem; margin: 0 auto; }
+.scanner-dir { font-size: 1rem; font-weight: 600; color: var(--fg-muted); }
+.scanner-result { display: grid; gap: .25rem; text-align: center; padding: 1.4rem 1rem; border-radius: 10px; border: 2px solid var(--border-strong); margin-bottom: var(--space-3); min-height: 8.5rem; align-content: center; }
+.scanner-big { font-size: clamp(1.8rem, 9vw, 2.6rem); font-weight: 800; }
+.scanner-sub { font-size: 1.15rem; }
+.scanner-result[data-state="ok"] { border-color: var(--ok); color: var(--ok); }
+.scanner-result[data-state="denied"], .scanner-result[data-state="invalid"], .scanner-result[data-state="unknown"], .scanner-result[data-state="refused"] { border-color: var(--err); color: var(--err); }
+.scanner-result[data-state="duplicate"], .scanner-result[data-state="pending"] { border-color: var(--warn); color: var(--warn); }
+.scanner-input input { flex: 1 1 12rem; max-width: none; font-size: 1.15rem; }
+.scanner-video { width: 100%; max-height: 40vh; border-radius: 8px; background: #000; }
+.scanner-log li { padding: .2rem 0; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.scanner-log li[data-state="denied"], .scanner-log li[data-state="invalid"], .scanner-log li[data-state="unknown"] { color: var(--err); }
+.scanner-log li[data-state="duplicate"] { color: var(--warn); }
+[data-scanner-sync][data-state="waiting"], [data-scanner-sync][data-state="offline"] { color: var(--warn); font-weight: 600; }
+.station-list li, .station-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; padding: .4rem 0; border-bottom: 1px solid var(--border); }
+.zone-list { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.badge-sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1rem; }
+.badge-card { background: #fff; color: #111; border: 1px dashed #999; border-radius: 6px; overflow: hidden; text-align: center; break-inside: avoid; aspect-ratio: 105 / 148; display: flex; flex-direction: column; }
+.badge-band { padding: .5rem; font-weight: 700; color: #fff; background: #2563eb; }
+.badge-name { font-size: 1.5rem; font-weight: 800; margin: .8rem .5rem .1rem; overflow-wrap: anywhere; }
+.badge-company { margin: 0 .5rem; color: #333; }
+.badge-card .qr-box { max-width: 9rem; margin: .5rem auto; }
+.badge-type { margin-top: auto; padding: .45rem; font-weight: 700; border-top: 1px solid #ccc; }
+.badge-group { margin-bottom: 1.5rem; }
+@media print {
+  .badge-sheet { grid-template-columns: repeat(2, 1fr); gap: 6mm; }
+  .badge-card { border-color: #ccc; }
+}

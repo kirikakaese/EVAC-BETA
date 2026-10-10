@@ -255,12 +255,17 @@ lent with a drawn signature and taken back. A lost report from the public help p
 | 7.2 | ✅ Inventory with QR labels, lend/return (signature, photo), who has what, reminders, map layer |
 | 7.3 | ✅ Lost & found (matching), requests, FAQ; public help page |
 
-## Phase 8 — Access ⬜ [§11.5]
-**Gate:** offline check-in syncs; access zone counts feed occupancy.
+## Phase 8 — Access ✅ [§11.5]
+**Gate:** offline check-in syncs; access zone counts feed occupancy. ✅ `frontend/e2e/phase8.mjs` (`make e2e`, CI):
+two gate phones scan into the main entrance, one offline; valid, cancelled and unknown tickets are decided on the
+device; after the sync the queued scans arrive with their device times, a ticket used at both gates is flagged as
+already inside, and the "Festival site" occupancy counted each guest exactly once (an exit counts down). Badges are
+rendered per attendee from a layout made in the layout editor. [ADR-0044](adr/0044-access-and-check-in.md).
+
 | ID | Ticket |
 |---|---|
-| 8.1 | Attendee lists, ticket types, badges (layout editor), offline check-in app |
-| 8.2 | pretix extension |
+| 8.1 | ✅ Attendee lists (CSV), ticket types, access zones with scanner rules, badges (layout editor), offline check-in app, occupancy feed |
+| 8.2 | ✅ pretix extension (attendees in, check-ins both ways) |
 
 ## Phase 9 — Hardening and ecosystem ⬜
 **Gate:** 1,000 simulated screens; SDK example plugin adds a widget + data source + extension page without

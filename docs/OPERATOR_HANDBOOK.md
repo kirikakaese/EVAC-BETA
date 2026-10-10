@@ -491,6 +491,43 @@ such as a queue or a tent.
 
 Occupancy holds no personal data. Clicks and sensors record a device label, not who clicked.
 
+## 5n. Access: attendees, badges and check-in
+
+**Attendees** and **Check-in** in the event menu (module *Access*, ADR-0044).
+
+1. **Ticket types and zones** (*Attendees → Ticket types and zones*):
+   - **Access zones** are the places with a scanner: the *Main entrance* (tick *checks in* and *every valid
+     ticket*), *Backstage*, a *Crew area* … Untick *re-entry allowed* where a ticket may only go in once. Choose
+     an **occupancy area** to have the zone's scans count people there (module *Occupancy*).
+   - **Ticket types** have a colour and *grant* zones beyond those open to every ticket (e.g. *Crew* grants
+     *Backstage* and *Crew area*).
+2. **Attendees**: add them one by one, **Import CSV** (`name, ticket_type`, optionally `email, company, code`;
+   unknown ticket types are created; an existing code updates that person), or connect **pretix**
+   ([pretix](extensions/pretix.md)). Each attendee has a ticket code (QR code on their page). *Block* or *Cancel*
+   makes scanners refuse it. *Export CSV* lists the current filter.
+3. **Badges**: on a ticket type, *Create a badge layout* opens an A6 badge in the layout editor with the
+   attendee's name, organisation, ticket type and the ticket's QR code; design it like any layout. *Print new
+   badges* on the attendee page prints all badges not printed yet (2 per A4 page); *Mark as printed* afterwards.
+   Ticket types without a layout use the built-in badge.
+4. **Check-in**: on a phone or tablet, *Check-in → zone → Entry* (or *Exit*). The page loads the ticket list
+   and works **offline** from then on:
+   - scan with a hardware scanner (it types into the field), type the code, or use *Camera* (Chrome on Android);
+   - the answer is immediate: **✓ OK / Welcome**, **✕ Ticket not valid**, **✕ Not allowed** (ticket type does
+     not grant the zone), **! Already inside** (no re-entry), **? Unknown ticket**;
+   - without network, scans are kept on the device ("5 scans waiting") and sent when it is back; if another gate
+     let the same ticket in meanwhile, the log shows "Server: … Already inside";
+   - give each device a name (*Gate A left*) so the scan history shows where people came in.
+
+   Gate staff need `access.scan` (*Control room*, *Security* and *Helpdesk* have it); scope it to one zone
+   (Roles → assign with scope *Access zone*) for a door that should scan only there. The staff app shows the
+   zones a person may scan.
+5. **Who is where**: the attendee page lists checked-in counts, people inside per zone, refused scans and the
+   latest scans; the control room has a *Check-in* panel; occupancy areas linked to zones go up and down with
+   every entry and exit.
+
+The offline list on scanner devices holds names and ticket types, not e-mail addresses or ticket codes (only
+hashes of them). Delete attendees after the event according to your retention rules (export and purge the event).
+
 ## 5k. Crew and shifts
 
 **Shift board** in the event menu (module *Crew*, ADR-0041).

@@ -6,6 +6,34 @@ released.
 
 ## [Unreleased]
 
+### Added — Access (Phase 8)
+
+- Access module (`apps/access`, module `access`, ADR-0044):
+  - ticket types (colour, granted zones, badge layout) and attendees (code, status valid/cancelled/blocked,
+    check-in time); CSV import (creates ticket types, updates by code) and formula-safe export;
+  - access zones: open to every ticket or to granting ticket types, "checks in", re-entry rule, room, linked
+    occupancy area; presence per zone; every scan recorded (result, device, device time, offline flag);
+  - the scanner rule (unknown, invalid, not allowed, already inside, OK) on the server and in the check-in app;
+  - check-in app `/e/<event>/access/scan/<zone>/` (`static/js/scanner.js`): keeps the zone's ticket list on the
+    device (code hashes only), decides at once also offline, queues scans with ids and device times, syncs in
+    batches; the server's answer wins and conflicts show in the device's log; hardware scanners, keyboard, or the
+    camera via `BarcodeDetector`; cached by the staff service worker;
+  - accepted entries and exits feed the zone's occupancy area (±1, exactly once);
+  - badges: "Create a badge layout" makes an A6 layout in the layout editor with attendee placeholders; the print
+    sheet renders it per attendee with the shared renderer (preview island `[data-preview-pages]`); built-in badge
+    otherwise; "mark as printed";
+  - `access.scan` scopable to an access zone (scope kind `access_zone`); Control room, Security and Helpdesk roles
+    get `access.view` and `access.scan`;
+  - control room panel, staff app card (gates I may scan), data source `access.zones`, webhooks
+    `access.checked_in` and `access.refused`, API `attendees` (create, edit), `ticket-types`, `access-zones` with
+    `POST …/scan/` for hardware scanners.
+- pretix extension (`extensions/pretix`): admission products → ticket types, order positions → attendees (the
+  ticket secret is the code), paid/cancelled/pending handling, positions gone from pretix are cancelled; check-ins
+  from pretix are taken over and EVAC's check-ins are sent to a pretix check-in list through the outbox.
+- Demo data: ticket types, zones (the entrance feeds the occupancy area "Festival site") and 40 attendees with
+  codes `DEMO-0001` …
+- `frontend/e2e/phase8.mjs`: the Phase 8 gate.
+
 ### Added — Crew, inventory and helpdesk (Phase 7)
 
 - Crew & shifts module (`apps/crew`, module `crew`, ADR-0041):

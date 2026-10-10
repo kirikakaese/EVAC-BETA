@@ -3,8 +3,8 @@
 
 Creates (idempotently) an instance admin ``admin@evac.local`` / ``evac-demo-admin``, a demo venue with
 buildings, floors, rooms and zones, the event ``demo`` with members in every built-in role and a scoped
-role assignment, a webhook extension config and a few audit entries. Program, ops, occupancy, crew,
-inventory and helpdesk data come from their modules' own seeds (see docs/ROADMAP.md).
+role assignment, a webhook extension config and a few audit entries. Program, ops, occupancy, access,
+crew, inventory and helpdesk data come from their modules' own seeds (see docs/ROADMAP.md).
 """
 import datetime as dt
 
@@ -97,6 +97,7 @@ class Command(BaseCommand):
 
         # demo data of optional modules, when installed (they are never imported directly)
         for key, path in (("program", "apps.schedule.demo"), ("crowd", "apps.crowd.demo"), ("ops", "apps.ops.demo"),
+                          ("access", "apps.access.demo"),
                           ("crew", "apps.crew.demo"), ("inventory", "apps.inventory.demo"),
                           ("helpdesk", "apps.helpdesk.demo")):
             if key in registry.modules:

@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% if direction == "out" %}{% trans "Exit" %}{% else %}{% trans "Entry" %}{% endif %} · {{ zone.name }}{% endblock %}
+{% block content %}
+<div class="scanner" data-scanner data-zone="{{ zone.pk }}" data-dir="{{ direction }}" data-list-url="{% url 'access:scan_list' event.slug zone.pk %}" data-sync-url="{% url 'access:scan_sync' event.slug %}" data-refresh="{{ refresh }}"
+     data-label-ok="{% trans 'OK' %}" data-label-denied="{% trans 'Not allowed' %}" data-label-duplicate="{% trans 'Already inside' %}" data-label-invalid="{% trans 'Ticket not valid' %}" data-label-unknown="{% trans 'Unknown ticket' %}"
+     data-label-welcome="{% trans 'Welcome, {name}' %}" data-label-goodbye="{% trans 'Goodbye, {name}' %}" data-label-not-granted="{% trans '{type} does not grant this zone' %}"
+     data-label-pending="{% trans '{n} scans waiting to be sent' %}" data-label-synced="{% trans 'All scans sent' %}" data-label-offline="{% trans 'Offline: scans are kept and sent later' %}"
+     data-label-list="{% trans '{n} tickets on this device, updated {time}' %}" data-label-nolist="{% trans 'No ticket list on this device yet: scans are checked by the server.' %}"
+     data-label-saved="{% trans 'Saved' %}" data-label-saved-sub="{% trans 'No ticket list yet: the server checks it when online' %}"
+     data-label-conflict="{% trans 'Server: {name} {result}' %}">
+<div class="page-header"><h1>{{ zone.name }} <span class="scanner-dir">{% if direction == "out" %}↤ {% trans "Exit" %}{% else %}↦ {% trans "Entry" %}{% endif %}</span></h1>
+<div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'access:stations' event.slug %}">{% trans "Change" %}</a></div></div>
+<div class="scanner-result" data-scanner-result role="status" aria-live="assertive" data-state="idle"><span class="scanner-big">{% trans "Ready" %}</span><span class="scanner-sub">{% trans "Scan a ticket" %}</span></div>
+<form class="scanner-input" data-scanner-form autocomplete="off"><label for="scan-code">{% trans "Ticket code (scanner or keyboard)" %}</label>
+<div class="form-inline"><input id="scan-code" data-scanner-code inputmode="text" autocapitalize="off" spellcheck="false" autofocus><button class="btn btn-primary">{% trans "Check" %}</button>
+<button type="button" class="btn" data-scanner-camera hidden>{% trans "Camera" %}</button></div></form>
+<video class="scanner-video" data-scanner-video muted playsinline hidden></video>
+<p class="small" data-scanner-sync role="status"></p>
+<p class="small muted" data-scanner-list></p>
+<div class="field"><label for="scan-device">{% trans "This device (shown with each scan)" %}</label><input id="scan-device" data-scanner-device maxlength="80" placeholder="{% trans 'e.g. Gate 1 left' %}"></div>
+<h2 class="h3">{% trans "On this device" %}</h2>
+<ol class="plain scanner-log" data-scanner-log></ol>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/scanner.js' %}?v={{ ASSET_VERSION }}" defer></script>{% endblock %}
