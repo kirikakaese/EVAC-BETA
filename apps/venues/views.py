@@ -2,9 +2,13 @@
 """Venue pages within an event: list the event's venues, add/link venues, edit buildings/floors/zones/rooms."""
 from __future__ import annotations
 
+import json
+
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from django.views.decorators.http import require_POST
@@ -14,7 +18,7 @@ from apps.events import rbac
 from apps.portal.forms import VenueForm
 from apps.portal.shortcuts import event_view
 
-from . import access, forms, graph
+from . import access, forms, graph, mapdata, plans
 from .models import Building, Edge, Floor, Point, Room, Venue, Zone
 
 PARTS = {
@@ -120,3 +124,123 @@ def part_delete(request, slug, venue_slug, part, pk, *, event):
     obj.delete()
     messages.success(request, _("Removed."))
     return redirect("venues:detail", slug, venue.slug)
+
+
+# ------------------------------------------------------------------ map editor (ADR-0027)
+MAP_STRINGS = [
+    "Select", "Add point", "Connect", "Zone outline", "Place", "Measure", "Fit", "Zoom in", "Zoom out", "Delete",
+    "Name", "Kind", "Step-free", "One way", "Facing", "Remove from map", "Finish outline", "Clear outline",
+    "Cancel", "Zone", "Metres", "Set scale", "Saved", "Saving…", "Could not save", "No floor plan",
+    "Not on this map", "On this floor", "Click on the map to place it.", "Click two points to connect them.",
+    "Click the corners, then Finish outline.", "Click two ends of a known distance.", "Distance in metres",
+    "Drag points to move them. Arrows show the way out.", "No way out", "elsewhere", "Choose a zone",
+    "Choose what to place", "Layers", "Points", "Outdoors", "Next step", "Plan not measured yet", "Tools", "Map",
+    "Loading…",
+]
+
+
+def _manage(request, event, venue) -> bool:
+    return rbac.has_perm(request.user, event, "venues.manage", obj=venue, request=request)
+
+
+@event_view("venues.view", module="venues")
+def map_editor(request, slug, venue_slug, *, event):
+    venue = _venue(request, event, venue_slug)
+    floor_id = request.GET.get("floor", "")
+    floors = mapdata.floors(venue)
+    if floor_id == "" and floors:
+        floor_id = str(next((f for f in floors if f.plan_file), floors[0]).pk)
+    try:
+        floor = mapdata.floor_of(venue, floor_id)
+    except ValidationError:
+        raise Http404 from None
+    can_edit = _manage(request, event, venue)
+    base = reverse("venues:map", args=[slug, venue.slug])
+    query = f"?floor={floor.pk if floor else 'outdoors'}"
+    config = {"dataUrl": reverse("venues:map_data", args=[slug, venue.slug]) + query,
+              "opUrl": reverse("venues:map_op", args=[slug, venue.slug]) + query,
+              "strings": {s: _(s) for s in MAP_STRINGS}}
+    return render(request, "venues/map.html", {
+        "event": event, "venue": venue, "floors": floors, "floor": floor, "floor_id": floor_id or "outdoors",
+        "can_edit": can_edit, "config": config, "base": base, "pdf": plans.has_pdf_renderer(),
+        "map_version": map_version(),
+    })
+
+
+@event_view("venues.view", module="venues")
+def map_data(request, slug, venue_slug, *, event):
+    venue = _venue(request, event, venue_slug)
+    try:
+        floor = mapdata.floor_of(venue, request.GET.get("floor", ""))
+    except ValidationError:
+        raise Http404 from None
+    return JsonResponse(mapdata.data(event, venue, floor, can_edit=_manage(request, event, venue)))
+
+
+@require_POST
+@event_view("venues.view", module="venues")
+def map_op(request, slug, venue_slug, *, event):
+    venue = _venue(request, event, venue_slug)
+    if not _manage(request, event, venue):
+        return JsonResponse({"ok": False, "error": _("You may not edit this venue.")}, status=403)
+    try:
+        op = json.loads(request.body or b"{}")
+        if not isinstance(op, dict):
+            raise ValueError
+        floor = mapdata.floor_of(venue, request.GET.get("floor", ""))
+        result = mapdata.apply(event, venue, floor, op, actor=request.user, request=request)
+    except ValueError:
+        return JsonResponse({"ok": False, "error": _("Malformed request.")}, status=400)
+    except ValidationError as exc:
+        return JsonResponse({"ok": False, "error": " ".join(exc.messages)}, status=400)
+    except PermissionDenied as exc:
+        return JsonResponse({"ok": False, "error": str(exc) or _("Not allowed.")}, status=403)
+    return JsonResponse({"ok": True, **result})
+
+
+@require_POST
+@event_view("venues.view", module="venues")
+def plan_upload(request, slug, venue_slug, floor_id, *, event):
+    venue = _venue(request, event, venue_slug)
+    if not _manage(request, event, venue):
+        raise PermissionDenied
+    floor = get_object_or_404(Floor, building__venue=venue, pk=floor_id)
+    if request.POST.get("remove"):
+        plans.remove(floor, actor=request.user, request=request, event=event)
+        messages.success(request, _("Floor plan removed."))
+    elif request.FILES.get("plan"):
+        try:
+            plans.store(floor, request.FILES["plan"], actor=request.user, request=request, event=event)
+        except ValidationError as exc:
+            for m in exc.messages:
+                messages.error(request, m)
+        else:
+            messages.success(request, _("Floor plan uploaded. Measure a known distance to set the scale."))
+    return redirect(f"{reverse('venues:map', args=[slug, venue.slug])}?floor={floor.pk}")
+
+
+@event_view("venues.view", module="venues")
+def plan_file(request, slug, venue_slug, floor_id, *, event):
+    venue = _venue(request, event, venue_slug)
+    floor = get_object_or_404(Floor, building__venue=venue, pk=floor_id)
+    path = plans.path_of(floor)
+    if path is None:
+        raise Http404
+    response = FileResponse(open(path, "rb"), content_type="image/svg+xml" if path.suffix == ".svg" else "image/png")
+    response["Cache-Control"] = "private, max-age=86400"
+    response["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; img-src data:"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+def map_version() -> str:
+    import hashlib
+
+    from django.conf import settings
+
+    h = hashlib.sha256()
+    for name in ("mapeditor.js", "mapeditor.css"):
+        p = settings.BASE_DIR / "static" / "mapeditor" / name
+        if p.exists():
+            h.update(p.read_bytes())
+    return h.hexdigest()[:10]

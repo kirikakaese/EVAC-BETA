@@ -77,6 +77,7 @@ again without removing the package.
 | pack section | `r.pack_section(PackSectionSpec(key, title, choices, dump, load, requires=, module=, order=))` | your objects in `.evacpack` files: `dump` returns JSON items (and packs files), `load` creates them through your services and fills `ctx.ids`; `requires` names what an object needs (ADR-0024) |
 | time anchors | `r.anchor_source(TimeAnchorSpec(key, title, choices, resolve))` | items announcements can be timed relative to ("10 min before …"); send `apps.core.signals.anchor_moved` when one moves (ADR-0025) |
 | audiences | `r.audience(AudienceSpec(key, title, choices, members))` | groups of people channels that reach people can be limited to (built in: roles) |
+| map layer | `r.map_layer(MapLayerSpec(key, title, items, place=, rescale=))` | your things on the venue map: `items(event, venue)` lists them with position and facing, `place(...)` stores a move (ADR-0027; screens) |
 | webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 

@@ -13,8 +13,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # ffmpeg converts uploaded video and audio for screens (H.264/VP9, loudness-normalised AAC); ~80 MB.
+# poppler-utils (pdftoppm) renders PDF floor plans for the map editor; ~5 MB.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg \
+    && apt-get install -y --no-install-recommends ffmpeg poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Runtime dependencies straight from pyproject.toml (layer-cached; the app runs from /app via manage.py).

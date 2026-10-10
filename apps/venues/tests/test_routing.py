@@ -212,6 +212,10 @@ def test_api_points_edges_and_routes(event, admin, venue, plan, member):
 
 
 def test_export_import_keeps_the_graph(event, admin, venue, plan):
+    north = Zone.objects.get(name="North")
+    north.areas = [{"floor": str(plan["hall"].floor_id), "points": [[0, 0], [5, 0], [5, 5]]},
+                   {"floor": None, "points": [[1, 1], [2, 1], [2, 2]]}]
+    north.save()
     data = json.loads(json.dumps(event_services.export_event(event), default=str))
     exported = data["plugins"]["venues"][0]
     assert len(exported["points"]) == 4 and len(exported["edges"]) == 3
@@ -223,6 +227,8 @@ def test_export_import_keeps_the_graph(event, admin, venue, plan):
     assert v.points.count() == 5 and v.edges.count() == 3
     assert v.points.get(name="Odd").kind == "waypoint"
     hall = v.points.get(name="Hall centre")
+    areas = v.zones.get(name="North").areas
+    assert areas[0] == {"floor": str(hall.floor_id), "points": [[0, 0], [5, 0], [5, 5]]} and areas[1]["floor"] is None
     assert hall.floor.name == "Ground" and hall.zone.name == "North"
     assert graph.table(v)[str(hall.pk)].distance == 60
 

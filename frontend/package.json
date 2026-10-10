@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "license": "AGPL-3.0-or-later",
-  "description": "EVAC screen player and layout editor (served at /player/ and in the portal)",
+  "description": "EVAC screen player, layout editor and map editor (served at /player/ and in the portal)",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && TARGET=player vite build && TARGET=sw vite build && TARGET=editor vite build && TARGET=preview vite build && node scripts/size-check.mjs",
+    "build": "tsc --noEmit && TARGET=player vite build && TARGET=sw vite build && TARGET=editor vite build && TARGET=preview vite build && TARGET=mapeditor vite build && node scripts/size-check.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

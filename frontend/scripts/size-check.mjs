@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Post-build: licence banners on the bundles and size budgets (gzipped): player < 300 kB (brief), editor < 500 kB.
+// Post-build: licence banners on the bundles and size budgets (gzipped): player < 300 kB (brief), editor < 500 kB, map editor < 150 kB.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
@@ -13,6 +13,9 @@ const BUNDLES = [
     "editor.js": BANNER("layout editor") + "// Includes Lit (BSD-3-Clause, https://lit.dev) and uqr (MIT).\n",
     "editor.css": CSS_BANNER("layout editor"), "preview.js": BANNER("slide preview"),
     "preview.css": CSS_BANNER("slide preview") } },
+  { dir: "mapeditor", budget: 150, banners: {
+    "mapeditor.js": BANNER("venue map editor") + "// Includes Lit (BSD-3-Clause, https://lit.dev).\n",
+    "mapeditor.css": CSS_BANNER("venue map editor") } },
 ];
 let failed = false;
 for (const b of BUNDLES) {

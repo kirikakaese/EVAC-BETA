@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% blocktrans with n=venue.name %}Map of {{ n }}{% endblocktrans %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'mapeditor/mapeditor.css' %}?v={{ map_version }}">
+{{ config|json_script:"map-config" }}<script type="module" nonce="{{ csp_nonce }}" src="{% static 'mapeditor/mapeditor.js' %}?v={{ map_version }}"></script>{% endblock %}
+{% block main_class %}page-editor{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'venues:index' event.slug %}">{% trans "Venues" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'venues:detail' event.slug venue.slug %}">{{ venue.name }}</a> <span aria-hidden="true">›</span> {% trans "Map" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% blocktrans with n=venue.name %}Map of {{ n }}{% endblocktrans %}</h1></div>
+<nav class="tabs" aria-label="{% trans 'Floors' %}">{% for f in floors %}<a href="{{ base }}?floor={{ f.pk }}"{% if floor_id == f.pk|stringformat:"s" %} aria-current="page"{% endif %}>{{ f }}{% if not f.plan_file %} <span class="muted small">({% trans "no plan" %})</span>{% endif %}</a>{% endfor %}<a href="{{ base }}?floor=outdoors"{% if floor_id == "outdoors" %} aria-current="page"{% endif %}>{% trans "Outdoors" %}</a></nav>
+{% if can_edit and floor %}<details class="card plan-upload"{% if not floor.plan_file %} open{% endif %}><summary>{% if floor.plan_file %}{% trans "Floor plan" %}{% else %}{% trans "Upload a floor plan" %}{% endif %}</summary>
+<form method="post" action="{% url 'venues:plan_upload' event.slug venue.slug floor.pk %}" enctype="multipart/form-data" class="inline">{% csrf_token %}
+<label for="plan-file">{% trans "Plan (PNG, JPEG, WebP, SVG" %}{% if pdf %}{% trans ", PDF" %}{% endif %})</label>
+<input id="plan-file" type="file" name="plan" accept=".png,.jpg,.jpeg,.webp,.svg{% if pdf %},.pdf{% endif %}" required>
+<button class="btn">{% if floor.plan_file %}{% trans "Replace" %}{% else %}{% trans "Upload" %}{% endif %}</button></form>
+{% if floor.plan_file %}<form method="post" action="{% url 'venues:plan_upload' event.slug venue.slug floor.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="remove" value="1"><button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Remove the floor plan? Points stay where they are.' %}">{% trans "Remove plan" %}</button></form>{% endif %}
+<p class="small muted">{% if floor.plan_file %}{% if floor.plan_scaled %}{% blocktrans with m=floor.metres_per_px|floatformat:4 %}Scale: {{ m }} m per pixel.{% endblocktrans %}{% else %}{% trans "The scale is not measured yet: use Measure in the editor on a distance you know." %}{% endif %}{% else %}{% trans "Without a plan the editor shows a grid in metres." %}{% endif %}</p>
+</details>{% endif %}
+<evac-map-editor><p class="muted">{% trans "Loading the map…" %}</p><noscript><p>{% trans "The map editor needs JavaScript. Points and connections can also be edited on the venue page." %}</p></noscript></evac-map-editor>
+{% endblock %}

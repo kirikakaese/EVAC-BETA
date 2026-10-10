@@ -2,7 +2,7 @@
 {% block title %}{{ venue.name }}{% endblock %}
 {% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'venues:index' event.slug %}">{% trans "Venues" %}</a> <span aria-hidden="true">›</span> {{ venue.name }}</p>{% endblock %}
 {% block content %}
-<div class="page-header"><h1>{{ venue.name }}</h1></div>
+<div class="page-header"><h1>{{ venue.name }}</h1><div class="actions"><a class="btn btn-primary" href="{% url 'venues:map' event.slug venue.slug %}">{% trans "Map" %}</a></div></div>
 {% if shared_with %}<p class="alert alert-info" role="status">{% blocktrans count n=shared_with %}This venue is also used by {{ n }} other event. Changes apply there too.{% plural %}This venue is also used by {{ n }} other events. Changes apply there too.{% endblocktrans %}</p>{% endif %}
 <div class="grid grid-2">
   <section class="card"><h2>{% trans "Buildings & floors" %}</h2>
@@ -24,7 +24,7 @@
   {% if can_edit %}<td><form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'room' r.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with n=r.name %}Delete {{ n }}{% endblocktrans %}">✕</button></form></td>{% endif %}</tr>
 {% empty %}<tr><td colspan="6" class="muted">{% trans "No rooms yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
 <section class="card"><h2>{% trans "Exits, assembly points and waypoints" %}</h2>
-<p class="small muted">{% trans "Points of the route graph. Positions are metres on the floor plan (the map editor will place them by clicking)." %}</p>
+<p class="small muted">{% trans "Points of the route graph. Positions are metres on the floor plan; the map places them by clicking." %}</p>
 <div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Point" %}</th><th scope="col">{% trans "Kind" %}</th><th scope="col">{% trans "Floor" %}</th><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Position (m)" %}</th><th scope="col">{% trans "Accessibility" %}</th>{% if can_edit %}<th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th>{% endif %}</tr></thead>
 <tbody>{% for p in points %}<tr><td>{{ p.name }}{% if p.note %}<br><span class="small muted">{{ p.note }}</span>{% endif %}</td><td><span class="badge badge-point-{{ p.kind }}">{{ p.get_kind_display }}</span>{% if p.capacity %} <span class="small muted">{{ p.capacity }}</span>{% endif %}</td>
   <td class="small">{{ p.floor|default:_("outdoors") }}</td><td class="small">{{ p.zone|default:"–" }}</td><td class="small">{{ p.x|floatformat:1 }}, {{ p.y|floatformat:1 }}</td>

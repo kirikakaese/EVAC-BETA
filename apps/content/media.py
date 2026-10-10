@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 import shutil
 import subprocess
 import tempfile
@@ -25,6 +24,8 @@ from typing import Any
 
 from defusedxml import ElementTree as SafeET
 from PIL import Image, ImageOps, ImageSequence, UnidentifiedImageError
+
+from apps.core.svg import sanitize_svg  # noqa: F401 - used by services (shared with floor plans)
 
 from . import storage
 
@@ -124,45 +125,6 @@ def probe(src: Path) -> dict[str, Any]:
         return json.loads(out.stdout or b"{}")
     except (subprocess.SubprocessError, ValueError) as exc:
         raise Rejected("The media file could not be read.") from exc
-
-
-# --------------------------------------------------------------------------- SVG sanitising
-
-SVG_NS = "{http://www.w3.org/2000/svg}"
-XLINK = "{http://www.w3.org/1999/xlink}href"
-FORBIDDEN_TAGS = {"script", "foreignObject", "iframe", "embed", "object", "audio", "video", "handler", "listener"}
-URL_IN_STYLE = re.compile(r"url\(\s*['\"]?\s*(?!#)", re.I)
-
-
-def _local(tag: str) -> str:
-    return tag.split("}", 1)[-1]
-
-
-def sanitize_svg(data: bytes) -> bytes:
-    """Remove everything that can run code or load external resources from an SVG."""
-    root = SafeET.fromstring(data)
-    for parent in list(root.iter()):
-        for child in list(parent):
-            if not isinstance(child.tag, str) or _local(child.tag) in FORBIDDEN_TAGS:
-                parent.remove(child)
-    for el in root.iter():
-        for attr in list(el.attrib):
-            name = _local(attr).lower()
-            value = el.attrib[attr].strip()
-            if name.startswith("on"):
-                del el.attrib[attr]
-            elif name == "href" or attr == XLINK:
-                if not (value.startswith("#") or value.startswith("data:image/")):
-                    del el.attrib[attr]
-            elif name == "style" and (URL_IN_STYLE.search(value) or "expression(" in value.lower()):
-                del el.attrib[attr]
-        if _local(el.tag) == "style" and el.text and (URL_IN_STYLE.search(el.text) or "@import" in el.text):
-            el.text = ""
-    from xml.etree import ElementTree as ET  # noqa: S405 - serialising an already parsed, sanitised tree
-
-    ET.register_namespace("", SVG_NS.strip("{}"))
-    ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
 # --------------------------------------------------------------------------- derivatives

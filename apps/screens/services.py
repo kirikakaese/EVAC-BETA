@@ -298,3 +298,50 @@ def delete_group(group: ScreenGroup, *, actor, request=None) -> None:
     log(action="screen_group.deleted", actor=actor, target=group, event=group.event, request=request,
         message=f"Screen group {group.name} deleted")
     group.delete()
+
+
+# ------------------------------------------------------------------ venue map (ADR-0027)
+def map_items(event, venue) -> list[dict[str, Any]]:
+    """Map layer "screens": the event's screens at this venue (or without a venue yet)."""
+    from django.db.models import Q
+
+    out = []
+    for s in Screen.objects.filter(event=event).filter(Q(venue=venue) | Q(venue__isnull=True)).order_by("name"):
+        placed = s.position_x is not None and s.position_y is not None and s.venue_id == venue.pk
+        out.append({"id": str(s.pk), "label": s.name, "placed": placed,
+                    "floor": str(s.floor_id) if s.floor_id else None, "x": s.position_x, "y": s.position_y,
+                    "facing": s.facing, "state": s.health_state})
+    return out
+
+
+def map_place(event, item_id: str, *, floor, x, y, facing, actor, request=None) -> None:
+    from django.core.exceptions import PermissionDenied
+
+    from apps.events import rbac
+
+    screen = Screen.objects.filter(event=event, pk=item_id).first() if len(item_id) == 36 else None
+    if screen is None:
+        raise ValidationError(_("Unknown screen."))
+    if not rbac.has_perm(actor, event, "screens.manage", obj=screen, request=request):
+        raise PermissionDenied(_("You may not move this screen."))
+    before = {"floor": str(screen.floor_id) if screen.floor_id else None, "x": screen.position_x,
+              "y": screen.position_y, "facing": screen.facing}
+    if x is None:
+        screen.position_x = screen.position_y = screen.facing = None
+        screen.floor = None
+    else:
+        screen.floor, screen.position_x, screen.position_y = floor, x, y
+        screen.facing = facing if facing is not None else screen.facing
+        if floor is not None and screen.venue_id is None:
+            screen.venue_id = floor.building.venue_id
+    screen.save(update_fields=["floor", "position_x", "position_y", "facing", "venue", "updated_at"])
+    log(action="screen.placed", actor=actor, target=screen, event=event, request=request,
+        message=f"Screen {screen.name} {'placed on' if x is not None else 'removed from'} the map",
+        changes={"before": before, "floor": str(screen.floor_id) if screen.floor_id else None,
+                 "x": screen.position_x, "y": screen.position_y, "facing": screen.facing})
+
+
+def map_rescale(floor, factor: float) -> None:
+    for s in Screen.objects.filter(floor=floor).exclude(position_x=None):
+        s.position_x, s.position_y = s.position_x * factor, (s.position_y or 0) * factor
+        s.save(update_fields=["position_x", "position_y"])

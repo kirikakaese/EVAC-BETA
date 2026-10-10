@@ -32,9 +32,9 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Screen
-        fields = ["id", "name", "description", "tags", "venue", "zone", "room", "groups", "position_x", "position_y",
-                  "paired", "paired_at", "revoked_at", "last_seen_at", "reported", "health", "token_prefix",
-                  "created_at", "updated_at"]
+        fields = ["id", "name", "description", "tags", "venue", "zone", "room", "groups", "floor",
+                  "position_x", "position_y", "facing", "paired", "paired_at", "revoked_at", "last_seen_at",
+                  "reported", "health", "token_prefix", "created_at", "updated_at"]
         read_only_fields = ["id", "paired", "paired_at", "revoked_at", "last_seen_at", "reported", "health",
                             "token_prefix", "created_at", "updated_at"]
 
@@ -45,7 +45,7 @@ class ScreenSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         event = self.context["event"]
         venues = set(event.venues.values_list("pk", flat=True))
-        for key in ("venue", "zone", "room"):
+        for key in ("venue", "zone", "room", "floor"):
             obj = attrs.get(key)
             if obj is not None and (obj.pk if key == "venue" else obj.venue_id) not in venues:
                 raise serializers.ValidationError({key: "Not a venue of this event."})

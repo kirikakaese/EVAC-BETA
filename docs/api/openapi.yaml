@@ -6758,11 +6758,19 @@ components:
           items:
             type: string
             format: uuid
+        floor:
+          type: string
+          format: uuid
+          nullable: true
         position_x:
           type: number
           format: double
           nullable: true
         position_y:
+          type: number
+          format: double
+          nullable: true
+        facing:
           type: number
           format: double
           nullable: true
@@ -7360,11 +7368,19 @@ components:
           items:
             type: string
             format: uuid
+        floor:
+          type: string
+          format: uuid
+          nullable: true
         position_x:
           type: number
           format: double
           nullable: true
         position_y:
+          type: number
+          format: double
+          nullable: true
+        facing:
           type: number
           format: double
           nullable: true
