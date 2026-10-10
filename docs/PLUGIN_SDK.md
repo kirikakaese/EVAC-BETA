@@ -2,7 +2,8 @@
 
 Every EVAC module and extension — built-in or third party — is a **plugin**: a Django app with an
 `evac_plugin.py`. The core uses exactly the same API ([ADR-0001](adr/0001-architecture-and-plugin-model.md)).
-Plugin API version: `apps.core.plugins.API_VERSION = 1`.
+Plugin API version: `apps.core.plugins.API_VERSION = 2` (2 added `layout_check`, `sync`, `node_action` and
+`ExtensionSpec.secrets_on_site`; plugins written for 1 still load).
 
 ## Minimal plugin
 
@@ -78,6 +79,9 @@ again without removing the package.
 | time anchors | `r.anchor_source(TimeAnchorSpec(key, title, choices, resolve))` | items announcements can be timed relative to ("10 min before …"); send `apps.core.signals.anchor_moved` when one moves (ADR-0025) |
 | audiences | `r.audience(AudienceSpec(key, title, choices, members))` | groups of people channels that reach people can be limited to (built in: roles) |
 | map layer | `r.map_layer(MapLayerSpec(key, title, items, place=, rescale=))` | your things on the venue map: `items(event, venue)` lists them with position and facing, `place(...)` stores a move (ADR-0027; screens) |
+| layout check | `r.layout_check(fn)` | `fn(layout, data) -> [{"level", "message", "element"}]`; errors block publishing (ADR-0033) |
+| sync spec | `r.sync(SyncSpec(module, models=(SyncModel(label, queryset, live=, local_fields=, secret_fields=, natural_key=, files=), ...), order=))` | what a venue node receives in the event snapshot and, for `live` models, sends back in its op-log (ADR-0036) |
+| node action | `r.node_action(kind, fn)` | `fn(event, payload, actor) -> dict`: a live action central forwards to the node holding a checked-out event; call `apps.nodes.guard.remote(event)` / `forward(...)` in your services |
 | webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 

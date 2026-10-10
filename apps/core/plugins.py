@@ -22,8 +22,9 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-#: Bumped on breaking changes to anything in this module. Plugins declare the API version they target.
-API_VERSION = 1
+#: Bumped when this module grows or changes. Plugins declare the API version they target; a plugin declaring a
+#: newer version than this EVAC provides refuses to load. 2: ``layout_check``, ``sync`` and ``node_action``.
+API_VERSION = 2
 
 PluginKind = Literal["core", "module", "extension"]
 NavSection = Literal["event", "operations", "content", "settings", "admin"]
@@ -325,6 +326,43 @@ LayoutCheck = Callable[[Any, Mapping[str, Any]], list[dict[str, Any]]]
 
 
 @dataclass(frozen=True)
+class SyncModel:
+    """One model a venue node receives in the event's snapshot or sends back in its op-log (ADR-0002, ADR-0036).
+
+    ``queryset(event)`` returns the rows belonging to the event. ``live`` models belong to the node while the event
+    is checked out (evacuation state, announcements, overrides): the node gets them once with the checkout and
+    sends every change back. ``local_fields`` are the node's own (pairing tokens, health) and are never
+    overwritten by a snapshot. ``secret_fields`` hold values encrypted with ``apps.core.crypto``: they travel
+    sealed for the node and are re-encrypted with the node's keys. ``natural_key`` upserts by those fields
+    instead of the primary key (rows with integer keys). ``files(obj)`` lists ``(media path, sha256 or "")``
+    the node downloads. ``delete_missing`` removes local rows the snapshot no longer has.
+    """
+
+    label: str
+    queryset: Callable[[Any], Any]
+    live: bool = False
+    local_fields: tuple[str, ...] = ()
+    secret_fields: tuple[str, ...] = ()
+    natural_key: tuple[str, ...] = ()
+    files: Callable[[Any], Sequence[tuple[str, str]]] | None = None
+    delete_missing: bool = True
+
+
+@dataclass(frozen=True)
+class SyncSpec:
+    """The models a module syncs to venue nodes, in dependency order (``order`` sorts modules)."""
+
+    module: str
+    models: tuple[SyncModel, ...]
+    order: int = 100
+
+
+#: ``fn(event, payload, actor) -> dict``: a live action central forwards to the node holding the event
+#: (alarms, announcements); runs on the node with the node's services.
+NodeAction = Callable[[Any, Mapping[str, Any], Any], Mapping[str, Any]]
+
+
+@dataclass(frozen=True)
 class ExtensionFeature:
     """Something an extension contributes that can be switched on/off individually on its settings page."""
 
@@ -384,3 +422,6 @@ class ExtensionSpec:
     urls: str = ""
     docs: str = ""
     icon: str = ""
+    #: venue nodes get this extension's configuration with its secrets (sealed for the node) because it is needed
+    #: on site (e.g. MQTT bridges); every other extension stays on central (ADR-0002, ADR-0036)
+    secrets_on_site: bool = False

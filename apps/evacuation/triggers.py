@@ -31,7 +31,7 @@ DRILL_GRACE = timedelta(minutes=15)
 
 @dataclass
 class Outcome:
-    result: str  # executed | armed | waiting | notified | duplicate
+    result: str  # executed | armed | waiting | notified | duplicate | forwarded (to the venue node)
     changes: list[StateChange] = field(default_factory=list)
     request: EvacRequest | None = None
 
@@ -107,6 +107,13 @@ def trigger(event: Any, target: State | str, *, source: str, zone: Any = None, d
                 event=event, zone=zone)), False)
         if not services.can(actor, event, target, drill=kind_drill, zone=zone, request=request):
             raise PermissionDenied("evacuation")
+    from apps.nodes import guard
+
+    if guard.remote(event):  # checked out: the node decides (ADR-0036); permissions were checked here
+        guard.forward(event, "evacuation.trigger", {
+            "state": target.value, "source": source, "zone": str(zone.pk) if zone else None, "drill": drill,
+            "reason": reason[:300], "key": key[:100], "clear_zones": clear_zones, "execute": execute}, actor=actor)
+        return Outcome("forwarded")
     services.check(event, target, zone=zone, drill=drill)  # refused changes are refused for every source
     now = timezone.now()
     states, seconds = two_person(event)
@@ -169,7 +176,22 @@ def _execute(req: EvacRequest, *, actor: Any, request: Any, status: str) -> list
     return changes
 
 
+def _forward_decision(req: EvacRequest, verdict: str, actor: Any, request: Any) -> bool:
+    from apps.nodes import guard
+
+    if not guard.remote(req.event):
+        return False
+    own = verdict == "reject" and req.requested_by_id is not None and req.requested_by_id == getattr(actor, "pk", None)
+    if not own and not services.can(actor, req.event, State(req.state), drill=req.drill, zone=req.zone,
+                                    request=request):
+        raise PermissionDenied("evacuation")
+    guard.forward(req.event, "evacuation.decide", {"request": str(req.pk), "verdict": verdict}, actor=actor)
+    return True
+
+
 def confirm(req: EvacRequest, *, actor: Any, request: Any = None) -> list[StateChange]:
+    if _forward_decision(req, "confirm", actor, request):
+        return []
     with transaction.atomic():
         req = EvacRequest.objects.select_for_update().get(pk=req.pk)
         if req.status != policy.Status.PENDING:
@@ -184,6 +206,8 @@ def confirm(req: EvacRequest, *, actor: Any, request: Any = None) -> list[StateC
 
 
 def reject(req: EvacRequest, *, actor: Any, request: Any = None) -> None:
+    if _forward_decision(req, "reject", actor, request):
+        return
     with transaction.atomic():
         req = EvacRequest.objects.select_for_update().get(pk=req.pk)
         if req.status != policy.Status.PENDING:
@@ -199,8 +223,13 @@ def reject(req: EvacRequest, *, actor: Any, request: Any = None) -> None:
 
 def process_due(event: Any = None, now: Any = None) -> int:
     """Escalate armed requests and expire two-person requests whose time is up; start due scheduled drills."""
+    from apps.nodes import guard
+
     now = now or timezone.now()
-    qs = EvacRequest.objects.filter(status=policy.Status.PENDING, deadline__lte=now)
+    if event is not None and (guard.remote(event) or guard.read_only_copy(event)):
+        return 0  # the node holding the event escalates, expires and starts drills
+    qs = EvacRequest.objects.filter(status=policy.Status.PENDING, deadline__lte=now) \
+        .exclude(event_id__in=guard.remote_event_ids())
     if event is not None:
         qs = qs.filter(event=event)
     done = 0
@@ -236,8 +265,11 @@ def process_due(event: Any = None, now: Any = None) -> int:
 
 
 def start_due_drills(event: Any = None, now: Any = None) -> int:
+    from apps.nodes import guard
+
     now = now or timezone.now()
-    qs = ScheduledDrill.objects.filter(started_at__isnull=True, at__lte=now).select_related("event", "zone")
+    qs = ScheduledDrill.objects.filter(started_at__isnull=True, at__lte=now).select_related("event", "zone") \
+        .exclude(event_id__in=guard.remote_event_ids())
     if event is not None:
         qs = qs.filter(event=event)
     n = 0

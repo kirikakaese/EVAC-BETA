@@ -107,12 +107,18 @@ files = [
     "apps/playlists/engine.py",
     "apps/venues/routing.py",
     "apps/evacuation/",
+    "apps/nodes/",
 ]
 strict = true
 exclude = ["/tests/", "/migrations/"]
 
 [[tool.mypy.overrides]]
 # Django ships no type information here: allow subclassing its (Any) base classes and its decorators
-module = ["apps.evacuation.*"]
+module = ["apps.evacuation.*", "apps.nodes.*"]
 disallow_subclassing_any = false
 disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+# model instances and querysets are Any without Django stubs; returning them is not an error here
+module = ["apps.nodes.*"]
+warn_return_any = false

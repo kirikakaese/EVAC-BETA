@@ -8,5 +8,8 @@ manifest = PluginManifest(key="accounts", name="Accounts", version="0.1.0", kind
 
 
 def register(r: Registry) -> None:
+    from . import sync
+
+    r.sync(sync.spec())
     r.nav(NavEntry(module="core", label=str(_("Users")), url_name="portal:users", permission="admin",
                    section="admin", order=10, global_=True, active=("portal:user*",)))

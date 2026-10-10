@@ -15,6 +15,9 @@ manifest = PluginManifest(key="widgets", name="Data feeds and custom widgets", v
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     from . import packs, services
 
     r.module(ModuleSpec(key="widgets", name=str(_("Custom widgets")), order=36, category="screens",

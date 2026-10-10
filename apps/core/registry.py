@@ -26,6 +26,7 @@ from .plugins import (
     MapLayerSpec,
     ModuleSpec,
     NavEntry,
+    NodeAction,
     NotificationChannelSpec,
     OutboxHandler,
     PackSectionSpec,
@@ -35,6 +36,7 @@ from .plugins import (
     ScopeKind,
     SettingsNamespace,
     StaffCardSpec,
+    SyncSpec,
     TimeAnchorSpec,
     WebhookEventSpec,
     WebhookSink,
@@ -74,6 +76,8 @@ class Registry:
         self.webhook_sinks: list[WebhookSink] = []
         self.program_sources: list[ProgramSource] = []
         self.layout_checks: list[LayoutCheck] = []
+        self.sync_specs: dict[str, SyncSpec] = {}
+        self.node_actions: dict[str, NodeAction] = {}
         self.staff_cards: dict[str, StaffCardSpec] = {}
         self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
         self.pack_sections: dict[str, PackSectionSpec] = {}
@@ -191,6 +195,15 @@ class Registry:
         """Check a layout on save and publish: ``fn(layout, data) -> [{"level": "error"|"warning", "message",
         "element"?}]``. Errors block publishing (the evacuation guardrails use this, ADR-0033)."""
         self.layout_checks.append(fn)
+
+    def sync(self, spec: SyncSpec) -> None:
+        """Models a venue node receives (snapshot) and sends back (op-log), ADR-0036."""
+        self._add(self.sync_specs, spec.module, spec, "sync spec")
+
+    def node_action(self, kind: str, fn: NodeAction) -> None:
+        """A live action central forwards to the node holding a checked-out event (``kind`` like
+        ``"evacuation.trigger"``)."""
+        self._add(self.node_actions, kind, fn, "node action")
 
     def editor_choices(self, key: str, fn: Callable[[Any], Any], *, module: str = "core") -> None:
         """Choices for the layout editor (``config.choices[key] = fn(event)``, only while ``module`` is on), e.g.

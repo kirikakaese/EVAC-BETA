@@ -24,6 +24,9 @@ def _group_choices(event):
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     from . import api, consumers, services
 
     r.map_layer(MapLayerSpec(key="screens", title=str(_("Screens")), items=services.map_items,

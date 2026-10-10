@@ -11,6 +11,9 @@ SCOPES = ("venue", "zone", "room", "screen_group")
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     from . import api, packs
 
     r.module(ModuleSpec(key="playlists", name=str(_("Playlists")), order=32, category="screens",

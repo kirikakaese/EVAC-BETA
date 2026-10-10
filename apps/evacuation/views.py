@@ -30,6 +30,8 @@ MODEL_LABELS = [(Model.SIMPLE, _lazy("Simple takeover")), (Model.STAGED, _lazy("
                 (Model.ZONES, _lazy("Zones and routes"))]
 GLYPHS = {Arrow.AHEAD: "↑", Arrow.AHEAD_RIGHT: "↗", Arrow.RIGHT: "→", Arrow.BACK_RIGHT: "↘", Arrow.BACK: "↓",
           Arrow.BACK_LEFT: "↙", Arrow.LEFT: "←", Arrow.AHEAD_LEFT: "↖"}
+FORWARDED = _lazy("Sent to the venue node that holds this event. It runs there and shows up here once the node "
+                  "reports back.")
 #: brief §8.5: trigger to screen within 2 s (p95) on the venue LAN
 TARGET_MS = 2000
 ARROW_CHOICES = [("", _lazy("No arrow"))] + [(a.value, a.value.replace("_", " ")) for a in Arrow]
@@ -94,6 +96,15 @@ def _form(request: HttpRequest, event: Any, cfg: services.Config, zones: list[di
                       alarm_zones=alarm_zones, can_drill=can_drill)
 
 
+def _forwarded(request: HttpRequest, event: Any) -> bool:
+    from apps.nodes import guard
+
+    if guard.remote(event):
+        messages.info(request, FORWARDED)
+        return True
+    return False
+
+
 def _can_change(request: HttpRequest, event: Any) -> bool:
     return any(rbac.has_any(request.user, event, p, request=request)
                for p in (services.PERM_TRIGGER, services.PERM_CLEAR, services.PERM_DRILL))
@@ -155,9 +166,8 @@ def answer(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
     elif acks.alarm_since(event) is None:
         messages.error(request, _("There is no alarm to answer."))
     else:
-        row = acks.staff_ack(event, request.user, kind, zone=zone, note=request.POST.get("note", ""),
-                             request=request)
-        messages.success(request, _("Sent to the control room: %(answer)s") % {"answer": row.get_kind_display()})
+        acks.staff_ack(event, request.user, kind, zone=zone, note=request.POST.get("note", ""), request=request)
+        messages.success(request, _("Sent to the control room: %(answer)s") % {"answer": dict(StaffAck.KINDS)[kind]})
     return redirect(nxt) if nxt else redirect("evacuation:index", event.slug)
 
 
@@ -200,6 +210,8 @@ def _report(request: HttpRequest, out: triggers.Outcome, cfg: services.Config) -
                                     "yet.") % {"t": timezone.localtime(out.request.deadline).strftime("%H:%M:%S")})
     elif out.result == "armed":
         messages.warning(request, _("Armed: the control room has to confirm this alarm."))
+    elif out.result == "forwarded":
+        messages.info(request, FORWARDED)
     else:
         messages.info(request, _("The control room was notified."))
 
@@ -215,11 +227,15 @@ def end_all_clear(request: HttpRequest, slug: str, *, event: Any) -> HttpRespons
             messages.error(request, _("Unknown zone."))
             return redirect("evacuation:index", event.slug)
     try:
-        triggers.trigger(event, State.NORMAL, source=policy.WEB, zone=zone, actor=request.user, request=request)
+        out = triggers.trigger(event, State.NORMAL, source=policy.WEB, zone=zone, actor=request.user,
+                               request=request)
     except machine.Refused as err:
         messages.error(request, err.message)
     else:
-        messages.success(request, _("Back to normal."))
+        if out.result == "forwarded":
+            messages.info(request, FORWARDED)
+        else:
+            messages.success(request, _("Back to normal."))
     return redirect("evacuation:index", event.slug)
 
 
@@ -259,7 +275,11 @@ def block(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
                              reason=request.POST.get("reason", "")[:300])
     except PermissionDenied:
         messages.error(request, _("You may not block or open this point."))
+    except machine.Refused as err:
+        messages.error(request, err.message)
     else:
+        if _forwarded(request, event):
+            return redirect("evacuation:index", event.slug)
         messages.success(request, (_("%(p)s is blocked. Routes avoid it.") if blocked
                                    else _("%(p)s is open again.")) % {"p": point.name})
     return redirect("evacuation:index", event.slug)
@@ -299,10 +319,12 @@ def decide(request: HttpRequest, slug: str, pk: Any, verdict: str, *, event: Any
     try:
         if verdict == "confirm":
             triggers.confirm(req, actor=request.user, request=request)
-            messages.success(request, _("Confirmed."))
+            if not _forwarded(request, event):
+                messages.success(request, _("Confirmed."))
         else:
             triggers.reject(req, actor=request.user, request=request)
-            messages.success(request, _("Rejected. Nothing changed."))
+            if not _forwarded(request, event):
+                messages.success(request, _("Rejected. Nothing changed."))
     except machine.Refused as err:
         messages.error(request, err.message)
     except PermissionDenied:

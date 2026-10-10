@@ -141,6 +141,16 @@ def check(event: Any, target: State | str, *, zone: Any = None, drill: bool = Fa
                               real_alarm_elsewhere=elsewhere, model=cfg.model, zone=zone is not None)
 
 
+def _ensure_local(event: Any) -> None:
+    """Live state has one writer (ADR-0036): the venue node while checked out, central otherwise."""
+    from apps.nodes import guard
+
+    try:
+        guard.ensure_local(event)
+    except guard.CheckedOut as err:
+        raise Refused("checked_out", err.message) from err
+
+
 def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = False, actor: Any = None,
            request: Any = None, source: str = "web", reason: str = "", clear_zones: list[str] | None = None,
            check_perms: bool = True) -> list[StateChange]:
@@ -152,6 +162,7 @@ def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = F
     target = State(target)
     if zone is not None and not zones_of(event).filter(pk=zone.pk).exists():
         raise Refused("zone", "This zone is not part of the event.")
+    _ensure_local(event)
     cfg = config(event)
     now = timezone.now()
     out: list[StateChange] = []
@@ -213,6 +224,13 @@ def set_blocked(event: Any, point: Any, blocked: bool, *, actor: Any = None, req
     if check_perms and actor is not None and not rbac.has_perm(actor, event, PERM_TRIGGER, obj=point,
                                                                request=request):
         raise PermissionDenied("evacuation")
+    from apps.nodes import guard
+
+    if guard.remote(event):
+        guard.forward(event, "evacuation.block", {"point": str(point.pk), "blocked": blocked, "reason": reason[:300],
+                                                  "source": source}, actor=actor)
+        return True
+    guard.ensure_local(event)
     with transaction.atomic():
         row = BlockedPoint.objects.select_for_update().filter(event=event, point=point).first()
         if blocked == (row is not None):

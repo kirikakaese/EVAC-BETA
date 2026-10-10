@@ -44,6 +44,12 @@ case "$1" in
     # Optional: MQTT subscriber for hardware bridges (extensions/mqtt); idles until the extension is configured
     exec python manage.py evac_mqtt
     ;;
+  node-sync)
+    wait_for_db
+    # Venue node only (EVAC_MODE=node, ADR-0036): sync with central. Enrol once first:
+    #   docker compose run --rm node-sync python manage.py evac_node enrol --central https://central.example.org --code …
+    exec python manage.py evac_node run --interval "${NODE_SYNC_INTERVAL:-2}"
+    ;;
   beat)
     wait_for_db
     exec celery -A evac beat -l "${LOG_LEVEL:-info}" --schedule /tmp/celerybeat-schedule

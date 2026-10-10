@@ -16,6 +16,9 @@ manifest = PluginManifest(key="content", name="Screen content", version="0.1.0",
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     from . import api, packs, services
 
     r.webhook_sink(services.welcome_on_first_pairing)

@@ -127,11 +127,19 @@ def coverage(event: Any) -> Coverage:
                     sorted(missing))
 
 
-def staff_ack(event: Any, user: Any, kind: str, *, zone: Any = None, note: str = "", request: Any = None) -> StaffAck:
+def staff_ack(event: Any, user: Any, kind: str, *, zone: Any = None, note: str = "",
+              request: Any = None) -> StaffAck | None:
+    """Record a staff answer. Returns ``None`` when it was forwarded to the venue node holding the event."""
+    from apps.nodes import guard
+
     from . import feed, services
 
     if kind not in dict(StaffAck.KINDS):
         raise ValueError(kind)
+    if guard.remote(event):
+        guard.forward(event, "evacuation.answer", {"kind": kind, "zone": str(zone.pk) if zone else None,
+                                                   "note": note[:300]}, actor=user)
+        return None
     shown = services.effective_for(event, [str(zone.pk)] if zone else [])
     row: StaffAck = StaffAck.objects.create(event=event, user=user, user_repr=str(user)[:200], kind=kind, zone=zone,
                                   note=note[:300], seq=feed.current_seq(event), drill=shown.drill)
@@ -199,8 +207,11 @@ def watchdog(event: Any = None, now: Any = None) -> int:
     from .models import EventAlarm
 
     now = now or timezone.now()
+    from apps.nodes import guard
+
     qs = EventAlarm.objects.filter(seq_at__lte=now - timedelta(seconds=WATCHDOG_SECONDS),
-                                   watchdog_seq__lt=models.F("seq")).select_related("event")
+                                   watchdog_seq__lt=models.F("seq")).select_related("event") \
+        .exclude(event_id__in=guard.remote_event_ids())
     if event is not None:
         qs = qs.filter(event=event)
     alerts = 0

@@ -9,6 +9,9 @@ manifest = PluginManifest(key="core", name="EVAC core", version="0.1.0", kind="c
 
 
 def register(r: Registry) -> None:
+    from . import sync
+
+    r.sync(sync.spec())
     from . import webpush
 
     r.outbox_handler(webpush.JOB_KIND, webpush.handle_job)

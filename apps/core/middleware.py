@@ -57,6 +57,7 @@ RATE_LIMITED_PATHS = {
     "/early-access/": "early_access",
     "/player/api/pair/": "pairing",
     "/bridge/": "bridge",
+    "/api/v1/node/enrol/": "node_enrol",
 }
 
 

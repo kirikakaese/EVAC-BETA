@@ -111,3 +111,19 @@ Installed with the package (`pip install .` provides the `evac` script) or run a
   in a two-factor session and its owner needs `evacuation.trigger` (or `evacuation.drill`). The source's policy
   applies (default *arm*); the answer says `executed`, `armed`, `notified` or `duplicate`. The API cannot end
   alarms. See [ADR-0031](adr/0031-evacuation-triggers-and-policies.md).
+
+## Venue node API
+
+`/api/v1/node/` is for venue nodes only (ADR-0036). Requests are signed by the node (`Authorization: Node …`,
+`X-EVAC-Node-Timestamp`, `X-EVAC-Node-Signature`).
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `enrol/` | the node presents its one-time code and public keys, and gets its token |
+| GET | `events/` | the events checked out to the node |
+| GET | `events/<id>/snapshot/` | configuration snapshot (`ETag`, `If-None-Match`) |
+| POST | `events/<id>/snapshot/confirm/` | the node applied a version |
+| GET | `events/<id>/files/<path>` | a media file (`Range: bytes=N-` resumes) |
+| POST | `events/<id>/oplog/` | live changes `{"entries": [...]}`; answers `{"applied_seq"}` |
+| GET / POST | `events/<id>/actions/`, `events/<id>/actions/<n>/` | actions forwarded from central, and their results |
+| POST | `events/<id>/checkin/` | hand the event back (`final_seq`, `alarm_seq`) |

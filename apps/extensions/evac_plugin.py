@@ -8,6 +8,9 @@ manifest = PluginManifest(key="extensions", name="Extensions framework", version
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     r.module(ModuleSpec(key="extensions", name=str(_("Extensions")), order=5, category="integration",
                         description=str(_("Integrations with external systems (DIAL, pretalx, Matrix, webhooks, "
                                           "...), configured under Settings -> Extensions."))))

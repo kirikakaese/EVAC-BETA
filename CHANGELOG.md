@@ -6,6 +6,20 @@ released.
 
 ## [Unreleased]
 
+### Added — venue node and sync (Phase 3, part 11)
+
+- Venue nodes (ADR-0036): EVAC with `EVAC_MODE=node` runs a checked-out event at the venue without the uplink.
+  *Venue nodes* page (enrolment codes, revoke); per event *Venue node* (check out, request check-in, force
+  check-in). Nodes enrol with their own Ed25519/X25519 keys and sign every request.
+- Configuration snapshots with ETags (generic, declared per module with `r.sync`); people, second factors and
+  the alarm key travel sealed for the node; media files sync resumably with SHA-256 checks.
+- Live state (evacuation, announcements, overrides, audit) goes back through an idempotent op-log; audit entries
+  join central's chain with the node's hash. Alarms and decisions taken in central's control room are forwarded
+  to the node and run there; the check-in hands back the alarm counter.
+- `manage.py evac_node enrol|run|sync|status`, entrypoint role `node-sync`, systemd unit `evac-node-sync`,
+  compose profile `node`; `make node-e2e` (two real instances, also in CI).
+- Plugin API 2: `r.sync`, `r.node_action`, `r.layout_check`, `ExtensionSpec.secrets_on_site`.
+
 ### Changed
 
 - Safety signs now use the official ISO 7010 artwork (E001, E002, E003, E007, W001), imported from

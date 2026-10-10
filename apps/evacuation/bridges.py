@@ -255,10 +255,12 @@ def report(bridge: Bridge, key: str, state: str, *, event_key: str = "", at: str
 
 def sweep(now: Any = None) -> int:
     """Mark bridges without a heartbeat for ``OFFLINE_AFTER`` seconds offline and alert (Celery beat)."""
+    from apps.nodes import guard
+
     now = now or timezone.now()
     n = 0
     for bridge in Bridge.objects.filter(online=True, last_seen__lt=now - timedelta(seconds=OFFLINE_AFTER)) \
-            .select_related("event"):
+            .exclude(event_id__in=guard.remote_event_ids()).select_related("event"):
         Bridge.objects.filter(pk=bridge.pk).update(online=False)
         audit.log(action="evacuation.bridge_offline", event=bridge.event, target=bridge, message=bridge.name)
         _alert(bridge, _("Bridge offline: %(b)s") % {"b": bridge.name},

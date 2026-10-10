@@ -28,6 +28,9 @@ def _role_members(event, ids: set[str]):
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
     r.audience(AudienceSpec(key="roles", title=str(_("Role")), choices=_role_choices, members=_role_members,
                             order=10))
     r.data_source(DataSourceSpec(key="event.info", name=str(_("Event details")), fetch=_event_info,

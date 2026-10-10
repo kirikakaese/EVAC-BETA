@@ -143,6 +143,15 @@ services:
       web:
         condition: service_started
 
+  # Venue node only (EVAC_MODE=node in .env, ADR-0036): sync with central: docker compose --profile node up -d
+  node-sync:
+    <<: *evac-service
+    command: ["node-sync"]
+    profiles: ["node"]
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:
   redisdata:

@@ -407,9 +407,25 @@ removed. Event audit logs can be filtered and exported as CSV or JSON (`audit.ex
 
 ## 9. Venue node
 
-Running EVAC on a mini PC at the venue (`EVAC_MODE=node`) so the venue keeps working without uplink is
-designed in [ADR-0002](adr/0002-central-node-sync.md) and ships with phase 3. Until then, for a single
-offline event run the normal stack on a local server.
+A venue node is EVAC on a small computer at the venue (`EVAC_MODE=node`, same image or package). While an event
+is *checked out* to it, screens, announcements, overrides and evacuation run there, with or without the uplink
+([ADR-0036](adr/0036-venue-node-sync.md)).
+
+1. Install the node like a normal instance with `EVAC_MODE=node` in its environment (its own database and
+   secrets).
+2. On central, *Venue nodes → Add a node*: copy the enrolment code (valid 24 hours).
+3. On the node: `manage.py evac_node enrol --central https://central.example.org --code …`, then start the sync
+   (`docker compose --profile node up -d`, or `systemctl enable --now evac-node-sync`).
+4. On central, in the event: *Venue node → Check out*. Within seconds the node has the configuration, the people
+   of the event (they sign in on the node with their usual password and second factor), the media and the
+   current live state. Pair the venue's screens with the node.
+5. During the event, change configuration (layouts, playlists, settings) on central: it follows within 30 s.
+   Alarms and announcements raised on central are sent to the node and run there. Without the uplink everything
+   keeps working at the venue; central catches up when the link is back.
+6. Afterwards, *Request check-in*: the node sends what is left and hands the event back. If the node is lost,
+   *Force check-in* (hold, reason; audit-logged) takes the event back at the last position central received.
+
+`manage.py evac_node status` on the node shows what it holds and what is still to send.
 
 ## 10. Backups and upgrades
 

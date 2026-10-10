@@ -26,6 +26,13 @@ def _label(default: str) -> dict[str, Any]:
 
 
 def register(r: Registry) -> None:
+    from . import sync as node_sync
+
+    r.sync(node_sync.spec())
+    from .node_actions import ACTIONS
+
+    for kind, fn in ACTIONS.items():
+        r.node_action(kind, fn)
     r.module(ModuleSpec(
         key="evacuation", name=str(_("Evacuation")), order=15, category="venue", default_enabled=False,
         depends_on=("venues",),

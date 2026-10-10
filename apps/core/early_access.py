@@ -30,7 +30,7 @@ COOKIE = "evac_early_access"
 SALT = "evac.early_access"
 #: screens (``/player/`` and its WebSocket) authenticate with device tokens and cannot type the password
 EXEMPT_PREFIXES = ("/early-access/", "/static/", "/healthz", "/readyz", "/metrics", "/favicon.ico", "/player/",
-                   "/bridge/", "/evac/")
+                   "/bridge/", "/evac/", "/api/v1/node/")
 WS_EXEMPT_PATHS = ("/ws/screen/",)
 WEBHOOK_PATH = re.compile(r"^/api/v1/extensions/[\w-]+/[0-9a-f-]{36}/webhook/$")
 

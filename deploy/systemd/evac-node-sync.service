@@ -1,0 +1,26 @@
+# EVAC venue node sync with central (EVAC_MODE=node only, ADR-0036). Enrol first: manage.py evac_node enrol
+# --central URL --code CODE; then: systemctl enable --now evac-node-sync
+[Unit]
+Description=EVAC venue node sync
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+PartOf=evac.target
+
+[Service]
+Type=simple
+User=evac
+Group=evac
+WorkingDirectory=/opt/evac
+EnvironmentFile=/etc/evac/evac.env
+Environment=DJANGO_SETTINGS_MODULE=evac.settings.prod
+ExecStart=/opt/evac/.venv/bin/python manage.py evac_node run --interval 2
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/evac
+
+[Install]
+WantedBy=evac.target

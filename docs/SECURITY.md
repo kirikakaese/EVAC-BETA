@@ -57,6 +57,15 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 | Dependency vulnerabilities | `pip-audit` in CI (nightly too) |
 | OIDC token substitution | PKCE, state, nonce, `iss`/`aud`/`azp`/`exp` validation, linking only by verified e-mail |
 
+### Venue nodes ([ADR-0036](adr/0036-venue-node-sync.md))
+
+- Enrolment needs a one-time code (24 h, hashed, rate-limited). The node creates its own keys; every request is
+  signed with Ed25519 over method, path, timestamp and body hash (5-minute window) and carries a hashed token.
+- Secrets reach the node sealed for its X25519 key (TOTP secrets, alarm key, feed headers, extensions marked
+  `secrets_on_site`) and are re-encrypted there; other extension secrets never leave central.
+- Central accepts from a node only changes of live state of the event checked out to it; audit entries join
+  central's chain as imported rows that keep the node's hash. A lost node is revoked after a forced check-in.
+
 ## Privacy (GDPR)
 
 - **Minimisation**: accounts hold e-mail, display name, optional SSO subject and second-factor metadata.

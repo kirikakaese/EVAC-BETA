@@ -18,6 +18,7 @@ def register(r: Registry) -> None:
 
     r.extension(ExtensionSpec(
         key="mqtt", name="MQTT", version="1.0.0", scope="instance", icon="⇄", docs="extensions/mqtt",
+        secrets_on_site=True,
         description=str(_("Hardware bridges can talk MQTT instead of HTTPS, through a broker you run (e.g. "
                           "Mosquitto). Needs the mqtt process (entrypoint role “mqtt”).")),
         settings_schema={"type": "object", "required": ["host"], "properties": {
