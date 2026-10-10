@@ -36,6 +36,7 @@ s=SessionStore(session_key="${sk}"); s[SESSION_KEY]="2026-01-01T00:00:00"; s.sav
 // 1. pair a screen
 const player = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 player.on("pageerror", (e) => logs.push(`player pageerror: ${e.message}`));
+player.on("response", (r) => { if (r.status() >= 500) logs.push(`player HTTP ${r.status()} ${r.request().method()} ${r.url()}`); });
 player.on("console", (m) => { if (m.type() === "error" && !m.text().includes("Content Security Policy")) logs.push(`player console: ${m.text()}`); });
 await player.goto(`${B}/player/`);
 await player.waitForSelector(".code");

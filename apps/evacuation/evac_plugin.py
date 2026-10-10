@@ -25,6 +25,16 @@ def _label(default: str) -> dict[str, Any]:
             "description": "Empty: the built-in name."}
 
 
+SAFETY_STATEMENT = _(
+    "EVAC is a supplementary information system. It is not a certified fire alarm system, voice alarm system or "
+    "evacuation system: DIN 14675, DIN VDE 0833, EN 54 and similar standards do not apply to it, and it does not "
+    "comply with them.\n\n"
+    "It complements, and never replaces, the fire alarm and voice alarm systems, the signage and the evacuation "
+    "procedures the venue and the authorities require. Screens, networks and power can fail: plan the evacuation "
+    "so that it works without EVAC, and keep the venue's own alarms as the alarm that counts.\n\n"
+    "Test the evacuation content, the self-test and a drill before the event.")
+
+
 def register(r: Registry) -> None:
     from . import sync as node_sync
 
@@ -37,7 +47,8 @@ def register(r: Registry) -> None:
         key="evacuation", name=str(_("Evacuation")), order=15, category="venue", default_enabled=False,
         depends_on=("venues",),
         description=str(_("Supplementary evacuation information: alarm states per event and zone, drills. "
-                          "Not a certified fire alarm, voice alarm or evacuation system; it complements them."))))
+                          "Not a certified fire alarm, voice alarm or evacuation system; it complements them.")),
+        acknowledgement=str(SAFETY_STATEMENT)))
     r.permissions_([
         PermissionSpec("evacuation.view", str(_("See the evacuation state and its history")), scopes=SCOPES),
         PermissionSpec("evacuation.trigger", str(_("Raise, change and step down real alarms")), scopes=SCOPES,

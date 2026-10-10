@@ -55,8 +55,12 @@ class EvacuationViewSet(EventScopedMixin, viewsets.ViewSet):
 
     def get_event(self) -> Any:
         event = super().get_event()
-        if not getattr(self, "swagger_fake_view", False) and not modules.is_enabled("evacuation", event):
-            raise NotFound("The evacuation module is switched off for this event.")
+        if not getattr(self, "swagger_fake_view", False):
+            if not modules.is_enabled("evacuation", event):
+                raise NotFound("The evacuation module is switched off for this event.")
+            if modules.acknowledgement_needed("evacuation", event):
+                raise PermissionDenied("The evacuation safety statement has not been accepted for this event "
+                                       "(Settings → Evacuation).")
         return event
 
     @extend_schema(responses=inline_serializer("EvacuationState", {

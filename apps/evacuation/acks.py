@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -21,6 +21,19 @@ from .models import LatencySample, ScreenAck, StaffAck
 
 #: render times above this are measurement errors (clock jumps), not latency
 MAX_LATENCY_MS = 600_000
+
+
+def _upsert(screen: Any, values: dict[str, Any]) -> ScreenAck:
+    """Write a screen's ack row with one UPDATE (insert when missing). Players send acks, heartbeats and state
+    requests at the same time; a read-then-write transaction per request deadlocks on SQLite."""
+    if not ScreenAck.objects.filter(screen_id=screen.pk).update(**values):
+        try:
+            with transaction.atomic():
+                ScreenAck.objects.create(screen_id=screen.pk, event=screen.event, **values)
+        except IntegrityError:  # created by a concurrent request meanwhile
+            ScreenAck.objects.filter(screen_id=screen.pk).update(**values)
+    row: ScreenAck = ScreenAck.objects.get(screen_id=screen.pk)
+    return row
 
 
 def _ts(value: Any) -> datetime | None:
@@ -48,12 +61,11 @@ def record(screen: Any, data: dict[str, Any]) -> ScreenAck:
         latency = None
     if latency is not None and latency > MAX_LATENCY_MS:
         latency = None
-    ack: ScreenAck
-    ack, _created = ScreenAck.objects.update_or_create(screen_id=screen.pk, defaults={
-        "event": screen.event, "seq": seq, "version": str(data.get("v") or "")[:32],
-        "state": str(data.get("state") or "")[:20], "drill": bool(data.get("drill")),
-        "via": str(data.get("via") or "")[:20], "rendered_at": rendered, "latency_ms": latency,
-        "fallback": bool(data.get("fallback")), "detail": str(data.get("detail") or "")[:200]})
+    ack = _upsert(screen, {
+        "seq": seq, "version": str(data.get("v") or "")[:32], "state": str(data.get("state") or "")[:20],
+        "drill": bool(data.get("drill")), "via": str(data.get("via") or "")[:20], "rendered_at": rendered,
+        "latency_ms": latency, "fallback": bool(data.get("fallback")), "detail": str(data.get("detail") or "")[:200],
+        "received_at": timezone.now()})
     if latency is not None and seq:
         LatencySample.objects.get_or_create(event=screen.event, seq=seq, screen_id=screen.pk,
                                             defaults={"latency_ms": latency})
@@ -235,8 +247,7 @@ def watchdog(event: Any = None, now: Any = None) -> int:
 
 
 def bundle_served(screen: Any, version: str) -> None:
-    ScreenAck.objects.update_or_create(screen_id=screen.pk, defaults={
-        "event": screen.event, "bundle_served": version[:16], "bundle_served_at": timezone.now()})
+    _upsert(screen, {"bundle_served": version[:16], "bundle_served_at": timezone.now()})
 
 
 def record_selftest(screen: Any, data: dict[str, Any]) -> ScreenAck:
@@ -250,9 +261,7 @@ def record_selftest(screen: Any, data: dict[str, Any]) -> ScreenAck:
              "signature": str(data.get("signature") or "")[:20], "audio": str(data.get("audio") or "")[:20],
              "stages": strs(data.get("stages")), "origins": strs(data.get("origins")),
              "visible": bool(data.get("visible")), "ms": data.get("ms") if isinstance(data.get("ms"), int) else None}
-    ack: ScreenAck = ScreenAck.objects.update_or_create(screen_id=screen.pk, defaults={
-        "event": screen.event, "selftest": clean, "selftest_at": timezone.now()})[0]
-    return ack
+    return _upsert(screen, {"selftest": clean, "selftest_at": timezone.now()})
 
 
 def screen_acks(event: Any) -> dict[str, ScreenAck]:

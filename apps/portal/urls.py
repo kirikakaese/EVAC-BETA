@@ -36,6 +36,8 @@ urlpatterns = [
     path("e/<slug:slug>/settings/clone/", views.event_clone, name="event_clone"),
     path("e/<slug:slug>/settings/export/", views.event_export, name="event_export"),
     path("e/<slug:slug>/settings/modules/", admin_views.event_modules, name="event_modules"),
+    path("e/<slug:slug>/settings/modules/<slug:key>/acknowledge/", admin_views.module_acknowledge,
+         name="module_acknowledge"),
     path("e/<slug:slug>/settings/s/<slug:ns>/", admin_views.event_settings_ns, name="settings_ns"),
     path("e/<slug:slug>/settings/tokens/", admin_views.event_tokens, name="event_tokens"),
     path("e/<slug:slug>/members/", admin_views.members, name="members"),

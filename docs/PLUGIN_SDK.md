@@ -59,7 +59,7 @@ again without removing the package.
 | Type | Registered with | Used for |
 |---|---|---|
 | `PluginManifest` | module attribute `manifest` | identity, version, kind, `api_version` |
-| `ModuleSpec` | `r.module` | Settings → Modules toggle; `required`, `default_enabled`, `depends_on`, `event_toggle` |
+| `ModuleSpec` | `r.module` | Settings → Modules toggle; `required`, `default_enabled`, `depends_on`, `event_toggle`; `acknowledgement`: a statement accepted once per event before the module works there (`event_view(module=...)` shows it) |
 | `PermissionSpec` | `r.permission` | `module.action` keys; `scopes` it may be limited to; `sensitive` (needs 2FA) |
 | `NavEntry` | `r.nav` | sidebar link; hidden when the module is off or the permission missing |
 | `SettingsNamespace` | `r.settings_namespace` | typed settings with inheritance and generated forms |

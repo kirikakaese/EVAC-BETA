@@ -26,6 +26,9 @@ def _auth(request: HttpRequest) -> tuple[Any, dict[str, Any] | None, JsonRespons
         return None, None, JsonResponse({"error": "unknown bridge token"}, status=401)
     if not modules.is_enabled("evacuation", bridge.event):
         return None, None, JsonResponse({"error": "the evacuation module is off for this event"}, status=409)
+    if modules.acknowledgement_needed("evacuation", bridge.event):
+        return None, None, JsonResponse({"error": "the evacuation safety statement is not accepted for this event"},
+                                        status=409)
     try:
         body = json.loads(request.body or b"{}")
     except ValueError:

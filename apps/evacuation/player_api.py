@@ -14,6 +14,7 @@ import json
 from typing import Any
 
 from django.core import signing
+from django.db import transaction
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
@@ -33,6 +34,7 @@ def _unauthorized() -> JsonResponse:
     return JsonResponse({"error": "unauthorized"}, status=401)
 
 
+@transaction.non_atomic_requests
 @require_GET
 def state(request: HttpRequest) -> JsonResponse:
     screen = _screen(request)
@@ -59,6 +61,7 @@ def _json(request: HttpRequest) -> dict[str, Any] | JsonResponse:
     return data
 
 
+@transaction.non_atomic_requests
 @csrf_exempt
 @require_POST
 def selftest(request: HttpRequest) -> JsonResponse:
@@ -74,6 +77,7 @@ def selftest(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"ok": True})
 
 
+@transaction.non_atomic_requests
 @csrf_exempt
 @require_POST
 def ack(request: HttpRequest) -> JsonResponse:

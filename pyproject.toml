@@ -70,6 +70,7 @@ DJANGO_SETTINGS_MODULE = "evac.settings.test"
 python_files = ["test_*.py", "tests.py"]
 testpaths = ["apps", "extensions", "bridge", "tests"]
 addopts = "-q"
+markers = ["unacknowledged: do not accept the evacuation safety statement for the test's event"]
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.coverage.run]

@@ -76,6 +76,7 @@ def status(event=None) -> list[dict]:
             "active": is_enabled(spec.key, event),
             "dependants": sorted(s.key for s in reg.modules.values() if spec.key in s.depends_on),
             "missing_deps": [d for d in spec.depends_on if not is_enabled(d, event)],
+            "needs_ack": acknowledgement_needed(spec.key, event) if event is not None else False,
         })
     return rows
 
@@ -114,6 +115,40 @@ def set_event(event, key: str, enabled: bool | None, user=None, request=None) ->
     log(action="module.toggled", actor=user, event=event, target=event, request=request,
         message=f"Module {spec.name}: {'inherit' if enabled is None else ('on' if enabled else 'off')}",
         changes={"enabled": [before, enabled]}, scope={"module": key, "level": "event"})
+
+
+def acknowledgement_needed(key: str, event) -> bool:
+    """The module has a statement (``ModuleSpec.acknowledgement``) nobody accepted for ``event`` yet."""
+    from .models import ModuleAcknowledgement
+
+    spec = registry.ensure_loaded().modules.get(key)
+    if spec is None or not spec.acknowledgement or event is None:
+        return False
+    return not ModuleAcknowledgement.objects.filter(event=event, key=key).exists()
+
+
+def acknowledgement(key: str, event):
+    from .models import ModuleAcknowledgement
+
+    return ModuleAcknowledgement.objects.filter(event=event, key=key).select_related("accepted_by").first()
+
+
+def acknowledge(event, key: str, user=None, request=None):
+    """Record that ``user`` accepted the module's statement for ``event`` (audit-logged; once per event)."""
+    from .audit import log
+    from .models import ModuleAcknowledgement
+
+    spec = registry.ensure_loaded().modules[key]
+    if not spec.acknowledgement:
+        raise ValueError(f"module {key} has no statement to accept")
+    row, created = ModuleAcknowledgement.objects.get_or_create(event=event, key=key, defaults={
+        "statement": str(spec.acknowledgement), "accepted_by": user if getattr(user, "pk", None) else None,
+        "accepted_by_repr": str(user or "system")[:200]})
+    if created:
+        log(action="module.acknowledged", actor=user, event=event, target=event, request=request,
+            message=f"{spec.name}: statement accepted", scope={"module": key},
+            changes={"statement": [None, str(spec.acknowledgement)]})
+    return row
 
 
 def require_module(key: str):

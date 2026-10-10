@@ -8,7 +8,7 @@ screens, announcements, evacuation drills and the kiosk image are added when tho
 EVAC is a **supplementary information system**. It is not a certified fire alarm, voice alarm or
 evacuation system and does not comply with DIN 14675, DIN VDE 0833, EN 54 or similar standards. It
 complements, and never replaces, the legally required systems and procedures of your venue. Operators
-acknowledge this once per event when they enable the evacuation module (phase 3).
+accept this once per event when they enable the evacuation module.
 
 ## 1. Installation
 
@@ -156,8 +156,10 @@ event instead.
 
 ## 4b. Evacuation (phase 3, in progress)
 
-Switch the **Evacuation** module on (*Settings → Modules*; it is off by default) and read the safety statement
-in [EVACUATION.md](EVACUATION.md) first: EVAC supplements, and never replaces, the venue's legally required systems.
+Switch the **Evacuation** module on (*Settings → Modules*; it is off by default). For each event an organiser
+reads and accepts the **safety statement** once (when switching it on for the event, in the wizard, on
+*Settings → Evacuation*, or on the first evacuation page): EVAC supplements, and never replaces, the venue's
+legally required systems ([EVACUATION.md](EVACUATION.md)).
 
 **Evacuation** in the event menu is the control page:
 

@@ -166,6 +166,10 @@ TEMPLATES = [
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 DATABASES["default"].setdefault("CONN_MAX_AGE", 60)
+if DATABASES["default"]["ENGINE"].endswith("sqlite3"):
+    # dev, tests and small venue nodes: take the write lock when a transaction starts, so two requests that read
+    # and then write wait for each other instead of one failing with "database is locked"
+    DATABASES["default"].setdefault("OPTIONS", {}).update({"transaction_mode": "IMMEDIATE", "timeout": 20})
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REDIS_URL = env("REDIS_URL")

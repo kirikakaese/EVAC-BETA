@@ -11,6 +11,13 @@ system or evacuation system; DIN 14675, DIN VDE 0833, EN 54 and similar standard
 does not claim compliance. It complements — and never replaces — the legally required systems and
 procedures of the venue. Operators must acknowledge this once per event when enabling the module.
 
+## Safety statement, accepted once per event (roadmap 3.11)
+
+Before the module works in an event, an organiser (with *Switch modules* or *Configure evacuation states*)
+accepts the safety statement. It is offered when switching the module on for the event, in the first-run wizard,
+on *Settings → Evacuation* and on every evacuation page until it is accepted. The acceptance is audit-logged with
+the statement's text. Until then the REST API and hardware bridges refuse alarms for the event.
+
 ## States and rules (roadmap 3.3, [ADR-0029](adr/0029-evacuation-state-machine.md))
 
 | State | Severity | Meaning |

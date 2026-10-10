@@ -134,6 +134,24 @@ class EventModuleState(models.Model):
 
 # --------------------------------------------------------------------------- settings
 
+class ModuleAcknowledgement(models.Model):
+    """Someone accepted a module's statement for an event (``ModuleSpec.acknowledgement``), once per event."""
+
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="module_acknowledgements")
+    key = models.CharField(max_length=64)
+    statement = models.TextField()  # the text accepted, as shown
+    accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name="+")
+    accepted_by_repr = models.CharField(max_length=200)
+    accepted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["event", "key"], name="uniq_module_ack")]
+
+    def __str__(self):
+        return f"{self.key} @ {self.event_id}: {self.accepted_by_repr}"
+
+
 class SettingValue(models.Model):
     """Values of one settings namespace at one scope level (only the keys set at that level)."""
 

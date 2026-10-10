@@ -62,6 +62,9 @@ class ModuleSpec:
     event_toggle: bool = True
     category: str = "general"
     order: int = 100
+    #: a statement people must accept once per event before the module works there (the evacuation safety
+    #: statement, brief §2); empty: none
+    acknowledgement: str = ""
 
 
 @dataclass(frozen=True)

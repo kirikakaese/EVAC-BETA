@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ spec.name }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ spec.name }}</h1></div>
+<section class="card" aria-labelledby="ack-title"><h2 id="ack-title">{% trans "Before you use this module in this event" %}</h2>
+<div class="alert alert-warn ack-statement">{{ spec.acknowledgement|linebreaks }}</div>
+{% if can %}<form method="post" action="{% url 'portal:module_acknowledge' event.slug spec.key %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+<div class="field"><label><input type="checkbox" name="accept" required> {% trans "I have read this statement and accept it for this event." %}</label></div>
+<div class="form-actions"><button class="btn btn-primary">{% trans "Accept" %}</button></div>
+<p class="small muted">{% trans "Accepting is recorded with your name in the audit log, once per event." %}</p></form>
+{% else %}<p class="muted">{% trans "An organiser of this event must accept this statement before the module can be used." %}</p>{% endif %}
+</section>
+{% endblock %}

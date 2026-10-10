@@ -6,6 +6,14 @@ released.
 
 ## [Unreleased]
 
+### Added — safety acknowledgement (Phase 3, part 12)
+
+- The evacuation module's safety statement (supplementary system, not DIN 14675 / DIN VDE 0833 / EN 54) is
+  accepted once per event before the module works there. It is offered when switching the module on for the
+  event, on every evacuation page until accepted, on *Settings → Evacuation* (with who accepted it and when)
+  and in the first-run wizard. The REST API and hardware bridges refuse until it is accepted. Acceptance is
+  audit-logged and travels to venue nodes. Generic: `ModuleSpec.acknowledgement`.
+
 ### Added — venue node and sync (Phase 3, part 11)
 
 - Venue nodes (ADR-0036): EVAC with `EVAC_MODE=node` runs a checked-out event at the venue without the uplink.
@@ -56,6 +64,9 @@ released.
 
 ### Fixed
 
+- Players' evacuation state requests and acknowledgements no longer fail with "database is locked" on SQLite:
+  they write the screen's row with a single statement outside the request transaction, and SQLite
+  transactions take the write lock when they start.
 - Trigger policy resolution picked between two equally specific rules by their order when they differed only
   in an unused escalation time.
 

@@ -202,7 +202,7 @@ ADR-0003 must be accepted before implementation starts.** Both accepted 2026-10-
 | 3.8 | ✅ Propagation + acks [§8.5] | ≤ 2 s p95 on LAN, measured; X of Y confirmed / Z offline per zone; staff acks (ADR-0035) |
 | 3.9 | ✅ Fail-safe [§8.6] | evacuation bundle cached per screen; stays in alarm offline; signed state from secondary node/bridge (ADR-0003); watchdog; self-test (ADR-0034) |
 | 3.10 | ✅ Venue node + sync | `EVAC_MODE=node`, checkout/checkin, config snapshots with ETags, op-log with idempotency keys, resumable assets (ADR-0002, ADR-0036) |
-| 3.11 | Safety acknowledgement | once per event when enabling the module; shown on settings page and in the wizard |
+| 3.11 | ✅ Safety acknowledgement | once per event when enabling the module; shown on settings page and in the wizard |
 | 3.12 | Tests [§8.7] | unit, property (routing), Playwright E2E, chaos (kill web/channels, partition), load (500 WS players); `make e2e load chaos` |
 
 ## Phase 4 — DIAL extension ⬜ [§9]

@@ -33,12 +33,14 @@ def _settings(event: Any) -> Any:
 
 
 def spec() -> SyncSpec:
-    from .models import EventModuleState, ModuleState
+    from .models import EventModuleState, ModuleAcknowledgement, ModuleState
 
     return SyncSpec(module="core", order=30, models=(
         SyncModel("core.ModuleState", lambda e: ModuleState.objects.all(), natural_key=("key",),
                   delete_missing=False),
         SyncModel("core.EventModuleState", lambda e: EventModuleState.objects.filter(event=e),
+                  natural_key=("event", "key")),
+        SyncModel("core.ModuleAcknowledgement", lambda e: ModuleAcknowledgement.objects.filter(event=e),
                   natural_key=("event", "key")),
         SyncModel("core.SettingValue", _settings, natural_key=("namespace", "level", "scope_id"),
                   delete_missing=False),

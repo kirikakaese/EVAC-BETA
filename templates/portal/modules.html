@@ -15,6 +15,8 @@
       {% else %}{% if r.instance %}<span class="badge badge-ok">{% trans "on" %}</span>{% else %}<span class="badge badge-off">{% trans "off" %}</span>{% endif %}{% endif %}</td>
     {% if level == "event" %}<td>{% if r.spec.required or not r.spec.event_toggle %}–{% else %}
       <form method="post" class="seg">{% csrf_token %}<input type="hidden" name="key" value="{{ r.spec.key }}">
+        {% if r.needs_ack %}<details class="ack-inline"><summary>{% trans "Statement to accept" %}</summary><div class="small">{{ r.spec.acknowledgement|linebreaks }}</div></details>
+        <label class="small"><input type="checkbox" name="accept"> {% trans "I accept the statement for this event" %}</label>{% endif %}
         <button class="btn btn-sm{% if r.event is None %} btn-primary{% endif %}" name="value" value="inherit" {% if r.event is None %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{% trans "Follow instance" %}</button>
         <button class="btn btn-sm{% if r.event is True %} btn-primary{% endif %}" name="value" value="on" aria-pressed="{% if r.event is True %}true{% else %}false{% endif %}">{% trans "On" %}</button>
         <button class="btn btn-sm{% if r.event is False %} btn-primary{% endif %}" name="value" value="off" aria-pressed="{% if r.event is False %}true{% else %}false{% endif %}">{% trans "Off" %}</button>

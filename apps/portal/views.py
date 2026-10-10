@@ -99,11 +99,17 @@ def setup(request):
         venue = Venue.objects.filter(pk=request.session.get("evac_setup_venue")).first()
         form = forms.SetupEventForm(request.POST or None, initial={"timezone": venue.timezone if venue else "UTC"})
         if request.method == "POST" and form.is_valid():
-            data = {k: v for k, v in form.cleaned_data.items() if k not in ("name", "slug")}
+            data = {k: v for k, v in form.cleaned_data.items() if k not in ("name", "slug")
+                    and not k.startswith("use_")}
             event = services.create_event(name=form.cleaned_data["name"], slug=form.cleaned_data["slug"],
                                           user=request.user, request=request, **data)
             if venue is not None:
                 event.venues.add(venue)
+            for key in form.modules_to_enable():
+                modules.acknowledge(event, key, user=request.user, request=request)
+                if not modules.instance_enabled(key):
+                    modules.set_instance(key, True, user=request.user, request=request)
+                modules.set_event(event, key, True, user=request.user, request=request)
             request.session["evac_setup_event"] = event.slug
             request.session["evac_setup_step"] = "screen"
             return redirect(reverse("portal:setup") + "?step=screen")
