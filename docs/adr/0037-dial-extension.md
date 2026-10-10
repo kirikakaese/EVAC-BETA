@@ -15,7 +15,8 @@ Constraints:
 - **Plugins only.** Nothing outside `extensions/dial` may import it.
 - **Outbox.** Every outgoing delivery goes through the durable outbox.
 - **Alarm rules (brief §8).** Alarm behaviour stays under the trigger policy and the safety statement.
-- **DIAL is not changed by this phase.**
+- **DIAL changes stay small.** Only additive DIAL changes are made, and EVAC keeps working with older DIAL
+  versions.
 
 Reading DIAL's code (not only its API document) showed details that shape the design:
 - Webhooks carry no delivery id, and a retry re-renders `sent_at`, so the body (and its signature) differs on every
@@ -62,7 +63,7 @@ Reading DIAL's code (not only its API document) showed details that shape the de
     `Broadcast` row (keyed by delivery) gives one place to see everything sent to DIAL.
 - **Announcements by phone.**
   - The webhook only stores a `Recording` and queues a job.
-  - The job finds the file through `ivr/announcements/` and downloads the path **from the configured DIAL URL**, so
+  - The job downloads `ivr/announcements/<id>/audio/` (older DIAL: the media path found through the IVR API) **from the configured DIAL URL**, so
     the token never follows a host DIAL put into a URL.
   - It accepts only WAV, stores it as announcement speech (AAC with ffmpeg) and transcribes it with optional
     whisper.cpp.
@@ -100,10 +101,17 @@ Reading DIAL's code (not only its API document) showed details that shape the de
   call never ends an alarm (policies never apply to the all clear).
 - Ringing every handset for each chosen stage is loud by design. Drills stay quiet unless allowed, and a group can
   limit who is rung.
-- Recordings need DIAL to serve `/media/ivr/` for the audio part. A small authenticated download endpoint in DIAL
-  (like its voicemail audio) would remove that requirement. It belongs to DIAL and is not part of this phase.
-- Role proposals are weaker than e-mail matching while DIAL's member list lacks addresses. That is acceptable only
-  because a person confirms every row.
+- DIAL was extended alongside (kirikakaese/DIAL-BETA#7):
+  - an authenticated `ivr/announcements/<id>/audio/`, with the id in `announcement.recorded`;
+  - a stable `X-DIAL-Delivery` webhook header;
+  - e-mail addresses in the member list;
+  - the calling token's scopes in `me/`.
+
+  EVAC uses them when present and falls back for older DIAL versions:
+  - `/media/` must be served for audio;
+  - repeats are deduplicated by content;
+  - role matches are by name (flagged “check”);
+  - no scope report.
 - On a venue node the DIAL link stays on central (`secrets_on_site` is off). Emergency calls arrive at central and
   are forwarded to the node like every trigger.
 
@@ -115,5 +123,5 @@ Reading DIAL's code (not only its API document) showed details that shape the de
 - **Send DECT messages for alarms from EVAC too.** Duplicates DIAL's own text broadcast.
 - **Render DIAL's info page HTML on screens.** Would let another system inject markup into every screen.
 - **Live DIAL calls when a page loads.** Violates the outbox rule, and makes the page as slow as DIAL.
-- **Change DIAL now** (e-mail in members, an audio endpoint, a delivery id). Out of scope for EVAC's phase. Noted
-  for DIAL.
+- **Leave DIAL as it is.** EVAC would need DIAL's media served publicly, could only dedupe by content, and could
+  only match roles by name. The four additive DIAL endpoints were cheaper than those workarounds.

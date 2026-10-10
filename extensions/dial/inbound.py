@@ -159,6 +159,7 @@ def recorded(config: Any, data: dict[str, Any]) -> WebhookResult:
         return WebhookResult(200, {"ok": True, "ignored": "recordings switched off"})
     rec = Recording.objects.create(config=config, event=config.event, extension=str(data.get("extension") or "")[:40],
                                    audio=str(data.get("audio") or "")[:300],
+                                   dial_announcement=str(data.get("announcement") or "")[:40],
                                    duration=max(0, int(data.get("duration") or 0)))
     outbox.enqueue(RECORDING_JOB, {"recording": str(rec.pk)}, event=config.event, key=f"dial-recording:{rec.pk}")
     return WebhookResult(200, {"ok": True, "recording": str(rec.pk)})

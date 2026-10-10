@@ -31,6 +31,13 @@ released.
 - Announcements: `speech_recorded` (a recording is never replaced by synthetic speech) and
   `services.submit_external` for announcements made by integrations.
 - `make dial-e2e` / CI job: the Phase 4 gate against a running DIAL (web, Celery worker, Redis).
+- Uses the DIAL additions made alongside (kirikakaese/DIAL-BETA#7) when present:
+  - recordings via the authenticated `ivr/announcements/<id>/audio/`;
+  - `X-DIAL-Delivery` for deduplication;
+  - e-mail matching in the role proposals;
+  - missing token scopes reported by *Test connection*.
+
+  It keeps working with older DIAL versions.
 
 ### Fixed
 

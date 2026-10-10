@@ -2,8 +2,9 @@
 """DIAL event roles -> EVAC roles (roadmap 4.5). A manual mapping table; a person reviews the proposals and assigns,
 nothing is granted automatically (no privilege escalation through DIAL).
 
-DIAL's member list gives usernames, not e-mail addresses, so EVAC suggests the EVAC member whose e-mail local part
-or display name equals the DIAL username; the person checks and corrects every row before assigning.
+EVAC suggests the EVAC member with the same e-mail address as the DIAL member (older DIAL versions send only
+usernames: then the member whose e-mail name or display name equals the username); the person checks and corrects
+every row before assigning.
 """
 from __future__ import annotations
 
@@ -59,8 +60,8 @@ def fetch_members(config: Any) -> list[dict[str, Any]]:
     client = Client.for_config(config)
     data = client.get(f"events/{client.event}/members/")
     items = data if isinstance(data, list) else (data or {}).get("results") or []
-    return [{"user": str(m.get("user") or ""), "role": str(m.get("role") or ""), "groups": m.get("groups") or []}
-            for m in items if isinstance(m, dict) and m.get("user")]
+    return [{"user": str(m.get("user") or ""), "role": str(m.get("role") or ""), "groups": m.get("groups") or [],
+             "email": str(m.get("email") or "")} for m in items if isinstance(m, dict) and m.get("user")]
 
 
 def member_choices(event: Any) -> list[tuple[str, str]]:
@@ -71,7 +72,14 @@ def member_choices(event: Any) -> list[tuple[str, str]]:
             if m.user.is_active]
 
 
-def _suggest(username: str, users: list[Any]) -> Any:
+def _suggest(username: str, users: list[Any], email: str = "") -> Any:
+    """The EVAC member with the same e-mail address (DIAL sends it since its member list has it), else the one whose
+    e-mail name or display name equals the DIAL username."""
+    email = email.strip().lower()
+    if email:
+        found = next((u for u in users if u.email.lower() == email), None)
+        if found is not None:
+            return found
     name = username.strip().lower()
     for u in users:
         if u.email.split("@", 1)[0].lower() == name or (u.display_name or "").strip().lower() == name:
@@ -89,12 +97,13 @@ def proposals(config: Any, members: list[dict[str, Any]]) -> list[dict[str, Any]
         role = mapping.get(m["role"])
         if role is None:
             continue
-        user = _suggest(m["user"], users)
+        user = _suggest(m["user"], users, m.get("email", ""))
+        by_email = user is not None and bool(m.get("email")) and user.email.lower() == m["email"].lower()
         has = user is not None and RoleAssignment.objects.filter(membership__event=config.event,
                                                                  membership__user=user, role=role,
                                                                  scope_kind="").exists()
         out.append({"index": i, "dial_user": m["user"], "dial_role": m["role"], "role": role, "user": user,
-                    "has": has})
+                    "has": has, "by_email": by_email, "email": m.get("email", "")})
     return out
 
 

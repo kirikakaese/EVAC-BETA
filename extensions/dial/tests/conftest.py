@@ -72,7 +72,7 @@ class FakeDial:
             ("GET", "events/camp/members/"): (200, [
                 {"user": "alice", "role": "orga"}, {"user": "zed", "role": "user"}, {"user": "bob", "role": "admin"}]),
         }
-        self.files = {"/media/ivr/camp/4000/phone-a.wav": WAV}
+        self.files = {"/media/ivr/camp/4000/phone-a.wav": WAV, "/api/v1/ivr/announcements/7/audio/?event=camp": WAV}
 
     def request(self, method, url, params=None, json=None, headers=None, timeout=None, verify=True,
                 allow_redirects=False):

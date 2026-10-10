@@ -191,6 +191,9 @@ def main() -> int:  # noqa: PLR0915 - a linear script
 
         step("start DIAL (web + Celery worker) and EVAC")
         dial.spawn(dial_py, "manage.py", "runserver", f"127.0.0.1:{d_port}", "--noreload")
+        # the demo seed queued provisioning jobs for the dummy PBX; a backlog only competes for the SQLite lock
+        subprocess.run([str(Path(dial_py).parent / "celery"), "-A", "dial", "purge", "-f"], cwd=dial_dir, env=dial.env,
+                       capture_output=True, timeout=60, check=False)
         dial.spawn(str(Path(dial_py).parent / "celery"), "-A", "dial", "worker", "-l", "warning", "--pool", "solo")
         evac.spawn(PY, "manage.py", "runserver", f"127.0.0.1:{e_port}", "--noreload")
         wait_http(f"http://127.0.0.1:{d_port}/api/v1/health/", "DIAL")
@@ -250,6 +253,10 @@ def main() -> int:  # noqa: PLR0915 - a linear script
             "'file': r.speech_file, 'title': r.announcement.title, 'detail': r.detail})"), timeout=45)
         expect(bool(ann) and ann["status"] == "pending", "EVAC created an announcement waiting for approval", ann)
         expect(ann["audio"] and bool(ann["file"]), "the phone recording is its audio", ann)
+        dl = evac.py("from extensions.dial.models import Recording\nr = Recording.objects.first()\n"
+                     "out({'id': r.dial_announcement})")
+        print("  · fetched from " + ("DIAL's audio endpoint" if dl["id"] else "DIAL's /media/ (older DIAL)"),
+              flush=True)
 
         step("gate 4: DIAL data feeds EVAC widgets")
         w = evac.py("from extensions.dial import presets\nfrom apps.widgets.models import Feed\n"

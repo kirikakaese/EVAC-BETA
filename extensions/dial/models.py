@@ -64,6 +64,7 @@ class Recording(models.Model):
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="dial_recordings")
     extension = models.CharField(_("DIAL extension"), max_length=40)
     audio = models.CharField(max_length=300, blank=True)  # DIAL media name, empty when DIAL kept the PBX path only
+    dial_announcement = models.CharField(max_length=40, blank=True)  # DIAL's announcement id (newer DIAL)
     duration = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.RECEIVED)
     detail = models.CharField(max_length=300, blank=True)

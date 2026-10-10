@@ -73,6 +73,14 @@ def csv(value: Any) -> list[str]:
     return [v.strip() for v in str(value or "").replace(";", ",").split(",") if v.strip()]
 
 
+def missing_scopes(granted: list[str]) -> list[str]:
+    """Scopes the link uses that the token does not grant (DIAL: empty list or ``*`` = all, ``<app>:*`` = the app)."""
+    granted = [str(g) for g in granted]
+    if not granted or "*" in granted:
+        return []
+    return [s for s in SCOPES if s not in granted and f"{s.split(':')[0]}:*" not in granted]
+
+
 def test_connection(config: Any) -> ConnectionResult:
     """DIAL ``GET /api/v1/health/?event=<slug>`` (no token needed) and ``GET /api/v1/me/`` (the token)."""
     client = Client.for_config(config)
@@ -99,6 +107,13 @@ def test_connection(config: Any) -> ConnectionResult:
         part = health.get(name) or {}
         if isinstance(part, dict) and part:
             parts.append(f"{label}: " + (_("ok") if part.get("ok") else str(part.get("error") or _("problem"))))
+    token = me.get("token") if isinstance(me.get("token"), dict) else None
+    if token is not None:
+        missing = missing_scopes(token.get("scopes") or [])
+        if missing:
+            parts.append(_("The token lacks: %(s)s.") % {"s": " ".join(missing)})
+        if token.get("event") and token["event"] != client.event:
+            parts.append(_("The token is bound to the DIAL event “%(e)s”.") % {"e": token["event"]})
     ok = status == 200 or status == 503  # 503: DIAL is up, a venue backend is not
     return ConnectionResult(ok, " ".join(parts), {"health": health, "me": {k: me.get(k) for k in
                                                                            ("username", "service_account")}})

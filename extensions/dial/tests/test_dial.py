@@ -17,6 +17,7 @@ from apps.extensions import services as ext
 from apps.extensions.models import ExtensionLog
 from apps.widgets.models import CustomWidget, Feed
 from extensions.dial import inbound, link, outbound, recordings, roles, sources, whisper
+from extensions.dial import link as link_module
 from extensions.dial.client import Client, Rejected, Temporary
 from extensions.dial.models import Broadcast, DectAlert, Recording, RoleMapping, Snapshot
 
@@ -552,3 +553,30 @@ def test_emergency_level_recording_never_published_at_once(event, levels, link, 
     a = Announcement(event=event, level=lv, title="Phone", body="x", channels=["screens"])
     ann_services.submit_external(a, source="test", publish_now=True)
     assert a.status == Announcement.Status.PENDING
+
+
+def test_recording_from_dial_audio_endpoint(post_hook, event, link, dial, speech_dir):
+    post_hook("announcement.recorded", {"extension": "4000", "audio": "ivr/camp/4000/phone-b.wav", "duration": 2,
+                                        "announcement": 7})
+    rec = Recording.objects.get()
+    assert rec.status == "imported" and rec.speech_file and rec.dial_announcement == "7"
+    assert dial.calls[-1][:2] == ("DOWNLOAD", "/api/v1/ivr/announcements/7/audio/?event=camp")
+    assert not any(c[1] == "ivr/announcements/" for c in dial.calls)  # no lookup needed
+
+
+def test_connection_reports_missing_scopes(link, dial):
+    dial.routes[("GET", "me/")] = (200, {"username": "orga", "service_account": "evac", "token": {
+        "name": "evac", "scopes": ["pages:read", "emergency:*", "dect:read"], "event": "other"}})
+    r = link_test(link)
+    assert r.ok and "The token lacks: events:read phonebook:read ivr:read messaging:write." in r.message
+    assert "bound to the DIAL event “other”" in r.message
+    assert link_module.missing_scopes(["*"]) == link_module.missing_scopes([]) == []
+
+
+def test_roles_match_by_email(event, link, other):
+    event_services.ensure_member(event, other)
+    from apps.events.models import Role
+
+    RoleMapping.objects.create(config=link, dial_role="orga", role=Role.objects.get(event=event, key="orga"))
+    rows = roles.proposals(link, [{"user": "someone-else", "role": "orga", "email": "BOB@example.org"}])
+    assert rows[0]["user"] == other and rows[0]["by_email"]

@@ -34,14 +34,14 @@ Nothing outside `extensions/dial` imports it; switch it off (or don't configure 
    | `pages:read` | info pages data source |
    | `phonebook:read` | phonebook data source |
    | `dect:read` | DECT status |
-   | `ivr:read` | finding the audio of a phone recording |
+   | `ivr:read` | downloading the audio of a phone recording |
    | `emergency:read` | where emergency numbers ring (labels in “call X for Y”) |
    | `emergency:write` | ringing handsets (emergency broadcast) |
    | `messaging:write` | DECT text messages |
 
 2. **EVAC: the link.** *Settings → Extensions → DIAL* of the event: DIAL URL, DIAL event slug, the token. Choose what
    the link does (see the settings below) and press **Test connection** (`GET /api/v1/health/?event=` and
-   `GET /api/v1/me/`).
+   `GET /api/v1/me/`; it names scopes the token lacks and a token bound to another DIAL event).
 3. **DIAL: the webhook.** EVAC shows the inbound webhook URL and a secret on the link settings page. In DIAL,
    *Orga → Webhooks* (`/e/<slug>/orga/webhooks/`): paste the URL and the secret; leave the event types empty to
    receive all.
@@ -77,7 +77,8 @@ room, or *execute* where a call to that number always means an alarm.
 - The evacuation module must be on and its safety statement accepted, or EVAC answers `409` and logs it.
 - DIAL's own broadcasts (also the ones EVAC asked for) arrive as `emergency.triggered` with `kind: "broadcast"`;
   they are ignored, so there is no loop.
-- DIAL retries a webhook with a new `sent_at`; EVAC recognises the repeat by its content and handles it once.
+- DIAL retries a webhook with the same `X-DIAL-Delivery` id (older DIAL versions: a new `sent_at` and no id; EVAC
+  then recognises the repeat by its content); it is handled once.
 
 ## Alarms ring handsets
 
@@ -91,15 +92,16 @@ the DIAL page lists each broadcast with its result.
 ## Announcements by phone
 
 1. In DIAL, an orga dials the announcement record number plus the announcement's code and speaks.
-2. DIAL posts `announcement.recorded`. EVAC looks the file up in DIAL's IVR API and downloads it **from the
-   configured DIAL URL** (the token never goes to another host), stores it as the announcement's spoken audio
-   (normalised to AAC with ffmpeg when available) and, with Whisper, transcribes it.
+2. DIAL posts `announcement.recorded` with the announcement's id. EVAC downloads the file from DIAL's
+   `ivr/announcements/<id>/audio/` **at the configured DIAL URL** (the token never goes to another host), stores it as
+   the announcement's spoken audio (normalised to AAC with ffmpeg when available) and, with Whisper, transcribes it.
 3. EVAC creates an announcement with the transcript (or a note) at the configured level: in the **approval queue**,
    or published at once when the calling extension is on the allow-list. Screens play the recording itself, never a
    synthetic voice.
 
-DIAL must serve its media files for the download: with `DEBUG=1`, or a reverse proxy for `/media/ivr/` in front of
-DIAL. Otherwise the announcement is still created, without audio, and the DIAL page says why.
+DIAL versions before the audio endpoint (they send no announcement id) only give the media name: then EVAC needs DIAL
+to serve `/media/ivr/` (`DEBUG=1` or a reverse proxy). Without audio the announcement is still created, and the DIAL
+page says why.
 
 **Whisper** (optional, offline, English): install [whisper.cpp](https://github.com/ggml-org/whisper.cpp)'s
 `whisper-cli` on the worker (or set `EVAC_WHISPER_BINARY`) and an English model at `EVAC_WHISPER_MODEL` (default
@@ -136,8 +138,9 @@ each system.
 
 *DIAL page → Roles* (needs “Create and edit roles”) maps DIAL event roles (user, helpdesk, orga, event admin) to EVAC
 roles. **Nothing is assigned automatically.** EVAC fetches the DIAL members and proposes, for each member with a
-mapped role, the EVAC member whose e-mail name or display name equals the DIAL username; a person with the
-permission to manage members checks each row, corrects the member if needed, and assigns. Only people who already are
+mapped role, the EVAC member with the same e-mail address (“same e-mail”); with older DIAL versions, which send no
+addresses, the member whose e-mail name or display name equals the DIAL username (“check: matched by name”). A
+person with the permission to manage members checks each row, corrects the member if needed, and assigns. Only people who already are
 members of the EVAC event can get a role.
 
 ## Troubleshooting
@@ -149,4 +152,4 @@ members of the EVAC event can get a role.
 | Broadcasts fail with `HTTP 404: emergency disabled` / `messaging disabled` | the DIAL feature is off (`DIAL_FEATURES`) or disabled for the event |
 | Webhooks rejected (`401`) in the DIAL webhook status | secret differs; regenerate it in EVAC and paste it into DIAL |
 | Emergency call answered `409` | evacuation module off or safety statement not accepted |
-| Recording without audio | DIAL does not serve `/media/` (see above) or kept the file on the PBX |
+| Recording without audio | DIAL kept the file on the PBX (it could not read the recording directory), or an older DIAL does not serve `/media/` |

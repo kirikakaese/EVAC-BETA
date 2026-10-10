@@ -4,9 +4,10 @@
 announcement that waits in the approval queue, or is published at once when the calling extension is on the link's
 allow-list.
 
-DIAL links the file as ``audio`` (its media name). EVAC looks it up in DIAL's IVR API (``ivr/announcements/``,
-absolute URL) and downloads it from the DIAL host only; when DIAL does not serve its media the announcement is still
-created, without audio, and the recording row says why.
+DIAL names the announcement (``data.announcement``); EVAC downloads the file from DIAL's authenticated
+``ivr/announcements/<id>/audio/``, always from the configured DIAL URL. Older DIAL versions only give the media name:
+then EVAC looks the URL up in the IVR API and needs DIAL to serve ``/media/``. Without audio the announcement is still
+created, and the recording row says why.
 """
 from __future__ import annotations
 
@@ -29,7 +30,10 @@ log = logging.getLogger("evac.dial")
 
 
 def audio_url(client: Client, rec: Recording) -> str:
-    """The absolute URL of the recording on the DIAL server."""
+    """Where to fetch the recording: DIAL's authenticated ``ivr/announcements/<id>/audio/`` when the webhook named the
+    announcement, else (older DIAL) the media URL from the IVR API, which needs DIAL to serve ``/media/``."""
+    if rec.dial_announcement.isdigit():
+        return client.url(f"ivr/announcements/{rec.dial_announcement}/audio/") + f"?event={client.event}"
     try:
         items = client.results("ivr/announcements/", event=client.event)
     except Rejected:
@@ -46,10 +50,10 @@ def audio_url(client: Client, rec: Recording) -> str:
 def on_base(client: Client, url: str) -> str:
     """DIAL renders absolute URLs with whatever host it was asked by (or an internal one behind a proxy): fetch the
     path from the configured DIAL URL, so the token never goes anywhere else."""
-    path = urlsplit(url).path
-    if not path.startswith("/") or ".." in path.split("/"):
+    parts = urlsplit(url)
+    if not parts.path.startswith("/") or ".." in parts.path.split("/"):
         raise Rejected("Unexpected recording path.", 0)
-    return f"{client.base}{path}"
+    return f"{client.base}{parts.path}" + (f"?{parts.query}" if parts.query else "")
 
 
 def store(data: bytes) -> str:
