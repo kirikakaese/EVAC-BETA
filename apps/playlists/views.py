@@ -356,6 +356,15 @@ def _preview_config(event, program, found, vars_, t) -> dict | None:
               for a in assets if str(a.pk) in tok.referenced_assets(values)}
     return {"layout": data, "at": t, "timezone": event.timezone, "vars": vars_,
             "assets": {str(a.pk): content_services.asset_entry(a, content_files.portal_url) for a in assets},
-            "fonts": content_services.font_stacks(event),
+            "fonts": content_services.font_stacks(event), "program": _program_data(event),
             "themeVariables": tok.css_variables(values, families=content_services.font_stacks(event), urls=images)}
+
+
+def _program_data(event) -> dict | None:
+    """Sessions for "program" elements, offered by the program module through the registry (when it is on)."""
+    from apps.core import modules
+    from apps.core.registry import registry
+
+    entry = registry.ensure_loaded().editor_choices_.get("programData")
+    return entry[1](event) if entry and modules.is_enabled(entry[0], event) else None
 

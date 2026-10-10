@@ -48,6 +48,11 @@ ELEMENT_TYPES = {
                                          "left", "ahead_left"]}},
     # a custom widget of the widgets module (ADR-0023): its rows arrive separately from /player/api/widgets/data/
     "data": {"widget": UUID, "title": {"type": "string", "maxLength": 200}},
+    # the program module (ADR-0038): now/next on a stage ("" = the stage in the screen's room, else all), the
+    # day's sessions or the live changes; sessions arrive from /player/api/schedule/
+    "program": {"view": {"enum": ["now_next", "day", "changes"]}, "stage": UUID,
+                "count": {"type": "integer", "minimum": 1, "maximum": 20},
+                "title": {"type": "string", "maxLength": 200}},
     # code mode (ADR-0018): runs in a sandboxed frame without network; only the data listed in "data" is sent in
     "code": {"html": {"type": "string", "maxLength": 50_000}, "css": {"type": "string", "maxLength": 50_000},
              "js": {"type": "string", "maxLength": 100_000},

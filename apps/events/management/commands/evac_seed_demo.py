@@ -87,6 +87,11 @@ class Command(BaseCommand):
 
         if "evacuation" in registry.ensure_loaded().modules and not modules.instance_enabled("evacuation"):
             modules.set_instance("evacuation", True, user=admin)
+        # a demo program (when the program module is installed): sessions today and tomorrow
+        if "program" in registry.modules:
+            import importlib
+
+            importlib.import_module("apps.schedule.demo").seed(event, admin)
         self.stdout.write(self.style.SUCCESS(
             f"Demo ready: log in as admin@evac.local / {password} (other demo accounts: "
             f"{', '.join(p[0] for p in PEOPLE)}; same password). Event: /e/demo/"))

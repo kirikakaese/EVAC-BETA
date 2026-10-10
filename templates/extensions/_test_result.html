@@ -1,1 +1,1 @@
-{% load i18n %}<div class="alert {% if result.ok %}alert-success{% else %}alert-error{% endif %}" role="{% if result.ok %}status{% else %}alert{% endif %}">{% if result.ok %}✓ {% else %}✕ {% endif %}{{ result.message|default:_("Connection OK.") }}</div>
+{% load i18n %}<div class="alert {% if result.ok %}alert-success{% else %}alert-error{% endif %}" role="{% if result.ok %}status{% else %}alert{% endif %}">{{ result.message|default:_("Connection OK.") }}</div>

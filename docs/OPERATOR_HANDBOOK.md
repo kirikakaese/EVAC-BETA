@@ -393,6 +393,30 @@ MQTT sources follow in phase 6.
 - On the command line: `manage.py evac_pack key`, `verify <file>`, `export <event> <file> --layouts=<id,…>`,
   `import <event> <file> [--yes]`.
 
+## 5h. Program
+
+**Program** in the event menu holds the event's sessions on stages, with speakers and tracks (ADR-0038).
+
+- **Stages and tracks**: create stages (a stage can belong to a venue room; screens in that room show its sessions
+  in *now and next*) and tracks with a colour.
+- **Sessions**: *New session*, or import them (below). The day view lists each day's sessions. *On the stages now*
+  shows what runs and what is next.
+- **Live changes** (permission `program.live`, e.g. the stage manager): *Change* on a session row offers +5/+10/+15/
+  +30 minutes (optionally *also later sessions on this stage*), *Move* to another stage, *Cancel session* and *Back
+  to plan*. Screens, the public page, webhooks and announcements timed relative to the session follow within a
+  second. *Recent changes* lists them, and the audit log records who made them.
+- **Import** from pretalx, frab/Pentabarf or iCal: Settings → Extensions ([program-import](extensions/program-import.md)).
+  Local changes survive every sync. *Follow the source again* undoes that for one session.
+- **On screens**: in the layout editor add a **Program** element (*Now and next*, *The day's sessions* or *Live
+  changes*).
+- **Public page**: Settings → Program → *Public program page* publishes `/public/<event>/program/` with iCal, JSON
+  and frab XML exports. Sessions marked not public (e.g. crew briefings) never appear there or on screens.
+- **Announcements** can be timed relative to a session ("10 minutes before *Opening*"). They move when the session
+  is delayed.
+
+Imports only reach public addresses. Set `EVAC_IMPORT_ALLOW_PRIVATE=1` for a pretalx or calendar server on the venue
+network.
+
 ## 6. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.

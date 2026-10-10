@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Stages and tracks" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Stages and tracks" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'schedule:index' event.slug %}">{% trans "Program" %}</a></div></div>
+<section class="card" aria-labelledby="st-h"><h2 id="st-h">{% trans "Stages and rooms" %}</h2>
+{% if stages %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Stage" %}</th><th scope="col">{% trans "Venue room" %}</th><th scope="col">{% trans "Sessions" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+<tbody>{% for st in stages %}<tr><th scope="row">{{ st.name }}</th><td>{{ st.room.name|default:"–" }}</td><td class="tabular">{{ st.sessions.count }}</td>
+<td><form method="post" action="{% url 'schedule:stage_delete' event.slug st.pk %}">{% csrf_token %}<button class="btn btn-sm btn-ghost" data-confirm="{% trans 'Delete this stage? Its sessions stay, without a stage.' %}">{% trans "Delete" %}</button></form></td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No stages yet." %}</p>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="stage"><h3>{% trans "Add a stage" %}</h3>
+{% include "portal/_form.html" with form=stage_form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Add stage" %}</button></div></form></section>
+<section class="card" aria-labelledby="tr-h"><h2 id="tr-h">{% trans "Tracks" %}</h2>
+{% if tracks %}<ul class="plain">{% for t in tracks %}<li><span class="swatch" data-color="{{ t.colour }}" aria-hidden="true"></span> {{ t.name }}</li>{% endfor %}</ul>{% else %}<p class="muted">{% trans "No tracks yet." %}</p>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="track"><h3>{% trans "Add a track" %}</h3>
+{% include "portal/_form.html" with form=track_form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Add track" %}</button></div></form></section>
+{% endblock %}

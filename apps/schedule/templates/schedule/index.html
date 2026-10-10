@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Program" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Program" %}</h1>
+<div class="actions">{% if public %}<a class="btn btn-ghost" href="{% url 'schedule_public:program' event.slug %}">{% trans "Public program" %}</a>{% endif %}
+{% if can_edit %}<a class="btn" href="{% url 'schedule:stages' event.slug %}">{% trans "Stages and tracks" %}</a>
+<a class="btn btn-primary" href="{% url 'schedule:new' event.slug %}">{% trans "New session" %}</a>{% endif %}</div></div>
+
+{% if on_now %}<section class="card" aria-labelledby="now-h"><h2 id="now-h">{% trans "On the stages now" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Stage" %}</th><th scope="col">{% trans "Now" %}</th><th scope="col">{% trans "Next" %}</th></tr></thead>
+<tbody>{% for row in on_now %}<tr><th scope="row">{{ row.stage.name }}</th>
+<td>{% if row.now %}<strong>{{ row.now.title }}</strong> <span class="small muted">{{ row.now.starts_at|time:"H:i" }}–{{ row.now.ends_at|time:"H:i" }}</span>{% if row.now.delay_minutes %} <span class="badge badge-warn">+{{ row.now.delay_minutes }} min</span>{% endif %}{% else %}<span class="muted">–</span>{% endif %}</td>
+<td>{% if row.next %}{{ row.next.title }} <span class="small muted">{{ row.next.starts_at|time:"H:i" }}</span>{% if row.next.delay_minutes %} <span class="badge badge-warn">+{{ row.next.delay_minutes }} min</span>{% endif %}{% else %}<span class="muted">–</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
+
+{% if days %}<nav class="tabs" aria-label="{% trans 'Days' %}">{% for d in days %}<a href="?day={{ d|date:'Y-m-d' }}{% if stage_id %}&amp;stage={{ stage_id }}{% endif %}"{% if d == day %} aria-current="page"{% endif %}>{{ d|date:"D j M" }}</a>{% endfor %}</nav>{% endif %}
+
+<section class="card" aria-labelledby="day-h"><h2 id="day-h">{{ day|date:"l, j F" }}</h2>
+{% if stages %}<form method="get" class="inline"><input type="hidden" name="day" value="{{ day|date:'Y-m-d' }}"><label for="stage-filter">{% trans "Stage" %}</label>
+<select id="stage-filter" name="stage" data-action="submit"><option value="">{% trans "All stages" %}</option>{% for st in stages %}<option value="{{ st.pk }}"{% if stage_id == st.pk|stringformat:"s" %} selected{% endif %}>{{ st.name }}</option>{% endfor %}</select>
+<noscript><button class="btn btn-sm">{% trans "Show" %}</button></noscript></form>{% endif %}
+{% if sessions %}<div class="table-wrap"><table class="program-table"><thead><tr><th scope="col">{% trans "Time" %}</th><th scope="col">{% trans "Stage" %}</th><th scope="col">{% trans "Session" %}</th><th scope="col">{% trans "Status" %}</th>{% if can_live %}<th scope="col">{% trans "Live change" %}</th>{% endif %}</tr></thead>
+<tbody>{% for s in sessions %}<tr{% if s.status == "cancelled" %} class="muted"{% endif %}>
+<td class="nowrap tabular">{{ s.starts_at|time:"H:i" }}–{{ s.ends_at|time:"H:i" }}{% if s.planned_start and s.delay_minutes %}<br><span class="small muted"><s>{{ s.planned_start|time:"H:i" }}</s></span>{% endif %}</td>
+<td>{{ s.stage.name|default:"–" }}{% if s.moved %}<br><span class="small muted">{% blocktrans with r=s.planned_stage.name %}was {{ r }}{% endblocktrans %}</span>{% endif %}</td>
+<th scope="row">{% if can_edit %}<a href="{% url 'schedule:session' event.slug s.pk %}">{{ s.title }}</a>{% else %}{{ s.title }}{% endif %}
+{% if s.speakers.all %}<br><span class="small muted">{{ s.speakers.all|join:", " }}</span>{% endif %}
+{% if s.track %}<br><span class="small"><span class="swatch" data-color="{{ s.track.colour }}" aria-hidden="true"></span> {{ s.track.name }}</span>{% endif %}</th>
+<td>{% if s.status == "cancelled" %}<span class="badge badge-err">{% trans "cancelled" %}</span>{% elif s.delay_minutes > 0 %}<span class="badge badge-warn">+{{ s.delay_minutes }} min</span>{% elif s.delay_minutes < 0 %}<span class="badge badge-warn">{{ s.delay_minutes }} min</span>{% elif s.moved %}<span class="badge badge-warn">{% trans "moved" %}</span>{% elif s.starts_at <= now and s.ends_at > now %}<span class="badge badge-ok">{% trans "now" %}</span>{% else %}<span class="badge badge-muted">{% trans "planned" %}</span>{% endif %}
+{% if s.note %}<br><span class="small">{{ s.note }}</span>{% endif %}
+{% if s.source %}<br><span class="small muted" title="{% trans 'Imported' %}">{% trans "imported" %}{% if s.overrides %} · {% blocktrans count n=s.overrides|length %}{{ n }} local change{% plural %}{{ n }} local changes{% endblocktrans %}{% endif %}{% if s.missing_upstream %} · {% trans "gone from the source" %}{% endif %}</span>{% endif %}</td>
+{% if can_live %}<td><details class="live-actions"><summary class="btn btn-sm">{% trans "Change" %}</summary>
+<div class="stack">
+<form method="post" action="{% url 'schedule:live' event.slug s.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="delay">
+<button class="btn btn-sm" name="minutes" value="5">+5</button><button class="btn btn-sm" name="minutes" value="10">+10</button><button class="btn btn-sm" name="minutes" value="15">+15</button><button class="btn btn-sm" name="minutes" value="30">+30</button>
+<label class="small"><input type="checkbox" name="following" value="1"> {% trans "also later sessions on this stage" %}</label></form>
+<form method="post" action="{% url 'schedule:live' event.slug s.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="move">
+<label class="sr-only" for="move-{{ s.pk }}">{% trans "Move to" %}</label><select id="move-{{ s.pk }}" name="stage">{% for st in stages %}<option value="{{ st.pk }}"{% if st.pk == s.stage_id %} selected{% endif %}>{{ st.name }}</option>{% endfor %}</select>
+<button class="btn btn-sm">{% trans "Move" %}</button></form>
+<div class="inline">{% if s.status != "cancelled" %}<form method="post" action="{% url 'schedule:live' event.slug s.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="btn btn-sm btn-danger" data-confirm="{% trans 'Cancel this session? Screens and the public program show it as cancelled.' %}">{% trans "Cancel session" %}</button></form>{% endif %}
+{% if s.changed or s.note %}<form method="post" action="{% url 'schedule:live' event.slug s.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="restore"><button class="btn btn-sm">{% trans "Back to plan" %}</button></form>{% endif %}
+{% if s.overrides and can_edit %}<form method="post" action="{% url 'schedule:live' event.slug s.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="reset"><button class="btn btn-sm btn-ghost">{% trans "Follow the source again" %}</button></form>{% endif %}</div>
+</div></details></td>{% endif %}</tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% if days %}{% trans "No sessions on this day." %}{% else %}{% trans "No sessions yet. Add one, or import a program from pretalx, frab or iCal (Settings → Extensions)." %}{% endif %}</p>{% endif %}
+</section>
+
+{% if sources %}<section class="card" aria-labelledby="src-h"><h2 id="src-h">{% trans "Imported from" %}</h2>
+<ul class="plain">{% for src in sources %}<li><a href="{{ src.detail }}">{{ src.name }}</a> ·
+{% if src.config.last_error %}<span class="badge badge-err">{% trans "error" %}</span> <span class="small">{{ src.config.last_error }}</span>{% elif src.config.last_sync_at %}<span class="small muted">{% blocktrans with t=src.config.last_sync_at|date:"D H:i" %}last sync {{ t }}{% endblocktrans %}</span>{% else %}<span class="small muted">{% trans "not synced yet" %}</span>{% endif %}
+{% if can_edit %}<form method="post" action="{{ src.sync }}" class="inline">{% csrf_token %}<button class="btn btn-sm">{% trans "Sync now" %}</button></form>{% endif %}</li>{% endfor %}</ul>
+<p class="small muted">{% trans "Changes made here (delays, room changes, edits) keep their value when the source syncs again." %}</p></section>{% endif %}
+
+{% if changes %}<section class="card" aria-labelledby="ch-h"><h2 id="ch-h">{% trans "Recent changes" %}</h2>
+<ul class="plain small">{% for c in changes %}<li><span class="tabular">{{ c.at|date:"D H:i" }}</span> · {{ c.text }}{% if c.actor %} <span class="muted">({{ c.actor }})</span>{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+{% endblock %}
