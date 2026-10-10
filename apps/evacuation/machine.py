@@ -39,6 +39,14 @@ ALARMS: frozenset[State] = frozenset({State.STAFF_ALERT, State.ATTENTION, State.
 ALWAYS_ENABLED: frozenset[State] = frozenset({State.NORMAL, State.ALL_CLEAR, State.EVACUATE})
 
 
+class Model(StrEnum):
+    """Evacuation model of an event (brief §8.1)."""
+
+    SIMPLE = "simple"  # one button: evacuate everywhere until the all clear
+    STAGED = "staged"  # all stages, the whole event at once
+    ZONES = "zones"  # stages per event and per zone, routes to the nearest open exit
+
+
 class Kind(StrEnum):
     """What a change does; kept in the history and the audit log."""
 
@@ -97,13 +105,20 @@ class Change:
 
 def transition(status: Status, target: State, *, drill: bool, now: datetime,
                enabled: frozenset[State] = frozenset(State), clear_seconds: int = 300,
-               real_alarm_elsewhere: bool = False) -> Change:
+               real_alarm_elsewhere: bool = False, model: Model = Model.ZONES, zone: bool = False) -> Change:
     """Validate and apply one change requested by a person or a trigger. Raises :class:`Refused`.
 
     ``drill`` is the kind of alarm requested (ignored for ``all_clear``/``normal``, which keep the current kind).
     ``real_alarm_elsewhere``: a real alarm is active in another scope of the same event (no drill may start).
+    ``model`` limits which alarms can be *raised or changed* (simple: only evacuate; zone states only in the zones
+    model). Ending an alarm is always possible, so switching the model never strands one.
     """
     before = current(status, now)
+    if target in ALARMS:
+        if model is Model.SIMPLE and target is not State.EVACUATE:
+            raise Refused("model", "The simple model only knows “evacuate”.")
+        if zone and model is not Model.ZONES:
+            raise Refused("model", "Zone alarms need the zones and routes model.")
     if target not in enabled and target not in ALWAYS_ENABLED:
         raise Refused("disabled", f"The state {target.value} is switched off for this event.")
     if target is State.NORMAL:

@@ -6,6 +6,16 @@ released.
 
 ## [Unreleased]
 
+### Added — evacuation models and screen directions (Phase 3, part 5)
+
+- Evacuation model per event (ADR-0030): simple takeover (only evacuate), staged global (default), zones and
+  routes (zone alarms). Changing the model never ends or hides an active alarm.
+- Live blocking of exits, assembly points, doors and stairs (hold to confirm, audit-logged, webhook
+  `evacuation.routes_changed`); routes recompute at once.
+- Direction per screen: nearest point on its floor, then the route to the nearest open assembly point or exit,
+  as an arrow relative to the people reading the screen; "Follow staff instructions" when there is no route; a
+  fixed arrow and text per screen overrides it. Shown on the control page.
+
 ### Added — evacuation state machine (Phase 3, part 4)
 
 - Evacuation module (off by default, depends on venues; ADR-0029): persisted state per event and per zone

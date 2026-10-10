@@ -143,3 +143,23 @@ def test_effective_examples():
     assert machine.effective([same_drill, ev], NOW) is ev and machine.effective([ev, same_drill], NOW) is ev
     clear = Status(State.ALL_CLEAR, False, T0, NOW + timedelta(minutes=1))
     assert machine.effective([clear, machine.NORMAL], NOW) is clear
+
+
+MODEL_CASES = list(itertools.product(ALL, list(machine.Model), (False, True), [State.NORMAL, State.ATTENTION]))
+
+
+@pytest.mark.parametrize(("target", "model", "zone", "before"), MODEL_CASES, ids=str)
+def test_models_limit_raising_never_ending(target, model, zone, before):
+    """Simple: only evacuate can be raised; zone alarms only in the zones model; ending works in every model."""
+    b = status(before, False)
+    blocked_by_model = target in ALARMS and (
+        (model is machine.Model.SIMPLE and target is not State.EVACUATE) or (zone and model is not machine.Model.ZONES))
+    if blocked_by_model:
+        with pytest.raises(Refused) as err:
+            machine.transition(b, target, drill=False, now=NOW, model=model, zone=zone)
+        assert err.value.code == "model"
+    else:
+        try:
+            machine.transition(b, target, drill=False, now=NOW, model=model, zone=zone)
+        except Refused as err:  # refused for another reason, which the main table covers
+            assert err.code != "model"

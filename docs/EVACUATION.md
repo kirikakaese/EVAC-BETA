@@ -1,6 +1,7 @@
 # Evacuation and alarm information
 
-> **Status:** phase 3 in progress. The state machine and the control page exist (3.3); triggers and
+> **Status:** phase 3 in progress. The state machine, the control page (3.3) and the evacuation models with
+> blocked exits and screen directions (3.4) exist; triggers and
 > policies, screen content, propagation, fail-safe and the drill runbook follow (see the roadmap).
 
 ## Safety statement
@@ -38,6 +39,25 @@ procedures of the venue. Operators must acknowledge this once per event when ena
 - Permissions: `evacuation.view`, `evacuation.trigger`, `evacuation.clear`, `evacuation.drill` (all three
   sensitive: two-factor session; scope them to a venue or zone), `evacuation.manage`. The built-in
   *security* role raises alarms but cannot clear them.
+
+## Evacuation models (roadmap 3.4, [ADR-0030](adr/0030-evacuation-models-and-screen-directions.md))
+
+| Model | What can be raised | Screens |
+|---|---|---|
+| Simple takeover | only *evacuate*, whole event | evacuation layout until the all clear |
+| Staged, global (default) | every enabled stage, whole event | the stage's layout; optional fixed direction per screen |
+| Zones and routes | every enabled stage, per event and per zone | arrow and text to the nearest open assembly point or exit |
+
+- The model limits what can be raised or changed, never what can be ended: an alarm that is active when the model
+  changes stays visible and can be cleared.
+- **Blocked exits** (zones model): *Block* an exit, assembly point, door or stair on the control page (hold to
+  confirm). Routes avoid it at once; *Open again* restores it. Both are audit-logged and sent as
+  `evacuation.routes_changed`.
+- **Directions**: each screen starts at the nearest point of the route graph on its floor. Place a waypoint near
+  every screen; the plan knows no walls. The arrow is drawn for the people reading the screen. Without a route,
+  a place on the map or a connection to an exit, a screen says **"Follow staff instructions"**.
+- **Fixed direction**: an arrow and a text per screen (e.g. ← "Exit B") override the computed route in every
+  model.
 
 ## What phase 0 already provides
 

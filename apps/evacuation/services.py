@@ -12,11 +12,12 @@ from django.utils import timezone
 from apps.core import audit, settings_store, webhooks
 from apps.events import rbac
 
-from . import machine
-from .machine import Kind, Refused, State
-from .models import EvacState, StateChange
+from . import guidance, machine
+from .machine import Kind, Model, Refused, State
+from .models import BlockedPoint, EvacState, StateChange
 
 STATE_CHANGED = "evacuation.state_changed"
+ROUTES_CHANGED = "evacuation.routes_changed"
 PERM_TRIGGER = "evacuation.trigger"
 PERM_CLEAR = "evacuation.clear"
 PERM_DRILL = "evacuation.drill"
@@ -24,6 +25,7 @@ PERM_DRILL = "evacuation.drill"
 
 @dataclass(frozen=True)
 class Config:
+    model: Model
     enabled: frozenset[State]
     clear_seconds: int
     labels: dict[str, str]
@@ -44,7 +46,13 @@ def config(event: Any) -> Config:
         if cfg.get(f"{key}_enabled", True):
             enabled.add(state)
     labels = {k: (cfg.get(f"{k}_label") or v) for k, v in DEFAULT_LABELS.items()}
-    return Config(frozenset(enabled), int(cfg.get("all_clear_minutes", 5)) * 60, labels,
+    try:
+        model = Model(cfg.get("model") or Model.STAGED)
+    except ValueError:
+        model = Model.STAGED
+    if model is Model.SIMPLE:
+        enabled = set(machine.ALWAYS_ENABLED)
+    return Config(model, frozenset(enabled), int(cfg.get("all_clear_minutes", 5)) * 60, labels,
                   str(cfg.get("drill_text") or "DRILL"))
 
 
@@ -143,7 +151,8 @@ def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = F
                       .select_related("zone"))
         elsewhere = any(machine.current(o.status, now).real_alarm for o in others)
         result = machine.transition(row.status, target, drill=drill, now=now, enabled=cfg.enabled,
-                                    clear_seconds=cfg.clear_seconds, real_alarm_elsewhere=elsewhere)
+                                    clear_seconds=cfg.clear_seconds, real_alarm_elsewhere=elsewhere,
+                                    model=cfg.model, zone=zone is not None)
         kw = {"actor": actor, "source": source, "reason": reason, "request": request}
         out.append(_record(event, row, result, **kw))
         if result.after.real_alarm:
@@ -163,6 +172,112 @@ def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = F
                     sub = machine.transition(other.status, State.ALL_CLEAR, drill=other.drill, now=now,
                                              clear_seconds=cfg.clear_seconds)
                     out.append(_record(event, other, sub, **kw))
+    return out
+
+
+# ------------------------------------------------------------------------------------------- blocked points
+def points_of(event: Any) -> Any:
+    from apps.venues.models import Point
+
+    return Point.objects.filter(venue__events=event).select_related("venue", "floor", "zone")
+
+
+def blocked_ids(event: Any) -> set[str]:
+    return {str(p) for p in BlockedPoint.objects.filter(event=event).values_list("point_id", flat=True)}
+
+
+def set_blocked(event: Any, point: Any, blocked: bool, *, actor: Any = None, request: Any = None,
+                reason: str = "", source: str = "web", check_perms: bool = True) -> bool:
+    """Block or reopen a point (exit, assembly point, door, passage) for this event; routes avoid blocked points.
+    Returns whether anything changed. Needs ``evacuation.trigger`` for the point."""
+    if not points_of(event).filter(pk=point.pk).exists():
+        raise Refused("point", "This point is not part of the event's venues.")
+    if check_perms and actor is not None and not rbac.has_perm(actor, event, PERM_TRIGGER, obj=point,
+                                                               request=request):
+        raise PermissionDenied("evacuation")
+    with transaction.atomic():
+        row = BlockedPoint.objects.select_for_update().filter(event=event, point=point).first()
+        if blocked == (row is not None):
+            return False
+        user = actor if getattr(actor, "pk", None) else None
+        if blocked:
+            row = BlockedPoint.objects.create(event=event, point=point, since=timezone.now(), blocked_by=user,
+                                              reason=reason[:300])
+        else:
+            assert row is not None
+            row.delete()
+        audit.log(action="evacuation.point_blocked" if blocked else "evacuation.point_reopened", actor=user,
+                  event=event, target=point, request=request,
+                  message=f"{point} {'blocked' if blocked else 'open again'}" + (f": {reason}" if reason else ""),
+                  changes={"blocked": [not blocked, blocked]}, scope={"source": source})
+        payload = {"event": event.slug, "point": str(point.pk), "point_name": point.name, "kind": point.kind,
+                   "blocked": blocked, "reason": reason[:300]}
+        transaction.on_commit(lambda: webhooks.emit(ROUTES_CHANGED, payload, event=event))
+    return True
+
+
+# ------------------------------------------------------------------------------------------- screens
+@dataclass(frozen=True)
+class ScreenView:
+    screen: Any
+    zone_ids: list[str]
+    shown: machine.Status
+    guidance: guidance.Guidance
+
+
+def _screens(event: Any) -> list[Any]:
+    from django.apps import apps
+
+    if not apps.is_installed("apps.screens"):
+        return []
+    from apps.screens.models import Screen
+
+    return list(Screen.objects.filter(event=event).select_related("venue", "zone", "room", "floor__building")
+                .prefetch_related("room__zones").order_by("name"))
+
+
+def hint_of(event: Any, screen: Any) -> tuple[str, str]:
+    cfg = settings_store.get("evacuation_screen", event=event, screen=screen)
+    return str(cfg.get("hint_text") or ""), str(cfg.get("hint_arrow") or "")
+
+
+def screen_views(event: Any, now: Any = None) -> list[ScreenView]:
+    """Every screen of the event with the state it shows and the way it sends people (ADR-0030)."""
+    from apps.venues import graph as venue_graph
+    from apps.venues import routing
+
+    now = now or timezone.now()
+    cfg = config(event)
+    ev, zones = statuses(event)
+    blocked = blocked_ids(event)
+    tables: dict[str, tuple[routing.Graph, dict[str, routing.Route], dict[str, list[str]]]] = {}
+    out = []
+    for screen in _screens(event):
+        zone_ids = [str(screen.zone_id)] if screen.zone_id else []
+        if screen.room_id:
+            zone_ids += [str(z.pk) for z in screen.room.zones.all() if str(z.pk) not in zone_ids]
+        shown = machine.effective([ev] + [zones[z] for z in zone_ids if z in zones], now)
+        text, arrow = hint_of(event, screen)
+        if text or arrow:
+            g = guidance.Guidance(guidance.Kind.HINT, guidance.Arrow(arrow) if arrow else None, text=text)
+        elif cfg.model is not Model.ZONES:
+            g = guidance.Guidance(guidance.Kind.NONE)
+        else:
+            venue = screen.venue or (screen.floor.building.venue if screen.floor_id else None)
+            if venue is None or screen.position_x is None or screen.position_y is None:
+                g = guidance.Guidance(guidance.Kind.FOLLOW_STAFF)
+            else:
+                key = str(venue.pk)
+                if key not in tables:
+                    gr = venue_graph.build(venue)
+                    by_floor: dict[str, list[str]] = {}
+                    for pid, fid in points_of(event).filter(venue=venue).values_list("pk", "floor_id"):
+                        by_floor.setdefault(str(fid) if fid else "", []).append(str(pid))
+                    tables[key] = (gr, routing.routes(gr, blocked=blocked), by_floor)
+                gr, table, by_floor = tables[key]
+                place = guidance.Place(screen.position_x, screen.position_y, screen.facing)
+                g = guidance.route(gr, table, place, by_floor.get(str(screen.floor_id) if screen.floor_id else "", []))
+        out.append(ScreenView(screen, zone_ids, shown, g))
     return out
 
 

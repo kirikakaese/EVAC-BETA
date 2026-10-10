@@ -97,3 +97,25 @@ class StateChange(models.Model):
 
     def delete(self, *args: Any, **kwargs: Any) -> Any:
         raise ValueError("evacuation history is append-only")
+
+
+class BlockedPoint(models.Model):
+    """An exit, assembly point or passage that is not usable during this event (blocked live); routes avoid it."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_blocked")
+    point = models.ForeignKey("venues.Point", on_delete=models.CASCADE, related_name="+")
+    since = models.DateTimeField()
+    blocked_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+    reason = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["event", "point"], name="evac_blocked_event_point")]
+
+    def __str__(self) -> str:
+        return f"{self.point} blocked"
+
+    def evac_scope_chain(self) -> list[tuple[str, str]]:
+        chain: list[tuple[str, str]] = self.point.evac_scope_chain()
+        return chain
