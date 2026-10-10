@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Lost & found" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Lost & found" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'helpdesk:index' event.slug %}">{% trans "Helpdesk" %}</a>
+<a class="btn" href="{% url 'helpdesk:lf_new' event.slug %}?kind=lost">{% trans "Lost report" %}</a>
+<a class="btn btn-primary" href="{% url 'helpdesk:lf_new' event.slug %}">{% trans "Found item" %}</a></div></div>
+<section class="card" aria-labelledby="lf-h"><h2 id="lf-h" class="sr-only">{% trans "Items" %}</h2>
+<form method="get" class="inline filters"><label for="f-q">{% trans "Search" %}</label><input id="f-q" type="search" name="q" value="{{ q }}">
+<label for="f-kind">{% trans "Kind" %}</label><select id="f-kind" name="kind"><option value="">{% trans "Lost and found" %}</option><option value="lost"{% if kind == "lost" %} selected{% endif %}>{% trans "Lost" %}</option><option value="found"{% if kind == "found" %} selected{% endif %}>{% trans "Found" %}</option></select>
+<label for="f-st">{% trans "Status" %}</label><select id="f-st" name="status"><option value="all">{% trans "Any" %}</option>{% for k, v in statuses %}<option value="{{ k }}"{% if status == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+<button class="btn btn-sm">{% trans "Show" %}</button></form>
+{% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Ref." %}</th><th scope="col">{% trans "What" %}</th><th scope="col">{% trans "Where and when" %}</th><th scope="col">{% trans "Status" %}</th></tr></thead>
+<tbody>{% for o in items %}<tr><td class="mono nowrap"><a href="{% url 'helpdesk:lf' event.slug o.pk %}">{{ o.reference }}</a></td>
+<td><span class="badge {% if o.kind == 'lost' %}badge-warn{% else %}badge-info{% endif %}">{{ o.get_kind_display }}</span> <strong>{{ o.what }}</strong> <span class="small muted">{{ o.get_category_display }}{% if o.colour %} · {{ o.colour }}{% endif %}</span></td>
+<td><span class="small">{% if o.room %}{{ o.room.name }} {% endif %}{{ o.where }}</span>{% if o.when %} <span class="small muted tabular">{{ o.when|date:"D H:i" }}</span>{% endif %}{% if o.storage %}<br><span class="small">{% trans "kept at" %} {{ o.storage }}</span>{% endif %}</td>
+<td>{% include "helpdesk/_status.html" with status=o.status kind=o.kind label=o.get_status_display %}{% if o.match %} <span class="small mono">↔ {{ o.match.reference }}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "Nothing here." %}</p>{% endif %}</section>
+{% endblock %}

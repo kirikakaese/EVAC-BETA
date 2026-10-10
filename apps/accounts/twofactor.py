@@ -58,7 +58,8 @@ def qr_svg(data: str) -> str:
     img = qrcode.make(data, image_factory=qrcode.image.svg.SvgPathImage, box_size=8)
     buf = io.BytesIO()
     img.save(buf)
-    return buf.getvalue().decode()
+    # the library names every path "qr-path"; ids must be unique when a page shows several codes (label sheets)
+    return buf.getvalue().decode().replace(' id="qr-path"', "")
 
 
 def _check_totp(dev: TOTPDevice, code: str) -> bool:

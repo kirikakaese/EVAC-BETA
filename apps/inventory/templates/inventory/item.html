@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ item.asset_tag }} {{ item.name }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1><span class="mono">{{ item.asset_tag }}</span> {{ item.name }}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'inventory:index' event.slug %}">{% trans "Inventory" %}</a>
+{% if can_manage %}<a class="btn btn-ghost" href="{% url 'inventory:labels' event.slug %}?from={{ item.asset_tag|urlencode }}&amp;to={{ item.asset_tag|urlencode }}">{% trans "Print label" %}</a>
+<a class="btn" href="{% url 'inventory:item_edit' event.slug item.pk %}">{% trans "Edit" %}</a>{% endif %}</div></div>
+<div class="grid-2">
+{% if loan %}<section class="card" aria-labelledby="ln-h"><h2 id="ln-h">{% trans "Lent out" %}</h2>
+<dl class="kv"><dt>{% trans "Lent to" %}</dt><dd><strong>{{ loan.borrower }}</strong>{% if loan.contact %} · {{ loan.contact }}{% endif %}</dd>
+<dt>{% trans "Since" %}</dt><dd class="tabular">{{ loan.lent_at|date:"D j M H:i" }}{% if loan.lent_by %} <span class="small muted">({{ loan.lent_by }})</span>{% endif %}</dd>
+<dt>{% trans "Due back" %}</dt><dd class="tabular">{% if loan.due_at %}{{ loan.due_at|date:"D j M H:i" }}{% if loan.due_at < now %} <span class="badge badge-err">{% trans "overdue" %}</span>{% endif %}{% else %}–{% endif %}</dd>
+{% if loan.signature %}<dt>{% trans "Signature" %}</dt><dd><img class="signature-img" src="{{ loan.signature.url }}" alt="{% blocktrans with b=loan.borrower %}Signature of {{ b }}{% endblocktrans %}"></dd>{% endif %}</dl>
+{% if back %}<form method="post" action="{% url 'inventory:return' event.slug item.pk %}" enctype="multipart/form-data" data-offline data-offline-label="{{ item.asset_tag }}">{% csrf_token %}
+{% include "portal/_form.html" with form=back %}<button class="btn btn-primary btn-lg">{% trans "Take back" %}</button></form>{% endif %}</section>
+{% elif lend %}<section class="card" aria-labelledby="lend-h"><h2 id="lend-h">{% trans "Lend" %}</h2>
+{% if item.status != "available" %}<p>{% include "inventory/_status.html" with status=item.status label=item.get_status_display %} {% trans "Set it available below before lending." %}</p>{% else %}
+<form method="post" action="{% url 'inventory:lend' event.slug item.pk %}" enctype="multipart/form-data">{% csrf_token %}
+{% include "portal/_form.html" with form=lend %}
+<div class="field signature-field"><span class="label" id="sig-l">{% trans "Signature" %}{% if signature_required %} <span class="small">({% trans "required" %})</span>{% endif %}</span>
+<canvas class="signature-pad" data-signature="lend-signature" width="600" height="200" role="img" aria-labelledby="sig-l" aria-describedby="sig-h"></canvas>
+<p class="small muted" id="sig-h">{% trans "Sign with a finger or the mouse." %} <button type="button" class="btn btn-sm btn-ghost" data-signature-clear="lend-signature">{% trans "Clear" %}</button></p></div>
+<button class="btn btn-primary btn-lg">{% trans "Lend" %}</button></form>{% endif %}</section>
+{% else %}<section class="card" aria-labelledby="st-h"><h2 id="st-h">{% trans "Status" %}</h2><p>{% include "inventory/_status.html" with status=item.status label=item.get_status_display %}</p></section>{% endif %}
+<section class="card" aria-labelledby="it-h"><h2 id="it-h">{% trans "Item" %}</h2>
+<dl class="kv"><dt>{% trans "Status" %}</dt><dd>{% include "inventory/_status.html" with status=item.status label=item.get_status_display %}</dd>
+{% if item.category %}<dt>{% trans "Category" %}</dt><dd>{{ item.category.name }}</dd>{% endif %}
+{% if item.serial %}<dt>{% trans "Serial" %}</dt><dd class="mono">{{ item.serial }}</dd>{% endif %}
+<dt>{% trans "Kept in" %}</dt><dd>{% if item.room %}{{ item.room.name }}{% endif %} {{ item.location }}{% if not item.room and not item.location %}–{% endif %}</dd></dl>
+{% if item.description %}<p>{{ item.description|linebreaksbr }}</p>{% endif %}
+{% if item.photo %}<img class="item-photo" src="{{ item.photo.url }}" alt="{% trans 'Photo of the item' %}">{% endif %}
+<div class="qr-box small-qr" role="img" aria-label="{% trans 'QR code of the label' %}">{{ qr|safe }}</div><p class="small muted mono url-text">{{ url }}</p></section></div>
+{% if note %}<section class="card" aria-labelledby="nt-h"><h2 id="nt-h">{% trans "Notes and maintenance" %}</h2>
+<form method="post" action="{% url 'inventory:note' event.slug item.pk %}">{% csrf_token %}{% include "portal/_form.html" with form=note %}<button class="btn">{% trans "Add" %}</button></form>
+{% if notes %}<ul class="plain">{% for n in notes %}<li><span class="badge {% if n.kind == 'damage' %}badge-err{% elif n.kind == 'maintenance' %}badge-warn{% else %}badge-info{% endif %}">{{ n.get_kind_display }}</span> {{ n.text }} <span class="small muted tabular">{{ n.at|date:"D H:i" }}{% if n.actor %} · {{ n.actor }}{% endif %}</span></li>{% endfor %}</ul>{% endif %}</section>{% endif %}
+<section class="card" aria-labelledby="hi-h"><h2 id="hi-h">{% trans "History" %}</h2>
+{% if history %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Lent to" %}</th><th scope="col">{% trans "Out" %}</th><th scope="col">{% trans "Back" %}</th><th scope="col">{% trans "Condition" %}</th></tr></thead>
+<tbody>{% for h in history %}<tr><td>{{ h.borrower }}</td><td class="tabular nowrap">{{ h.lent_at|date:"D j M H:i" }}</td><td class="tabular nowrap">{% if h.returned_at %}{{ h.returned_at|date:"D j M H:i" }}{% else %}<span class="badge badge-info">{% trans "out" %}</span>{% endif %}</td>
+<td>{% if h.condition %}<span class="badge {% if h.condition == 'ok' %}badge-ok{% else %}badge-warn{% endif %}">{{ h.get_condition_display }}</span>{% else %}–{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "Never lent yet." %}</p>{% endif %}</section>
+{% endblock %}

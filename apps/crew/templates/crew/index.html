@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Shift board" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Shift board" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'crew:teams' event.slug %}">{% trans "Teams and crew" %}</a>
+{% if can_manage %}<form method="post" action="{% url 'crew:install_widgets' event.slug %}" class="inline">{% csrf_token %}<button class="btn btn-ghost">{% trans "Add shift board widgets for screens" %}</button></form>
+<a class="btn btn-primary" href="{% url 'crew:shift_new' event.slug %}">{% trans "New shift" %}</a>{% endif %}</div></div>
+<section class="card" aria-labelledby="need-h"><h2 id="need-h">{% trans "Needed now" %}</h2>
+{% if needed %}<ul class="plain panel-list">{% for n in needed %}<li><span class="badge {% if n.now %}badge-err{% else %}badge-warn{% endif %}">{{ n.missing }} {% trans "needed" %}</span> <a href="{% url 'crew:shift' event.slug n.id %}"><strong>{{ n.title }}</strong></a> <span class="small muted">{{ n.team }} · {{ n.time }}{% if n.place %} · {{ n.place }}{% endif %} · {{ n.label }}</span></li>{% endfor %}</ul>
+{% else %}<p class="muted">✓ {% trans "Every shift of the next hours has its people." %}</p>{% endif %}</section>
+{% if days %}<nav class="tabs" aria-label="{% trans 'Days' %}">{% for d in days %}<a href="?day={{ d|date:'Y-m-d' }}{% if team_id %}&amp;team={{ team_id }}{% endif %}"{% if d == day %} aria-current="page"{% endif %}>{{ d|date:"D j M" }}</a>{% endfor %}</nav>{% endif %}
+<section class="card" aria-labelledby="day-h"><h2 id="day-h">{{ day|date:"l, j F" }}</h2>
+<form method="get" class="inline filters"><input type="hidden" name="day" value="{{ day|date:'Y-m-d' }}"><label for="f-team">{% trans "Team" %}</label><select id="f-team" name="team" data-action="submit"><option value="">{% trans "All teams" %}</option>{% for t in teams %}<option value="{{ t.pk }}"{% if team_id == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }}</option>{% endfor %}</select><noscript><button class="btn btn-sm">{% trans "Show" %}</button></noscript></form>
+{% if shifts %}<div class="table-wrap"><table class="shift-table"><thead><tr><th scope="col">{% trans "Time" %}</th><th scope="col">{% trans "Team" %}</th><th scope="col">{% trans "Shift" %}</th><th scope="col">{% trans "People" %}</th></tr></thead>
+<tbody>{% for s in shifts %}<tr><td class="tabular nowrap">{{ s.starts_at|time:"H:i" }}–{{ s.ends_at|time:"H:i" }}{% if s.starts_at <= now and s.ends_at > now %}<br><span class="badge badge-ok">{% trans "now" %}</span>{% endif %}</td>
+<td><span class="swatch" data-color="{{ s.team.colour }}" aria-hidden="true"></span> {{ s.team.name }}</td>
+<td><a href="{% url 'crew:shift' event.slug s.pk %}"><strong>{{ s.title }}</strong></a>{% if s.place %}<br><span class="small muted">{{ s.place }}</span>{% endif %}</td>
+<td class="tabular">{{ s.filled }} / {{ s.needed }}{% if s.present %} <span class="small muted">({{ s.present }} {% trans "here" %})</span>{% endif %}{% if s.missing %} <span class="badge badge-warn">{{ s.missing }} {% trans "missing" %}</span>{% else %} <span class="badge badge-ok">{% trans "full" %}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No shifts on this day." %}</p>{% endif %}</section>
+{% if sources %}<section class="card" aria-labelledby="src-h"><h2 id="src-h">{% trans "Imported from" %}</h2>
+<ul class="plain">{% for src in sources %}<li><a href="{{ src.detail }}">{{ src.name }}</a> ·
+{% if src.config.last_error %}<span class="badge badge-err">{% trans "error" %}</span> <span class="small">{{ src.config.last_error }}</span>{% elif src.config.last_sync_at %}<span class="small muted">{% blocktrans with t=src.config.last_sync_at|date:"D H:i" %}last sync {{ t }}{% endblocktrans %}</span>{% else %}<span class="small muted">{% trans "not synced yet" %}</span>{% endif %}
+{% if can_manage %}<form method="post" action="{{ src.sync }}" class="inline">{% csrf_token %}<button class="btn btn-sm">{% trans "Sync now" %}</button></form>{% endif %}</li>{% endfor %}</ul>
+<p class="small muted">{% trans "Check-ins, no-shows and people added here stay when the source syncs again." %}</p></section>{% endif %}
+{% endblock %}

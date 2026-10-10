@@ -242,13 +242,18 @@ door counters (one offline for a while) fill the foyer; its screen shows "Foyer 
 | 6.2 | ✅ Control room dashboard (panels from every module: alarms, incidents, zone map, occupancy, screens, announcements, DIAL/DECT, ops log, tasks) |
 | 6.3 | ✅ Occupancy: PWA counter (offline queue), MQTT/HTTP sensors, capacity rules → screens + alerts, history |
 
-## Phase 7 — Crew, inventory, helpdesk ⬜ [§11.2, §11.6, §11.7]
-**Gate:** shift board on screens; lend/return with QR.
+## Phase 7 — Crew, inventory, helpdesk ✅ [§11.2, §11.6, §11.7]
+**Gate:** shift board on screens; lend/return with QR. ✅ `frontend/e2e/phase7.mjs` (`make e2e`, CI): a screen
+with *Crew: needed now* shows "Wristbands: 2 needed"; a crew member scans the shift's QR code on the phone (walk-in,
+checked in) and the screen shows "1 needed" about half a second later. A radio's QR label opens it on a phone; it is
+lent with a drawn signature and taken back. A lost report from the public help page is matched and handed over.
+[ADR-0041](adr/0041-crew-and-shifts.md), [ADR-0042](adr/0042-inventory.md), [ADR-0043](adr/0043-helpdesk.md).
+
 | ID | Ticket |
 |---|---|
-| 7.1 | Crew & shifts (+ Engelsystem extension), scope kind `team` |
-| 7.2 | Inventory with QR labels, lend/return |
-| 7.3 | Lost & found, requests, FAQ |
+| 7.1 | ✅ Crew & shifts (teams, skills, rules, QR check-in, no-shows, needed-now widgets) + Engelsystem extension, scope kind `team` |
+| 7.2 | ✅ Inventory with QR labels, lend/return (signature, photo), who has what, reminders, map layer |
+| 7.3 | ✅ Lost & found (matching), requests, FAQ; public help page |
 
 ## Phase 8 — Access ⬜ [§11.5]
 **Gate:** offline check-in syncs; access zone counts feed occupancy.

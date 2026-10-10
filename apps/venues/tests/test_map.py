@@ -239,4 +239,5 @@ def test_permissions_and_module(client, event, venue, ground, member, admin):
 
     modules.set_event(event, "screens", False, user=admin)
     login_2fa(client, admin)
-    assert client.get(f"{base(event)}map/data/?floor={ground.pk}").json()["layers"] == []
+    layers = client.get(f"{base(event)}map/data/?floor={ground.pk}").json()["layers"]
+    assert "screens" not in [layer["key"] for layer in layers]

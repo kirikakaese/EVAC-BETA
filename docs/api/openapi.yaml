@@ -1175,6 +1175,81 @@ paths:
               schema:
                 $ref: '#/components/schemas/Audit'
           description: ''
+  /api/v1/events/{event_slug}/crew-teams/:
+    get:
+      operationId: events_crew_teams_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTeamList'
+          description: ''
+  /api/v1/events/{event_slug}/crew-teams/{id}/:
+    get:
+      operationId: events_crew_teams_retrieve
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this team.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: ''
   /api/v1/events/{event_slug}/evacuation/:
     get:
       operationId: events_evacuation_list
@@ -1256,6 +1331,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EvacuationTriggerResult'
+          description: ''
+  /api/v1/events/{event_slug}/faq/:
+    get:
+      operationId: events_faq_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFaqList'
+          description: ''
+  /api/v1/events/{event_slug}/faq/{id}/:
+    get:
+      operationId: events_faq_retrieve
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this faq entry.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Faq'
           description: ''
   /api/v1/events/{event_slug}/fonts/:
     get:
@@ -1396,6 +1546,112 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/events/{event_slug}/helpdesk-requests/:
+    get:
+      operationId: events_helpdesk_requests_list
+      description: Requests (``?status=new``).
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          title: About
+          enum:
+          - accessibility
+          - feedback
+          - other
+          - problem
+          - question
+        description: |-
+          * `question` - Question
+          * `problem` - Problem
+          * `accessibility` - Accessibility
+          * `feedback` - Feedback
+          * `other` - Other
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - done
+          - new
+          - open
+          - waiting
+        description: |-
+          * `new` - New
+          * `open` - In progress
+          * `waiting` - Waiting
+          * `done` - Done
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTicketList'
+          description: ''
+  /api/v1/events/{event_slug}/helpdesk-requests/{id}/:
+    get:
+      operationId: events_helpdesk_requests_retrieve
+      description: Requests (``?status=new``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this ticket.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+          description: ''
   /api/v1/events/{event_slug}/incidents/:
     get:
       operationId: events_incidents_list
@@ -1625,6 +1881,102 @@ paths:
               schema:
                 $ref: '#/components/schemas/Incident'
           description: ''
+  /api/v1/events/{event_slug}/inventory-items/:
+    get:
+      operationId: events_inventory_items_list
+      description: Items with their asset tag, status and the open loan (who has it).
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - available
+          - lent
+          - maintenance
+          - missing
+          - retired
+        description: |-
+          * `available` - Available
+          * `lent` - Lent
+          * `maintenance` - Maintenance
+          * `missing` - Missing
+          * `retired` - Retired
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryItemList'
+          description: ''
+  /api/v1/events/{event_slug}/inventory-items/{id}/:
+    get:
+      operationId: events_inventory_items_retrieve
+      description: Items with their asset tag, status and the open loan (who has it).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this item.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+          description: ''
   /api/v1/events/{event_slug}/layouts/:
     get:
       operationId: events_layouts_list
@@ -1848,6 +2200,206 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
+          description: ''
+  /api/v1/events/{event_slug}/loans/:
+    get:
+      operationId: events_loans_list
+      description: 'Loans, newest first (``?open=1``: only items still out).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryLoanList'
+          description: ''
+  /api/v1/events/{event_slug}/loans/{id}/:
+    get:
+      operationId: events_loans_retrieve
+      description: 'Loans, newest first (``?open=1``: only items still out).'
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this loan.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryLoan'
+          description: ''
+  /api/v1/events/{event_slug}/lost-found/:
+    get:
+      operationId: events_lost_found_list
+      description: Lost reports and found items (``?kind=found&status=open``).
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - bag
+          - bottle
+          - clothing
+          - electronics
+          - glasses
+          - jewellery
+          - keys
+          - other
+          - toy
+          - wallet
+        description: |-
+          * `bag` - Bag or backpack
+          * `clothing` - Clothing
+          * `electronics` - Phone or electronics
+          * `keys` - Keys
+          * `wallet` - Wallet, cards or documents
+          * `jewellery` - Jewellery or watch
+          * `glasses` - Glasses
+          * `bottle` - Bottle or cup
+          * `toy` - Toy
+          * `other` - Something else
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - found
+          - lost
+        description: |-
+          * `lost` - Lost
+          * `found` - Found
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - closed
+          - matched
+          - open
+          - returned
+        description: |-
+          * `open` - Open
+          * `matched` - Matched
+          * `returned` - Returned
+          * `closed` - Closed
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLostFoundList'
+          description: ''
+  /api/v1/events/{event_slug}/lost-found/{id}/:
+    get:
+      operationId: events_lost_found_retrieve
+      description: Lost reports and found items (``?kind=found&status=open``).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this lost found.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LostFound'
           description: ''
   /api/v1/events/{event_slug}/members/:
     get:
@@ -3490,6 +4042,107 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Session'
+          description: ''
+  /api/v1/events/{event_slug}/shifts/:
+    get:
+      operationId: events_shifts_list
+      description: Shifts with how many are filled (``?day=YYYY-MM-DD`` in the event
+        time zone).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedShiftList'
+          description: ''
+  /api/v1/events/{event_slug}/shifts/{id}/:
+    get:
+      operationId: events_shifts_retrieve
+      description: Shifts with how many are filled (``?day=YYYY-MM-DD`` in the event
+        time zone).
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this shift.
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+  /api/v1/events/{event_slug}/shifts/needed/:
+    get:
+      operationId: events_shifts_needed_retrieve
+      description: Shifts now and soon that still need people.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
           description: ''
   /api/v1/events/{event_slug}/themes/:
     get:
@@ -5519,18 +6172,6 @@ components:
       required:
       - name
       - venue
-    CategoryEnum:
-      enum:
-      - sans
-      - serif
-      - mono
-      - display
-      type: string
-      description: |-
-        * `sans` - Sans serif
-        * `serif` - Serif
-        * `mono` - Monospace
-        * `display` - Display
     CloneRequest:
       type: object
       properties:
@@ -5549,6 +6190,16 @@ components:
           default: false
       required:
       - name
+    ConditionEnum:
+      enum:
+      - ok
+      - damaged
+      - incomplete
+      type: string
+      description: |-
+        * `ok` - OK
+        * `damaged` - Damaged
+        * `incomplete` - Incomplete
     Delivery:
       type: object
       properties:
@@ -5889,6 +6540,41 @@ components:
       required:
       - name
       - slug
+    Faq:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        question:
+          type: string
+          readOnly: true
+        answer:
+          type: string
+          readOnly: true
+        topic:
+          type: string
+          readOnly: true
+          description: Groups the questions.
+        order:
+          type: integer
+          readOnly: true
+        public:
+          type: boolean
+          readOnly: true
+          title: On the public help page
+        on_screens:
+          type: boolean
+          readOnly: true
+      required:
+      - answer
+      - id
+      - on_screens
+      - order
+      - public
+      - question
+      - topic
     Floor:
       type: object
       properties:
@@ -5942,7 +6628,7 @@ components:
           type: string
           maxLength: 120
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/FontFamilyCategoryEnum'
         fallback:
           type: string
           title: Fallback fonts
@@ -5969,6 +6655,18 @@ components:
       - files
       - id
       - stack
+    FontFamilyCategoryEnum:
+      enum:
+      - sans
+      - serif
+      - mono
+      - display
+      type: string
+      description: |-
+        * `sans` - Sans serif
+        * `serif` - Serif
+        * `mono` - Monospace
+        * `display` - Display
     FontFamilyRequest:
       type: object
       properties:
@@ -5977,7 +6675,7 @@ components:
           minLength: 1
           maxLength: 120
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/FontFamilyCategoryEnum'
         fallback:
           type: string
           title: Fallback fonts
@@ -6228,6 +6926,128 @@ components:
         * `in_progress` - In progress
         * `resolved` - Resolved
         * `closed` - Closed
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        asset_tag:
+          type: string
+          readOnly: true
+          description: 'Empty: the next free number.'
+        name:
+          type: string
+          readOnly: true
+        category:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        category_name:
+          type: string
+          readOnly: true
+        serial:
+          type: string
+          readOnly: true
+          title: Serial number
+        status:
+          allOf:
+          - $ref: '#/components/schemas/InventoryItemStatusEnum'
+          readOnly: true
+        room:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Kept in
+        location:
+          type: string
+          readOnly: true
+          title: Where exactly
+          description: e.g. Shelf B3
+        loan:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+      required:
+      - asset_tag
+      - category
+      - category_name
+      - id
+      - loan
+      - location
+      - name
+      - room
+      - serial
+      - status
+    InventoryItemStatusEnum:
+      enum:
+      - available
+      - lent
+      - maintenance
+      - missing
+      - retired
+      type: string
+      description: |-
+        * `available` - Available
+        * `lent` - Lent
+        * `maintenance` - Maintenance
+        * `missing` - Missing
+        * `retired` - Retired
+    InventoryLoan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        item:
+          type: string
+          format: uuid
+          readOnly: true
+        asset_tag:
+          type: string
+          readOnly: true
+        borrower:
+          type: string
+          readOnly: true
+          title: Lent to
+        contact:
+          type: string
+          readOnly: true
+          description: Phone, DECT or team.
+        lent_at:
+          type: string
+          format: date-time
+          readOnly: true
+        due_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Due back
+        returned_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        condition:
+          allOf:
+          - $ref: '#/components/schemas/ConditionEnum'
+          readOnly: true
+      required:
+      - asset_tag
+      - borrower
+      - condition
+      - contact
+      - due_at
+      - id
+      - item
+      - lent_at
+      - returned_at
     Item:
       type: object
       properties:
@@ -6571,6 +7391,156 @@ components:
           maxLength: 64
       required:
       - text
+    LostFound:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LostFoundKindEnum'
+          readOnly: true
+        what:
+          type: string
+          readOnly: true
+          description: e.g. Black backpack
+        category:
+          allOf:
+          - $ref: '#/components/schemas/LostFoundCategoryEnum'
+          readOnly: true
+        colour:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+          title: Details
+          description: Brand, contents, marks. Not shown on the public page.
+        where:
+          type: string
+          readOnly: true
+        room:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        when:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        storage:
+          type: string
+          readOnly: true
+          title: Kept at
+          description: e.g. Helpdesk box 3
+        name:
+          type: string
+          readOnly: true
+        contact:
+          type: string
+          readOnly: true
+          description: Phone or e-mail, only for the helpdesk.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LostFoundStatusEnum'
+          readOnly: true
+        match:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        handed_to:
+          type: string
+          readOnly: true
+        handed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        public:
+          type: boolean
+          readOnly: true
+          title: List publicly
+          description: 'Found items: what, category, colour and day on the public
+            page.'
+        source:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - colour
+      - contact
+      - created_at
+      - description
+      - handed_at
+      - handed_to
+      - id
+      - kind
+      - match
+      - name
+      - public
+      - reference
+      - room
+      - source
+      - status
+      - storage
+      - what
+      - when
+      - where
+    LostFoundCategoryEnum:
+      enum:
+      - bag
+      - clothing
+      - electronics
+      - keys
+      - wallet
+      - jewellery
+      - glasses
+      - bottle
+      - toy
+      - other
+      type: string
+      description: |-
+        * `bag` - Bag or backpack
+        * `clothing` - Clothing
+        * `electronics` - Phone or electronics
+        * `keys` - Keys
+        * `wallet` - Wallet, cards or documents
+        * `jewellery` - Jewellery or watch
+        * `glasses` - Glasses
+        * `bottle` - Bottle or cup
+        * `toy` - Toy
+        * `other` - Something else
+    LostFoundKindEnum:
+      enum:
+      - lost
+      - found
+      type: string
+      description: |-
+        * `lost` - Lost
+        * `found` - Found
+    LostFoundStatusEnum:
+      enum:
+      - open
+      - matched
+      - returned
+      - closed
+      type: string
+      description: |-
+        * `open` - Open
+        * `matched` - Matched
+        * `returned` - Returned
+        * `closed` - Closed
     Membership:
       type: object
       properties:
@@ -6945,6 +7915,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Event'
+    PaginatedFaqList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Faq'
     PaginatedFloorList:
       type: object
       required:
@@ -7014,6 +8007,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Incident'
+    PaginatedInventoryItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryItem'
+    PaginatedInventoryLoanList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryLoan'
     PaginatedLayoutList:
       type: object
       required:
@@ -7083,6 +8122,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LogEntry'
+    PaginatedLostFoundList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LostFound'
     PaginatedMembershipList:
       type: object
       required:
@@ -7336,6 +8398,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Session'
+    PaginatedShiftList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shift'
+    PaginatedTeamList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
     PaginatedTemplateList:
       type: object
       required:
@@ -7382,6 +8490,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Theme'
+    PaginatedTicketList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
     PaginatedTokenList:
       type: object
       required:
@@ -8951,6 +10082,75 @@ components:
         * `medium` - Medium
         * `high` - High
         * `critical` - Critical
+    Shift:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        team:
+          type: string
+          format: uuid
+          readOnly: true
+        team_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        place:
+          type: string
+          readOnly: true
+        starts_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Starts
+        ends_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Ends
+        needed:
+          type: integer
+          readOnly: true
+          title: People needed
+        filled:
+          type: integer
+          readOnly: true
+        people:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+          readOnly: true
+        open_signup:
+          type: boolean
+          readOnly: true
+          title: Open for sign-up
+          description: Crew can sign up themselves in the staff app.
+        source:
+          type: string
+          readOnly: true
+        external_id:
+          type: string
+          readOnly: true
+      required:
+      - ends_at
+      - external_id
+      - filled
+      - id
+      - needed
+      - open_signup
+      - people
+      - place
+      - source
+      - starts_at
+      - team
+      - team_name
+      - title
     SoundEnum:
       enum:
       - none
@@ -9008,6 +10208,40 @@ components:
       description: |-
         * `normal` - normal
         * `italic` - italic
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        colour:
+          type: string
+          readOnly: true
+        meeting_point:
+          type: string
+          readOnly: true
+          description: Where the team meets, used in crew calls.
+        source:
+          type: string
+          readOnly: true
+        external_id:
+          type: string
+          readOnly: true
+      required:
+      - colour
+      - description
+      - external_id
+      - id
+      - meeting_point
+      - name
+      - source
     Template:
       type: object
       properties:
@@ -9112,6 +10346,95 @@ components:
       required:
       - key
       - name
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+        subject:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+          title: Message
+        category:
+          allOf:
+          - $ref: '#/components/schemas/TicketCategoryEnum'
+          readOnly: true
+          title: About
+        name:
+          type: string
+          readOnly: true
+        contact:
+          type: string
+          readOnly: true
+          description: Phone or e-mail if you want an answer.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/TicketStatusEnum'
+          readOnly: true
+        assignee:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Assigned to
+        source:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assignee
+      - body
+      - category
+      - contact
+      - created_at
+      - id
+      - name
+      - reference
+      - source
+      - status
+      - subject
+      - updated_at
+    TicketCategoryEnum:
+      enum:
+      - question
+      - problem
+      - accessibility
+      - feedback
+      - other
+      type: string
+      description: |-
+        * `question` - Question
+        * `problem` - Problem
+        * `accessibility` - Accessibility
+        * `feedback` - Feedback
+        * `other` - Other
+    TicketStatusEnum:
+      enum:
+      - new
+      - open
+      - waiting
+      - done
+      type: string
+      description: |-
+        * `new` - New
+        * `open` - In progress
+        * `waiting` - Waiting
+        * `done` - Done
     Token:
       type: object
       properties:

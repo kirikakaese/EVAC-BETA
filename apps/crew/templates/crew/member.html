@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if obj %}{{ obj.name }}{% else %}{% trans "Add crew member" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if obj %}{{ obj.name }}{% else %}{% trans "Add crew member" %}{% endif %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'crew:teams' event.slug %}">{% trans "Teams and crew" %}</a></div></div>
+<form method="post" class="card">{% csrf_token %}{% include "portal/_form.html" with form=form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button></div></form>
+{% if shifts %}<section class="card" aria-labelledby="ms-h"><h2 id="ms-h">{% trans "Shifts" %}</h2><ul class="plain">{% for a in shifts %}<li class="tabular">{{ a.shift.starts_at|date:"D H:i" }} · <a href="{% url 'crew:shift' event.slug a.shift_id %}">{{ a.shift.title }}</a> · {{ a.get_status_display }}</li>{% endfor %}</ul></section>{% endif %}
+{% endblock %}

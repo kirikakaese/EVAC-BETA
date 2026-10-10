@@ -397,6 +397,45 @@
   // ---- door counter (occupancy, ADR-0040): <div data-counter data-area data-endpoint data-state-url>.
   // Clicks show at once, wait in localStorage (offline too) and go to the server in batches with a client id
   // each, so a replay after a lost answer counts nothing twice; the count of other doors arrives by polling.
+  // signature pad (inventory lending): <canvas data-signature="<field name>"> writes a PNG data URL into the
+  // form's hidden field of that name; <button data-signature-clear="<field name>"> clears it
+  document.querySelectorAll("canvas[data-signature]").forEach(function (canvas) {
+    const form = canvas.closest("form");
+    const field = form && form.querySelector('[name="' + canvas.getAttribute("data-signature") + '"]');
+    if (!field) return;
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+    let inked = false;
+    function pos(e) {
+      const r = canvas.getBoundingClientRect();
+      return [(e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height];
+    }
+    function style() {
+      ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.strokeStyle = getComputedStyle(canvas).color || "#000";
+    }
+    canvas.addEventListener("pointerdown", function (e) {
+      drawing = true; style();
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      const p = pos(e); ctx.beginPath(); ctx.moveTo(p[0], p[1]); e.preventDefault();
+    });
+    canvas.addEventListener("pointermove", function (e) {
+      if (!drawing) return;
+      const p = pos(e); ctx.lineTo(p[0], p[1]); ctx.stroke(); inked = true; e.preventDefault();
+    });
+    function end() {
+      if (!drawing) return;
+      drawing = false;
+      if (inked) field.value = canvas.toDataURL("image/png");
+    }
+    canvas.addEventListener("pointerup", end);
+    canvas.addEventListener("pointercancel", end);
+    canvas.addEventListener("pointerleave", end);
+    document.querySelectorAll('[data-signature-clear="' + canvas.getAttribute("data-signature") + '"]').forEach(function (b) {
+      b.addEventListener("click", function () { ctx.clearRect(0, 0, canvas.width, canvas.height); inked = false; field.value = ""; });
+    });
+  });
+
   const counter = document.querySelector("[data-counter]");
   if (counter) {
     const QKEY = "evac.count-queue";

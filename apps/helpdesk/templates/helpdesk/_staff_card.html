@@ -1,0 +1,5 @@
+{% load i18n %}<section class="card staff-helpdesk"><h2>{% trans "Helpdesk" %}</h2>
+{% if ctx.new %}<p><span class="badge badge-warn">{{ ctx.new }}</span> <a href="{% url 'helpdesk:index' event.slug %}?status=new">{% trans "new requests" %}</a></p>{% endif %}
+{% if ctx.mine %}<ul class="plain">{% for t in ctx.mine %}<li><a href="{% url 'helpdesk:ticket' event.slug t.pk %}"><span class="mono">{{ t.reference }}</span> {{ t.subject }}</a></li>{% endfor %}</ul>{% elif not ctx.new %}<p class="muted">✓ {% trans "Nothing waiting for you." %}</p>{% endif %}
+{% if ctx.can_manage %}<p><a class="btn btn-sm" href="{% url 'helpdesk:lf_new' event.slug %}">{% trans "Log a found item" %}</a></p>{% endif %}
+</section>

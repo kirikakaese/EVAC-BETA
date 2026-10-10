@@ -6,6 +6,48 @@ released.
 
 ## [Unreleased]
 
+### Added — Crew, inventory and helpdesk (Phase 7)
+
+- Crew & shifts module (`apps/crew`, module `crew`, ADR-0041):
+  - teams with colour, leads and meeting point; skills; crew members with or without an EVAC account;
+  - shifts with room or place, people needed, skills and self sign-up; a day board and a "needed now" list;
+  - sign-up rules (settings `crew`): full, late sign-up, skills, overlap, rest time, hours per day; leads can add
+    someone anyway (audited);
+  - check-in and check-out by the shift's QR code (walk-ins join when the rules allow), in the staff app (offline
+    queue) or by the team lead; no-shows after 15 minutes notify the leads (beat task `crew-mark-no-shows`);
+  - scope kind `team` (permissions `crew.view`, `crew.checkin`, `crew.manage` per team), announcement audience
+    *Team*;
+  - screens: data sources `crew.needed_now` and `crew.board`, one-click widgets *Crew: needed now* and *Crew: shift
+    board*; every sign-up and check-in refreshes them within a second;
+  - control room panel, staff app card *My shifts* with *Help needed*, webhooks `crew.shift_changed` and
+    `crew.no_show` (also an ops log line), API `shifts` and `crew-teams`.
+- Engelsystem extension (`extensions/engelsystem`): angel types → teams, shifts → shifts, entries → sign-ups
+  (API v0-beta with an API key); periodic or *Sync now* (also on the shift board); local check-ins, no-shows and
+  people added in EVAC are kept.
+- Inventory module (`apps/inventory`, module `inventory`, ADR-0042):
+  - items with asset tags (next number with a prefix; several identical items at once), categories with a usual
+    loan time, status, place, photo, map position;
+  - printable QR label sheets; the label opens the item's page on any phone;
+  - lend with a name or account, contact, due time, photo and a signature drawn on the screen (`data-signature`
+    canvas in `evac.js`; optionally required); take back with condition (damaged → maintenance);
+  - who has what, maintenance notes, overdue reminders (beat task `inventory-remind-overdue`, ops log line),
+    control room panel, staff app card, map layer, webhooks, API `inventory-items` and `loans`.
+- Helpdesk module (`apps/helpdesk`, module `helpdesk`, ADR-0043):
+  - lost & found: lost reports and found items with references, photo, storage place; matching suggestions,
+    match, hand over, close;
+  - requests with status, assignee, notes and replies;
+  - FAQ by topic, on the public page and on screens;
+  - public help page `/public/<event>/help/` without login: FAQ, found items (no details or contacts), request
+    and lost-item forms (honeypot, per-IP limit `public_form`), a status link per submission;
+  - data sources `helpdesk.faq`, `helpdesk.found`, `helpdesk.queue`; control room panel; staff app card; webhooks;
+    API `helpdesk-requests`, `lost-found`, `faq`.
+- Demo data for crew, inventory and the helpdesk; accessibility smoke pages for the new modules.
+- `frontend/e2e/phase7.mjs`: the Phase 7 gate.
+
+### Changed
+
+- Map editor test no longer assumes the screens layer is the only one (inventory adds a layer).
+
 ### Added — Operations and occupancy (Phase 6)
 
 - Incidents & control room module (`apps/ops`, module `ops`, ADR-0039):

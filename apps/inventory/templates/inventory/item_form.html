@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if obj %}{% trans "Edit item" %}{% else %}{% trans "New item" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if obj %}{{ obj }}{% else %}{% trans "New item" %}{% endif %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% if obj %}{% url 'inventory:item' event.slug obj.pk %}{% else %}{% url 'inventory:index' event.slug %}{% endif %}">{% trans "Back" %}</a></div></div>
+<section class="card"><form method="post" enctype="multipart/form-data">{% csrf_token %}{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Save" %}</button></form></section>
+{% endblock %}

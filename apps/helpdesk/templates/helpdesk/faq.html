@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "FAQ" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "FAQ" %}</h1><div class="actions"><a class="btn btn-ghost" href="{% url 'helpdesk:index' event.slug %}">{% trans "Helpdesk" %}</a><a class="btn btn-ghost" href="{% url 'helpdesk_public:help' event.slug %}">{% trans "Public page" %}</a></div></div>
+<div class="grid-2">
+<section class="card" aria-labelledby="q-h"><h2 id="q-h">{% trans "Questions" %}</h2>
+{% if entries %}<ul class="plain">{% for e in entries %}<li><a href="{% url 'helpdesk:faq_edit' event.slug e.pk %}"><strong>{{ e.question }}</strong></a>{% if e.topic %} <span class="small muted">{{ e.topic }}</span>{% endif %}{% if not e.public %} <span class="badge badge-muted">{% trans "internal" %}</span>{% endif %}{% if e.on_screens %} <span class="badge badge-info">{% trans "on screens" %}</span>{% endif %}</li>{% endfor %}</ul>
+{% else %}<p class="muted">{% trans "No questions yet." %}</p>{% endif %}</section>
+<section class="card" aria-labelledby="e-h"><h2 id="e-h">{% if obj %}{% trans "Edit question" %}{% else %}{% trans "Add a question" %}{% endif %}</h2>
+<form method="post">{% csrf_token %}{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Save" %}</button>
+{% if obj %}<button class="btn btn-ghost" name="delete" value="1" data-confirm="{% trans 'Delete this question?' %}">{% trans "Delete" %}</button> <a class="btn btn-ghost" href="{% url 'helpdesk:faq' event.slug %}">{% trans "New" %}</a>{% endif %}</form></section></div>
+{% endblock %}

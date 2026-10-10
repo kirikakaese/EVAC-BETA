@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Teams and crew" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Teams and crew" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'crew:index' event.slug %}">{% trans "Shift board" %}</a>{% if can_manage %} <a class="btn btn-primary" href="{% url 'crew:member_new' event.slug %}">{% trans "Add crew member" %}</a>{% endif %}</div></div>
+<section class="card" aria-labelledby="t-h"><h2 id="t-h">{% trans "Teams" %}</h2>
+{% if teams %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Team" %}</th><th scope="col">{% trans "Leads" %}</th><th scope="col">{% trans "Members" %}</th><th scope="col">{% trans "Meeting point" %}</th></tr></thead>
+<tbody>{% for t in teams %}<tr><td><span class="swatch" data-color="{{ t.colour }}" aria-hidden="true"></span> <strong>{{ t.name }}</strong>{% if t.source %} <span class="small muted">{% trans "imported" %}</span>{% endif %}</td><td>{{ t.leads.all|join:", "|default:"–" }}</td><td class="tabular">{{ t.n }}</td><td>{{ t.meeting_point|default:"–" }}</td></tr>{% endfor %}</tbody></table></div>
+<p class="small muted">{% trans "Crew calls: in an announcement choose the audience “Team: …” and the staff notification reaches that team." %}</p>
+{% else %}<p class="muted">{% trans "No teams yet." %}</p>{% endif %}
+{% if form %}<form method="post">{% csrf_token %}<input type="hidden" name="what" value="team"><h3>{% trans "New team" %}</h3>{% include "portal/_form.html" with form=form %}<div class="form-actions"><button class="btn btn-primary">{% trans "Add team" %}</button></div></form>{% endif %}</section>
+<section class="card" aria-labelledby="m-h"><h2 id="m-h">{% trans "Crew" %}</h2>
+{% if members %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Name" %}</th><th scope="col">{% trans "Teams" %}</th><th scope="col">{% trans "Skills" %}</th><th scope="col">{% trans "Arrived" %}</th></tr></thead>
+<tbody>{% for m in members %}<tr><td>{% if can_manage %}<a href="{% url 'crew:member' event.slug m.pk %}">{{ m.name }}</a>{% else %}{{ m.name }}{% endif %}{% if m.user_id %} <span class="small muted">{% trans "account" %}</span>{% endif %}</td><td>{{ m.teams.all|join:", " }}</td><td class="small">{{ m.skills.all|join:", " }}</td><td>{% if m.arrived %}<span class="badge badge-ok">{% trans "yes" %}</span>{% else %}<span class="badge badge-muted">{% trans "no" %}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No crew members yet." %}</p>{% endif %}</section>
+<section class="card" aria-labelledby="s-h"><h2 id="s-h">{% trans "Skills" %}</h2>
+<p>{% for s in skills %}<span class="badge badge-muted">{{ s.name }}</span> {% empty %}<span class="muted">{% trans "No skills yet." %}</span>{% endfor %}</p>
+{% if skill %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="skill">{% include "portal/_form.html" with form=skill %}<button class="btn">{% trans "Add skill" %}</button></form>{% endif %}</section>
+{% endblock %}

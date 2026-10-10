@@ -50,6 +50,6 @@ failed).
 | DIAL — DECT & IP Administration Layer | 4 | [dial](extensions/dial.md) |
 | pretalx / frab / iCal | 5 | [program-import](extensions/program-import.md) |
 | pretix | 8 | – |
-| Engelsystem | 7 | – |
+| Engelsystem | 7 | [engelsystem](extensions/engelsystem.md) |
 | Matrix, Telegram, ntfy, Mastodon, SMTP | 2 | – |
 | MQTT broker, Open-Meteo, info-beamer hosted, OIDC IdP | later | – |

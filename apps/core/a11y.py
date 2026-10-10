@@ -313,6 +313,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
               f"{e}/announcements/templates/", f"{e}/announcements/levels/", f"{e}/staff/", f"{e}/widgets/",
               f"{e}/evacuation/", f"{e}/evacuation/history/", f"{e}/evacuation/panic/", f"{e}/schedule/",
               f"{e}/ops/", f"{e}/ops/control/", f"{e}/ops/log/", f"{e}/ops/tasks/", f"{e}/crowd/",
+              f"{e}/crew/", f"{e}/crew/teams/", f"{e}/inventory/", f"{e}/helpdesk/", f"{e}/helpdesk/lost-found/",
               "/offline/", "/", "/about/", "/docs/", "/docs/operator-handbook/", "/search/?q=event",
               "/accounts/profile/", "/accounts/security/", "/accounts/security/totp/", "/accounts/tokens/",
               "/notifications/"]
@@ -329,13 +330,19 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
         f"{e}/settings/extensions/mqtt/", f"{e}/settings/extensions/dial/", f"{e}/dial/",
         f"{e}/schedule/new/", f"{e}/schedule/stages/", f"{e}/settings/s/program/",
         f"{e}/ops/new/", f"{e}/ops/escalation/", f"{e}/settings/s/ops/",
+        f"{e}/crew/shifts/new/", f"{e}/crew/members/new/", f"{e}/settings/s/crew/", f"{e}/inventory/new/",
+        f"{e}/inventory/labels/", f"{e}/settings/s/inventory/", f"{e}/helpdesk/requests/new/",
+        f"{e}/helpdesk/lost-found/new/", f"{e}/helpdesk/faq/", f"{e}/settings/s/helpdesk/",
+        f"{e}/settings/extensions/engelsystem/",
         f"{e}/settings/extensions/pretalx/", f"{e}/settings/extensions/frab/", f"{e}/settings/extensions/ical/",
         f"{e}/settings/extensions/", f"{e}/settings/extensions/webhooks/",
         "/settings/extensions/", "/settings/extensions/webhooks/", "/settings/modules/", "/settings/general/",
         "/settings/general/general/", "/settings/audit/", "/settings/users/", "/events/new/", "/events/import/",
         "/accounts/privacy/delete/",
     ]
-    return {"anonymous": ["/accounts/login/", "/docs/", "/about/"], "member": member, "admin": admin}
+    return {"anonymous": ["/accounts/login/", "/docs/", "/about/", f"/public/{event_slug}/help/",
+                          f"/public/{event_slug}/help/request/", f"/public/{event_slug}/help/lost/"],
+            "member": member, "admin": admin}
 
 
 def audit_url(client, url: str) -> list[str] | None:
