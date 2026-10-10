@@ -419,7 +419,7 @@ def create_layout(event, *, name: str, key: str, actor, request=None, width: int
 
     if data is None:
         data = lf.starter(width, height) if starter else lf.empty(width, height)
-    errors = lf.validate(data) + _check_refs(event, data)
+    errors = lf.validate(data) or _check_refs(event, data)
     if errors:
         raise ValidationError(errors)
     _check_code(event, None, data, actor, request)
@@ -442,7 +442,7 @@ def save_layout(layout, data: dict, *, actor, request=None, expected_version: in
     if expected_version is not None and current != expected_version:
         raise Conflict(_("Someone else saved this layout in the meantime. Reload to see their version; your "
                          "changes are still in the editor."))
-    errors = lf.validate(data) + _check_refs(layout.event, data)
+    errors = lf.validate(data) or _check_refs(layout.event, data)
     if errors:
         raise ValidationError(errors)
     if data == layout.data:

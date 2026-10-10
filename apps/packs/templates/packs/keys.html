@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Pack keys" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Pack keys" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'portal:instance_settings_ns' 'packs' %}">{% trans "Pack settings" %}</a></div></div>
+<section class="card"><h2>{% trans "This server's key" %}</h2>
+<p class="small muted">{% trans "Packs exported here are signed with this key. Give the public key to servers that should trust your packs." %}</p>
+<dl class="kv"><dt>{% trans "Public key" %}</dt><dd><code id="own-key">{{ own_key }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#own-key">{% trans "Copy" %}</button></dd>
+<dt>{% trans "Fingerprint" %}</dt><dd><code>{{ own_fingerprint }}</code></dd></dl></section>
+<section class="card"><h2>{% trans "Trusted keys" %}</h2>
+<p class="small muted">{% trans "Packs signed with these keys import without a warning." %}</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Name" %}</th><th scope="col">{% trans "Fingerprint" %}</th><th scope="col">{% trans "Added" %}</th><th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th></tr></thead>
+<tbody>{% for key, fp in trusted %}<tr><td>{{ key.name }}</td><td><code class="small">{{ fp }}</code></td><td class="small">{{ key.created_at|date:"j M Y" }}{% if key.added_by %} · {{ key.added_by }}{% endif %}</td>
+<td><form method="post" action="{% url 'packs_admin:untrust' key.pk %}" class="inline">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Stop trusting this key?' %}">{% trans "Remove" %}</button></form></td></tr>
+{% empty %}<tr><td colspan="4" class="muted">{% trans "No trusted keys yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+<form method="post" class="card" novalidate>{% csrf_token %}<h2>{% trans "Trust a key" %}</h2>{% include "portal/_form.html" with form=form %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Trust" %}</button></div></form>
+{% endblock %}

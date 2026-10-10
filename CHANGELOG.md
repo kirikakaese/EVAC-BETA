@@ -6,6 +6,20 @@ released.
 
 ## [Unreleased]
 
+### Added — screen packs (Phase 2, part 6)
+
+- `.evacpack` import/export (ADR-0024): zip with manifest, hashed files and an Ed25519 signature; export of
+  layouts, themes, files, fonts, custom widgets and playlists with everything they need; import as copies after a
+  review page with origin, key fingerprint, contents and preview; upload, URL download or the built-in gallery
+  (*Welcome board*, *Info board*, *Wayfinding*).
+- Pack keys: this server's signing key and trusted keys (*Settings → Pack keys*); setting *Only import packs
+  signed by a trusted key*. `manage.py evac_pack key|verify|export|import`.
+- Plugin API: `r.pack_section(PackSectionSpec(...))`. The safe URL fetcher moved to `apps.core.safefetch`.
+
+### Fixed
+
+- Saving a malformed layout reports the format errors instead of failing while checking file references.
+
 ### Added — custom widgets (Phase 2, part 5)
 
 - Data & widgets (ADR-0023): feeds from JSON, RSS/Atom, iCal and CSV URLs or built-in data sources, fetched on the

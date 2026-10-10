@@ -25,6 +25,7 @@ from .plugins import (
     NavEntry,
     NotificationChannelSpec,
     OutboxHandler,
+    PackSectionSpec,
     PermissionSpec,
     PluginManifest,
     ProgramSource,
@@ -70,6 +71,7 @@ class Registry:
         self.program_sources: list[ProgramSource] = []
         self.staff_cards: dict[str, StaffCardSpec] = {}
         self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
+        self.pack_sections: dict[str, PackSectionSpec] = {}
         self.websocket_routes: list[Any] = []
         self.api_routes: list[tuple[str, Any, str]] = []
 
@@ -181,6 +183,10 @@ class Registry:
         """Choices for the layout editor (``config.choices[key] = fn(event)``, only while ``module`` is on), e.g.
         the event's custom widgets for the "data" element."""
         self._add(self.editor_choices_, key, (module, fn), "editor choices")
+
+    def pack_section(self, spec: PackSectionSpec) -> None:
+        """A kind of content in ``.evacpack`` files (ADR-0024)."""
+        self._add(self.pack_sections, spec.key, spec, "pack section")
 
     def staff_card(self, spec: StaffCardSpec) -> None:
         """A card on the staff page (PWA)."""

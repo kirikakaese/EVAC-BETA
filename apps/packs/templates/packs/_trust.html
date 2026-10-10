@@ -1,0 +1,1 @@
+{% load i18n %}{% if pi.trust == "builtin" or pi.trust == "trusted" %}<span class="badge badge-ok">{{ pi.get_trust_display }}</span>{% elif pi.trust %}<span class="badge badge-warn">{{ pi.get_trust_display }}</span>{% endif %}

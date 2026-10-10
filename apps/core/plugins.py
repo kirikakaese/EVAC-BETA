@@ -186,6 +186,33 @@ class StaffCardSpec:
 
 
 @dataclass(frozen=True)
+class PackSectionSpec:
+    """A kind of content in ``.evacpack`` files (ADR-0024), e.g. layouts or widgets.
+
+    * ``choices(event) -> [(id, label)]``: what can be exported from the event.
+    * ``requires(event, ids) -> {section: ids}``: what these objects need (``"*"``: ids of any section, e.g.
+      UUIDs inside layout data); the export adds them.
+    * ``dump(event, ids, files) -> [item]``: JSON items (each with ``id`` and ``name``); ``files.add(path,
+      name) -> ref`` puts a file into the pack.
+    * ``load(event, items, ctx) -> [label]``: creates the objects through the module's services; ``ctx.ids`` maps
+      pack ids to new ids (fill it for every created object), ``ctx.remap(value)`` rewrites ids in JSON,
+      ``ctx.file(ref)`` opens a packed file, ``ctx.warn(text)`` reports skipped parts.
+
+    Sections load in ``order`` (dependencies first)."""
+
+    key: str
+    title: str
+    choices: Callable[[Any], list[tuple[str, str]]]
+    dump: Callable[[Any, set[str], Any], list[dict[str, Any]]]
+    load: Callable[[Any, list[dict[str, Any]], Any], list[str]]
+    requires: Callable[[Any, set[str]], Mapping[str, set[str]]] | None = None
+    module: str = "core"
+    order: int = 100
+    #: offered on the export page (False: only exported as a dependency, e.g. files)
+    selectable: bool = True
+
+
+@dataclass(frozen=True)
 class EvacTriggerSpec:
     """A source that can raise an evacuation/alarm state change (consumed by the Phase 3 module)."""
 

@@ -74,6 +74,7 @@ again without removing the package.
 | staff card | `r.staff_card(StaffCardSpec(key, title, template, context))` | a card on the staff page (PWA); `context(request, event)` returns the template context or `None` to hide it (ADR-0021) |
 | program source | `r.program_source(fn)` | `fn(event, target, start, end) -> {"entries", "messages", "overlays"}`: extra content in every screen's program (announcements; evacuation in phase 3) |
 | editor choices | `r.editor_choices(key, fn, module=)` | `fn(event)` returns data the layout editor receives under `choices[key]` while the module is on (widget list for the data element) |
+| pack section | `r.pack_section(PackSectionSpec(key, title, choices, dump, load, requires=, module=, order=))` | your objects in `.evacpack` files: `dump` returns JSON items (and packs files), `load` creates them through your services and fills `ctx.ids`; `requires` names what an object needs (ADR-0024) |
 | webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 

@@ -1,0 +1,124 @@
+{
+ "name": "Info board",
+ "description": "A slide that lists the announcements currently on air, kept up to date by a custom widget. Needs the announcements and custom widgets modules.",
+ "modules": [
+  "content",
+  "widgets"
+ ],
+ "sections": {
+  "feeds": [
+   {
+    "id": "6a7e0000-0000-4000-8000-000000000040",
+    "name": "Announcements on air",
+    "kind": "source",
+    "url": "",
+    "source": "announcements.on_air",
+    "poll_seconds": 60,
+    "enabled": true,
+    "needs_auth": false
+   }
+  ],
+  "widgets": [
+   {
+    "id": "6a7e0000-0000-4000-8000-000000000050",
+    "name": "On air now",
+    "feed": "6a7e0000-0000-4000-8000-000000000040",
+    "items_path": "$.announcements",
+    "fields": {
+     "title": "title",
+     "subtitle": "short",
+     "label": "level",
+     "time": "published"
+    },
+    "visual": "list",
+    "options": {
+     "limit": 5,
+     "heading": "Now",
+     "template": "",
+     "unit": "",
+     "upcoming": false
+    }
+   }
+  ],
+  "layouts": [
+   {
+    "id": "6a7e0000-0000-4000-8000-000000000022",
+    "key": "info-board",
+    "name": "Info board",
+    "description": "Announcements on air next to the clock.",
+    "theme": null,
+    "published": true,
+    "data": {
+     "format": 1,
+     "width": 1920,
+     "height": 1080,
+     "background": {
+      "color": "token:background"
+     },
+     "elements": [
+      {
+       "id": "name",
+       "type": "text",
+       "name": "Event name",
+       "frame": {
+        "x": 5,
+        "y": 6,
+        "w": 64,
+        "h": 12
+       },
+       "style": {
+        "fontFamily": "token:heading",
+        "fontSize": 6.5,
+        "fontWeight": 800,
+        "color": "token:accent"
+       },
+       "props": {
+        "text": "{{ event.name }}",
+        "autofit": true
+       }
+      },
+      {
+       "id": "clock",
+       "type": "clock",
+       "name": "Clock",
+       "frame": {
+        "x": 72,
+        "y": 6,
+        "w": 23,
+        "h": 12
+       },
+       "style": {
+        "fontSize": 7,
+        "textAlign": "right",
+        "tabularNumbers": true
+       },
+       "props": {
+        "format": "HH:mm"
+       }
+      },
+      {
+       "id": "news",
+       "type": "data",
+       "name": "Announcements",
+       "frame": {
+        "x": 5,
+        "y": 24,
+        "w": 90,
+        "h": 68
+       },
+       "style": {
+        "fontSize": 3.4,
+        "background": "token:surface",
+        "radius": 2,
+        "padding": 2.5
+       },
+       "props": {
+        "widget": "6a7e0000-0000-4000-8000-000000000050"
+       }
+      }
+     ]
+    }
+   }
+  ]
+ }
+}

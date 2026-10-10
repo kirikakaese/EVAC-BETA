@@ -852,3 +852,9 @@ pre.logs { max-height: 22rem; overflow: auto; font-size: .78rem; background: var
 .tree-key { font-weight: 600; }
 .tree-path { font-size: .75rem; color: var(--fg-muted); }
 .tree-value { font-family: ui-monospace, monospace; font-size: .85rem; }
+
+/* screen packs (ADR-0024) */
+.pack-card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elev); }
+.pack-card h3 { margin: 0; }
+.pack-card p, .pack-card ul { margin: 0; }
+.pack-card form { margin-top: auto; }

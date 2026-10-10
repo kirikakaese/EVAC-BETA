@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Export a pack" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Export a pack" %}</h1></div>
+<p><a href="{% url 'packs:index' event.slug %}">← {% trans "Screen packs" %}</a></p>
+<form method="post" class="card" novalidate>{% csrf_token %}
+<p class="small muted">{% trans "Choose what to export. What it needs comes along: the files, fonts and theme of a layout, the feed of a widget, the layouts of a playlist. Authorization headers of data feeds are never exported." %}</p>
+{% include "portal/_form.html" with form=form %}
+<div class="form-actions"><button class="btn btn-primary">{% trans "Download .evacpack" %}</button></div></form>
+{% endblock %}

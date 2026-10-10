@@ -1,14 +1,22 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import ModuleSpec, NavEntry, PermissionSpec, PluginManifest, SettingsNamespace, WidgetSpec
+from apps.core.plugins import (
+    ModuleSpec,
+    NavEntry,
+    PackSectionSpec,
+    PermissionSpec,
+    PluginManifest,
+    SettingsNamespace,
+    WidgetSpec,
+)
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="content", name="Screen content", version="0.1.0", kind="module")
 
 
 def register(r: Registry) -> None:
-    from . import api, services
+    from . import api, packs, services
 
     r.webhook_sink(services.welcome_on_first_pairing)
     r.module(ModuleSpec(key="content", name=str(_("Screen content")), order=31, category="screens",
@@ -57,3 +65,14 @@ def register(r: Registry) -> None:
     ))
     for prefix, viewset, basename in api.ROUTES:
         r.api_route(prefix, viewset, basename)
+    # .evacpack (ADR-0024): files and fonts first, then themes, layouts last
+    r.pack_section(PackSectionSpec(key="assets", title=str(_("Files")), module="content", order=10,
+                                   choices=packs.asset_choices, dump=packs.dump_assets, load=packs.load_assets))
+    r.pack_section(PackSectionSpec(key="fonts", title=str(_("Fonts")), module="content", order=20,
+                                   choices=packs.font_choices, dump=packs.dump_fonts, load=packs.load_fonts))
+    r.pack_section(PackSectionSpec(key="themes", title=str(_("Themes")), module="content", order=30,
+                                   choices=packs.theme_choices, requires=packs.theme_requires,
+                                   dump=packs.dump_themes, load=packs.load_themes))
+    r.pack_section(PackSectionSpec(key="layouts", title=str(_("Layouts")), module="content", order=60,
+                                   choices=packs.layout_choices, requires=packs.layout_requires,
+                                   dump=packs.dump_layouts, load=packs.load_layouts))

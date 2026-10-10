@@ -1,0 +1,175 @@
+{
+ "name": "Wayfinding",
+ "description": "A light high-contrast theme and a directions slide with a QR code. Change the texts and the QR link after importing.",
+ "modules": [
+  "content"
+ ],
+ "sections": {
+  "fonts": [
+   {
+    "id": "6a7e0000-0000-4000-8000-000000000002",
+    "name": "Atkinson Hyperlegible",
+    "builtin": true
+   }
+  ],
+  "themes": [
+   {
+    "id": "6a7e0000-0000-4000-8000-000000000011",
+    "key": "daylight",
+    "name": "Daylight",
+    "description": "Light, high-contrast theme for sunny places and foyers.",
+    "parent": null,
+    "tokens": {
+     "mode": "light",
+     "light_background": "#ffffff",
+     "light_surface": "#eef2f7",
+     "light_text": "#0b1220",
+     "light_muted": "#425066",
+     "light_primary": "#0b57d0",
+     "light_accent": "#0b57d0",
+     "font_body": "6a7e0000-0000-4000-8000-000000000002",
+     "font_heading": "6a7e0000-0000-4000-8000-000000000002",
+     "heading_weight": 700,
+     "radius": 1
+    }
+   }
+  ],
+  "layouts": [
+   {
+    "id": "6a7e0000-0000-4000-8000-000000000023",
+    "key": "wayfinding",
+    "name": "Wayfinding",
+    "description": "Directions with arrows and a QR code to the site map.",
+    "theme": "6a7e0000-0000-4000-8000-000000000011",
+    "published": true,
+    "data": {
+     "format": 1,
+     "width": 1920,
+     "height": 1080,
+     "background": {
+      "color": "token:background"
+     },
+     "elements": [
+      {
+       "id": "title",
+       "type": "text",
+       "name": "Heading",
+       "frame": {
+        "x": 6,
+        "y": 6,
+        "w": 88,
+        "h": 12
+       },
+       "style": {
+        "fontFamily": "token:heading",
+        "fontSize": 6.5,
+        "fontWeight": 700
+       },
+       "props": {
+        "text": "This way",
+        "autofit": true
+       }
+      },
+      {
+       "id": "r1",
+       "type": "text",
+       "name": "Direction 1",
+       "frame": {
+        "x": 6,
+        "y": 24,
+        "w": 62,
+        "h": 16
+       },
+       "style": {
+        "fontSize": 5,
+        "background": "token:surface",
+        "radius": 1,
+        "padding": 2
+       },
+       "props": {
+        "text": "← Main stage",
+        "autofit": true
+       }
+      },
+      {
+       "id": "r2",
+       "type": "text",
+       "name": "Direction 2",
+       "frame": {
+        "x": 6,
+        "y": 44,
+        "w": 62,
+        "h": 16
+       },
+       "style": {
+        "fontSize": 5,
+        "background": "token:surface",
+        "radius": 1,
+        "padding": 2
+       },
+       "props": {
+        "text": "→ Food court · Toilets",
+        "autofit": true
+       }
+      },
+      {
+       "id": "r3",
+       "type": "text",
+       "name": "Direction 3",
+       "frame": {
+        "x": 6,
+        "y": 64,
+        "w": 62,
+        "h": 16
+       },
+       "style": {
+        "fontSize": 5,
+        "background": "token:surface",
+        "radius": 1,
+        "padding": 2
+       },
+       "props": {
+        "text": "↑ Info point · First aid",
+        "autofit": true
+       }
+      },
+      {
+       "id": "qr",
+       "type": "qr",
+       "name": "Site map QR code",
+       "frame": {
+        "x": 74,
+        "y": 30,
+        "w": 20,
+        "h": 36
+       },
+       "style": {},
+       "props": {
+        "text": "https://example.org/map"
+       }
+      },
+      {
+       "id": "qrlabel",
+       "type": "text",
+       "name": "QR label",
+       "frame": {
+        "x": 70,
+        "y": 68,
+        "w": 28,
+        "h": 8
+       },
+       "style": {
+        "textAlign": "center",
+        "fontSize": 2.6,
+        "color": "token:muted"
+       },
+       "props": {
+        "text": "Site map on your phone"
+       }
+      }
+     ]
+    }
+   }
+  ]
+ }
+}

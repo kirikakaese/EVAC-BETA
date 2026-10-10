@@ -1,14 +1,21 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import ModuleSpec, NavEntry, PermissionSpec, PluginManifest, SettingsNamespace
+from apps.core.plugins import (
+    ModuleSpec,
+    NavEntry,
+    PackSectionSpec,
+    PermissionSpec,
+    PluginManifest,
+    SettingsNamespace,
+)
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="widgets", name="Data feeds and custom widgets", version="0.1.0", kind="module")
 
 
 def register(r: Registry) -> None:
-    from . import services
+    from . import packs, services
 
     r.module(ModuleSpec(key="widgets", name=str(_("Custom widgets")), order=36, category="screens",
                         depends_on=("content",),
@@ -31,3 +38,8 @@ def register(r: Registry) -> None:
         }}))
     r.editor_choices("dataWidgets", services.editor_choices, module="widgets")
     r.editor_choices("widgetData", services.event_payload, module="widgets")
+    r.pack_section(PackSectionSpec(key="feeds", title=str(_("Data feeds")), module="widgets", order=40,
+                                   choices=packs.feed_choices, dump=packs.dump_feeds, load=packs.load_feeds))
+    r.pack_section(PackSectionSpec(key="widgets", title=str(_("Custom widgets")), module="widgets", order=50,
+                                   choices=packs.widget_choices, requires=packs.widget_requires,
+                                   dump=packs.dump_widgets, load=packs.load_widgets))
