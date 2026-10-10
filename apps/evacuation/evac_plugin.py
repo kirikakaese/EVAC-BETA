@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+from typing import Any
+
+from django.utils.translation import gettext_lazy as _
+
+from apps.core.plugins import (
+    ModuleSpec,
+    NavEntry,
+    PermissionSpec,
+    PluginManifest,
+    SettingsNamespace,
+    WebhookEventSpec,
+)
+from apps.core.registry import Registry
+
+manifest = PluginManifest(key="evacuation", name="Evacuation", version="0.1.0", kind="module")
+
+SCOPES = ("venue", "zone")
+
+
+def _label(default: str) -> dict[str, Any]:
+    return {"type": "string", "title": f"Name of “{default}”", "default": "", "maxLength": 60,
+            "description": "Empty: the built-in name."}
+
+
+def register(r: Registry) -> None:
+    r.module(ModuleSpec(
+        key="evacuation", name=str(_("Evacuation")), order=15, category="venue", default_enabled=False,
+        depends_on=("venues",),
+        description=str(_("Supplementary evacuation information: alarm states per event and zone, drills. "
+                          "Not a certified fire alarm, voice alarm or evacuation system; it complements them."))))
+    r.permissions_([
+        PermissionSpec("evacuation.view", str(_("See the evacuation state and its history")), scopes=SCOPES),
+        PermissionSpec("evacuation.trigger", str(_("Raise, change and step down real alarms")), scopes=SCOPES,
+                       sensitive=True),
+        PermissionSpec("evacuation.clear", str(_("Give the all clear for real alarms")), scopes=SCOPES,
+                       sensitive=True),
+        PermissionSpec("evacuation.drill", str(_("Run drills (start, change and end them)")), scopes=SCOPES,
+                       sensitive=True),
+        PermissionSpec("evacuation.manage", str(_("Configure evacuation states"))),
+    ])
+    r.nav(NavEntry(module="evacuation", label=str(_("Evacuation")), url_name="evacuation:index",
+                   permission="evacuation.view", section="event", order=5))
+    props: dict[str, Any] = {
+        "staff_alert_enabled": {"type": "boolean", "title": "Use “Staff alert” (silent pre-alarm)", "default": True},
+        "attention_enabled": {"type": "boolean", "title": "Use “Attention”", "default": True},
+        "shelter_in_place_enabled": {"type": "boolean", "title": "Use “Shelter in place”", "default": True},
+        "all_clear_minutes": {"type": "integer", "title": "Show “All clear” for (minutes)", "default": 5,
+                              "minimum": 0, "maximum": 240,
+                              "description": "Then screens return to normal content. Nothing else ever returns "
+                                             "to normal on its own."},
+        "drill_text": {"type": "string", "title": "Drill marker", "default": "DRILL", "maxLength": 40,
+                       "description": "Shown on screens and prefixed to notifications during drills."},
+    }
+    for key, default in [("staff_alert", "Staff alert"), ("attention", "Attention"),
+                         ("shelter_in_place", "Shelter in place"), ("evacuate", "Evacuate"),
+                         ("all_clear", "All clear")]:
+        props[f"{key}_label"] = _label(default)
+    r.settings_namespace(SettingsNamespace(
+        key="evacuation", title=str(_("Evacuation")), module="evacuation", order=15,
+        permission="evacuation.manage", levels=("instance", "event"),
+        schema={"type": "object", "properties": props}))
+    r.webhook_event(WebhookEventSpec(key="evacuation.state_changed", module="evacuation",
+                                     description="The evacuation state of the event or a zone changed "
+                                                 "(includes the drill flag)."))

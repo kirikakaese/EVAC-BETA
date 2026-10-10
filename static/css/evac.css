@@ -477,6 +477,25 @@ details.section > summary + * { margin-top: var(--space-3); }
 .help-steps li + li { margin-top: .3rem; }
 audio { max-width: 100%; }
 
+/* evacuation states: every badge carries a glyph, never colour alone */
+.badge-evac::before { margin-right: .25rem; }
+.badge-evac-normal::before { content: "\2713"; }
+.badge-evac-normal { color: var(--ok); }
+.badge-evac-staff_alert::before { content: "\25CF"; }
+.badge-evac-staff_alert { color: var(--info); }
+.badge-evac-attention::before { content: "!"; }
+.badge-evac-attention, .badge-evac-shelter_in_place { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+.badge-evac-shelter_in_place::before { content: "\2302"; }
+.badge-evac-evacuate::before { content: "\26A0"; }
+.badge-evac-evacuate { color: var(--err); border-color: color-mix(in srgb, var(--err) 60%, transparent); font-weight: 700; }
+.badge-evac-all_clear::before { content: "\2713\2713"; }
+.badge-evac-all_clear { color: var(--ok); }
+.badge-evac-drill { color: var(--info); border-style: dashed; font-weight: 700; letter-spacing: .04em; }
+.badge-evac-drill::before { content: "\25C7"; margin-right: .25rem; }
+.evac-now-state .badge { font-size: 1.4rem; padding: .35rem .9rem; }
+.evac-now-evacuate { border-color: var(--err); }
+.evac-now-attention, .evac-now-shelter_in_place { border-color: var(--warn); }
+
 /* 10b. documentation ------------------------------------------------------- */
 .docs-hero { padding: var(--space-4) 0 0; max-width: 820px; }
 .docs-hero h1 { font-size: 2rem; letter-spacing: -.02em; }

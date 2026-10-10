@@ -282,7 +282,7 @@ class EvacTriggerSpec:
 
 @dataclass(frozen=True)
 class WebhookEventSpec:
-    """An outbound webhook event type (``evac.state_changed``, ``event.created``, ...)."""
+    """An outbound webhook event type (``evacuation.state_changed``, ``event.created``, ...)."""
 
     key: str
     description: str = ""

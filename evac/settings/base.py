@@ -89,6 +89,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.announcements",
     "apps.widgets",
     "apps.packs",
+    "apps.evacuation",
     "extensions.webhooks",
     "extensions.notify",
 ]

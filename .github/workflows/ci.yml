@@ -71,6 +71,8 @@ jobs:
 
       - name: Tests with coverage (includes the accessibility checks)
         run: python -m pytest -p no:cacheprovider --cov --cov-report=term --cov-report=xml
+      - name: Evacuation coverage gate (95 %)
+        run: python -m coverage report --include='apps/evacuation/*' --fail-under=95 --skip-covered
 
       - name: Migrations, seed and deploy checks on PostgreSQL
         env:

@@ -2,6 +2,7 @@
 """Every portal page renders without accessibility findings, as anonymous, member and admin."""
 import pytest
 
+from apps.core import modules
 from apps.core.a11y import audit_url, check_html, smoke_urls
 from conftest import login_2fa
 
@@ -22,12 +23,14 @@ def test_pages_anonymous(client, admin, event):
 
 @pytest.mark.django_db
 def test_pages_member(client, member, event):
+    modules.set_instance("evacuation", True)
     client.force_login(member)
     _check(client, smoke_urls("demo", "hall")["member"])
 
 
 @pytest.mark.django_db
 def test_pages_admin(client, admin, event):
+    modules.set_instance("evacuation", True)
     login_2fa(client, admin)
     _check(client, smoke_urls("demo", "hall")["admin"] + ["/e/demo/roles/new/", "/e/demo/roles/orga/"])
 

@@ -154,6 +154,25 @@ works with a tile server you run yourself (and *Allow area download* ticked), be
 servers forbid bulk downloads. With the public servers, open the map at the zoom levels you need before the
 event instead.
 
+## 4b. Evacuation (phase 3, in progress)
+
+Switch the **Evacuation** module on (*Settings → Modules*; it is off by default) and read the safety statement
+in [EVACUATION.md](EVACUATION.md) first: EVAC supplements, and never replaces, the venue's legally required systems.
+
+**Evacuation** in the event menu is the control page:
+
+- **Whole event** shows the current state; **Zones** shows each zone's own state and what its screens show
+  (the more severe of the two).
+- **Change the state**: choose where (whole event or a zone), the new state, *Drill* for exercises and an
+  optional note, then **hold** the button until it confirms. Alarms can be raised, escalated and stepped down
+  directly. Nothing returns to normal on its own: give the **All clear** (for the whole event it also clears the
+  ticked zones), which shows for the configured time and then ends; *Back to normal now* ends it early.
+- A real alarm ends every running drill. **History** lists every change; filter real alarms or drills.
+- *Settings → Evacuation*: which states are used, their names, the all-clear time and the drill marker.
+
+Screens, notifications, trigger sources (panic page, hardware bridge, DIAL, API) and the drill runbook arrive
+with the next parts of phase 3.
+
 ## 5a. Screens
 
 - **Pair**: open `<your EVAC>/player/` in the screen's browser (kiosk mode, TV browser, Raspberry Pi). It shows
