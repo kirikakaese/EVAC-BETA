@@ -6,6 +6,18 @@ released.
 
 ## [Unreleased]
 
+### Added — evacuation triggers and policies (Phase 3, part 6)
+
+- Trigger sources with policies per source, stage and zone (ADR-0031): execute, arm (control room confirms; executes
+  by itself after 120 s without an answer, configurable) or notify. Defaults: control room and panic page
+  execute, API and hardware bridge arm, scheduled drills execute (always as drills).
+- Two-person rule per stage (Settings → Evacuation): a second person confirms within 60 s or the request expires
+  and the control room is alerted.
+- Panic page for the staff app (big hold-to-confirm buttons, zone, drill), staff app card, requests waiting for a
+  decision on the control page, *Triggers & drills* page with rules and scheduled drills.
+- API: `GET /api/v1/events/<slug>/evacuation/` and `POST .../evacuation/trigger/` with idempotency keys; only
+  people end alarms. MQTT follows with the hardware bridge (3.6).
+
 ### Added — evacuation models and screen directions (Phase 3, part 5)
 
 - Evacuation model per event (ADR-0030): simple takeover (only evacuate), staged global (default), zones and

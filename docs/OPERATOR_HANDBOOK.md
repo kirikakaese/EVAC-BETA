@@ -175,6 +175,14 @@ in [EVACUATION.md](EVACUATION.md) first: EVAC supplements, and never replaces, t
   *Open again* when it is clear. *Screens* shows where each screen sends people. Place each screen on the venue
   map with its facing, and put a waypoint near it, so it gets an arrow; otherwise it says "Follow staff
   instructions".
+- **Panic page** (*Staff app → Evacuation → Raise an alarm*, or *Panic page* on the control page): one big button
+  per stage, hold until it confirms; choose the zone and tick *drill* for exercises.
+- **Waiting for a decision**: alarms from the API or the hardware bridge (and any source set to *arm*) wait on the
+  control page. *Hold to confirm* or *Reject*; without an answer they execute by themselves after 120 s.
+  Requests under the two-person rule wait for a second person and expire if nobody confirms.
+- **Triggers & drills**: change what each source does per stage and zone (execute, arm with or without
+  auto-escalation, notify), and plan drills that start by themselves. The two-person rule is set in
+  *Settings → Evacuation*.
 - **Fixed direction** per screen (any model): choose an arrow and a text such as "Exit B" in the *Screens* table;
   it overrides the computed route.
 

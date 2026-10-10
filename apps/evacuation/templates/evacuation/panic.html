@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Raise an alarm" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Raise an alarm" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'evacuation:index' event.slug %}">{% trans "Control page" %}</a></div></div>
+<p class="evac-now-state">{% trans "Now:" %} {% include "evacuation/_state.html" with s=ev drill_text=cfg.drill_text %}</p>
+{% include "evacuation/_pending.html" with back="panic" %}
+{% if can_raise or can_drill %}<form method="post" class="card evac-panic">{% csrf_token %}
+{% if zones %}<div class="field"><label for="panic-zone">{% trans "Where" %}</label><select id="panic-zone" name="zone"><option value="">{% trans "Whole event" %}</option>{% for z in zones %}<option value="{{ z.pk }}">{{ z.venue.name }} · {{ z.name }}</option>{% endfor %}</select></div>{% endif %}
+<div class="field"><label for="panic-reason">{% trans "What happened (optional)" %}</label><input id="panic-reason" name="reason" maxlength="300"></div>
+{% if can_drill %}<div class="field"><label><input type="checkbox" name="drill"> {% trans "This is a drill" %}</label></div>{% endif %}
+<p class="small muted">{% trans "Hold a button until it confirms." %}</p>
+<div class="evac-panic-buttons">{% for value, label in stages %}<button class="btn btn-lg evac-panic-btn evac-panic-{{ value }}" name="state" value="{{ value }}" data-hold="1500" data-hold-label="{% trans 'Keep holding…' %}"><span class="badge badge-evac badge-evac-{{ value }}" aria-hidden="true"></span>{{ label }}</button>{% endfor %}</div>
+</form>{% else %}<p class="muted">{% trans "You may not raise alarms in this event." %}</p>{% endif %}
+<p class="small muted">{% blocktrans %}EVAC is a supplementary information system. Call the emergency services and follow the venue's procedures.{% endblocktrans %}</p>
+{% endblock %}

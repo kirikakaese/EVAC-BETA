@@ -254,6 +254,7 @@ CELERY_BEAT_SCHEDULE = {
     "announcements-publish-due": {"task": "apps.announcements.tasks.publish_due", "schedule": 15.0},
     "widgets-fetch-due": {"task": "apps.widgets.tasks.fetch_due", "schedule": 30.0},
     "packs-cleanup": {"task": "apps.packs.tasks.cleanup", "schedule": 3600.0},
+    "evacuation-process-due": {"task": "apps.evacuation.tasks.process_due", "schedule": 5.0},
 }
 
 # --------------------------------------------------------------------------- REST framework

@@ -119,3 +119,98 @@ class BlockedPoint(models.Model):
     def evac_scope_chain(self) -> list[tuple[str, str]]:
         chain: list[tuple[str, str]] = self.point.evac_scope_chain()
         return chain
+
+
+SOURCE_MAX = 40
+
+
+class EvacPolicy(models.Model):
+    """What a trigger source does for a stage (empty: all) in a zone (empty: all), ADR-0031."""
+
+    ACTIONS = [("execute", _("Execute at once")), ("arm", _("Arm: the control room confirms")),
+               ("notify", _("Only notify the control room"))]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_policies")
+    source = models.CharField(max_length=SOURCE_MAX)
+    state = models.CharField(max_length=20, blank=True, choices=STATE_CHOICES)
+    zone = models.ForeignKey("venues.Zone", null=True, blank=True, on_delete=models.CASCADE, related_name="+")
+    action = models.CharField(max_length=10, choices=ACTIONS)
+    #: arm only: execute after this many seconds without an answer; empty = wait for a person
+    escalate_seconds = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["source", "state"]
+        constraints = [models.UniqueConstraint(fields=["event", "source", "state", "zone"],
+                                               name="evac_policy_unique")]
+
+    def __str__(self) -> str:
+        return f"{self.source}/{self.state or '*'}/{self.zone or '*'}: {self.action}"
+
+
+class EvacRequest(models.Model):
+    """An alarm waiting for the control room (``arm``) or for a second person (``second``)."""
+
+    KINDS = [("arm", _("Waiting for the control room")), ("second", _("Waiting for a second person"))]
+    STATUSES = [("pending", _("pending")), ("executed", _("executed at once")), ("confirmed", _("confirmed")),
+                ("rejected", _("rejected")),
+                ("escalated", _("escalated")), ("expired", _("expired")), ("notified", _("notified")),
+                ("superseded", _("superseded"))]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_requests")
+    kind = models.CharField(max_length=10, choices=KINDS)
+    source = models.CharField(max_length=SOURCE_MAX)
+    state = models.CharField(max_length=20, choices=STATE_CHOICES)
+    drill = models.BooleanField(default=False)
+    zone = models.ForeignKey("venues.Zone", null=True, blank=True, on_delete=models.CASCADE, related_name="+")
+    reason = models.CharField(max_length=300, blank=True)
+    #: event-wide all clear: the zones to clear as well (None: every zone in alarm)
+    clear_zones = models.JSONField(null=True, blank=True)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                     related_name="+")
+    requested_repr = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField()
+    deadline = models.DateTimeField(null=True, blank=True)
+    escalate_seconds = models.PositiveIntegerField(null=True, blank=True)
+    status = models.CharField(max_length=12, choices=STATUSES, default="pending")
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    #: idempotency key of API/bridge triggers: a repeated delivery returns the same request
+    key = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["event", "key"], condition=~models.Q(key=""),
+                                               name="evac_request_key")]
+        indexes = [models.Index(fields=["status", "deadline"])]
+
+    def __str__(self) -> str:
+        return f"{self.source}: {self.state} ({self.status})"
+
+    def evac_scope_chain(self) -> list[tuple[str, str]] | None:
+        chain: list[tuple[str, str]] | None = self.zone.evac_scope_chain() if self.zone_id else None
+        return chain
+
+
+class ScheduledDrill(models.Model):
+    """A drill that starts by itself at a set time (source ``schedule``). Like every drill it ends with the all
+    clear given by a person; a real alarm ends it at once."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="evac_drills")
+    at = models.DateTimeField()
+    state = models.CharField(max_length=20, choices=STATE_CHOICES, default="evacuate")
+    zone = models.ForeignKey("venues.Zone", null=True, blank=True, on_delete=models.CASCADE, related_name="+")
+    note = models.CharField(max_length=300, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="+")
+    started_at = models.DateTimeField(null=True, blank=True)
+    outcome = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["at"]
+
+    def __str__(self) -> str:
+        return f"Drill {self.state} at {self.at:%Y-%m-%d %H:%M}"

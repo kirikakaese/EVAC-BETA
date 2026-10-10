@@ -311,7 +311,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
               f"{e}/playlists/lists/", f"{e}/playlists/schedules/", f"{e}/playlists/calendar/",
               f"{e}/playlists/overrides/", f"{e}/playlists/preview/", f"{e}/announcements/",
               f"{e}/announcements/templates/", f"{e}/announcements/levels/", f"{e}/staff/", f"{e}/widgets/",
-              f"{e}/evacuation/", f"{e}/evacuation/history/",
+              f"{e}/evacuation/", f"{e}/evacuation/history/", f"{e}/evacuation/panic/",
               "/offline/", "/", "/about/", "/docs/", "/docs/operator-handbook/", "/search/?q=event",
               "/accounts/profile/", "/accounts/security/", "/accounts/security/totp/", "/accounts/tokens/",
               "/notifications/"]
@@ -323,6 +323,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
         f"{e}/settings/s/content/", f"{e}/playlists/schedules/new/", f"{e}/announcements/new/",
         f"{e}/settings/s/announcements/", f"{e}/widgets/feeds/new/", f"{e}/widgets/new/",
         f"{e}/packs/", f"{e}/packs/export/", "/settings/packs/", f"{e}/settings/s/evacuation/",
+        f"{e}/evacuation/policies/",
         f"{e}/settings/extensions/", f"{e}/settings/extensions/webhooks/",
         "/settings/extensions/", "/settings/extensions/webhooks/", "/settings/modules/", "/settings/general/",
         "/settings/general/general/", "/settings/audit/", "/settings/users/", "/events/new/", "/events/import/",

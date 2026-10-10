@@ -34,3 +34,40 @@ class ChangeForm(forms.Form):
             del self.fields["clear_zones"]
         if not can_drill:
             del self.fields["drill"]
+
+
+class PolicyForm(forms.Form):
+    source = forms.ChoiceField(label=_("Source"))
+    state = forms.ChoiceField(label=_("Stage"), required=False)
+    zone = forms.ChoiceField(label=_("Zone"), required=False)
+    action = forms.ChoiceField(label=_("Action"), choices=[
+        ("execute", _("Execute at once")), ("arm", _("Arm: the control room confirms")),
+        ("notify", _("Only notify the control room"))])
+    escalate_seconds = forms.IntegerField(
+        label=_("Auto-escalate after (seconds)"), required=False, min_value=10, max_value=3600, initial=120,
+        help_text=_("Arm only: execute when nobody confirms or rejects in time. Empty: wait for a person."))
+
+    def __init__(self, *args: Any, sources: list[tuple[str, str]], zones: Any, labels: dict[str, str],
+                 **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["source"].choices = sources
+        self.fields["state"].choices = [("", _("Every stage"))] + [
+            (s.value, labels[s.value]) for s in State if s not in (State.NORMAL, State.ALL_CLEAR)]
+        self.fields["zone"].choices = [("", _("Every zone and the whole event"))] + [
+            (str(z.pk), f"{z.venue.name} · {z.name}") for z in zones]
+
+
+class DrillForm(forms.Form):
+    at = forms.DateTimeField(label=_("Starts at"), widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
+                             input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"])
+    state = forms.ChoiceField(label=_("Stage"))
+    zone = forms.ChoiceField(label=_("Where"), required=False)
+    note = forms.CharField(label=_("Note"), required=False, max_length=300)
+
+    def __init__(self, *args: Any, zones: Any, labels: dict[str, str], enabled: frozenset[State],
+                 **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["state"].choices = [(s.value, labels[s.value]) for s in sorted(
+            (s for s in enabled if s not in (State.NORMAL, State.ALL_CLEAR)), key=lambda s: -SEVERITY[s])]
+        self.fields["zone"].choices = [("", _("Whole event"))] + [
+            (str(z.pk), f"{z.venue.name} · {z.name}") for z in zones]

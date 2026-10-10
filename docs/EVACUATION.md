@@ -1,7 +1,7 @@
 # Evacuation and alarm information
 
-> **Status:** phase 3 in progress. The state machine, the control page (3.3) and the evacuation models with
-> blocked exits and screen directions (3.4) exist; triggers and
+> **Status:** phase 3 in progress. The state machine, the control page (3.3), the evacuation models with
+> blocked exits and screen directions (3.4) and triggers with policies (3.5) exist; triggers and
 > policies, screen content, propagation, fail-safe and the drill runbook follow (see the roadmap).
 
 ## Safety statement
@@ -58,6 +58,25 @@ procedures of the venue. Operators must acknowledge this once per event when ena
   a place on the map or a connection to an exit, a screen says **"Follow staff instructions"**.
 - **Fixed direction**: an arrow and a text per screen (e.g. ← "Exit B") override the computed route in every
   model.
+
+## Triggers and policies (roadmap 3.5, [ADR-0031](adr/0031-evacuation-triggers-and-policies.md))
+
+| Source | Default | Notes |
+|---|---|---|
+| Control room page | execute | hold-to-confirm |
+| Panic page (staff app) | execute | hold-to-confirm, big buttons, zone choice |
+| API / external systems | arm | service token with `evacuation:write`, created with two factors; idempotency `key` |
+| Hardware bridge | arm | ADR-0003; the bridge itself arrives in 3.6 |
+| Scheduled drills | execute | always drills; not during a real alarm; not more than 15 minutes late |
+
+- **Execute** switches at once. **Arm** shows the alarm on the control page ("Waiting for a decision") and alerts
+  everyone who may confirm (bell and push). If nobody confirms or rejects it within **120 s** it executes by itself
+  (auto-escalation; per rule, can be switched off). **Notify** only alerts the control room.
+- Rules per source, stage and zone (*Triggers & drills*); the most specific wins.
+- **Two-person rule** (Settings → Evacuation, per stage): a person's change into that stage waits until someone
+  else with the permission confirms. After the set time (default 60 s) it expires, nothing changes and the
+  control room is alerted.
+- Policies never end alarms. Only people end alarms, from the control or panic page, with the all clear.
 
 ## What phase 0 already provides
 

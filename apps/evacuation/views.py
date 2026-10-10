@@ -16,12 +16,12 @@ from django.views.decorators.http import require_POST
 from apps.events import rbac
 from apps.portal.shortcuts import event_view
 
-from . import machine, services
-from .forms import EVENT, ChangeForm
+from . import machine, policy, services, triggers
+from .forms import EVENT, ChangeForm, DrillForm, PolicyForm
 from .guidance import Arrow
 from .guidance import Kind as GuidanceKind
 from .machine import Model, State
-from .models import BlockedPoint, EvacState, StateChange
+from .models import BlockedPoint, EvacPolicy, EvacRequest, EvacState, ScheduledDrill, StateChange
 
 MODULE = "evacuation"
 MODEL_LABELS = [(Model.SIMPLE, _lazy("Simple takeover")), (Model.STAGED, _lazy("Staged, global")),
@@ -98,6 +98,7 @@ def index(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
 
 
 def _page(request: HttpRequest, event: Any, form: ChangeForm | None = None) -> HttpResponse:
+    triggers.process_due(event)
     cfg = services.config(event)
     ev, zones = _rows(event, cfg.labels)
     can_change = _can_change(request, event)
@@ -109,7 +110,7 @@ def _page(request: HttpRequest, event: Any, form: ChangeForm | None = None) -> H
         "model_label": dict(MODEL_LABELS)[cfg.model], "points": _points(event) if zones_model else [],
         "can_block": can_block, "screens": _screen_rows(event, cfg),
         "can_manage": rbac.has_any(request.user, event, "evacuation.manage", request=request),
-        "arrow_choices": ARROW_CHOICES,
+        "arrow_choices": ARROW_CHOICES, "pending": triggers.pending(event),
         "form": form or (_form(request, event, cfg, zones) if can_change else None),
         "history": StateChange.objects.filter(event=event).select_related("actor")[:15],
         "labels": cfg.labels,
@@ -129,7 +130,7 @@ def change(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
     scope = form.cleaned_data["scope"]
     zone = None if scope == EVENT else next(z["zone"] for z in zones if str(z["zone"].pk) == scope)
     try:
-        done = services.change(event, form.cleaned_data["state"], zone=zone,
+        out = triggers.trigger(event, form.cleaned_data["state"], source=policy.WEB, zone=zone,
                                drill=bool(form.cleaned_data.get("drill")), actor=request.user, request=request,
                                reason=form.cleaned_data["reason"],
                                clear_zones=form.cleaned_data.get("clear_zones") if "clear_zones" in form.fields
@@ -140,11 +141,23 @@ def change(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
     except PermissionDenied:
         form.add_error(None, _("You may not make this change here."))
         return _page(request, event, form)
-    first = done[0]
-    messages.success(request, _("%(where)s: %(state)s%(drill)s.") % {
-        "where": first.zone_name or _("Whole event"), "state": cfg.labels[first.to_state],
-        "drill": f" ({cfg.drill_text})" if first.drill and first.to_state != State.NORMAL else ""})
+    _report(request, out, cfg)
     return redirect("evacuation:index", event.slug)
+
+
+def _report(request: HttpRequest, out: triggers.Outcome, cfg: services.Config) -> None:
+    if out.result == "executed" and out.changes:
+        first = out.changes[0]
+        messages.success(request, _("%(where)s: %(state)s%(drill)s.") % {
+            "where": first.zone_name or _("Whole event"), "state": cfg.labels[first.to_state],
+            "drill": f" ({cfg.drill_text})" if first.drill and first.to_state != State.NORMAL else ""})
+    elif out.result == "waiting" and out.request is not None:
+        messages.warning(request, _("Waiting for a second person to confirm until %(t)s. Nothing has changed "
+                                    "yet.") % {"t": timezone.localtime(out.request.deadline).strftime("%H:%M:%S")})
+    elif out.result == "armed":
+        messages.warning(request, _("Armed: the control room has to confirm this alarm."))
+    else:
+        messages.info(request, _("The control room was notified."))
 
 
 @require_POST
@@ -158,7 +171,7 @@ def end_all_clear(request: HttpRequest, slug: str, *, event: Any) -> HttpRespons
             messages.error(request, _("Unknown zone."))
             return redirect("evacuation:index", event.slug)
     try:
-        services.change(event, State.NORMAL, zone=zone, actor=request.user, request=request)
+        triggers.trigger(event, State.NORMAL, source=policy.WEB, zone=zone, actor=request.user, request=request)
     except machine.Refused as err:
         messages.error(request, err.message)
     else:
@@ -225,3 +238,114 @@ def hint(request: HttpRequest, slug: str, pk: str, *, event: Any) -> HttpRespons
                         user=request.user, event=event)
     messages.success(request, _("Direction for %(s)s saved.") % {"s": screen.name})
     return redirect("evacuation:index", event.slug)
+
+
+def _request_of(event: Any, pk: Any) -> EvacRequest | None:
+    req: EvacRequest | None = EvacRequest.objects.filter(event=event, pk=pk).select_related("zone").first()
+    return req
+
+
+@require_POST
+@event_view("evacuation.view", module=MODULE)
+def decide(request: HttpRequest, slug: str, pk: Any, verdict: str, *, event: Any) -> HttpResponse:
+    req = _request_of(event, pk)
+    if req is None:
+        messages.error(request, _("Unknown request."))
+        return redirect("evacuation:index", event.slug)
+    try:
+        if verdict == "confirm":
+            triggers.confirm(req, actor=request.user, request=request)
+            messages.success(request, _("Confirmed."))
+        else:
+            triggers.reject(req, actor=request.user, request=request)
+            messages.success(request, _("Rejected. Nothing changed."))
+    except machine.Refused as err:
+        messages.error(request, err.message)
+    except PermissionDenied:
+        messages.error(request, _("You may not decide this request."))
+    back = "evacuation:panic" if request.POST.get("next") == "panic" else "evacuation:index"
+    return redirect(back, event.slug)
+
+
+@event_view("evacuation.view", module=MODULE)
+def panic(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    """The mobile panic page (staff app): big hold-to-confirm buttons per stage, zone choice."""
+    cfg = services.config(event)
+    triggers.process_due(event)
+    can_raise = rbac.has_any(request.user, event, services.PERM_TRIGGER, request=request)
+    can_drill = rbac.has_any(request.user, event, services.PERM_DRILL, request=request)
+    zones = list(services.zones_of(event)) if cfg.model is Model.ZONES else []
+    if request.method == "POST":
+        if not (can_raise or can_drill):
+            raise PermissionDenied
+        state = request.POST.get("state", "")
+        zone_id = request.POST.get("zone", "")
+        zone = next((z for z in zones if str(z.pk) == zone_id), None)
+        try:
+            out = triggers.trigger(event, state, source=policy.PANIC, zone=zone, actor=request.user,
+                                   request=request, drill=request.POST.get("drill") == "on",
+                                   reason=request.POST.get("reason", "")[:300])
+        except ValueError:
+            messages.error(request, _("Unknown state."))
+        except machine.Refused as err:
+            messages.error(request, err.message)
+        except PermissionDenied:
+            messages.error(request, _("You may not raise this alarm here."))
+        else:
+            _report(request, out, cfg)
+        return redirect("evacuation:panic", event.slug)
+    ev, _zones = _rows(event, cfg.labels)
+    stages = sorted((s for s in cfg.enabled if s in machine.ALARMS), key=lambda s: -machine.SEVERITY[s])
+    return render(request, "evacuation/panic.html", {
+        "event": event, "ev": ev, "cfg": cfg, "zones": zones, "can_raise": can_raise, "can_drill": can_drill,
+        "stages": [(s.value, cfg.labels[s.value]) for s in stages], "pending": triggers.pending(event)})
+
+
+@event_view("evacuation.manage", module=MODULE)
+def policies(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
+    cfg = services.config(event)
+    zones = list(services.zones_of(event))
+    srcs = triggers.sources()
+    pform = PolicyForm(sources=srcs, zones=zones, labels=cfg.labels, prefix="policy")
+    dform = DrillForm(zones=zones, labels=cfg.labels, enabled=cfg.enabled, prefix="drill")
+    if request.method == "POST":
+        what = request.POST.get("what")
+        if what == "policy":
+            pform = PolicyForm(request.POST, sources=srcs, zones=zones, labels=cfg.labels, prefix="policy")
+            if pform.is_valid():
+                d = pform.cleaned_data
+                zone = next((z for z in zones if str(z.pk) == d["zone"]), None)
+                triggers.save_policy(event, source=d["source"], state=d["state"], zone=zone, action=d["action"],
+                                     escalate_seconds=d["escalate_seconds"], actor=request.user, request=request)
+                messages.success(request, _("Policy saved."))
+                return redirect("evacuation:policies", event.slug)
+        elif what == "drill":
+            dform = DrillForm(request.POST, zones=zones, labels=cfg.labels, enabled=cfg.enabled, prefix="drill")
+            if dform.is_valid():
+                d = dform.cleaned_data
+                zone = next((z for z in zones if str(z.pk) == d["zone"]), None)
+                triggers.schedule_drill(event, at=d["at"], state=d["state"], zone=zone, note=d["note"],
+                                        actor=request.user, request=request)
+                messages.success(request, _("Drill scheduled."))
+                return redirect("evacuation:policies", event.slug)
+        elif what in ("delete_policy", "delete_drill"):
+            pk = request.POST.get("pk", "")
+            if _uuid(pk):
+                if what == "delete_policy":
+                    triggers.delete_policy(event, pk, actor=request.user, request=request)
+                else:
+                    triggers.delete_drill(event, pk, actor=request.user, request=request)
+            messages.success(request, _("Deleted."))
+            return redirect("evacuation:policies", event.slug)
+    names = dict(srcs)
+    rows = []
+    for p in EvacPolicy.objects.filter(event=event).select_related("zone"):
+        rows.append({"p": p, "source": names.get(p.source, p.source), "state": cfg.labels.get(p.state, "")})
+    defaults = [(names[k], dict(EvacPolicy.ACTIONS)[policy.DEFAULTS.get(k, policy.Action.ARM).value])
+                for k, _n in srcs]
+    two, seconds = triggers.two_person(event)
+    return render(request, "evacuation/policies.html", {
+        "event": event, "rows": rows, "defaults": defaults, "pform": pform, "dform": dform,
+        "drills": ScheduledDrill.objects.filter(event=event).select_related("zone"),
+        "two_person": [cfg.labels.get(s, s) for s in sorted(two)], "two_seconds": seconds,
+        "escalate_default": policy.DEFAULT_ESCALATE}, status=400 if request.method == "POST" else 200)

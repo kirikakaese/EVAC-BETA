@@ -1175,6 +1175,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/Audit'
           description: ''
+  /api/v1/events/{event_slug}/evacuation/:
+    get:
+      operationId: events_evacuation_list
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EvacuationState'
+          description: ''
+  /api/v1/events/{event_slug}/evacuation/trigger/:
+    post:
+      operationId: events_evacuation_trigger_create
+      description: For viewsets nested below /events/<event_slug>/.
+      parameters:
+      - in: path
+        name: event_slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TriggerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TriggerRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvacuationTriggerResult'
+          description: ''
   /api/v1/events/{event_slug}/fonts/:
     get:
       operationId: events_fonts_list
@@ -4917,6 +4975,47 @@ components:
       - a
       - b
       - venue
+    EvacuationState:
+      type: object
+      properties:
+        model:
+          type: string
+        event:
+          type: object
+          additionalProperties: {}
+        zones:
+          type: object
+          additionalProperties: {}
+        pending:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        blocked:
+          type: array
+          items:
+            type: string
+      required:
+      - blocked
+      - event
+      - model
+      - pending
+      - zones
+    EvacuationTriggerResult:
+      type: object
+      properties:
+        result:
+          type: string
+        request:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+      required:
+      - request
+      - result
+      - status
     Event:
       type: object
       properties:
@@ -4937,7 +5036,7 @@ components:
           type: string
         state:
           allOf:
-          - $ref: '#/components/schemas/StateEnum'
+          - $ref: '#/components/schemas/StateA0dEnum'
           readOnly: true
         timezone:
           type: string
@@ -7545,7 +7644,7 @@ components:
         * `ready` - Ready
         * `failed` - Failed
         * `unavailable` - No voice installed
-    StateEnum:
+    StateA0dEnum:
       enum:
       - draft
       - setup
@@ -7748,12 +7847,53 @@ components:
       type: object
       properties:
         state:
-          $ref: '#/components/schemas/StateEnum'
+          $ref: '#/components/schemas/StateA0dEnum'
         reason:
           type: string
           maxLength: 300
       required:
       - state
+    TriggerRequest:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/TriggerStateEnum'
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        drill:
+          type: boolean
+          default: false
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+        key:
+          type: string
+          default: ''
+          description: 'Idempotency key: the same key never raises a second alarm.'
+          maxLength: 100
+        source:
+          type: string
+          minLength: 1
+          default: api
+          description: api (default), bridge or an extension's trigger source.
+          maxLength: 40
+      required:
+      - state
+    TriggerStateEnum:
+      enum:
+      - staff_alert
+      - attention
+      - shelter_in_place
+      - evacuate
+      type: string
+      description: |-
+        * `staff_alert` - staff_alert
+        * `attention` - attention
+        * `shelter_in_place` - shelter_in_place
+        * `evacuate` - evacuate
     User:
       type: object
       properties:

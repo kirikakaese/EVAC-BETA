@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Triggers & drills" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Triggers & drills" %}</h1>
+<div class="actions"><a class="btn" href="{% url 'evacuation:index' event.slug %}">{% trans "Back" %}</a></div></div>
+
+<section class="card"><h2>{% trans "Built-in defaults" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Source" %}</th><th scope="col">{% trans "Default" %}</th></tr></thead>
+<tbody>{% for name, action in defaults %}<tr><th scope="row">{{ name }}</th><td>{{ action }}</td></tr>{% endfor %}</tbody></table></div>
+<p class="small muted">{% blocktrans with s=escalate_default %}Armed alarms execute by themselves after {{ s }} seconds when nobody confirms or rejects them, unless a rule below says otherwise. Ending an alarm is never subject to a policy: only people give the all clear.{% endblocktrans %}</p>
+<p class="small">{% if two_person %}{% blocktrans with s=two_person|join:", " t=two_seconds %}Two-person rule: {{ s }} (second person within {{ t }} s).{% endblocktrans %}{% else %}{% trans "Two-person rule: off." %}{% endif %} <a href="{% url 'portal:settings_ns' event.slug 'evacuation' %}">{% trans "Change in Settings → Evacuation" %}</a></p>
+</section>
+
+<section class="card"><h2>{% trans "Rules" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Source" %}</th><th scope="col">{% trans "Stage" %}</th><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Action" %}</th><th scope="col">{% trans "Auto-escalate" %}</th><th scope="col">{% trans "Delete" %}</th></tr></thead>
+<tbody>{% for r in rows %}<tr><th scope="row">{{ r.source }}</th><td>{{ r.state|default:_("every stage") }}</td><td>{{ r.p.zone.name|default:_("every zone") }}</td><td>{{ r.p.get_action_display }}</td>
+<td>{% if r.p.action == "arm" %}{% if r.p.escalate_seconds %}{{ r.p.escalate_seconds }} s{% else %}{% trans "never (waits)" %}{% endif %}{% else %}–{% endif %}</td>
+<td><form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="delete_policy"><input type="hidden" name="pk" value="{{ r.p.pk }}"><button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Delete this rule?' %}">{% trans "Delete" %}</button></form></td></tr>
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No rules: every source uses its default." %}</td></tr>{% endfor %}</tbody></table></div>
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="policy"><h3>{% trans "Add or replace a rule" %}</h3>
+{% include "portal/_form.html" with form=pform %}<div class="form-actions"><button class="btn btn-primary">{% trans "Save rule" %}</button></div></form>
+<p class="small muted">{% trans "The most specific rule wins: source + stage + zone, then source + stage, then source + zone, then source." %}</p>
+</section>
+
+<section class="card"><h2>{% trans "Scheduled drills" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "When" %}</th><th scope="col">{% trans "Stage" %}</th><th scope="col">{% trans "Where" %}</th><th scope="col">{% trans "Note" %}</th><th scope="col">{% trans "Outcome" %}</th><th scope="col">{% trans "Delete" %}</th></tr></thead>
+<tbody>{% for d in drills %}<tr><th scope="row"><time datetime="{{ d.at|date:'c' }}">{{ d.at|date:"D j M H:i" }}</time></th><td>{{ d.get_state_display }}</td><td>{{ d.zone.name|default:_("Whole event") }}</td><td>{{ d.note|default:"–" }}</td>
+<td class="small">{% if d.started_at %}{{ d.outcome }}{% else %}<span class="badge badge-info">{% trans "planned" %}</span>{% endif %}</td>
+<td>{% if not d.started_at %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="what" value="delete_drill"><input type="hidden" name="pk" value="{{ d.pk }}"><button class="btn btn-ghost btn-sm" data-confirm="{% trans 'Delete this drill?' %}">{% trans "Delete" %}</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No drills planned." %}</td></tr>{% endfor %}</tbody></table></div>
+<form method="post">{% csrf_token %}<input type="hidden" name="what" value="drill"><h3>{% trans "Plan a drill" %}</h3>
+{% include "portal/_form.html" with form=dform %}<div class="form-actions"><button class="btn btn-primary">{% trans "Plan drill" %}</button></div></form>
+<p class="small muted">{% trans "A scheduled drill starts by itself with the drill marker; like every drill it ends with the all clear by a person. It does not start while a real alarm is active, nor more than 15 minutes late." %}</p>
+</section>
+{% endblock %}
