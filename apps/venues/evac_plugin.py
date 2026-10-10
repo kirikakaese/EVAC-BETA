@@ -25,12 +25,19 @@ def _room_choices(event):
             .select_related("venue")]
 
 
+def _assembly_choices(event):
+    from .models import Point
+
+    return [(str(p.pk), f"{p.venue.name} · {p.name}") for p in Point.objects.filter(
+        venue__events=event, kind=Point.Kind.ASSEMBLY).select_related("venue")]
+
+
 def register(r: Registry) -> None:
     from . import transfer
 
     r.module(ModuleSpec(key="venues", name=str(_("Venues")), order=10, category="venue",
                         description=str(_("Buildings, floors, rooms and zones; reusable across events. "
-                                          "Floor plans, exits and routes arrive with the evacuation phase."))))
+                                          "Exits, assembly points, waypoints and the route graph."))))
     r.permissions_([
         PermissionSpec("venues.view", str(_("See venues, rooms and zones")), scopes=("venue",)),
         PermissionSpec("venues.manage", str(_("Edit venues, rooms and zones")), scopes=("venue",)),
@@ -38,6 +45,8 @@ def register(r: Registry) -> None:
     r.scope_kind(ScopeKind(key="venue", label=str(_("Venue")), choices=_venue_choices, module="venues"))
     r.scope_kind(ScopeKind(key="zone", label=str(_("Zone")), choices=_zone_choices, module="venues"))
     r.scope_kind(ScopeKind(key="room", label=str(_("Room")), choices=_room_choices, module="venues"))
+    r.scope_kind(ScopeKind(key="assembly", label=str(_("Assembly point")), choices=_assembly_choices,
+                           module="venues"))
     r.nav(NavEntry(module="venues", label=str(_("Venues")), url_name="venues:index", permission="venues.view",
                    section="event", order=20))
     r.event_hook(EventHook(module="venues", export=transfer.export_venues, import_=transfer.import_venues,

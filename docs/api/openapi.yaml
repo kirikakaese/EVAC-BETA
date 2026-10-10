@@ -195,6 +195,180 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/edges/:
+    get:
+      operationId: edges_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - edges
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEdgeList'
+          description: ''
+    post:
+      operationId: edges_create
+      tags:
+      - edges
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+  /api/v1/edges/{id}/:
+    get:
+      operationId: edges_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - edges
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    put:
+      operationId: edges_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - edges
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    patch:
+      operationId: edges_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - edges
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEdgeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEdgeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEdgeRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    delete:
+      operationId: edges_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - edges
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/events/:
     get:
       operationId: events_list
@@ -3233,6 +3407,180 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/v1/points/:
+    get:
+      operationId: points_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - points
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPointList'
+          description: ''
+    post:
+      operationId: points_create
+      tags:
+      - points
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PointRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PointRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+          description: ''
+  /api/v1/points/{id}/:
+    get:
+      operationId: points_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this point.
+        required: true
+      tags:
+      - points
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+          description: ''
+    put:
+      operationId: points_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this point.
+        required: true
+      tags:
+      - points
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PointRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PointRequest'
+        required: true
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+          description: ''
+    patch:
+      operationId: points_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this point.
+        required: true
+      tags:
+      - points
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPointRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPointRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPointRequest'
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+          description: ''
+    delete:
+      operationId: points_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this point.
+        required: true
+      tags:
+      - points
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/registry/:
     get:
       operationId: registry_retrieve
@@ -3683,6 +4031,40 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/venues/{slug}/routes/:
+    get:
+      operationId: venues_routes_retrieve
+      description: 'The way out from every point: next point, target, distance (m)
+        and the full path (ADR-0026).'
+      parameters:
+      - in: query
+        name: blocked
+        schema:
+          type: string
+        description: Comma-separated ids of blocked points (e.g. exits).
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: step_free
+        schema:
+          type: boolean
+        description: Only step-free routes.
+      tags:
+      - venues
+      security:
+      - ServiceToken: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/zones/:
     get:
       operationId: zones_list
@@ -4470,6 +4852,71 @@ components:
         * `ticker` - Scrolling ticker
         * `card` - Card over the content
         * `takeover` - Full screen
+    Edge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        venue:
+          type: string
+          format: uuid
+        a:
+          type: string
+          format: uuid
+          title: From
+        b:
+          type: string
+          format: uuid
+          title: To
+        one_way:
+          type: boolean
+          description: Only from the first to the second point (e.g. an exit-only
+            door).
+        length_m:
+          type: number
+          format: double
+          nullable: true
+          title: Length (m)
+          description: 'Empty: the straight distance (plus 5 m per floor).'
+        step_free:
+          type: boolean
+      required:
+      - a
+      - b
+      - id
+      - venue
+    EdgeRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        a:
+          type: string
+          format: uuid
+          title: From
+        b:
+          type: string
+          format: uuid
+          title: To
+        one_way:
+          type: boolean
+          description: Only from the first to the second point (e.g. an exit-only
+            door).
+        length_m:
+          type: number
+          format: double
+          nullable: true
+          title: Length (m)
+          description: 'Empty: the straight distance (plus 5 m per floor).'
+        step_free:
+          type: boolean
+      required:
+      - a
+      - b
+      - venue
     Event:
       type: object
       properties:
@@ -5296,6 +5743,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Building'
+    PaginatedEdgeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
     PaginatedEventList:
       type: object
       required:
@@ -5503,6 +5973,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Playlist'
+    PaginatedPointList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Point'
     PaginatedRoleList:
       type: object
       required:
@@ -5890,6 +6383,32 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
+    PatchedEdgeRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        a:
+          type: string
+          format: uuid
+          title: From
+        b:
+          type: string
+          format: uuid
+          title: To
+        one_way:
+          type: boolean
+          description: Only from the first to the second point (e.g. an exit-only
+            door).
+        length_m:
+          type: number
+          format: double
+          nullable: true
+          title: Length (m)
+          description: 'Empty: the straight distance (plus 5 m per floor).'
+        step_free:
+          type: boolean
     PatchedEventRequest:
       type: object
       properties:
@@ -6015,6 +6534,55 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ItemRequest'
+    PatchedPointRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/PointKindEnum'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        floor:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Empty: outdoors at ground level.'
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        x:
+          type: number
+          format: double
+          title: X (m)
+          description: Metres from the left edge of the floor plan.
+        y:
+          type: number
+          format: double
+          title: Y (m)
+          description: Metres from the top edge of the floor plan.
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: 'Exits: people per minute; assembly points: people. Informational
+            for now.'
+        step_free:
+          type: boolean
+          description: Usable with a wheelchair (stairs usually are not).
+        note:
+          type: string
+          maxLength: 300
     PatchedRoleRequest:
       type: object
       properties:
@@ -6343,6 +6911,130 @@ components:
             $ref: '#/components/schemas/ItemRequest'
       required:
       - name
+    Point:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        venue:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/PointKindEnum'
+        name:
+          type: string
+          maxLength: 200
+        floor:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Empty: outdoors at ground level.'
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        x:
+          type: number
+          format: double
+          title: X (m)
+          description: Metres from the left edge of the floor plan.
+        y:
+          type: number
+          format: double
+          title: Y (m)
+          description: Metres from the top edge of the floor plan.
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: 'Exits: people per minute; assembly points: people. Informational
+            for now.'
+        step_free:
+          type: boolean
+          description: Usable with a wheelchair (stairs usually are not).
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - id
+      - name
+      - venue
+    PointKindEnum:
+      enum:
+      - waypoint
+      - door
+      - stairs
+      - lift
+      - exit
+      - assembly
+      type: string
+      description: |-
+        * `waypoint` - Waypoint
+        * `door` - Door
+        * `stairs` - Stairs
+        * `lift` - Lift
+        * `exit` - Exit
+        * `assembly` - Assembly point
+    PointRequest:
+      type: object
+      properties:
+        venue:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/PointKindEnum'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        floor:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Empty: outdoors at ground level.'
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        x:
+          type: number
+          format: double
+          title: X (m)
+          description: Metres from the left edge of the floor plan.
+        y:
+          type: number
+          format: double
+          title: Y (m)
+          description: Metres from the top edge of the floor plan.
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: 'Exits: people per minute; assembly points: people. Informational
+            for now.'
+        step_free:
+          type: boolean
+          description: Usable with a wheelchair (stairs usually are not).
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - name
+      - venue
     PublishRequest:
       type: object
       properties:

@@ -4,7 +4,6 @@
 {% block content %}
 <div class="page-header"><h1>{{ venue.name }}</h1></div>
 {% if shared_with %}<p class="alert alert-info" role="status">{% blocktrans count n=shared_with %}This venue is also used by {{ n }} other event. Changes apply there too.{% plural %}This venue is also used by {{ n }} other events. Changes apply there too.{% endblocktrans %}</p>{% endif %}
-<p class="muted small">{% trans "Floor plans, exits, assembly points and routes are added with the evacuation phase of the roadmap." %}</p>
 <div class="grid grid-2">
   <section class="card"><h2>{% trans "Buildings & floors" %}</h2>
     {% for b in buildings %}<h3>{{ b.name }}{% if b.outdoor %} <span class="badge">{% trans "open air" %}</span>{% endif %}
@@ -24,6 +23,27 @@
   <td class="small">{% if r.step_free %}{% trans "step-free" %}{% else %}{% trans "steps" %}{% endif %}{% if r.has_lift %} · {% trans "lift" %}{% endif %}{% if r.wheelchair_spaces %} · {% blocktrans with n=r.wheelchair_spaces %}{{ n }} wheelchair spaces{% endblocktrans %}{% endif %}</td>
   {% if can_edit %}<td><form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'room' r.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with n=r.name %}Delete {{ n }}{% endblocktrans %}">✕</button></form></td>{% endif %}</tr>
 {% empty %}<tr><td colspan="6" class="muted">{% trans "No rooms yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card"><h2>{% trans "Exits, assembly points and waypoints" %}</h2>
+<p class="small muted">{% trans "Points of the route graph. Positions are metres on the floor plan (the map editor will place them by clicking)." %}</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Point" %}</th><th scope="col">{% trans "Kind" %}</th><th scope="col">{% trans "Floor" %}</th><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Position (m)" %}</th><th scope="col">{% trans "Accessibility" %}</th>{% if can_edit %}<th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th>{% endif %}</tr></thead>
+<tbody>{% for p in points %}<tr><td>{{ p.name }}{% if p.note %}<br><span class="small muted">{{ p.note }}</span>{% endif %}</td><td><span class="badge badge-point-{{ p.kind }}">{{ p.get_kind_display }}</span>{% if p.capacity %} <span class="small muted">{{ p.capacity }}</span>{% endif %}</td>
+  <td class="small">{{ p.floor|default:_("outdoors") }}</td><td class="small">{{ p.zone|default:"–" }}</td><td class="small">{{ p.x|floatformat:1 }}, {{ p.y|floatformat:1 }}</td>
+  <td class="small">{% if p.step_free %}{% trans "step-free" %}{% else %}{% trans "steps" %}{% endif %}</td>
+  {% if can_edit %}<td><form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'point' p.pk %}" data-confirm="{% trans 'Delete this point and its connections?' %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with n=p.name %}Delete {{ n }}{% endblocktrans %}">✕</button></form></td>{% endif %}</tr>
+{% empty %}<tr><td colspan="7" class="muted">{% trans "No points yet. Add exits and assembly points first, then the doors and waypoints between them." %}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card"><h2>{% trans "Route connections" %}</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "To" %}</th><th scope="col">{% trans "Direction" %}</th><th scope="col">{% trans "Length" %}</th><th scope="col">{% trans "Accessibility" %}</th>{% if can_edit %}<th scope="col"><span class="sr-only">{% trans "Actions" %}</span></th>{% endif %}</tr></thead>
+<tbody>{% for e in edges %}<tr><td>{{ e.a.name }}</td><td>{{ e.b.name }}</td><td class="small">{% if e.one_way %}{% trans "one way" %} →{% else %}{% trans "both ways" %} ↔{% endif %}</td>
+  <td class="small">{% if e.length_m is not None %}{{ e.length_m|floatformat:1 }} m{% else %}{% trans "straight distance" %}{% endif %}</td><td class="small">{% if e.step_free %}{% trans "step-free" %}{% else %}{% trans "steps" %}{% endif %}</td>
+  {% if can_edit %}<td><form method="post" action="{% url 'venues:part_delete' event.slug venue.slug 'edge' e.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" aria-label="{% blocktrans with a=e.a.name b=e.b.name %}Delete connection {{ a }} to {{ b }}{% endblocktrans %}">✕</button></form></td>{% endif %}</tr>
+{% empty %}<tr><td colspan="6" class="muted">{% trans "No connections yet." %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% if points %}<section class="card"><h2>{% trans "Ways out" %}</h2>
+<p class="small muted">{% trans "The nearest assembly point (or exit) from every point, as evacuation arrows will use it. Blocked exits are taken into account live during an evacuation." %}</p>
+{% if routes.problems %}<div class="alert alert-warning" role="status">{% for p, text in routes.problems %}{% if not forloop.first %}<br>{% endif %}{% if p %}{{ p.name }}: {% endif %}{{ text }}{% endfor %}</div>{% endif %}
+<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "From" %}</th><th scope="col">{% trans "Next" %}</th><th scope="col">{% trans "Way out" %}</th><th scope="col">{% trans "Distance" %}</th><th scope="col">{% trans "Step-free way out" %}</th></tr></thead>
+<tbody>{% for r in routes.rows %}<tr><td>{{ r.point.name }}</td><td class="small">{{ r.next.name|default:"–" }}</td>
+  <td>{% if r.target %}{{ r.target.name }}{% else %}<span class="badge badge-err">{% trans "none" %}</span>{% endif %}</td><td class="small">{% if r.distance is not None %}{{ r.distance|floatformat:0 }} m{% endif %}</td>
+  <td class="small">{% if r.free_target %}{{ r.free_target.name }} ({{ r.free_distance|floatformat:0 }} m){% else %}–{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
 {% if can_edit %}
 <div class="grid grid-2">
   {% for key, pair in part_forms.items %}

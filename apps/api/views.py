@@ -29,7 +29,8 @@ from apps.events.models import Event, Membership, Role
 from apps.extensions import services as ext_services
 from apps.extensions.models import ExtensionConfig, InboundDelivery
 from apps.venues import access as venue_access
-from apps.venues.models import Building, Floor, Room, Venue, Zone
+from apps.venues import graph as venue_graph
+from apps.venues.models import Building, Edge, Floor, Point, Room, Venue, Zone
 
 from . import serializers as s
 from .permissions import EventPermission, HasScope, IsSuperuser
@@ -397,6 +398,18 @@ class VenueViewSet(_VenuePartViewSet):
                 event.venues.add(venue)
         log(action="venue.created", actor=self.request.user, target=venue, event=event, request=self.request)
 
+    @extend_schema(parameters=[
+        OpenApiParameter("step_free", bool, description="Only step-free routes."),
+        OpenApiParameter("blocked", str, description="Comma-separated ids of blocked points (e.g. exits).")],
+        responses={200: dict})
+    @action(detail=True, methods=["get"])
+    def routes(self, request, slug=None):
+        """The way out from every point: next point, target, distance (m) and the full path (ADR-0026)."""
+        venue = self.get_object()
+        blocked = [b for b in request.query_params.get("blocked", "").split(",") if b]
+        step_free = request.query_params.get("step_free") in ("1", "true", "yes")
+        return Response(venue_graph.api_table(venue, blocked=blocked, step_free=step_free))
+
 
 class BuildingViewSet(_VenuePartViewSet):
     serializer_class = s.BuildingSerializer
@@ -412,6 +425,16 @@ class FloorViewSet(_VenuePartViewSet):
 class ZoneViewSet(_VenuePartViewSet):
     serializer_class = s.ZoneSerializer
     model = Zone
+
+
+class PointViewSet(_VenuePartViewSet):
+    serializer_class = s.PointSerializer
+    model = Point
+
+
+class EdgeViewSet(_VenuePartViewSet):
+    serializer_class = s.EdgeSerializer
+    model = Edge
 
 
 class RoomViewSet(_VenuePartViewSet):

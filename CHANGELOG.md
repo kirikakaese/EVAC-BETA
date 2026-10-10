@@ -6,6 +6,17 @@ released.
 
 ## [Unreleased]
 
+### Added — venue route graph (Phase 3, part 1)
+
+- ADR-0002 (central/node sync) and ADR-0003 (alarm delivery redundancy) accepted with the review decisions:
+  live actions proxied through central during a checkout, extension secrets on nodes opt-in, HTTP polling of
+  fallback origins (multicast optional, off), hardware bridge triggers default to `arm`.
+- Exits, assembly points, doors, waypoints, stairs and lifts with floor, zone, position (metres), capacity and
+  step-free flag; route connections (one-way, length, step-free) on the venue page, in the API
+  (`/api/v1/points/`, `/api/v1/edges/`) and in event export/import (ADR-0026).
+- Routing: nearest assembly point (else exit) from every point, step-free alternative, blocked points;
+  `GET /api/v1/venues/<slug>/routes/`; plan checks on the venue page; scope kind *assembly point*.
+
 ### Added — announcement audiences and time anchors (Phase 2, part 7)
 
 - Audiences (ADR-0025): *Only these people* limits staff notifications of an announcement to members with

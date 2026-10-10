@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Venues are reusable across events: venue -> building -> floor -> room, plus zones.
 
-Phase 0 models the hierarchy and capacities/accessibility attributes. Floor plans, exits, assembly
-points, waypoints and the route graph follow in Phase 3 (see docs/ROADMAP.md).
+Exits, assembly points, doors, waypoints, stairs and lifts are ``Point`` rows placed on a floor (x/y in metres
+in that floor's plan); ``Edge`` rows connect them into the route graph (ADR-0026, ``routing.py``). Floor plans
+and georeferencing come with the map editor.
 """
 from __future__ import annotations
 
@@ -116,3 +117,76 @@ class Room(models.Model):
         chain += [("zone", str(z)) for z in self.zones.values_list("pk", flat=True)]
         chain.append(("room", str(self.pk)))
         return chain
+
+
+class Point(models.Model):
+    """A node of the route graph: an exit, an assembly point, a door, a waypoint, stairs or a lift."""
+
+    class Kind(models.TextChoices):
+        WAYPOINT = "waypoint", _("Waypoint")
+        DOOR = "door", _("Door")
+        STAIRS = "stairs", _("Stairs")
+        LIFT = "lift", _("Lift")
+        EXIT = "exit", _("Exit")
+        ASSEMBLY = "assembly", _("Assembly point")
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="points")
+    floor = models.ForeignKey(Floor, null=True, blank=True, on_delete=models.SET_NULL, related_name="points",
+                              help_text=_("Empty: outdoors at ground level."))
+    zone = models.ForeignKey(Zone, null=True, blank=True, on_delete=models.SET_NULL, related_name="points")
+    room = models.ForeignKey(Room, null=True, blank=True, on_delete=models.SET_NULL, related_name="points")
+    kind = models.CharField(_("kind"), max_length=10, choices=Kind.choices, default=Kind.WAYPOINT)
+    name = models.CharField(_("name"), max_length=200)
+    x = models.FloatField(_("x (m)"), default=0, help_text=_("Metres from the left edge of the floor plan."))
+    y = models.FloatField(_("y (m)"), default=0, help_text=_("Metres from the top edge of the floor plan."))
+    capacity = models.PositiveIntegerField(
+        _("capacity"), null=True, blank=True,
+        help_text=_("Exits: people per minute; assembly points: people. Informational for now."))
+    step_free = models.BooleanField(_("step-free"), default=True,
+                                    help_text=_("Usable with a wheelchair (stairs usually are not)."))
+    note = models.CharField(_("note"), max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["kind", "name"]
+        indexes = [models.Index(fields=["venue", "kind"])]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.name}"
+
+    @property
+    def level(self) -> int:
+        return self.floor.level if self.floor_id else 0
+
+    def evac_scope_chain(self):
+        chain = [("venue", str(self.venue_id))]
+        if self.zone_id:
+            chain.append(("zone", str(self.zone_id)))
+        if self.kind == self.Kind.ASSEMBLY:
+            chain.append(("assembly", str(self.pk)))
+        return chain
+
+
+class Edge(models.Model):
+    """A walkable connection between two points of the same venue."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="edges")
+    a = models.ForeignKey(Point, on_delete=models.CASCADE, related_name="edges_out", verbose_name=_("from"))
+    b = models.ForeignKey(Point, on_delete=models.CASCADE, related_name="edges_in", verbose_name=_("to"))
+    one_way = models.BooleanField(_("one way"), default=False,
+                                  help_text=_("Only from the first to the second point (e.g. an exit-only door)."))
+    length_m = models.FloatField(_("length (m)"), null=True, blank=True,
+                                 help_text=_("Empty: the straight distance (plus 5 m per floor)."))
+    step_free = models.BooleanField(_("step-free"), default=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["a", "b"], name="venues_edge_unique_pair"),
+                       models.CheckConstraint(condition=~models.Q(a=models.F("b")), name="venues_edge_not_loop")]
+
+    def __str__(self):
+        arrow = "→" if self.one_way else "↔"
+        return f"{self.a.name} {arrow} {self.b.name}"
+
+    def evac_scope_chain(self):
+        return [("venue", str(self.venue_id))]

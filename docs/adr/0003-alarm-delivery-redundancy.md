@@ -1,6 +1,6 @@
 # ADR-0003: Alarm delivery redundancy
 
-- Status: **Proposed — needs review before Phase 3 implementation** (brief §8.6)
+- Status: Accepted (2026-10-10, open questions resolved below)
 - Date: 2026-10-02
 
 ## Context
@@ -11,7 +11,7 @@ still be possible to raise or change an alarm. Screens must not accept forged st
 LAN. EVAC is a supplementary system (brief §2); this design limits, but cannot eliminate, single points of
 failure.
 
-## Decision (proposed)
+## Decision
 
 1. **Alarm key per event.** When the evacuation module is enabled, EVAC generates an Ed25519 *alarm
    signing key pair* per event. Public key: part of every screen's evacuation bundle. Private key: held
@@ -25,9 +25,10 @@ failure.
    clocks. `issued_at` older than a window is ignored *only for escalations to normal*: a stale "all
    clear" is never applied, a stale alarm is (fail-safe direction).
 3. **Delivery paths, in order**: (a) WebSocket from the node, (b) SSE/long-poll from the node,
-   (c) **LAN fallback**: secondary node or hardware bridge broadcasts the same signed message over UDP
-   multicast and serves it via a tiny HTTP endpoint the player polls (`/evac/state`) when (a)/(b) fail;
-   screens are configured with up to three fallback origins at pairing.
+   (c) **LAN fallback**: secondary node or hardware bridge serves the same signed message via a tiny HTTP
+   endpoint the player polls (`/evac/state`) when (a)/(b) fail; screens are configured with up to three
+   fallback origins at pairing. UDP multicast of the same message is an optional optimisation, **off by
+   default**.
 4. **Fail-safe rules on the screen** (unchanged by any path): offline in alarm → stay in alarm; offline in
    normal → keep normal content + staff-only offline marker; no state returns to `normal` except via a
    signed `all_clear` (then `normal` after the configured time); missing/broken custom layout → built-in
@@ -40,7 +41,9 @@ failure.
    `seq`.
 6. **Hardware bridge** can issue a limited set of messages (e.g. `evacuate` for its configured zones,
    `staff_alert`) directly when it detects a dry-contact trigger and cannot reach any node; it never
-   issues `all_clear`.
+   issues `all_clear`. Its **default trigger policy is `arm`**: a person confirms with hold-to-confirm, with
+   auto-escalation after a configurable timeout; an admin can set a source to `execute` explicitly
+   (audit-logged). When no node is reachable the bridge applies the configured policy itself.
 
 ## Consequences
 
@@ -57,9 +60,8 @@ failure.
 - MQTT broker as fallback bus: one more service at the venue; can be added as an *additional* transport
   for bridges later.
 
-## Open questions for review
+## Resolved questions (review 2026-10-10)
 
-1. Is UDP multicast acceptable in typical venue networks (often filtered)? HTTP polling of fallback
-   origins is the baseline; multicast is an optimisation.
-2. May a hardware bridge raise `evacuate` without any human confirmation (policy `execute`) by default,
-   or should the default policy be `arm`?
+1. UDP multicast: HTTP polling of fallback origins is the baseline; multicast is optional and off by default.
+2. Hardware bridge default: policy `arm` (human confirmation, auto-escalation timeout); `execute` only when an
+   admin sets it for a source.
