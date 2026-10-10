@@ -33,7 +33,7 @@ route edges. Evacuation arrows (3.7) need every screen's position and the direct
 
 ## Consequences
 
-- Georeferencing floor plans and OpenStreetMap tiles cached offline for open-air sites follow in 3.2b (the
-  outdoor "floor" is a metre grid until then).
+- Georeferencing floor plans and OpenStreetMap tiles cached offline for open-air sites follow in 3.2b
+  ([ADR-0028](0028-georeference-and-map-tiles.md)).
 - Event export/import carries points, edges and zone outlines but not plan files (they stay with the venue).
 - Live layers (blocked exits, occupancy, incidents, screen status) can use the same layer hook later.

@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from "vitest";
 
-import { arrow, bearing, distance, extent, facingTriangle, type MapData, pixelsFor, zoom } from "../src/mapeditor/model";
+import {
+  arrow, bearing, distance, extent, facingTriangle, geoToNorthUp, type MapData, northUpToGeo, pixelsFor, tileCorner,
+  tileOf, tilesForView, toNorthUp, zoom,
+} from "../src/mapeditor/model";
 
 const empty: MapData = { floor: null, floors: [], plan: null, points: [], elsewhere: {}, edges: [], zones: [],
   layers: [], kinds: [], canEdit: true };
@@ -44,5 +47,35 @@ describe("map editor geometry", () => {
     expect(bearing([0, 0], [-5, 0])).toBe(270);
     expect(distance([0, 0], [3, 4])).toBe(5);
     expect(pixelsFor(10, { url: "", width: 1, height: 1, metresPerPx: 0.5, scaled: false })).toBe(20);
+  });
+});
+
+describe("georeference", () => {
+  const frame = { lat: 52.52, lon: 13.405, rotation: 30 };
+
+  it("rotates plan metres to north-up metres and back to the earth", () => {
+    const [e, s] = toNorthUp({ ...frame, rotation: 90 }, 10, 0);
+    expect(e).toBeCloseTo(0);
+    expect(s).toBeCloseTo(10); // the plan's x axis points south when "up" faces east
+    const [lat, lon] = northUpToGeo(frame, 100, 200);
+    const [e2, s2] = geoToNorthUp(frame, lat, lon);
+    expect(e2).toBeCloseTo(100);
+    expect(s2).toBeCloseTo(200);
+    expect(lat).toBeLessThan(frame.lat); // south
+    expect(lon).toBeGreaterThan(frame.lon); // east
+  });
+
+  it("finds tiles", () => {
+    expect(tileOf(0, 0, 0)).toEqual([0, 0]);
+    expect(tileOf(52.52, 13.405, 10)).toEqual([550, 335]); // Berlin
+    const [lat, lon] = tileCorner(10, 550, 335);
+    expect(tileOf(lat - 1e-6, lon + 1e-6, 10)).toEqual([550, 335]);
+    const tiles = tilesForView({ x: 0, y: 0, w: 200, h: 100 }, frame, 0.25, 19);
+    expect(tiles.length).toBeGreaterThan(0);
+    expect(tiles.length).toBeLessThanOrEqual(80);
+    expect(new Set(tiles.map((t) => t.z)).size).toBe(1);
+    expect(tiles[0].z).toBeLessThanOrEqual(19);
+    // zoomed far out: fewer, lower tiles
+    expect(tilesForView({ x: 0, y: 0, w: 1e6, h: 5e5 }, frame, 1000, 19)[0].z).toBeLessThan(10);
   });
 });

@@ -49,3 +49,7 @@ polyline.mapeditor-measure { fill: none; }
 .mapeditor .link-button { background: none; border: 0; padding: 0; color: var(--link, inherit); cursor: pointer;
   text-align: left; font: inherit; text-decoration: underline; }
 .plan-upload form { margin: .5rem 0; flex-wrap: wrap; }
+.mapeditor-stage { position: relative; }
+.mapeditor-attribution { position: absolute; right: .35rem; bottom: .35rem; background: rgba(255, 255, 255, .85);
+  color: #111827; padding: .05rem .4rem; border-radius: 3px; font-size: .7rem; }
+.mapeditor-canvas.tool-align { cursor: move; }

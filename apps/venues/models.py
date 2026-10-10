@@ -67,6 +67,11 @@ class Floor(models.Model):
     #: metres per plan pixel; ``plan_scaled`` is False until someone measured a known distance
     metres_per_px = models.FloatField(default=0.05)
     plan_scaled = models.BooleanField(default=False)
+    #: georeference (ADR-0028): latitude/longitude of the plan's top-left corner and the bearing of the plan's
+    #: "up" (degrees clockwise from north); empty until aligned with the map
+    geo_lat = models.FloatField(null=True, blank=True)
+    geo_lon = models.FloatField(null=True, blank=True)
+    geo_rotation = models.FloatField(default=0)
 
     class Meta:
         ordering = ["level", "name"]

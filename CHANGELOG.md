@@ -6,6 +6,14 @@ released.
 
 ## [Unreleased]
 
+### Added — georeferencing and offline map tiles (Phase 3, part 3)
+
+- Floors can be aligned with OpenStreetMap (ADR-0028): corner position and rotation typed in or set by dragging
+  the map under the plan, plan opacity; the outdoor floor is drawn on the map at the venue's coordinates.
+- Map tiles are proxied and cached by the server (`/maptiles/…`, fetched in the background), so maps viewed once
+  work offline. *Settings → Maps*: tile server, attribution, maximum zoom, tiles on/off, area download for
+  offline use (only for your own tile server; refused for the public OpenStreetMap servers).
+
 ### Added — map editor (Phase 3, part 2)
 
 - Floor plans per floor (PNG, JPEG, WebP, SVG sanitised, PDF via poppler's `pdftoppm`, now in the Docker image)

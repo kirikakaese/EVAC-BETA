@@ -5,6 +5,7 @@ from . import views
 
 app_name = "venues"
 PORTAL_MOUNT = True  # /e/<slug>/venues/
+ROOT_MOUNTS = [("maptiles/", "apps.venues.tile_urls", "maptiles")]  # cached map tiles (ADR-0028)
 urlpatterns = [
     path("", views.index, name="index"),
     path("<slug:venue_slug>/", views.detail, name="detail"),

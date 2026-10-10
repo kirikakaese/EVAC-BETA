@@ -143,6 +143,17 @@ During an evacuation, blocked exits are taken out and the routes recompute at on
 
 The side panel lists all points and screens, with numeric positions for keyboard use. Everything is saved at once.
 
+**Align with map** puts the floor plan on OpenStreetMap: type the position of the plan's top-left corner and its
+rotation, or drag the map until streets and buildings match the plan (lower *Plan opacity* to see both). The
+*Outdoors* floor uses the venue's own coordinates and is drawn straight onto the map, which suits open-air sites.
+
+Tiles come through your EVAC server and are cached there, so a map viewed once works without internet at the
+venue. New tiles take a moment the first time. *Settings → Maps* sets the tile server, attribution, maximum zoom
+and whether tiles are shown at all. **Download area for offline use** fetches the whole area in advance; it only
+works with a tile server you run yourself (and *Allow area download* ticked), because the public OpenStreetMap
+servers forbid bulk downloads. With the public servers, open the map at the zoom levels you need before the
+event instead.
+
 ## 5a. Screens
 
 - **Pair**: open `<your EVAC>/player/` in the screen's browser (kiosk mode, TV browser, Raspberry Pi). It shows

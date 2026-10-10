@@ -14,6 +14,11 @@ export interface LayerItem {
 }
 export interface MapLayer { key: string; title: string; editable: boolean; items: LayerItem[] }
 export interface MapPlan { url: string; width: number; height: number; metresPerPx: number; scaled: boolean }
+export interface MapFrame { lat: number; lon: number; rotation: number }
+export interface MapInfo {
+  tileUrl: string; attribution: string; maxZoom: number; frame: MapFrame | null; rotatable: boolean;
+  areaDownload: boolean;
+}
 export interface MapData {
   floor: string | null;
   floors: { id: string; label: string; level: number; hasPlan: boolean }[];
@@ -25,6 +30,7 @@ export interface MapData {
   layers: MapLayer[];
   kinds: [string, string][];
   canEdit: boolean;
+  map?: MapInfo | null;
 }
 export interface Box { x: number; y: number; w: number; h: number }
 
@@ -99,4 +105,58 @@ export function bearing(a: [number, number], b: [number, number]): number {
 /** Plan pixels that ``metres`` correspond to now (for the "Measure" tool). */
 export function pixelsFor(metres: number, plan: MapPlan): number {
   return metres / plan.metresPerPx;
+}
+
+// ---------------------------------------------------------------- georeference (ADR-0028), same rules as geo.py
+const M_PER_DEG = 111320;
+
+/** Plan metres -> metres east/south of the frame origin. */
+export function toNorthUp(frame: MapFrame, x: number, y: number): [number, number] {
+  const t = (frame.rotation * Math.PI) / 180;
+  return [x * Math.cos(t) - y * Math.sin(t), x * Math.sin(t) + y * Math.cos(t)];
+}
+
+export function northUpToGeo(frame: MapFrame, east: number, south: number): [number, number] {
+  return [frame.lat - south / M_PER_DEG, frame.lon + east / (M_PER_DEG * Math.cos((frame.lat * Math.PI) / 180))];
+}
+
+export function geoToNorthUp(frame: MapFrame, lat: number, lon: number): [number, number] {
+  return [(lon - frame.lon) * M_PER_DEG * Math.cos((frame.lat * Math.PI) / 180), (frame.lat - lat) * M_PER_DEG];
+}
+
+export function tileOf(lat: number, lon: number, z: number): [number, number] {
+  const n = 2 ** z, la = Math.max(Math.min(lat, 85.0511), -85.0511) * Math.PI / 180;
+  const x = Math.floor(((lon + 180) / 360) * n);
+  const y = Math.floor(((1 - Math.asinh(Math.tan(la)) / Math.PI) / 2) * n);
+  return [Math.min(Math.max(x, 0), n - 1), Math.min(Math.max(y, 0), n - 1)];
+}
+
+/** North-west corner of a tile. */
+export function tileCorner(z: number, x: number, y: number): [number, number] {
+  const n = 2 ** z;
+  return [(Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI, (x / n) * 360 - 180];
+}
+
+export interface Tile { z: number; x: number; y: number; e0: number; s0: number; e1: number; s1: number }
+
+/** Tiles covering the view (plan metres) at a zoom matching ``metresPerScreenPx``, in north-up metres. */
+export function tilesForView(view: Box, frame: MapFrame, metresPerScreenPx: number, maxZoom: number,
+                             limit = 80): Tile[] {
+  const corners = [[view.x, view.y], [view.x + view.w, view.y], [view.x, view.y + view.h],
+    [view.x + view.w, view.y + view.h]].map(([x, y]) => northUpToGeo(frame, ...toNorthUp(frame, x, y)));
+  const lats = corners.map((c) => c[0]), lons = corners.map((c) => c[1]);
+  const ideal = Math.log2((156543.03 * Math.cos((frame.lat * Math.PI) / 180)) / Math.max(metresPerScreenPx, 1e-3));
+  for (let z = Math.min(Math.max(Math.round(ideal), 1), maxZoom); z >= 1; z--) {
+    const [x0, y0] = tileOf(Math.max(...lats), Math.min(...lons), z);
+    const [x1, y1] = tileOf(Math.min(...lats), Math.max(...lons), z);
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > limit) continue;
+    const out: Tile[] = [];
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      const [lat0, lon0] = tileCorner(z, x, y), [lat1, lon1] = tileCorner(z, x + 1, y + 1);
+      const [e0, s0] = geoToNorthUp(frame, lat0, lon0), [e1, s1] = geoToNorthUp(frame, lat1, lon1);
+      out.push({ z, x, y, e0: r3(e0), s0: r3(s0), e1: r3(e1), s1: r3(s1) });
+    }
+    return out;
+  }
+  return [];
 }
