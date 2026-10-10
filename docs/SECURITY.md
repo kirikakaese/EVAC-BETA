@@ -44,6 +44,7 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 | Premature public exposure | Early-access gate: signed, password-bound cookie, constant-time check, rate limit, WebSockets gated too |
 | CSRF / clickjacking | Django CSRF on all forms, HTMX sends the token header, `X-Frame-Options: DENY`, `frame-ancestors 'none'` |
 | Webhook forgery / replay | HMAC-SHA256 with constant-time comparison, per-config secrets shown once, delivery-id idempotency |
+| Map tile fetching | Tiles are fetched by a background task, never inside a request, from the one tile server an instance admin configured; size limit, image type check, login required to view; bulk download refused for the public OpenStreetMap servers ([ADR-0028](adr/0028-georeference-and-map-tiles.md)) |
 | SSRF via outbound webhooks | Only admins/orgas with `extensions.manage` add endpoints; deliveries do not follow redirects. Venue LANs are private networks by design, so private addresses are allowed — restrict egress at the firewall if needed |
 | Secret disclosure | Fernet at rest, write-only forms, never in audit/logs, key rotation |
 | Audit tampering | Hash chain + immutable rows + PostgreSQL trigger; verify on demand |

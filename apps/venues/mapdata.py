@@ -14,7 +14,7 @@ from apps.core import modules
 from apps.core.audit import log
 from apps.core.registry import registry
 
-from . import graph, plans
+from . import geo, graph, plans
 from .models import Edge, Floor, Point, Zone
 
 LIMIT = 100_000.0  # metres; anything beyond is a typo
@@ -82,8 +82,20 @@ def data(event, venue, floor: Floor | None, *, can_edit: bool) -> dict[str, Any]
                       if pid not in here},
         "edges": edges, "zones": zones, "layers": layer_data,
         "kinds": [[k, str(v)] for k, v in Point.Kind.choices],
+        "map": _map(venue, floor),
         "canEdit": can_edit, "pdf": plans.has_pdf_renderer(),
     }
+
+
+def _map(venue, floor: Floor | None) -> dict[str, Any] | None:
+    cfg = geo.config()
+    if not cfg.get("tiles_enabled") or not geo.tile_url():
+        return None
+    frame = geo.frame_of(venue, floor)
+    return {"tileUrl": reverse("maptiles:tile", args=[0, 0, 0]).replace("/0/0/0.png", "/{z}/{x}/{y}.png"),
+            "attribution": str(cfg.get("attribution") or ""), "maxZoom": int(cfg.get("max_zoom") or 19),
+            "frame": {"lat": frame.lat, "lon": frame.lon, "rotation": frame.rotation} if frame else None,
+            "rotatable": floor is not None, "areaDownload": geo.area_download_allowed()}
 
 
 # ------------------------------------------------------------------ operations
@@ -192,9 +204,72 @@ def apply(event, venue, floor: Floor | None, op: dict[str, Any], *, actor, reque
         facing = None if op.get("facing") is None else _num(op.get("facing"), "facing") % 360
         spec.place(event, str(op.get("id")), floor=floor, x=x, y=y, facing=facing, actor=actor, request=request)
         return {}
+    if kind in ("georef", "georef.move"):
+        return _georef(venue, floor, op, kind, audit)
+    if kind == "map.download":
+        return _download(venue, floor, audit)
     if kind == "scale":
         if floor is None or not floor.plan_file:
             raise ValidationError(_("Upload a floor plan first."))
         plans.set_scale(floor, px=_num(op.get("px"), "px"), metres=_num(op.get("metres"), "metres"), **audit)
         return {}
     raise ValidationError(_("Unknown operation."))
+
+
+def _georef(venue, floor: Floor | None, op: dict[str, Any], kind: str, audit: dict[str, Any]) -> dict[str, Any]:
+    """Align the plan with the map: set the frame, or move it by a drag of (dx, dy) metres."""
+    if kind == "georef":
+        lat, lon = _num(op.get("lat"), "lat"), _num(op.get("lon"), "lon")
+        if not (-85 <= lat <= 85 and -180 <= lon <= 180):
+            raise ValidationError(_("This is not a position on the map."))
+        rotation = _num(op.get("rotation", 0), "rotation") % 360 if floor is not None else 0.0
+    else:
+        frame = geo.frame_of(venue, floor)
+        if frame is None:
+            raise ValidationError(_("Set a position first."))
+        # dragging the map by (dx, dy) moves the plan's origin the other way
+        lat, lon = geo.to_geo(frame, -_num(op.get("dx"), "dx"), -_num(op.get("dy"), "dy"))
+        rotation = frame.rotation
+    if floor is None:
+        venue.latitude, venue.longitude = round(lat, 6), round(lon, 6)
+        venue.save(update_fields=["latitude", "longitude", "updated_at"])
+        target = venue
+    else:
+        floor.geo_lat, floor.geo_lon, floor.geo_rotation = round(lat, 7), round(lon, 7), round(rotation, 2)
+        floor.save(update_fields=["geo_lat", "geo_lon", "geo_rotation"])
+        target = floor
+    log(action="venue.georeferenced", target=target, message=f"{target} aligned with the map",
+        changes={"lat": round(lat, 7), "lon": round(lon, 7), "rotation": round(rotation, 2)}, **audit)
+    return {}
+
+
+def _download(venue, floor: Floor | None, audit: dict[str, Any]) -> dict[str, Any]:
+    """Queue the tiles around this floor (or the outdoor area) for offline use."""
+    from .tasks import download_area
+
+    if not geo.area_download_allowed():
+        raise ValidationError(_("Area downloads are only allowed for a tile server you run yourself "
+                                "(Settings → Maps)."))
+    frame = geo.frame_of(venue, floor)
+    if frame is None:
+        raise ValidationError(_("Align the plan with the map first."))
+    xs, ys = [0.0], [0.0]
+    if floor is not None and floor.plan_file:
+        xs.append(floor.plan_width * floor.metres_per_px)
+        ys.append(floor.plan_height * floor.metres_per_px)
+    for p in Point.objects.filter(venue=venue, floor=floor):
+        xs.append(p.x)
+        ys.append(p.y)
+    margin = 100.0
+    corners = [geo.to_geo(frame, x, y) for x in (min(xs) - margin, max(xs) + margin)
+               for y in (min(ys) - margin, max(ys) + margin)]
+    top = int(geo.config().get("max_zoom") or 19)
+    tiles = geo.tiles_for_area(corners, range(14, top + 1))
+    while len(tiles) > geo.MAX_AREA_TILES and top > 14:
+        top -= 1
+        tiles = geo.tiles_for_area(corners, range(14, top + 1))
+    tiles = tiles[:geo.MAX_AREA_TILES]
+    download_area.delay([list(t) for t in tiles])
+    log(action="venue.map_downloaded", target=floor or venue, message=f"{len(tiles)} map tiles queued",
+        changes={"tiles": len(tiles), "max_zoom": top}, **audit)
+    return {"tiles": len(tiles)}

@@ -9,11 +9,11 @@ import { html, LitElement, nothing, svg, type TemplateResult } from "lit";
 
 import {
   arrow, type Box, distance, extent, facingTriangle, GLYPHS, type LayerItem, type MapData, type MapPoint,
-  pixelsFor, r3, zoom,
+  pixelsFor, r3, type Tile, tilesForView, zoom,
 } from "./model";
 
 interface Config { dataUrl: string; opUrl: string; strings: Record<string, string> }
-type Tool = "select" | "point" | "connect" | "zone" | "place" | "measure";
+type Tool = "select" | "point" | "connect" | "zone" | "place" | "measure" | "align";
 type Selection = { type: "point" | "edge" | "item"; id: string; layer?: string } | null;
 
 function csrf(): string {
@@ -29,7 +29,8 @@ export class EvacMapEditor extends LitElement {
   static properties = {
     data: { state: true }, view: { state: true }, tool: { state: true }, selected: { state: true },
     status: { state: true }, pointKind: { state: true }, pending: { state: true }, corners: { state: true },
-    zoneId: { state: true }, placing: { state: true }, measured: { state: true },
+    zoneId: { state: true }, placing: { state: true }, measured: { state: true }, planOpacity: { state: true },
+    alignOffset: { state: true },
   };
 
   data: MapData | null = null;
@@ -43,8 +44,11 @@ export class EvacMapEditor extends LitElement {
   zoneId = "";
   placing: { layer: string; id: string } | null = null;
   measured: [number, number][] = [];
+  planOpacity = 1;
+  alignOffset: [number, number] = [0, 0];
+  private tileTries = new Map<string, number>();
   private cfg: Config | null = readConfig();
-  private drag: { kind: "pan" | "point" | "item"; id?: string; layer?: string; sx: number; sy: number;
+  private drag: { kind: "pan" | "point" | "item" | "align"; id?: string; layer?: string; sx: number; sy: number;
                   start: Box; moved: boolean; x?: number; y?: number } | null = null;
 
   createRenderRoot() { return this; } // light DOM: portal styles apply
@@ -117,7 +121,10 @@ export class EvacMapEditor extends LitElement {
     const itemEl = target.closest("[data-item]");
     const [x, y] = this.toMap(e);
     const edit = this.data?.canEdit ?? false;
-    if (this.tool === "select" && pointId && edit) {
+    if (this.tool === "align") {
+      if (!edit || !this.data?.map?.frame) return;
+      this.drag = { kind: "align", sx: e.clientX, sy: e.clientY, start: this.view, moved: false };
+    } else if (this.tool === "select" && pointId && edit) {
       this.selected = { type: "point", id: pointId };
       this.drag = { kind: "point", id: pointId, sx: e.clientX, sy: e.clientY, start: this.view, moved: false };
     } else if (this.tool === "select" && itemEl) {
@@ -140,9 +147,13 @@ export class EvacMapEditor extends LitElement {
     if (!d) return;
     d.moved = d.moved || Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 3;
     if (!d.moved) return;
-    if (d.kind === "pan") {
+    if (d.kind === "pan" || d.kind === "align") {
       const el = this.svgEl();
       const scale = el ? d.start.w / el.clientWidth : 1;
+      if (d.kind === "align") {
+        this.alignOffset = [r3((e.clientX - d.sx) * scale), r3((e.clientY - d.sy) * scale)];
+        return;
+      }
       this.view = { ...d.start, x: d.start.x - (e.clientX - d.sx) * scale, y: d.start.y - (e.clientY - d.sy) * scale };
       return;
     }
@@ -162,6 +173,12 @@ export class EvacMapEditor extends LitElement {
   private onUp() {
     const d = this.drag;
     this.drag = null;
+    if (d?.kind === "align") {
+      const [dx, dy] = this.alignOffset;
+      if (d.moved && (dx || dy)) void this.op({ op: "georef.move", dx, dy }).then(() => { this.alignOffset = [0, 0]; });
+      else this.alignOffset = [0, 0];
+      return;
+    }
     if (!d || !d.moved || d.x === undefined) return;
     if (d.kind === "point") void this.op({ op: "point.update", id: d.id, x: d.x, y: d.y });
     if (d.kind === "item") {
@@ -206,7 +223,8 @@ export class EvacMapEditor extends LitElement {
     const d = this.data;
     if (!d) return html`<p class="muted">${this.t("Loading…")}</p>`;
     const tools: [Tool, string][] = [["select", "Select"], ["point", "Add point"], ["connect", "Connect"],
-      ["zone", "Zone outline"], ["place", "Place"], ["measure", "Measure"]];
+      ["zone", "Zone outline"], ["place", "Place"], ["measure", "Measure"],
+      ...(d.map ? [["align", "Align with map"] as [Tool, string]] : [])];
     return html`
       <div class="mapeditor">
         <div class="mapeditor-toolbar" role="toolbar" aria-label=${this.t("Tools")}>
@@ -222,7 +240,8 @@ export class EvacMapEditor extends LitElement {
           <span class="mapeditor-status small muted" role="status" aria-live="polite">${this.status}</span>
         </div>
         <div class="mapeditor-body">
-          ${this.canvas(d)}
+          <div class="mapeditor-stage">${this.canvas(d)}
+            ${d.map ? html`<div class="mapeditor-attribution small">${d.map.attribution}</div>` : nothing}</div>
           <aside class="mapeditor-panel">${this.panel(d)}</aside>
         </div>
       </div>`;
@@ -238,9 +257,10 @@ export class EvacMapEditor extends LitElement {
         @pointermove=${this.onMove} @pointerup=${this.onUp} @pointercancel=${this.onUp}>
       <defs><pattern id="mapeditor-grid" width="10" height="10" patternUnits="userSpaceOnUse">
         <path d="M 10 0 L 0 0 0 10" class="mapeditor-gridline"></path></pattern></defs>
+      ${this.tiles(d)}
       ${plan ? svg`<image href=${plan.url} x="0" y="0" width=${plan.width * plan.metresPerPx}
-          height=${plan.height * plan.metresPerPx} preserveAspectRatio="none"></image>`
-        : svg`<rect x=${v.x - v.w} y=${v.y - v.h} width=${v.w * 3} height=${v.h * 3} fill="url(#mapeditor-grid)"></rect>`}
+          height=${plan.height * plan.metresPerPx} preserveAspectRatio="none" opacity=${this.planOpacity}></image>`
+        : d.map?.frame ? nothing : svg`<rect x=${v.x - v.w} y=${v.y - v.h} width=${v.w * 3} height=${v.h * 3} fill="url(#mapeditor-grid)"></rect>`}
       ${d.zones.filter((z) => z.area).map((z) => svg`<g class="mapeditor-zone">
           <polygon points=${(z.area ?? []).map(([x, y]) => `${x},${y}`).join(" ")} fill=${z.color} stroke=${z.color}
             stroke-width=${unit * 0.3}></polygon>
@@ -292,6 +312,29 @@ export class EvacMapEditor extends LitElement {
     </svg>`;
   }
 
+  private tiles(d: MapData): TemplateResult | typeof nothing {
+    const m = d.map, frame = m?.frame;
+    if (!m || !frame) return nothing;
+    const width = this.svgEl()?.clientWidth || 900;
+    const list: Tile[] = tilesForView(this.view, frame, this.view.w / width, m.maxZoom);
+    const [ox, oy] = this.alignOffset;
+    return svg`<g class="mapeditor-tiles" transform="translate(${ox} ${oy}) rotate(${-frame.rotation})">
+      ${list.map((t) => {
+        const key = `${t.z}/${t.x}/${t.y}`, tries = this.tileTries.get(key) ?? 0;
+        const href = m.tileUrl.replace("{z}", String(t.z)).replace("{x}", String(t.x)).replace("{y}", String(t.y))
+          + (tries ? `?try=${tries}` : "");
+        return svg`<image href=${href} x=${t.e0} y=${t.s0} width=${r3(t.e1 - t.e0)} height=${r3(t.s1 - t.s0)}
+          preserveAspectRatio="none" @error=${() => this.retryTile(key)}></image>`;
+      })}</g>`;
+  }
+
+  /** A tile not cached yet: the server fetches it in the background; try again a few times. */
+  private retryTile(key: string) {
+    const tries = this.tileTries.get(key) ?? 0;
+    if (tries >= 5) return;
+    window.setTimeout(() => { this.tileTries.set(key, tries + 1); this.requestUpdate(); }, 1500 * (tries + 1));
+  }
+
   // ---------------------------------------------------------------- side panel
   private panel(d: MapData): TemplateResult {
     return html`
@@ -314,6 +357,7 @@ export class EvacMapEditor extends LitElement {
       select: "Drag points to move them. Arrows show the way out.", point: "Click on the map to place it.",
       connect: "Click two points to connect them.", zone: "Click the corners, then Finish outline.",
       place: "Click on the map to place it.", measure: "Click two ends of a known distance.",
+      align: "Drag the map until it matches the plan.",
     };
     return html`<p class="small muted">${this.t(text[this.tool])}${d.plan && !d.plan.scaled
       ? html`<br><span class="badge badge-warn">${this.t("Plan not measured yet")}</span>` : nothing}</p>`;
@@ -347,6 +391,9 @@ export class EvacMapEditor extends LitElement {
         ${items.map(({ l, i }) => html`<option value="${l.key}|${i.id}">${l.title}: ${i.label}${i.placed ? ` (${this.t("On this floor")})` : ""}</option>`)}
       </select></label>`;
     }
+    if (this.tool === "align" && d.map) {
+      return this.alignPanel(d);
+    }
     if (this.tool === "measure" && this.measured.length === 2 && d.plan) {
       const m = distance(this.measured[0], this.measured[1]);
       return html`<form class="field" @submit=${async (e: Event) => {
@@ -364,6 +411,33 @@ export class EvacMapEditor extends LitElement {
         ${d.canEdit ? html`<button class="btn btn-sm btn-primary">${this.t("Set scale")}</button>` : nothing}</form>`;
     }
     return nothing;
+  }
+
+  private alignPanel(d: MapData): TemplateResult {
+    const m = d.map;
+    const f = m?.frame;
+    const input = (name: string) => (this.querySelector(`.mapeditor-align [name=${name}]`) as HTMLInputElement | null)?.value;
+    return html`<form class="mapeditor-props mapeditor-align" @submit=${async (e: Event) => {
+        e.preventDefault();
+        await this.op({ op: "georef", lat: Number(input("lat")), lon: Number(input("lon")),
+                        rotation: Number(input("rotation") ?? 0) });
+        this.view = extent(this.data ?? d);
+      }}>
+      ${f ? nothing : html`<p class="small">${this.t("Enter the position of the plan's top-left corner.")}</p>`}
+      <div class="grid-xy">
+        <label class="field">${this.t("Latitude")}<input name="lat" type="number" step="any" min="-85" max="85"
+          required .value=${f ? f.lat.toFixed(6) : ""} ?disabled=${!d.canEdit}></label>
+        <label class="field">${this.t("Longitude")}<input name="lon" type="number" step="any" min="-180" max="180"
+          required .value=${f ? f.lon.toFixed(6) : ""} ?disabled=${!d.canEdit}></label></div>
+      ${m?.rotatable ? html`<label class="field">${this.t("Rotation (°)")}<input name="rotation" type="number" step="0.5"
+        min="0" max="359.5" .value=${String(f?.rotation ?? 0)} ?disabled=${!d.canEdit}></label>` : nothing}
+      ${d.canEdit ? html`<button class="btn btn-sm btn-primary">${this.t("Apply")}</button>` : nothing}
+      ${d.plan ? html`<label class="field">${this.t("Plan opacity")}<input type="range" min="0.2" max="1" step="0.05"
+        .value=${String(this.planOpacity)} @input=${(e: Event) => {
+          this.planOpacity = Number((e.target as HTMLInputElement).value); }}></label>` : nothing}
+      ${m?.areaDownload && f && d.canEdit ? html`<button type="button" class="btn btn-sm"
+        @click=${() => this.op({ op: "map.download" })}>${this.t("Download area for offline use")}</button>` : nothing}
+    </form>`;
   }
 
   private selectionPanel(d: MapData): TemplateResult | typeof nothing {

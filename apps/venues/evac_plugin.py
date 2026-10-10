@@ -1,7 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import EventHook, ModuleSpec, NavEntry, PermissionSpec, PluginManifest, ScopeKind
+from apps.core.plugins import (
+    EventHook,
+    ModuleSpec,
+    NavEntry,
+    PermissionSpec,
+    PluginManifest,
+    ScopeKind,
+    SettingsNamespace,
+)
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="venues", name="Venues", version="0.1.0", kind="module")
@@ -51,3 +59,21 @@ def register(r: Registry) -> None:
                    section="event", order=20))
     r.event_hook(EventHook(module="venues", export=transfer.export_venues, import_=transfer.import_venues,
                            order=10))
+    r.settings_namespace(SettingsNamespace(
+        key="maps", title=str(_("Maps")), module="venues", levels=("instance",), order=12,
+        schema={"type": "object", "properties": {
+            "tiles_enabled": {"type": "boolean", "title": "Show map tiles under floor plans and outdoor sites",
+                              "default": True},
+            "tile_url": {"type": "string", "title": "Tile server", "maxLength": 300,
+                         "default": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                         "description": "URL template with {z}, {x}, {y} (and optionally {s}). Tiles are cached "
+                                        "on this server when someone views them."},
+            "attribution": {"type": "string", "title": "Attribution", "maxLength": 200,
+                            "default": "© OpenStreetMap contributors"},
+            "allow_area_download": {"type": "boolean", "title": "Allow downloading map areas for offline use",
+                                    "default": False,
+                                    "description": "Only for a tile server you run yourself: the public "
+                                                   "OpenStreetMap servers forbid bulk downloads (refused)."},
+            "max_zoom": {"type": "integer", "title": "Highest zoom level", "default": 19, "minimum": 10,
+                         "maximum": 20},
+        }}))

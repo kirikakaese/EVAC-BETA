@@ -135,7 +135,9 @@ MAP_STRINGS = [
     "Click the corners, then Finish outline.", "Click two ends of a known distance.", "Distance in metres",
     "Drag points to move them. Arrows show the way out.", "No way out", "elsewhere", "Choose a zone",
     "Choose what to place", "Layers", "Points", "Outdoors", "Next step", "Plan not measured yet", "Tools", "Map",
-    "Loading…",
+    "Loading…", "Align with map", "Latitude", "Longitude", "Rotation (°)", "Apply", "Plan opacity",
+    "Download area for offline use", "Drag the map until it matches the plan.",
+    "Enter the position of the plan's top-left corner.",
 ]
 
 
@@ -244,3 +246,34 @@ def map_version() -> str:
         if p.exists():
             h.update(p.read_bytes())
     return h.hexdigest()[:10]
+
+
+# ------------------------------------------------------------------ map tiles (ADR-0028)
+def tile(request, z, x, y):
+    """A cached map tile. A missing one is fetched in the background (never inside the request): 503 and the
+    editor retries."""
+    from django.contrib.auth.views import redirect_to_login
+    from django.core.cache import cache
+    from django.http import HttpResponse
+
+    from . import geo, tasks
+
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    if not geo.valid_tile(z, x, y) or not geo.config().get("tiles_enabled") or not geo.tile_url():
+        raise Http404
+    if z > int(geo.config().get("max_zoom") or 19):
+        raise Http404
+    path = geo.tile_path(z, x, y)
+    if path.exists():
+        head = path.read_bytes()[:4]
+        response = FileResponse(open(path, "rb"), content_type="image/jpeg" if head[:2] == b"\xff\xd8" else (
+            "image/webp" if head == b"RIFF" else "image/png"))
+        response["Cache-Control"] = "private, max-age=604800"
+        return response
+    if cache.add(f"evac:tile:{z}/{x}/{y}", 1, 60):
+        tasks.fetch_tile.delay(z, x, y)
+    response = HttpResponse(status=503)
+    response["Retry-After"] = "2"
+    response["Cache-Control"] = "no-store"
+    return response
