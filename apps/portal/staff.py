@@ -45,7 +45,8 @@ def manifest(request):
     return HttpResponse(json.dumps(data), content_type="application/manifest+json")
 
 
-SHELL_ASSETS = ("css/evac.css", "js/evac.js", "vendor/htmx.min.js", "icons/evac-192.png", "icons/favicon.svg")
+SHELL_ASSETS = ("css/evac.css", "js/evac.js", "js/scanner.js", "vendor/htmx.min.js", "icons/evac-192.png",
+                "icons/favicon.svg")
 
 
 @cache_control(no_cache=True)

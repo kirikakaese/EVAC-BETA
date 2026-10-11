@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Ticket types and zones" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Ticket types and zones" %}</h1><div class="actions"><a class="btn btn-ghost" href="{% url 'access:index' event.slug %}">{% trans "Attendees" %}</a></div></div>
+<section class="card" aria-labelledby="tt-h"><h2 id="tt-h">{% trans "Ticket types" %}</h2>
+{% if types %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Ticket type" %}</th><th scope="col">{% trans "Grants" %}</th><th scope="col">{% trans "Badge" %}</th><th scope="col">{% trans "Attendees" %}</th></tr></thead>
+<tbody>{% for t in types %}<tr><td><span class="swatch" data-color="{{ t.colour }}" aria-hidden="true"></span> {% if can_manage %}<a href="{% url 'access:type' event.slug t.pk %}"><strong>{{ t.name }}</strong></a>{% else %}<strong>{{ t.name }}</strong>{% endif %}{% if t.source %} <span class="small muted">{{ t.source }}</span>{% endif %}</td>
+<td>{{ t.zones.all|join:", "|default:"–" }}</td><td>{% if t.badge_layout %}<a href="{% url 'content:layout_edit' event.slug t.badge_layout_id %}">{{ t.badge_layout.name }}</a>{% else %}<span class="muted">{% trans "built-in" %}</span>{% endif %}</td>
+<td class="tabular"><a href="{% url 'access:index' event.slug %}?type={{ t.pk }}">{{ t.n }}</a> {% if can_manage and t.n %}<a class="small" href="{% url 'access:badges' event.slug %}?type={{ t.pk }}">{% trans "badges" %}</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No ticket types yet." %}</p>{% endif %}
+{% if can_manage %}<details class="reveal"><summary class="btn btn-sm">{% trans "Add a ticket type" %}</summary><form method="post">{% csrf_token %}<input type="hidden" name="what" value="type">{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Add" %}</button></form></details>{% endif %}</section>
+<section class="card" aria-labelledby="zz-h"><h2 id="zz-h">{% trans "Access zones" %}</h2>
+{% if zones %}<div class="table-wrap"><table><thead><tr><th scope="col">{% trans "Zone" %}</th><th scope="col">{% trans "Who may enter" %}</th><th scope="col">{% trans "Rules" %}</th><th scope="col">{% trans "Counts into" %}</th></tr></thead>
+<tbody>{% for z in zones %}<tr><td>{% if can_manage %}<a href="{% url 'access:zone' event.slug z.pk %}"><strong>{{ z.name }}</strong></a>{% else %}<strong>{{ z.name }}</strong>{% endif %}{% if z.room %} <span class="small muted">{{ z.room.name }}</span>{% endif %}</td>
+<td>{% if z.open_to_all %}{% trans "every valid ticket" %}{% else %}{{ z.ticket_types.all|join:", "|default:"–" }}{% endif %}</td>
+<td class="small">{% if z.checkin %}{% trans "checks in" %} · {% endif %}{% if z.reentry %}{% trans "re-entry allowed" %}{% else %}{% trans "no re-entry" %}{% endif %}</td>
+<td>{% with key=z.area_id|stringformat:"s" %}{% for k, v in areas.items %}{% if k == key %}{{ v }}{% endif %}{% endfor %}{% endwith %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">{% trans "No access zones yet: add the entrance first." %}</p>{% endif %}
+{% if can_manage %}<details class="reveal"><summary class="btn btn-sm">{% trans "Add an access zone" %}</summary><form method="post">{% csrf_token %}<input type="hidden" name="what" value="zone">{% include "portal/_form.html" with form=zone_form %}<button class="btn btn-primary">{% trans "Add" %}</button></form></details>{% endif %}</section>
+{% endblock %}

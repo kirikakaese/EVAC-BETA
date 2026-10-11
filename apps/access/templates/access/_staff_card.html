@@ -1,0 +1,3 @@
+{% load i18n %}<section class="card staff-access"><h2>{% trans "Check-in" %}</h2>
+<ul class="plain">{% for z in ctx.zones %}<li class="station-row"><strong>{{ z.name }}</strong> <a class="btn btn-sm btn-primary" href="{% url 'access:scanner' event.slug z.pk %}">{% trans "Entry" %}</a> <a class="btn btn-sm" href="{% url 'access:scanner' event.slug z.pk %}?dir=out">{% trans "Exit" %}</a></li>{% endfor %}</ul>
+</section>

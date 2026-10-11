@@ -1,0 +1,3 @@
+{% load i18n %}<p class="panel-figures"><b class="tabular">{{ ctx.checked_in }}</b> {% blocktrans with t=ctx.total %}of {{ t }} checked in{% endblocktrans %}{% if ctx.refused %} · <b class="tabular">{{ ctx.refused }}</b> {% trans "refused" %}{% endif %}</p>
+{% if ctx.zones %}<ul class="plain panel-list">{% for z in ctx.zones %}<li><strong>{{ z.name }}</strong> <span class="tabular">{{ z.n }}</span> {% trans "inside" %}</li>{% endfor %}</ul>{% endif %}
+<p><a class="btn btn-sm btn-ghost" href="{% url 'access:index' event.slug %}">{% trans "Attendees" %}</a></p>

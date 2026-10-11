@@ -53,6 +53,9 @@ two-factor verified session may use *sensitive* permissions; other tokens may no
 | `/events/<slug>/incidents/` | incidents (`?status=open`); `POST` reports one, `PATCH` edits; `POST …/<id>/status/` `{status, note}`, `POST …/<id>/note/` `{text}` | `ops.view` / `ops.report` / `ops.manage`, token scope `ops` |
 | `/events/<slug>/ops-log/` | the ops log, newest first; `POST` `{text, sender, recipient, important, incident, client_id}` | `ops.view` / `ops.report` |
 | `/events/<slug>/occupancy/` | areas with `value`, `capacity`, `percent`, `state`; `POST …/<id>/count/` takes a sensor reading `{delta}` / `{in, out}` / `{value}` (+ `id`) | `crowd.view` / `crowd.count`, token scope `crowd` |
+| `/events/<slug>/attendees/` (`?search=`, `?status=valid`, `?ticket_type=`) | attendees with ticket type, code, status, check-in time; `POST` adds one (empty `code`: a random one), `PATCH` edits | `access.view` / `access.manage`, token scope `access` |
+| `GET /events/<slug>/ticket-types/` | ticket types with the zones they grant | `access.view`, token scope `access` |
+| `/events/<slug>/access-zones/` | access zones with how many are `inside`; `POST …/<id>/scan/` `{code, direction: in\|out, id, device}` scans a ticket (hardware scanners, turnstiles) and answers `{result, message, name}` | `access.view` / `access.scan`, token scope `access` |
 | `GET /events/<slug>/shifts/` (`?day=YYYY-MM-DD`) | shifts with team, place, `needed`, `filled` and the people with their status; `GET …/shifts/needed/` lists shifts now and soon that still need people | `crew.view`, token scope `crew` |
 | `GET /events/<slug>/crew-teams/` | crew teams (with `source`/`external_id` when imported from Engelsystem) | `crew.view`, token scope `crew` |
 | `GET /events/<slug>/inventory-items/` (`?status=lent`, `?category=`, `?search=`) | items with asset tag, status and the open loan (who has it, due back) | `inventory.view`, token scope `inventory` |

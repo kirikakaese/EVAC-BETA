@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ t.name }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ t.name }}</h1><div class="actions"><a class="btn btn-ghost" href="{% url 'access:types' event.slug %}">{% trans "Ticket types and zones" %}</a></div></div>
+<div class="grid-2">
+<section class="card" aria-labelledby="e-h"><h2 id="e-h">{% trans "Ticket type" %}</h2><form method="post">{% csrf_token %}{% include "portal/_form.html" with form=form %}<button class="btn btn-primary">{% trans "Save" %}</button> <button class="btn btn-ghost" name="delete" value="1" data-confirm="{% trans 'Delete this ticket type?' %}">{% trans "Delete" %}</button></form></section>
+<section class="card" aria-labelledby="b-h"><h2 id="b-h">{% trans "Badge" %}</h2>
+{% if t.badge_layout %}<p>{% blocktrans with l=t.badge_layout.name %}Badges use the layout “{{ l }}”.{% endblocktrans %}</p><p><a class="btn" href="{% url 'content:layout_edit' event.slug t.badge_layout_id %}">{% trans "Edit in the layout editor" %}</a> <a class="btn btn-ghost" href="{% url 'access:badges' event.slug %}?type={{ t.pk }}">{% trans "Print badges" %}</a></p>
+{% else %}<p>{% trans "Badges use the built-in design. Create a badge layout to design them in the layout editor: name, organisation, ticket type and the ticket's QR code are filled in for each attendee." %}</p>
+<form method="post">{% csrf_token %}<button class="btn btn-primary" name="badge" value="create">{% trans "Create a badge layout" %}</button></form>{% endif %}
+<p class="small muted">{% trans "Placeholders: {{ attendee.name }}, {{ attendee.company }}, {{ attendee.code }} (for a QR code element), {{ attendee.zones }}, {{ ticket.name }}, {{ event.name }}." %}</p></section></div>
+{% endblock %}
