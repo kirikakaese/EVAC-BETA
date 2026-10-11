@@ -736,8 +736,8 @@ def _notify_screens(ann: Announcement) -> None:
     from apps.screens.models import Screen
 
     def send():
-        for screen in Screen.objects.paired().filter(event=ann.event):
-            channel.send(screen, "program.changed", {})
+        channel.send_many([(sid, "program.changed", {}) for sid in
+                           Screen.objects.paired().filter(event=ann.event).values_list("pk", flat=True)])
     transaction.on_commit(send)
 
 
@@ -830,8 +830,9 @@ def send_screens(d: Delivery) -> dict[str, Any]:
     from apps.screens.models import Screen
 
     ann = d.announcement
-    screens = [s for s in Screen.objects.paired().filter(event=ann.event).select_related("venue", "zone", "room")
-               if applies_to(ann, Target(screen=s))]
+    paired = list(Screen.objects.paired().filter(event=ann.event).select_related("venue", "zone", "room"))
+    groups = Screen.group_ids_of(paired)
+    screens = [s for s in paired if applies_to(ann, Target(screen=s, group_ids=groups[s.pk]))]
     _notify_screens(ann)
     return {"recipients": len(screens), "detail": _("%(n)s screens") % {"n": len(screens)}}
 

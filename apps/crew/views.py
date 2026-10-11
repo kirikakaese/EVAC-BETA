@@ -16,7 +16,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.events import rbac
-from apps.portal.shortcuts import event_view
+from apps.portal.shortcuts import event_view, safe_next
 
 from . import services
 from .forms import AddPersonForm, MemberForm, ShiftForm, SkillForm, TeamForm
@@ -43,8 +43,7 @@ def _can_checkin(request: Any, event: Any, team: Team) -> bool:
 
 
 def _back(request: Any, default: str) -> Any:
-    nxt = request.POST.get("next") or ""
-    return redirect(nxt if nxt.startswith("/") and not nxt.startswith("//") else default)
+    return redirect(safe_next(request, default))
 
 
 # ------------------------------------------------------------------ shift board

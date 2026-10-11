@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyRoot, applyState, displayState, inRange, localHHMM, rootTransform } from "../src/player/screen-settings";
+import { applyRoot, applyState, displayState, inRange, localHHMM, rootTransform, wallTile } from "../src/player/screen-settings";
 import { bootCheck, markClean, recentReloads, safeReload } from "../src/player/resilience";
 import { log, logLines, onErrorStorm, recordError } from "../src/player/report";
 import { clearCaches } from "../src/player/remote";
@@ -94,5 +94,24 @@ describe("resilience", () => {
     expect(localStorage.getItem("evac.player.token")).toBe("evacscreen_x");
     expect(localStorage.getItem("evac.player.bundle")).toBeNull();
     expect(localStorage.getItem("other")).toBe("1");
+  });
+});
+
+describe("video walls", () => {
+  it("moves the stage so each display shows its tile", () => {
+    expect(wallTile({})).toBeNull();
+    const left = rootTransform({ wall_columns: 2, wall_rows: 1, wall_column: 1 });
+    expect(left.width).toBe("200vw");
+    expect(left.height).toBe("100vh");
+    expect(left.transform).toBe("translate(-25%, -50%)");
+    expect(rootTransform({ wall_columns: 2, wall_rows: 1, wall_column: 2 }).transform).toBe("translate(-75%, -50%)");
+    const bezel = rootTransform({ wall_columns: 2, wall_rows: 2, wall_column: 2, wall_row: 2, wall_bezel: 2 });
+    expect(bezel.width).toBe("202vw");
+    expect(bezel.transform).toBe(`translate(${-(152 / 202 * 100).toFixed(4)}%, ${-(152 / 202 * 100).toFixed(4)}%)`);
+    expect(wallTile({ wall_columns: 3, wall_column: 9 })?.col).toBe(3);  // clamped
+  });
+
+  it("never splits the evacuation layer", () => {
+    expect(rootTransform({ wall_columns: 3, wall_column: 2 }, false).transform).toBe("translate(-50%, -50%)");
   });
 });

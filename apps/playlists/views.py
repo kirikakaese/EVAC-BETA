@@ -14,6 +14,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.content import files as content_files
+from apps.content import plugin_widgets
 from apps.content import services as content_services
 from apps.content import tokens as tok
 from apps.content.layout_views import editor_version
@@ -357,6 +358,7 @@ def _preview_config(event, program, found, vars_, t) -> dict | None:
     return {"layout": data, "at": t, "timezone": event.timezone, "vars": vars_,
             "assets": {str(a.pk): content_services.asset_entry(a, content_files.portal_url) for a in assets},
             "fonts": content_services.font_stacks(event), "program": _program_data(event),
+            "plugins": plugin_widgets.preview_config(event),
             "themeVariables": tok.css_variables(values, families=content_services.font_stacks(event), urls=images)}
 
 

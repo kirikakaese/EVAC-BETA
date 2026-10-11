@@ -149,6 +149,13 @@ class LayoutCreateForm(forms.Form):
         return key
 
 
+class TemplateUseForm(LayoutCreateForm):
+    """"Use template": only a name; size and content come from the template."""
+
+    size = None  # type: ignore[assignment]
+    starter = None  # type: ignore[assignment]
+
+
 class LayoutMetaForm(forms.ModelForm):
     class Meta:
         model = Layout

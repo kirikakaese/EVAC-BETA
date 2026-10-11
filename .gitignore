@@ -37,3 +37,7 @@ node_modules/
 *.swp
 dump.rdb
 e2e-output/
+
+# Tauri build output
+deploy/tauri/src-tauri/target/
+deploy/tauri/src-tauri/gen/

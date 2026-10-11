@@ -60,6 +60,16 @@ def register(r: Registry) -> None:
 
     for prefix, viewset, basename in api.ROUTES:
         r.api_route(prefix, viewset, basename)
+    from apps.core.plugins import LayoutTemplateSpec
+
+    from . import layout_templates
+
+    r.layout_template(LayoutTemplateSpec(key="program-stage", name=str(_("Stage screen")), category=str(_("Program")),
+                                         description=str(_("The room's name, the time, now and next.")),
+                                         data=layout_templates.stage, module="program", order=200))
+    r.layout_template(LayoutTemplateSpec(key="program-day", name=str(_("Day program")), category=str(_("Program")),
+                                         description=str(_("Today's sessions and live changes.")),
+                                         data=layout_templates.day, module="program", order=210))
     r.editor_choices("programStages", _stage_choices, module="program")
     r.editor_choices("programData", services.screen_payload, module="program")
 

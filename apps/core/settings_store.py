@@ -48,10 +48,17 @@ def chain(*, venue=None, event=None, screen_group=None, screen_groups=(), screen
 
 
 def _layers(ns_key: str, scopes: list[tuple[str, str]]) -> list[tuple[str, dict[str, Any]]]:
+    from django.db.models import Q
+
     from .models import SettingValue
 
-    rows = {(r.level, r.scope_id): r.values for r in SettingValue.objects.filter(namespace=ns_key)
-            .filter(level__in=[lvl for lvl, _ in scopes])}
+    if not scopes:
+        return []
+    # exactly the rows of these scopes (not every screen's row of the namespace)
+    match = Q()
+    for lvl, sid in scopes:
+        match |= Q(level=lvl, scope_id=sid)
+    rows = {(r.level, r.scope_id): r.values for r in SettingValue.objects.filter(namespace=ns_key).filter(match)}
     return [(lvl, rows.get((lvl, sid), {})) for lvl, sid in scopes]
 
 
@@ -63,6 +70,25 @@ def resolve(ns_key: str, **objs) -> settings_schema.Resolved:
 
 def get(ns_key: str, **objs) -> dict[str, Any]:
     return resolve(ns_key, **objs).values
+
+
+def get_many(ns_key: str, screens: list[Any], *, event: Any = None, venue: Any = None) -> dict[str, dict[str, Any]]:
+    """``get(ns_key, event=…, screen=s)`` for many screens with one query (an alarm reaches every screen):
+    ``{screen id: values}``. Screen groups are not part of the chain, as in ``get(…, screen=s)``."""
+    from .models import SettingValue
+
+    ns = namespace(ns_key)
+    base = [s for s in chain(venue=venue, event=event) if s[0] in ns.levels]
+    with_screen = "screen" in ns.levels
+    wanted = {(lvl, sid) for lvl, sid in base} | ({("screen", str(s.pk)) for s in screens} if with_screen else set())
+    rows = {(r.level, r.scope_id): r.values for r in SettingValue.objects.filter(
+        namespace=ns_key, level__in={lvl for lvl, _ in wanted}) if (r.level, r.scope_id) in wanted}
+    layers = [(lvl, rows.get((lvl, sid), {})) for lvl, sid in base]
+    out = {}
+    for s in screens:
+        mine = layers + ([("screen", rows.get(("screen", str(s.pk)), {}))] if with_screen else [])
+        out[str(s.pk)] = settings_schema.resolve(ns.schema, mine).values
+    return out
 
 
 def raw(ns_key: str, level: str, scope_id: str = "") -> dict[str, Any]:

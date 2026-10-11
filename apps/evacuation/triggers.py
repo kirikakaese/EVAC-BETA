@@ -235,7 +235,7 @@ def process_due(event: Any = None, now: Any = None) -> int:
     done = 0
     for pk in list(qs.values_list("pk", flat=True)):
         with transaction.atomic():
-            req = EvacRequest.objects.select_for_update().select_related("event", "zone").get(pk=pk)
+            req = EvacRequest.objects.select_for_update(of=("self",)).select_related("event", "zone").get(pk=pk)
             if req.status != policy.Status.PENDING:
                 continue
             _two, seconds = two_person(req.event)

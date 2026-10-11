@@ -87,6 +87,8 @@ class LostFound(models.Model):
     public = models.BooleanField(_("list publicly"), default=True,
                                  help_text=_("Found items: what, category, colour and day on the public page."))
     source = models.CharField(max_length=10, default="staff")
+    # set by the staff app's offline queue: a replayed submission finds the item it already created
+    client_id = models.CharField(max_length=64, blank=True, db_index=True, editable=False)
     token = models.CharField(max_length=32, default=_token, unique=True, editable=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="+")

@@ -1,6 +1,6 @@
 # Announcement channels: e-mail, ntfy, Matrix, Telegram, Mastodon
 
-Five extensions that deliver [announcements](../OPERATOR_HANDBOOK.md#5d-announcements) beyond screens. Each is
+Five extensions that deliver [announcements](../OPERATOR_HANDBOOK.md#11-announcements) beyond screens. Each is
 configured under *Settings → Extensions*, either once for the whole instance (events then choose "use the
 instance configuration") or per event. Secrets (tokens) are encrypted at rest and never shown again. *Test
 connection* checks the setup without sending an announcement (ntfy sends a lowest-priority test message).

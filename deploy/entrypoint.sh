@@ -32,8 +32,10 @@ case "$1" in
     ;;
   channels)
     wait_for_db
-    # Dedicated realtime service: WebSockets (/ws/) of screens, dashboards and the staff PWA
-    exec daphne -b 0.0.0.0 -p 8001 --proxy-headers evac.asgi:application
+    # Dedicated realtime service: WebSockets (/ws/) of screens, dashboards and the staff PWA. Several ASGI workers
+    # share the port: one process cannot deliver an alarm to 1,000 screens within 2 s (ADR-0047)
+    exec gunicorn evac.asgi:application -k uvicorn_worker.UvicornWorker --bind 0.0.0.0:8001 \
+      --workers "${WS_WORKERS:-3}" --timeout 90 --forwarded-allow-ips "${FORWARDED_ALLOW_IPS:-127.0.0.1}"
     ;;
   worker)
     wait_for_db

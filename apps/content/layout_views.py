@@ -10,12 +10,12 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_safe
 
 from apps.core.middleware import allow_code_frames
 from apps.events import rbac
@@ -27,6 +27,7 @@ from .models import Asset, Layout, LayoutVersion, owner_q
 
 #: every string the editor shows (frontend/src/editor uses them as keys; a test keeps both in sync)
 EDITOR_STRINGS = [
+    "Plugin widget", "Default", "No plugin widgets installed",
     # safety signs and checks (ADR-0033)
     "Ahead", "Ahead left", "Ahead right", "Automatic (the screen's way out)", "Back left",
     "Back right", "Checks", "Direction", "Direction arrow", "E001 Emergency exit (left)",
@@ -90,6 +91,46 @@ def layouts(request, slug, *, event):
 
 
 @event_view("content.view", module="content")
+def templates(request, slug, *, event):
+    """Template gallery (roadmap 9.3, ADR-0046): live thumbnails; "use" copies one into a new layout."""
+    from . import gallery
+
+    specs = gallery.available(event)
+    can_edit = _perm(request, event, "content.edit")
+    if request.method == "POST":
+        if not can_edit:
+            raise PermissionDenied
+        spec = gallery.get(event, request.POST.get("template", ""))
+        form = forms.TemplateUseForm(request.POST, event=event)
+        if spec is not None and form.is_valid():
+            layout = services.create_layout(event, name=form.cleaned_data["name"], key=form.key(),
+                                            actor=request.user, request=request, data=spec.data())
+            messages.success(request, _("Layout created from the template “%(name)s”.") % {"name": spec.name})
+            return redirect("content:layout_edit", slug, layout.pk)
+        messages.error(request, _("Give the new layout a name."))
+    theme = services.event_theme(event)
+    values = services.resolved_tokens(theme)
+    stacks = services.font_stacks(event)
+    config = {"layouts": {s.key: s.data() for s in specs}, "at": int(timezone.now().timestamp() * 1000),
+              "timezone": event.timezone, "vars": editor_config_vars(event), "assets": {}, "fonts": stacks,
+              "themeVariables": tok.css_variables(values, families=stacks)}
+    return render(request, "content/templates.html", {
+        "event": event, "specs": specs, "config": config, "can_edit": can_edit, "editor_version": editor_version(),
+        "categories": sorted({s.category for s in specs}),
+    })
+
+
+def editor_config_vars(event) -> dict:
+    """Sample template variables for the editor and previews (screens fill in their own)."""
+    return {"event": {"name": event.name, "slug": event.slug},
+            "screen": {"name": "Screen", "zone": "Zone", "room": "Room", "venue": "Venue", "tags": []},
+            # sample values for evacuation layouts (ADR-0033)
+            "evac": {"stage": "Evacuate", "text": "Please leave the building now via the nearest exit.",
+                     "direction": "Exit East", "target": "Assembly point Meadow", "arrow": "ahead_left",
+                     "drill": ""}}
+
+
+@event_view("content.view", module="content")
 def layout(request, slug, pk, *, event):
     obj = _layout(event, pk)
     can_edit, can_publish = _perm(request, event, "content.edit"), _perm(request, event, "content.publish")
@@ -146,17 +187,13 @@ def editor_config(request, event, obj: Layout) -> dict:
         "fontChoices": [{"value": v, "label": str(label)} for v, label in services.font_choices(event)
                         if v != "system"],
         "themeVariables": tok.css_variables(values, families=services.font_stacks(event), urls=images),
-        "vars": {"event": {"name": event.name, "slug": event.slug},
-                 "screen": {"name": "Screen", "zone": "Zone", "room": "Room", "venue": "Venue", "tags": []},
-                 # sample values for evacuation layouts (ADR-0033); screens fill in their own
-                 "evac": {"stage": "Evacuate", "text": "Please leave the building now via the nearest exit.",
-                          "direction": "Exit East", "target": "Assembly point Meadow", "arrow": "ahead_left",
-                          "drill": ""}},
+        "vars": editor_config_vars(event),
         "timezone": event.timezone,
         "urls": {"save": reverse("content:layout_save", args=[event.slug, obj.pk]),
                  "publish": reverse("content:layout_publish", args=[event.slug, obj.pk]),
                  "back": reverse("content:layout", args=[event.slug, obj.pk]),
-                 "assets": reverse("content:assets", args=[event.slug])},
+                 "assets": reverse("content:assets", args=[event.slug]),
+                 "sources": reverse("content:sources", args=[event.slug, "x"])[:-2]},  # + "<key>/"
         "canPublish": _perm(request, event, "content.publish"),
         "canCode": services.may_write_code(request.user, event, request),
         "types": list(layout_format.ELEMENT_TYPES),
@@ -175,6 +212,19 @@ def editor_choices(event) -> dict:
 
 
 EDITOR_DIR = Path(settings.BASE_DIR) / "static" / "editor"
+
+
+@require_safe
+@event_view("content.view", module="content")
+def source(request, slug, key, *, event):
+    """A data source declared by a plugin widget (ADR-0045), for the editor and previews."""
+    from . import plugin_widgets
+
+    try:
+        return JsonResponse({"key": key, "data": plugin_widgets.source_payload(event, key, user=request.user,
+                                                                                request=request)})
+    except KeyError:
+        raise Http404 from None
 
 
 @lru_cache(maxsize=1)

@@ -119,7 +119,7 @@ The wizard cannot be re-run once an account exists.
 - **Settings** are typed and inherited: instance → venue → event → screen group → screen. Pages show
   whether a value is *overridden here* or *inherited*.
 
-## 4a. Venues, exits and routes
+## 6. Venues, exits and routes
 
 *Venues* lists the event's venues (shared with other events at the same place). A venue page holds buildings,
 floors, zones and rooms, and the **route graph** used for evacuation arrows and wayfinding:
@@ -159,7 +159,7 @@ works with a tile server you run yourself (and *Allow area download* ticked), be
 servers forbid bulk downloads. With the public servers, open the map at the zoom levels you need before the
 event instead.
 
-## 4b. Evacuation (phase 3, in progress)
+## 7. Evacuation
 
 Switch the **Evacuation** module on (*Settings → Modules*; it is off by default). For each event an organiser
 reads and accepts the **safety statement** once (when switching it on for the event, in the wizard, on
@@ -209,7 +209,7 @@ legally required systems ([EVACUATION.md](EVACUATION.md)).
   is lost.
 - During an alarm the **watchdog** alerts the control room when screens have not confirmed it after 30 s.
 
-## 5a. Screens
+## 8. Screens
 
 - **Pair**: open `<your EVAC>/player/` in the screen's browser (kiosk mode, TV browser, Raspberry Pi). It shows
   a six-character code and a QR code. Under *Screens → Pair a screen* type the code (or scan the QR with your
@@ -244,8 +244,13 @@ legally required systems ([EVACUATION.md](EVACUATION.md)).
   for building an SD-card image for many screens). Other kiosk browsers should start `/player/` in full
   screen with autoplay allowed (Chromium: `--kiosk --autoplay-policy=no-user-gesture-required
   --auto-accept-this-tab-capture`).
+- **Other players**: `deploy/tauri/` builds **EVAC Player**, a small native app for Linux, Windows and macOS that
+  opens the player full screen without browser chrome (`evac-player --server=https://<your EVAC>`; see its
+  README). `deploy/info-beamer/` is a package for **info-beamer hosted** devices: a text-only player showing the
+  evacuation state with its direction, announcements and the time (no layouts, widgets or media); it pairs with a
+  code like any screen.
 
-## 5b. Design & assets
+## 9. Design & assets
 
 - **Themes** (*Design & assets → Themes*): colours for dark and light mode, fonts, text sizes, spacing, corner
   radius, shadows, background (colour, gradient, image), logo and slide transitions. A theme can inherit
@@ -261,12 +266,19 @@ legally required systems ([EVACUATION.md](EVACUATION.md)).
   **shared library** (instance admins: tick *Add to the shared library* when uploading) is visible to every
   event.
 - **Layouts** are designed in the layout editor (see the [Designer Guide](DESIGNER_GUIDE.md)); screens show
-  published layouts (through playlists, schedules and overrides, see 5c; without them the event's default
+  published layouts (through playlists, schedules and overrides, see 10; without them the event's default
   layout) and keep them, with all their files, for offline playback.
   Publishing can be scheduled (needs the beat service).
 - *Settings → Screen content*: maximum upload size (default 512 MB), largest image edge, AVIF, VP9.
+- **Template gallery** (*Layouts → Start from a template*): ready-made layouts (welcome, information board,
+  portrait information, countdown, sponsor slideshow, picture with ticker, wayfinding, and with the program
+  module stage screen and day program) shown live in the event's theme. *Use template* creates an ordinary layout
+  to change and publish; plugins can add their own templates.
+- **Plugin widgets**: installed plugins can bring their own widgets (for example the weather example plugin);
+  they appear in the layout editor under *Plugin widget* with a settings form, and screens keep their data for
+  offline playback.
 
-## 5c. Playback: playlists, schedules and overrides
+## 10. Playback: playlists, schedules and overrides
 
 *Playback* (modules *Playlists*, *Schedules*, *Live overrides*; each can be switched off per event) decides what
 every screen shows. Highest wins:
@@ -296,7 +308,7 @@ every screen shows. Highest wins:
   screens of a group change at the same moment and keep playing (and following schedules) without network.
 - Webhooks: `override.started`, `override.cancelled`.
 
-## 5d. Announcements
+## 11. Announcements
 
 *Announcements* (module *Announcements*) are written once and go out through the channels you tick: **screens**,
 the **public feed**, **staff notifications** (the bell), **webhooks**, and - once set up under *Settings →
@@ -340,7 +352,7 @@ failed, with recipients and retries).
   "Level. Title. Text.".
 - Webhooks: `announcement.published` (per occurrence), `announcement.pending`, `announcement.cancelled`.
 
-## 5e. Staff app (PWA)
+## 12. Staff app (PWA)
 
 Staff open **Staff app** in the event menu (`/e/<event>/staff/`) on their phone and install it with the
 browser's *Add to home screen*. The page shows
@@ -355,11 +367,21 @@ browser's *Add to home screen*. The page shows
   vibration until *Got it*.
 - **Offline**: the page works without network. Approvals and other actions taken offline are kept on the phone
   ("1 action waiting to be sent") and sent automatically when the connection is back.
+- **Sync state**: the ⇅ badge in the top bar appears on every page while actions (approvals, found items, check-in
+  scans, door counts) wait to be sent or the device is offline; it leads back to the staff app, which lists them.
+- **Scan a code** (phones with a camera and a browser that reads QR codes, e.g. Chrome on Android): opens the
+  camera and follows EVAC links in codes: inventory labels, item pages and others.
+- **Log a found item**: what, where, details. Works offline like approvals; replays never create duplicates. The
+  full form (photo, storage place) stays under *Helpdesk → Lost & found*.
+- **Backup notifications (ntfy)**: when the ntfy extension is set up for the event, the staff app shows its topic;
+  staff subscribe in the ntfy app as a second way to receive announcements and staff alerts.
+- The other cards come from the modules: incidents (*Report*), door counter, my shifts with check-in, inventory,
+  check-in gates, helpdesk and the evacuation status with the panic page for those allowed.
 
 Set `EVAC_VAPID_SUBJECT` (e.g. `mailto:ops@example.org`) so push services can reach you; the push keys are
 created automatically.
 
-## 5f. Data & widgets
+## 13. Data & widgets
 
 **Data & widgets** in the event menu shows external data on screens without code.
 
@@ -376,7 +398,7 @@ Screens keep the latest data offline and update when the feed changes. Feeds can
 an instance administrator can allow private networks (venue sensors) under *Settings → General → Data feeds* (instance settings).
 MQTT sources follow in phase 6.
 
-## 5g. Screen packs
+## 14. Screen packs
 
 **Screen packs** in the event menu moves content between events and servers as `.evacpack` files.
 
@@ -393,7 +415,7 @@ MQTT sources follow in phase 6.
 - On the command line: `manage.py evac_pack key`, `verify <file>`, `export <event> <file> --layouts=<id,…>`,
   `import <event> <file> [--yes]`.
 
-## 5h. Program
+## 15. Program
 
 **Program** in the event menu holds the event's sessions on stages, with speakers and tracks (ADR-0038).
 
@@ -417,7 +439,7 @@ MQTT sources follow in phase 6.
 Imports only reach public addresses. Set `EVAC_IMPORT_ALLOW_PRIVATE=1` for a pretalx or calendar server on the venue
 network.
 
-## 5i. Incidents, ops log and the control room
+## 16. Incidents, ops log and the control room
 
 The **Operations** part of the event menu (module *Incidents & control room*, ADR-0039) holds the control room's
 tools. The built-in roles *Control room* and *Security* have all of it, and *Viewer* can read it.
@@ -457,7 +479,7 @@ tools. The built-in roles *Control room* and *Security* have all of it, and *Vie
 
   Panels of switched-off modules are not shown.
 
-## 5j. Occupancy
+## 17. Occupancy
 
 **Occupancy** in the event menu (module *Occupancy*, ADR-0040) counts people per area: a room, a zone or any place
 such as a queue or a tent.
@@ -491,7 +513,81 @@ such as a queue or a tent.
 
 Occupancy holds no personal data. Clicks and sensors record a device label, not who clicked.
 
-## 5n. Access: attendees, badges and check-in
+## 18. Crew and shifts
+
+**Shift board** in the event menu (module *Crew*, ADR-0041).
+
+1. **Teams and crew** (*Teams and crew*): add teams with a colour, a meeting point and their leads, and skills
+   such as *First aid* or *Forklift*. Add crew members with a name and a contact (phone or DECT); link an account
+   when the person logs in to EVAC. Members can belong to several teams. Team leads manage their own team without
+   any other role; for more, grant `crew.manage` or `crew.checkin` scoped to a team (Roles → assign with scope
+   *Team*).
+2. **Shifts**: *New shift* with team, title, room or place, start and end, people needed, skills, and whether crew
+   may sign up themselves. The board shows each day, the people per shift and a **Needed now** list.
+3. **Rules** (Settings → Crew): at most 10 hours a day, 30 minutes rest between shifts, sign-up up to 30 minutes
+   after the start, cancel until 60 minutes before, no-show after 15 minutes, "needed now" looks 3 hours ahead.
+   A lead can add someone anyway (*anyway* on the shift page); the audit log records it.
+4. **Check-in**:
+   - **QR code**: every shift page has a QR code; *Print QR code* prints a sheet for the meeting point. Crew scan
+     it with the phone camera and press *Check in* (and later *Check out*). Someone who is not on the shift joins
+     it if the rules allow ("walk-in").
+   - **Staff app**: *My shifts* has *Check in*, *Check out* and *Cancel*; *Help needed* signs up with one tap.
+     Both work offline and are sent when the phone is back.
+   - **Team lead**: on the shift page, *Check in*, *Check out*, *No-show*, *Remove* per person.
+5. **No-shows**: a sign-up not checked in 15 minutes after the start becomes a no-show; the team leads get a
+   notification and the ops log a line, and the shift is "needed" again.
+6. **On screens**: *Add shift board widgets for screens* on the shift board creates *Crew: needed now* and
+   *Crew: shift board*. Put one on a layout with a **Data widget** element (Design → Layouts) and show the layout
+   on the crew-room screen. Sign-ups and check-ins appear there within seconds.
+7. **Engelsystem**: Settings → Extensions → *Engelsystem* imports angel types, shifts and sign-ups
+   ([engelsystem](extensions/engelsystem.md)). *Sync now* is also on the shift board.
+
+## 19. Inventory
+
+**Inventory** in the event menu (module *Inventory*, ADR-0042): radios, keys, vehicles, tools, laptops.
+
+1. **Items**: *New item* with a name, a category (with its usual loan time), serial number, where it is kept and a
+   photo. Leave the asset tag empty for the next number (`EV-0001`; the prefix is in Settings → Inventory).
+   *How many* creates identical items (e.g. 20 radios) with consecutive tags.
+2. **Labels**: *Print QR labels* (all, a category, or the items just created) prints a sheet with QR code, tag and
+   name. Stick them on the items. The QR code opens the item's page on any phone of someone with
+   `inventory.view`.
+3. **Lend**: scan the label (or open the item). Enter who gets it (a name, or choose an account), a contact, the
+   due time (pre-filled from the category), optionally take a photo, and let them sign on the screen with a
+   finger. *Lend*. Settings → Inventory can make the signature required.
+4. **Take back**: scan the label again, choose the condition (OK, damaged, incomplete), optionally a note and a
+   photo, *Take back*. Damaged or incomplete items go to *maintenance* with a note; set them *available* again
+   from *Notes and maintenance* when fixed.
+5. **Who has what** is at the top of the inventory page; overdue loans are marked. Borrowers with an account and
+   whoever lent the item get one reminder when it is overdue; the ops log gets a line. The control room has a
+   *Lent out* panel, and the staff app shows each person what they have.
+6. **Map**: items can be placed on the floor plans (Venues → Map, layer *Inventory*).
+
+Lending needs `inventory.lend`; adding items, labels and maintenance need `inventory.manage`.
+
+## 20. Helpdesk: lost & found, requests, FAQ
+
+**Helpdesk** and **Lost & found** in the event menu (module *Helpdesk*, ADR-0043).
+
+- **Public help page** `/public/<event>/help/` (link on the helpdesk page, e.g. as a QR code on screens and
+  posters): the FAQ, found items (what, category, colour and day only), *Ask the helpdesk* and *I lost something*.
+  Visitors get a status link that shows the state and your replies; they need no account. Settings → Helpdesk
+  switches the page, the forms and the found list off.
+- **Requests**: new requests notify the helpdesk; accessibility requests also go to the ops log. Open one to
+  assign it, set its status (new, in progress, waiting, done) and add notes. Tick *Reply* to show a note to the
+  requester on their status page. The desk can also log a request from someone at the counter (*New request*).
+- **Lost & found**: *Found item* logs what was handed in (what, category, colour, where and when, a photo, where it
+  is kept, the finder). *Lost report* records what someone lost and how to reach them. Each item page suggests
+  look-alikes of the other kind (same category and colour, shared words); *Match* links them, the visitor's
+  status page then says "Probably found: please come to the helpdesk". *Hand over* records to whom (check their
+  ID). *Close* ends an item that is not handed over (e.g. given to the police).
+- **FAQ**: questions with an answer and a topic. *On the public help page* and *on screens* choose where they
+  appear (data source *Helpdesk: FAQ* for a custom widget).
+
+Contacts of visitors are only visible to the helpdesk. Delete them after the event (export and purge the event, or
+delete the rows) according to your retention rules.
+
+## 21. Access: attendees, badges and check-in
 
 **Attendees** and **Check-in** in the event menu (module *Access*, ADR-0044).
 
@@ -528,100 +624,40 @@ Occupancy holds no personal data. Clicks and sensors record a device label, not 
 The offline list on scanner devices holds names and ticket types, not e-mail addresses or ticket codes (only
 hashes of them). Delete attendees after the event according to your retention rules (export and purge the event).
 
-## 5k. Crew and shifts
-
-**Shift board** in the event menu (module *Crew*, ADR-0041).
-
-1. **Teams and crew** (*Teams and crew*): add teams with a colour, a meeting point and their leads, and skills
-   such as *First aid* or *Forklift*. Add crew members with a name and a contact (phone or DECT); link an account
-   when the person logs in to EVAC. Members can belong to several teams. Team leads manage their own team without
-   any other role; for more, grant `crew.manage` or `crew.checkin` scoped to a team (Roles → assign with scope
-   *Team*).
-2. **Shifts**: *New shift* with team, title, room or place, start and end, people needed, skills, and whether crew
-   may sign up themselves. The board shows each day, the people per shift and a **Needed now** list.
-3. **Rules** (Settings → Crew): at most 10 hours a day, 30 minutes rest between shifts, sign-up up to 30 minutes
-   after the start, cancel until 60 minutes before, no-show after 15 minutes, "needed now" looks 3 hours ahead.
-   A lead can add someone anyway (*anyway* on the shift page); the audit log records it.
-4. **Check-in**:
-   - **QR code**: every shift page has a QR code; *Print QR code* prints a sheet for the meeting point. Crew scan
-     it with the phone camera and press *Check in* (and later *Check out*). Someone who is not on the shift joins
-     it if the rules allow ("walk-in").
-   - **Staff app**: *My shifts* has *Check in*, *Check out* and *Cancel*; *Help needed* signs up with one tap.
-     Both work offline and are sent when the phone is back.
-   - **Team lead**: on the shift page, *Check in*, *Check out*, *No-show*, *Remove* per person.
-5. **No-shows**: a sign-up not checked in 15 minutes after the start becomes a no-show; the team leads get a
-   notification and the ops log a line, and the shift is "needed" again.
-6. **On screens**: *Add shift board widgets for screens* on the shift board creates *Crew: needed now* and
-   *Crew: shift board*. Put one on a layout with a **Data widget** element (Design → Layouts) and show the layout
-   on the crew-room screen. Sign-ups and check-ins appear there within seconds.
-7. **Engelsystem**: Settings → Extensions → *Engelsystem* imports angel types, shifts and sign-ups
-   ([engelsystem](extensions/engelsystem.md)). *Sync now* is also on the shift board.
-
-## 5l. Inventory
-
-**Inventory** in the event menu (module *Inventory*, ADR-0042): radios, keys, vehicles, tools, laptops.
-
-1. **Items**: *New item* with a name, a category (with its usual loan time), serial number, where it is kept and a
-   photo. Leave the asset tag empty for the next number (`EV-0001`; the prefix is in Settings → Inventory).
-   *How many* creates identical items (e.g. 20 radios) with consecutive tags.
-2. **Labels**: *Print QR labels* (all, a category, or the items just created) prints a sheet with QR code, tag and
-   name. Stick them on the items. The QR code opens the item's page on any phone of someone with
-   `inventory.view`.
-3. **Lend**: scan the label (or open the item). Enter who gets it (a name, or choose an account), a contact, the
-   due time (pre-filled from the category), optionally take a photo, and let them sign on the screen with a
-   finger. *Lend*. Settings → Inventory can make the signature required.
-4. **Take back**: scan the label again, choose the condition (OK, damaged, incomplete), optionally a note and a
-   photo, *Take back*. Damaged or incomplete items go to *maintenance* with a note; set them *available* again
-   from *Notes and maintenance* when fixed.
-5. **Who has what** is at the top of the inventory page; overdue loans are marked. Borrowers with an account and
-   whoever lent the item get one reminder when it is overdue; the ops log gets a line. The control room has a
-   *Lent out* panel, and the staff app shows each person what they have.
-6. **Map**: items can be placed on the floor plans (Venues → Map, layer *Inventory*).
-
-Lending needs `inventory.lend`; adding items, labels and maintenance need `inventory.manage`.
-
-## 5m. Helpdesk: lost & found, requests, FAQ
-
-**Helpdesk** and **Lost & found** in the event menu (module *Helpdesk*, ADR-0043).
-
-- **Public help page** `/public/<event>/help/` (link on the helpdesk page, e.g. as a QR code on screens and
-  posters): the FAQ, found items (what, category, colour and day only), *Ask the helpdesk* and *I lost something*.
-  Visitors get a status link that shows the state and your replies; they need no account. Settings → Helpdesk
-  switches the page, the forms and the found list off.
-- **Requests**: new requests notify the helpdesk; accessibility requests also go to the ops log. Open one to
-  assign it, set its status (new, in progress, waiting, done) and add notes. Tick *Reply* to show a note to the
-  requester on their status page. The desk can also log a request from someone at the counter (*New request*).
-- **Lost & found**: *Found item* logs what was handed in (what, category, colour, where and when, a photo, where it
-  is kept, the finder). *Lost report* records what someone lost and how to reach them. Each item page suggests
-  look-alikes of the other kind (same category and colour, shared words); *Match* links them, the visitor's
-  status page then says "Probably found: please come to the helpdesk". *Hand over* records to whom (check their
-  ID). *Close* ends an item that is not handed over (e.g. given to the police).
-- **FAQ**: questions with an answer and a topic. *On the public help page* and *on screens* choose where they
-  appear (data source *Helpdesk: FAQ* for a custom widget).
-
-Contacts of visitors are only visible to the helpdesk. Delete them after the event (export and purge the event, or
-delete the rows) according to your retention rules.
-
-## 6. Extensions
+## 22. Extensions
 
 *Settings → Extensions* (instance for admins, per event for orgas) lists integrations with their status.
 Each extension page has connection settings, secrets (stored encrypted, never shown again), **Test
 connection**, health and log, feature switches, the inbound webhook URL with its secret (shown once), and
 **Disconnect & purge data**. See [EXTENSIONS.md](EXTENSIONS.md).
 
-## 7. Audit log
+**Third-party plugins** are Python packages: `pip install <package>` in EVAC's environment (in Docker: build your
+own image `FROM` EVAC's with the `pip install`), `manage.py migrate`, restart web, WebSocket and worker processes.
+EVAC finds them through their `evac.plugins` entry point; `EVAC_DISABLED_PLUGINS=<app>` switches one off without
+uninstalling. Plugin code runs with EVAC's full rights (also in the screens' browsers): install only plugins you
+trust. Writing one: [Plugin SDK](PLUGIN_SDK.md), with the example `examples/evac-weather`.
+
+## 23. Audit log
 
 Every state change is recorded with actor, time, scope and before/after values in a hash-chained log.
 *Instance → Audit log → Verify hash chain* (or `manage.py evac_audit_verify`) proves nothing was altered or
 removed. Event audit logs can be filtered and exported as CSV or JSON (`audit.export`).
 
-## 8. Monitoring
+## 24. Monitoring
 
 - `GET /healthz` (process alive), `GET /readyz` (database and cache), `GET /metrics` (Prometheus; protect
   with `EVAC_METRICS_TOKEN` or the proxy).
 - `LOG_FORMAT=json` for structured logs. The outbox depth metric shows stuck deliveries.
+- **Capacity**: one server with 4 cores (3 web workers, 3 WebSocket workers, a Celery worker, PostgreSQL and
+  Redis) carries 1,000 screens: an alarm reaches 95 % of them within 2 s. CI checks this with
+  `scripts/load_screens.py --screens 1000 --production` (boot, heartbeats, a content change and an alarm on every
+  screen; ADR-0047). Tune with `WEB_WORKERS` and `WS_WORKERS` (processes of the web and realtime services). Each
+  process keeps a PostgreSQL connection pool of at most `DB_POOL_MAX` connections (default 10; `DB_POOL=0`
+  switches pooling off): keep *processes × DB_POOL_MAX* below PostgreSQL's `max_connections` (default 100). Redis
+  connections per process are capped by `REDIS_MAX_CONNECTIONS` (default 1000), queued realtime messages per
+  process by `CHANNEL_CAPACITY` (default 20,000).
 
-## 9. Venue node
+## 25. Venue node
 
 A venue node is EVAC on a small computer at the venue (`EVAC_MODE=node`, same image or package). While an event
 is *checked out* to it, screens, announcements, overrides and evacuation run there, with or without the uplink
@@ -643,7 +679,7 @@ is *checked out* to it, screens, announcements, overrides and evacuation run the
 
 `manage.py evac_node status` on the node shows what it holds and what is still to send.
 
-## 10. Backups and upgrades
+## 26. Backups and upgrades
 
 Back up PostgreSQL (`pg_dump`), the `media` volume and `.env` (with `EVAC_SECRETS_KEYS`). Upgrades:
 `git pull && docker compose up --build -d` — migrations run automatically on start of `web`.

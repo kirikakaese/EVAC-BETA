@@ -12,7 +12,8 @@ Group=evac
 WorkingDirectory=/opt/evac
 EnvironmentFile=/etc/evac/evac.env
 Environment=DJANGO_SETTINGS_MODULE=evac.settings.prod
-ExecStart=/opt/evac/.venv/bin/daphne -b 127.0.0.1 -p 8001 --proxy-headers evac.asgi:application
+# ASGI workers sharing the port: one process cannot deliver an alarm to 1,000 screens in time (ADR-0047)
+ExecStart=/opt/evac/.venv/bin/gunicorn evac.asgi:application -k uvicorn_worker.UvicornWorker --bind 127.0.0.1:8001 --workers 3 --timeout 90
 Restart=always
 RestartSec=3
 NoNewPrivileges=true

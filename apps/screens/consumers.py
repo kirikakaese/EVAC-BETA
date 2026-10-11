@@ -27,13 +27,6 @@ def _heartbeat(screen, data, ip):
     return services.heartbeat(screen, data, ip=ip)
 
 
-@database_sync_to_async
-def _still_valid(screen_id):
-    from .models import Screen
-
-    return Screen.objects.paired().filter(pk=screen_id).exists()
-
-
 class ScreenConsumer(AsyncJsonWebsocketConsumer):
     screen = None
 
@@ -73,10 +66,10 @@ class ScreenConsumer(AsyncJsonWebsocketConsumer):
                 await self.send_json(msg)
             return
         if kind == "heartbeat":
-            if not await _still_valid(self.screen.pk):
+            reply = await _heartbeat(self.screen, content.get("data") or {}, self._ip())
+            if reply is None:  # the token was revoked
                 await self.close(code=4401)
                 return
-            reply = await _heartbeat(self.screen, content.get("data") or {}, self._ip())
             await self.send_json({"type": "heartbeat.ack", **reply})
         elif kind == "ping":
             await self.send_json({"type": "pong"})

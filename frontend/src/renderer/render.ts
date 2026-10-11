@@ -10,6 +10,7 @@ import type { LayoutData, LayoutElement, RenderContext } from "./types";
 import { defineWidgets, EvacWidget } from "./widgets";
 import "./data";  // registers the "data" element (custom widgets)
 import "./program";  // registers the "program" element (ADR-0038)
+import "./plugin";  // registers the "plugin" element (ADR-0045)
 
 export interface RenderedLayout {
   stage: HTMLElement;

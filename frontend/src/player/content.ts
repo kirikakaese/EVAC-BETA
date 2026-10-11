@@ -3,7 +3,7 @@
 // screen restarts without network; asset files are prefetched so the service worker has them cached.
 import { request, Unauthorized } from "./api";
 import type { ThemePayload } from "./theme";
-import type { AssetEntry, LayoutData } from "../renderer/types";
+import type { AssetEntry, LayoutData, PluginWidgetInfo } from "../renderer/types";
 
 export interface BundleLayout { id: string; key: string; name: string; default: boolean; version: number;
                                 data: LayoutData; variables?: Record<string, string> }
@@ -15,6 +15,7 @@ export interface Bundle {
   assets: Record<string, AssetEntry>;
   fonts_css: string;
   fonts: Record<string, string>;
+  plugins?: Record<string, PluginWidgetInfo>;
 }
 
 const KEY = "evac.player.bundle";
@@ -54,6 +55,7 @@ export function defaultLayout(bundle: Bundle | null): BundleLayout | null {
 export async function prefetch(bundle: Bundle): Promise<number> {
   const urls = new Set<string>();
   for (const a of Object.values(bundle.assets)) Object.values(a.urls).forEach((u) => urls.add(u));
+  for (const w of Object.values(bundle.plugins ?? {})) urls.add(w.script);  // plugin widget modules, for offline
   let ok = 0;
   await Promise.all([...urls].map(async (u) => {
     try {

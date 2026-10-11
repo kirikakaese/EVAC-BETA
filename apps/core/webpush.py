@@ -120,15 +120,31 @@ class Gone(Exception):
     """The push service says the subscription no longer exists."""
 
 
+def push_host_allowed(endpoint: str) -> bool:
+    """Endpoints must belong to a browser push service (``EVAC_PUSH_SERVICE_HOSTS``, host suffixes): anything else
+    would let a user make the server POST to hosts of their choosing, internal ones included."""
+    from urllib.parse import urlsplit
+
+    from django.conf import settings
+
+    parts = urlsplit(endpoint)
+    host = (parts.hostname or "").lower().rstrip(".")
+    if parts.scheme != "https" or not host or parts.username or parts.password:
+        return False
+    return any(host == h or host.endswith("." + h) for h in settings.EVAC_PUSH_SERVICE_HOSTS)
+
+
 def send(sub, message: dict[str, Any], *, ttl: int = 3600, urgency: str = "normal") -> int:
     """POST one push message; returns the HTTP status. Raises on errors worth retrying."""
+    if not push_host_allowed(sub.endpoint):
+        raise ValueError("the endpoint is not a known push service")
     body = encrypt(json.dumps(message, separators=(",", ":")).encode(), sub.p256dh, sub.auth)
     headers = {"Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", "TTL": str(ttl),
                "Urgency": urgency, "Authorization": vapid_header(sub.endpoint)}
     if message.get("tag"):
         headers["Topic"] = str(message["tag"])[:32]
     try:
-        r = requests.post(sub.endpoint, data=body, headers=headers, timeout=10)
+        r = requests.post(sub.endpoint, data=body, headers=headers, timeout=10, allow_redirects=False)
     except requests.RequestException as exc:
         raise ConnectionError(f"{type(exc).__name__}: push service not reachable") from None
     if r.status_code in (404, 410):
@@ -198,6 +214,8 @@ def subscribe(user, data: dict[str, Any], user_agent: str = ""):
     p256dh, auth = str(keys.get("p256dh") or ""), str(keys.get("auth") or "")
     if not endpoint.startswith("https://") or len(endpoint) > 800:
         raise ValueError("endpoint must be an https URL")
+    if not push_host_allowed(endpoint):
+        raise ValueError("endpoint is not a known push service")
     try:
         if len(b64u_decode(p256dh)) != 65 or len(b64u_decode(auth)) != 16:
             raise ValueError

@@ -13,7 +13,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.events import rbac
-from apps.portal.shortcuts import event_view
+from apps.portal.shortcuts import event_view, safe_next
 
 from . import services
 from .forms import QuickIncidentForm
@@ -33,8 +33,7 @@ def card(request: Any, event: Any) -> dict[str, Any] | None:
 
 
 def _back(request: Any, slug: str) -> Any:
-    nxt = request.POST.get("next") or ""
-    return redirect(nxt if nxt.startswith("/") and not nxt.startswith("//") else f"/e/{slug}/staff/")
+    return redirect(safe_next(request, f"/e/{slug}/staff/"))
 
 
 @require_POST

@@ -267,13 +267,19 @@ rendered per attendee from a layout made in the layout editor. [ADR-0044](adr/00
 | 8.1 | ✅ Attendee lists (CSV), ticket types, access zones with scanner rules, badges (layout editor), offline check-in app, occupancy feed |
 | 8.2 | ✅ pretix extension (attendees in, check-ins both ways) |
 
-## Phase 9 — Hardening and ecosystem ⬜
+## Phase 9 — Hardening and ecosystem ✅
 **Gate:** 1,000 simulated screens; SDK example plugin adds a widget + data source + extension page without
-core changes.
+core changes. ✅ `scripts/load_screens.py --screens 1000 --production` (CI job *screens load*): 1,000 screens boot,
+heartbeat, get a content change and an alarm on gunicorn + Celery + Redis + PostgreSQL (alarm p95 1.8 s, change
+1.5 s, heartbeat 15 ms; [ADR-0047](adr/0047-capacity-and-production-hardening.md)). The example plugin
+`examples/evac-weather`, installed with pip (CI job *example plugin*), adds the widget, its data source and the
+extension page; `frontend/e2e/phase9.mjs` shows a reading entered on that page on a paired screen
+([ADR-0045](adr/0045-plugin-widgets.md)).
+
 | ID | Ticket |
 |---|---|
-| 9.1 | Full staff PWA |
-| 9.2 | Public plugin SDK docs + example plugin (pip, entry point) |
-| 9.3 | Template gallery |
-| 9.4 | Tauri player wrapper; info-beamer hosted package |
-| 9.5 | Performance/load tuning; security review; handbook polish; video walls (stretch) |
+| 9.1 | ✅ Full staff PWA: sync badge on every page, scan button, offline found items, ntfy backup card |
+| 9.2 | ✅ Plugin widgets on screens, public plugin SDK docs, example plugin (pip, entry point) |
+| 9.3 | ✅ Template gallery ([ADR-0046](adr/0046-template-gallery.md)) |
+| 9.4 | ✅ Tauri player wrapper; info-beamer hosted package ([ADR-0048](adr/0048-other-players-and-video-walls.md)) |
+| 9.5 | ✅ Performance/load tuning (PostgreSQL pool, Redis, bulk fan-out, WebSocket workers); security review; handbook polish; video walls |

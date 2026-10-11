@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Example EVAC plugin (docs/PLUGIN_SDK.md): pip install ./examples/evac-weather, restart EVAC, done.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evac-weather"
+version = "1.0.0"
+description = "Example EVAC plugin: a weather widget for screens, its data source and an extension page"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.12"
+authors = [{ name = "kirikakaese" }]
+dependencies = []  # everything it needs (Django, Celery, requests) comes with EVAC
+
+# EVAC adds every "evac.plugins" entry point to INSTALLED_APPS and loads <app>.evac_plugin
+[project.entry-points."evac.plugins"]
+weather = "evac_weather"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+evac_weather = ["templates/**/*", "static/**/*"]

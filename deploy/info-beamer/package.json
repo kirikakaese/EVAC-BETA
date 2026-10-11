@@ -1,0 +1,7 @@
+{
+    "name": "EVAC screen",
+    "author": "kirikakaese",
+    "desc": "Evacuation state, announcements and the time from EVAC on info-beamer hosted devices (text-only player).",
+    "repository": "https://github.com/kirikakaese/EVAC-BETA/tree/main/deploy/info-beamer",
+    "platforms": ["pi/epoch-1", "pi/epoch-2"]
+}

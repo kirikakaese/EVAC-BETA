@@ -150,17 +150,31 @@ def _clean_reported(data: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def heartbeat(screen: Screen, data: dict[str, Any], *, ip: str | None = None) -> dict[str, Any]:
-    """Store what the player reported; answer with the server time (for offset sync) and its settings."""
+def _heartbeat_seconds(event) -> int:
+    """The event's heartbeat interval, cached briefly: 1,000 screens send 100 heartbeats a second."""
+    from django.core.cache import cache
+
+    key = f"evac:heartbeat-seconds:{event.pk}"
+    value = cache.get(key)
+    if value is None:
+        value = screen_settings(event)["heartbeat_seconds"]
+        cache.set(key, value, 30)
+    return int(value)
+
+
+def heartbeat(screen: Screen, data: dict[str, Any], *, ip: str | None = None) -> dict[str, Any] | None:
+    """Store what the player reported; answer with the server time (for offset sync) and its settings. ``None``
+    when the screen is no longer paired (its token was revoked): one query does both."""
     reported = _clean_reported(data)
     now = timezone.now()
     previous = screen.health_state
-    Screen.objects.filter(pk=screen.pk).update(last_seen_at=now, last_ip=ip, reported=reported,
-                                               health_state=Screen.Health.ONLINE)
+    if not Screen.objects.paired().filter(pk=screen.pk).update(last_seen_at=now, last_ip=ip, reported=reported,
+                                                                health_state=Screen.Health.ONLINE):
+        return None
     screen.last_seen_at, screen.reported, screen.health_state = now, reported, Screen.Health.ONLINE
     if previous in (Screen.Health.OFFLINE, Screen.Health.STALE):
         _health_changed(screen, previous, Screen.Health.ONLINE)
-    return {"server_time": now.timestamp(), "heartbeat_seconds": screen_settings(screen.event)["heartbeat_seconds"]}
+    return {"server_time": now.timestamp(), "heartbeat_seconds": _heartbeat_seconds(screen.event)}
 
 
 def sweep_health(now=None) -> int:

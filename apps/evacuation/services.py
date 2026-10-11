@@ -173,7 +173,12 @@ def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = F
         if check_perms and actor is not None and not can(actor, event, target, drill=kind_drill, zone=zone,
                                                          request=request):
             raise PermissionDenied("evacuation")
-        others = list(EvacState.objects.select_for_update().filter(event=event).exclude(pk=row.pk)
+        from . import feed
+
+        # registered first, so after the commit screens get their state before webhooks, the ops log and
+        # notifications (all on_commit as well); payloads are built after the commit, from the final state
+        feed.push(event)
+        others = list(EvacState.objects.select_for_update(of=("self",)).filter(event=event).exclude(pk=row.pk)
                       .select_related("zone"))
         elsewhere = any(machine.current(o.status, now).real_alarm for o in others)
         result = machine.transition(row.status, target, drill=drill, now=now, enabled=cfg.enabled,
@@ -198,9 +203,6 @@ def change(event: Any, target: State | str, *, zone: Any = None, drill: bool = F
                     sub = machine.transition(other.status, State.ALL_CLEAR, drill=other.drill, now=now,
                                              clear_seconds=cfg.clear_seconds)
                     out.append(_record(event, other, sub, **kw))
-        from . import feed
-
-        feed.push(event)
     return out
 
 
@@ -275,9 +277,28 @@ def _screens(event: Any) -> list[Any]:
                 .prefetch_related("room__zones").order_by("name"))
 
 
+def screens_by_id(event: Any, ids: list[Any]) -> list[Any]:
+    """Like ``_screens`` but only these screens (with the same related objects loaded)."""
+    from django.apps import apps
+
+    if not apps.is_installed("apps.screens"):
+        return []
+    from apps.screens.models import Screen
+
+    return list(Screen.objects.filter(event=event, pk__in=ids).select_related("venue", "zone", "room",
+                                                                               "floor__building")
+                .prefetch_related("room__zones").order_by("name"))
+
+
 def hint_of(event: Any, screen: Any) -> tuple[str, str]:
     cfg = settings_store.get("evacuation_screen", event=event, screen=screen)
     return str(cfg.get("hint_text") or ""), str(cfg.get("hint_arrow") or "")
+
+
+def hints_of(event: Any, screens: list[Any]) -> dict[str, tuple[str, str]]:
+    """``hint_of`` for many screens with one query."""
+    many = settings_store.get_many("evacuation_screen", screens, event=event)
+    return {sid: (str(c.get("hint_text") or ""), str(c.get("hint_arrow") or "")) for sid, c in many.items()}
 
 
 def screen_views(event: Any, now: Any = None, *, blocked: set[str] | None = None,
@@ -293,12 +314,14 @@ def screen_views(event: Any, now: Any = None, *, blocked: set[str] | None = None
     blocked = blocked_ids(event) if blocked is None else blocked
     tables: dict[str, tuple[routing.Graph, dict[str, routing.Route], dict[str, list[str]]]] = {}
     out = []
-    for screen in (_screens(event) if screens is None else screens):
+    screens = _screens(event) if screens is None else screens
+    hints = hints_of(event, screens)
+    for screen in screens:
         zone_ids = [str(screen.zone_id)] if screen.zone_id else []
         if screen.room_id:
             zone_ids += [str(z.pk) for z in screen.room.zones.all() if str(z.pk) not in zone_ids]
         shown = machine.effective([ev] + [zones[z] for z in zone_ids if z in zones], now)
-        text, arrow = hint_of(event, screen)
+        text, arrow = hints[str(screen.pk)]
         if text or arrow:
             g = guidance.Guidance(guidance.Kind.HINT, guidance.Arrow(arrow) if arrow else None, text=text)
         elif cfg.model is not Model.ZONES:

@@ -17,7 +17,8 @@ import { cachedSchedule, clearSchedule, refreshSchedule } from "./scheduledata";
 import { ProgramStore } from "../renderer/program";
 import { nextChange, slideAt, type Program, type Slide } from "../program/engine";
 import { pageNonce } from "../renderer/code";
-import type { LayoutData } from "../renderer/types";
+import type { LayoutData, PluginHost } from "../renderer/types";
+import { fetchHost } from "../renderer/plugin";
 import { applyTheme, fetchTheme } from "./theme";
 import { readEnv, t, wsUrl, type PlayerEnv } from "./env";
 import { installErrorHandlers, log, logLines, onErrorStorm, recordError, report } from "./report";
@@ -62,6 +63,7 @@ export class Player {
   private lastSync: number | null = null;
   private slide = "idle";
   private bundle: Bundle | null = null;
+  private plugins: PluginHost | null = null;
   private program: Program | null = null;
   private shown = "";
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -131,7 +133,7 @@ export class Player {
     const cached = getConfig<ScreenConfig>();
     // an alarm that was showing before a restart or power cut shows again at once, even without the server
     this.evac = this.evac ?? this.makeEvac(token);
-    if (cached) applyRoot(this.evac.layer, cached.display ?? {});
+    if (cached) applyRoot(this.evac.layer, cached.display ?? {}, false);
     this.evac.render(true);
     // offline first: show the last known state at once; the network refreshes it in the background (a hanging
     // network must never keep a screen blank)
@@ -162,6 +164,8 @@ export class Player {
     this.applySettings();
     this.bundle = this.bundle ?? cachedBundle();
     this.program = this.program ?? cachedProgram();
+    this.plugins = fetchHost(() => this.bundle?.plugins ?? {}, `${this.env.api}content/sources/`,
+                             () => ({ Authorization: `Screen ${token}` }), true);
     await this.loadContent(token);
     await this.loadProgram(token);
     this.show();
@@ -230,12 +234,18 @@ export class Player {
         break;
       }
       case "program.changed": {
-        const before = this.program?.version;
-        await this.loadProgram(token);
-        if (this.program?.version !== before) {
-          this.shown = "";
-          this.show();
-        }
+        // a change for many screens carries "spread" (seconds): each screen refetches at a random moment within
+        // it, so 1,000 screens do not ask at once (ADR-0047). Never awaited: other messages (alarms) go on.
+        const spread = Math.max(0, Math.min(60, Number(msg.data?.spread) || 0));
+        window.setTimeout(() => {
+          const before = this.program?.version;
+          void this.loadProgram(token).then(() => {
+            if (this.program?.version !== before) {
+              this.shown = "";
+              this.show();
+            }
+          });
+        }, Math.random() * spread * 1000);
         break;
       }
       case "data.changed":
@@ -344,7 +354,7 @@ export class Player {
       context: () => ({ vars: this.config ? this.vars() : {}, now: () => this.clock.now(),
                         timezone: this.config?.event.timezone, assets: this.bundle?.assets ?? {},
                         fonts: this.bundle?.fonts ?? {}, nonce: pageNonce(), data: this.widgetData,
-                        program: this.schedule,
+                        program: this.schedule, plugins: this.plugins ?? undefined,
                         onError: (id, err) => recordError(`evac ${id}: ${String(err)}`) }),
       onRendered: (p, info) => {
         this.evacAck = `${p.seq}:${p.v}`.slice(0, 40);
@@ -469,7 +479,7 @@ export class Player {
       this.display.layout(data, {
         vars: this.vars(), now: () => this.clock.now(), timezone: cfg.event.timezone, assets: this.bundle.assets,
         fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches, audio,
-        nonce: pageNonce(), data: this.widgetData, program: this.schedule,
+        nonce: pageNonce(), data: this.widgetData, program: this.schedule, plugins: this.plugins ?? undefined,
         onError: (id, err) => recordError(`${id}: ${String(err)}`),
         onLog: (id, message) => log("info", `${id}: ${message}`),
       }, variables);
@@ -486,7 +496,7 @@ export class Player {
     const s: DisplaySettings = this.config?.display ?? {};
     applyRoot(this.root, s);
     // the evacuation layer lives outside #player (above the dim overlay) but turns and fits like it
-    if (this.evac) applyRoot(this.evac.layer, s);
+    if (this.evac) applyRoot(this.evac.layer, s, false);
     this.updateDisplayState();
   }
 

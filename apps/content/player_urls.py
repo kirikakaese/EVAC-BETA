@@ -46,9 +46,27 @@ def file(request, sha, name):
     return files.respond(sha, name)
 
 
+@require_safe
+def source(request, key):
+    """A data source declared by a plugin widget (ADR-0045), for the screen's event."""
+    from . import plugin_widgets
+
+    screen = _screen(request)
+    if screen is None:
+        return _unauthorized()
+    if not modules.is_enabled("content", screen.event):
+        raise Http404
+    try:
+        data = plugin_widgets.source_payload(screen.event, key, screen=True)
+    except KeyError:
+        raise Http404 from None
+    return JsonResponse({"key": key, "data": data})
+
+
 app_name = "content_player"
 urlpatterns = [
     re_path(r"^theme/$", theme, name="theme"),
     re_path(r"^bundle/$", bundle, name="bundle"),
+    re_path(r"^sources/(?P<key>[a-z0-9_.-]{1,64})/$", source, name="source"),
     re_path(r"^files/(?P<sha>[0-9a-f]{64})/(?P<name>[a-z0-9][a-z0-9_.-]{0,60})$", file, name="file"),
 ]

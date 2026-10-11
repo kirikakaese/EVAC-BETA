@@ -1,0 +1,230 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""EVAC screen for info-beamer hosted: the package's background service.
+
+info-beamer devices draw with Lua/OpenGL and cannot run EVAC's HTML player, so this package shows what matters on
+any screen as text: the evacuation state with its direction (full screen), announcements (banner/ticker/card and
+takeovers) and otherwise the event name and the time. The service pairs the device like a browser player (the
+pairing code appears on the screen; staff enter it under Screens -> Pair), then polls EVAC over HTTPS and writes
+``data.json`` for ``node.lua``. Standard library only (urllib, json), no packages to install.
+
+It keeps the last state when EVAC is unreachable and says so on the screen; an alarm stays up until EVAC clears it.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+from typing import Any, Callable
+
+VERSION = "1.0.0"
+EVAC_POLL = 3  # seconds between evacuation state requests (the browser player is pushed over a WebSocket)
+PROGRAM_POLL = 30
+CONFIG_POLL = 300
+HEARTBEAT = 30
+UA = f"evac-info-beamer/{VERSION}"
+
+Http = Callable[[str, str, dict[str, str], bytes | None], tuple[int, Any]]
+
+
+def http(method: str, url: str, headers: dict[str, str], body: bytes | None = None) -> tuple[int, Any]:
+    req = urllib.request.Request(url, method=method, data=body, headers={"User-Agent": UA, **headers})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            raw = r.read()
+            return r.status, json.loads(raw) if raw else None
+    except urllib.error.HTTPError as err:
+        return err.code, None
+
+
+def overlays_now(program: dict[str, Any] | None, now_ms: int) -> list[dict[str, Any]]:
+    """Announcement overlays and takeovers whose time window covers ``now_ms`` (highest rank first)."""
+    if not program:
+        return []
+    live = []
+    for o in program.get("overlays") or []:
+        if any(a <= now_ms < b for a, b in o.get("windows") or []):
+            live.append({"style": o.get("style") or "banner", "title": o.get("title") or "", "text": o.get("text")
+                         or "", "colour": o.get("colour") or "#1f6feb", "rank": o.get("rank") or 0})
+    for e in program.get("entries") or []:
+        if e.get("source") == "announcement" and any(a <= now_ms < b for a, b in e.get("windows") or []):
+            live.append({"style": "takeover", "title": e.get("name") or "", "text": "", "colour": "#b42318",
+                         "rank": 1000 + int(e.get("priority") or 0)})
+    return sorted(live, key=lambda o: -o["rank"])
+
+
+def evac_view(state: dict[str, Any] | None) -> dict[str, Any] | None:
+    """What the screen shows for the signed evacuation payload, or None when nothing is going on."""
+    if not state or not state.get("enabled"):
+        return None
+    p = state.get("payload") or {}
+    if not p or p.get("state") in (None, "normal"):
+        return None
+    texts = [t for t in p.get("texts") or [] if isinstance(t, str) and t.strip()]
+    return {"state": p.get("state"), "label": p.get("label") or p.get("state"), "takeover": bool(p.get("takeover")),
+            "direction": p.get("direction") or "", "arrow": (p.get("guidance") or {}).get("arrow") or "",
+            "texts": texts[:4], "drill": bool(p.get("drill")), "drill_text": p.get("drill_text") or "",
+            "seq": p.get("seq")}
+
+
+def display(cfg: dict[str, Any] | None, state: dict[str, Any] | None, program: dict[str, Any] | None,
+            now: float, *, online: bool, pairing: dict[str, Any] | None = None) -> dict[str, Any]:
+    """The whole ``data.json`` node.lua draws from."""
+    out: dict[str, Any] = {"online": online, "updated": int(now), "pairing": pairing}
+    if cfg:
+        out["event"] = (cfg.get("event") or {}).get("name") or ""
+        out["screen"] = (cfg.get("screen") or {}).get("name") or ""
+        # node.lua has no time zone database: give it the offset of the event's local time
+        out["utc_offset"] = cfg.get("_utc_offset", 0)
+    out["evac"] = evac_view(state)
+    out["overlays"] = overlays_now(program, int(now * 1000))[:3]
+    return out
+
+
+def utc_offset(tz: str, now: float) -> int:
+    try:
+        from zoneinfo import ZoneInfo
+        import datetime as dt
+
+        return int(dt.datetime.fromtimestamp(now, ZoneInfo(tz)).utcoffset().total_seconds())
+    except Exception:  # no tz database on the device: UTC
+        return 0
+
+
+class Service:
+    def __init__(self, server: str, store: str, out: str, request: Http = http, clock: Callable[[], float] = time.time):
+        self.server = server.rstrip("/")
+        self.store, self.out, self.request, self.clock = store, out, request, clock
+        self.token = self._read("token")
+        self.cfg: dict[str, Any] | None = None
+        self.state: dict[str, Any] | None = None
+        self.program: dict[str, Any] | None = None
+        self.online = False
+        self.due = {"evac": 0.0, "program": 0.0, "config": 0.0, "beat": 0.0}
+
+    # ---- storage
+    def _read(self, name: str) -> str:
+        try:
+            with open(os.path.join(self.store, name)) as f:
+                return f.read().strip()
+        except OSError:
+            return ""
+
+    def _write(self, name: str, value: str) -> None:
+        tmp = os.path.join(self.store, name + ".new")
+        with open(tmp, "w") as f:
+            f.write(value)
+        os.replace(tmp, os.path.join(self.store, name))
+
+    def publish(self, pairing: dict[str, Any] | None = None) -> dict[str, Any]:
+        data = display(self.cfg, self.state, self.program, self.clock(), online=self.online, pairing=pairing)
+        tmp = self.out + ".new"
+        with open(tmp, "w") as f:
+            json.dump(data, f)
+        os.replace(tmp, self.out)
+        return data
+
+    # ---- API
+    def _api(self, method: str, path: str, body: dict[str, Any] | None = None) -> tuple[int, Any]:
+        headers = {"Authorization": f"Screen {self.token}"} if self.token else {}
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+        try:
+            return self.request(method, f"{self.server}/player/api/{path}", headers,
+                                json.dumps(body).encode() if body is not None else None)
+        except (OSError, ValueError):
+            return 0, None
+
+    def pair(self) -> bool:
+        """One pairing round: show a code until staff pair this screen (or it expires). True once paired."""
+        status, start = self._api("POST", "pair/", {"info": {"player": "info-beamer", "version": VERSION}})
+        if status != 201 or not start:
+            self.online = False
+            self.publish({"code": "", "url": self.server, "error": "EVAC not reachable"})
+            return False
+        self.online = True
+        self.publish({"code": start["code"], "url": start.get("pair_url") or self.server})
+        until = self.clock() + float(start.get("expires_in") or 600)
+        while self.clock() < until:
+            time.sleep(3)
+            try:
+                status, st = self.request("POST", f"{self.server}/player/api/pair/{start['id']}/",
+                                          {"X-Pairing-Secret": start["secret"]}, None)
+            except OSError:
+                continue
+            if status == 200 and st and st.get("status") == "paired":
+                self.token = st["token"]
+                self._write("token", self.token)
+                return True
+            if status == 200 and st and st.get("status") in ("expired", "delivered"):
+                return False
+        return False
+
+    def tick(self) -> None:
+        now = self.clock()
+        if now >= self.due["config"]:
+            status, cfg = self._api("GET", "config/")
+            if status == 401:
+                return self.unpair()
+            if status == 200 and cfg:
+                cfg["_utc_offset"] = utc_offset((cfg.get("event") or {}).get("timezone") or "UTC", now)
+                self.cfg = cfg
+                self.due["config"] = now + CONFIG_POLL
+        if now >= self.due["evac"]:
+            status, state = self._api("GET", "evacuation/state/")
+            if status == 401:
+                return self.unpair()
+            self.online = status == 200
+            if status == 200:
+                self.state = state  # otherwise keep the last state: an alarm stays up while EVAC is unreachable
+            self.due["evac"] = now + EVAC_POLL
+        if now >= self.due["program"]:
+            status, program = self._api("GET", "playlists/program/")
+            if status == 200 and program:
+                self.program = program.get("program") or program
+            self.due["program"] = now + PROGRAM_POLL
+        if now >= self.due["beat"]:
+            self._api("POST", "heartbeat/", {"data": {"version": f"info-beamer {VERSION}", "slide": "info-beamer",
+                                                      "online": self.online}})
+            self.due["beat"] = now + HEARTBEAT
+        self.publish()
+
+    def unpair(self) -> None:
+        """The token was revoked: forget it and pair again."""
+        self.token = ""
+        try:
+            os.remove(os.path.join(self.store, "token"))
+        except OSError:
+            pass
+        self.cfg = self.state = self.program = None
+
+
+def node_config() -> dict[str, Any]:
+    try:
+        with open("config.json") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def main() -> int:
+    server = (node_config().get("server") or os.environ.get("EVAC_SERVER") or "").strip()
+    store = os.environ.get("SCRATCH") or "."
+    svc = Service(server, store, "data.json")
+    if not server:
+        svc.publish({"code": "", "url": "", "error": "Set the EVAC server in the setup"})
+        time.sleep(30)
+        return 1
+    while True:
+        if not svc.token:
+            svc.pair()
+            continue
+        svc.tick()
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

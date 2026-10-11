@@ -6,6 +6,57 @@ released.
 
 ## [Unreleased]
 
+### Added — Hardening and ecosystem (Phase 9)
+
+- Plugin widgets on screens (ADR-0045): a plugin's `WidgetSpec(element=, script=)` is a custom element in an ES
+  module; new layout element type `plugin` (`props.widget`, `props.settings`); the renderer loads the module once,
+  sets `settings`, `vars` and `data` and refreshes the declared data sources every `ttl_seconds`; screens read
+  them at `/player/api/content/sources/<key>/` (only sources used by published layouts), the editor and previews
+  at `/e/<event>/content/sources/<key>/`; the player prefetches plugin scripts and keeps the last payloads
+  offline; the layout editor lists *Plugin widget* with a settings form generated from the widget's schema.
+- Public plugin SDK docs (`docs/PLUGIN_SDK.md`: screen widgets, testing) and the example plugin
+  `examples/evac-weather` (pip package with an `evac.plugins` entry point: widget, data source, extension page,
+  model, Celery task, tests); CI installs it with pip and runs its tests without EVAC changes.
+- Template gallery (ADR-0046): `r.layout_template(...)` (plugin API 4), nine built-in templates (welcome,
+  information board, portrait information, countdown, sponsor slideshow, picture with ticker, wayfinding, stage
+  screen, day program), live thumbnails in the event's theme, *Use template* creates a layout.
+- Staff app: app-wide sync badge (approvals, found items, check-in scans and door counts waiting or offline),
+  *Scan a code* (camera, follows EVAC links), *Log a found item* that works offline (idempotent replays, keeps the
+  time it was written), backup notifications card with the event's ntfy topic.
+- Players (ADR-0048): EVAC Player, a Tauri 2 app around the web player (`deploy/tauri/`, built in CI); an
+  info-beamer hosted package (`deploy/info-beamer/`): text-only player for evacuation state, announcements and the
+  time, with pairing.
+- Video walls: display settings for columns, rows, position and bezel; each display shows its tile, alarms show
+  complete on every display.
+- `scripts/load_screens.py`: 1,000 simulated screens through boot, heartbeats, a content change and an alarm, in
+  production shape (gunicorn, daphne, Celery, Redis, PostgreSQL); CI job *screens load (1,000 simulated screens)*.
+- CI jobs *tests on PostgreSQL* (`TEST_DATABASE_URL`) and *example plugin (pip install)*.
+
+### Changed — Phase 9
+
+- PostgreSQL uses psycopg's connection pool (`DB_POOL_MAX`, default 10 per process; `DB_POOL=0` to switch off)
+  instead of persistent connections, which piled up under ASGI (ADR-0047).
+- Redis: channel-layer sockets time out after 30 s (redis-py 8's 5 s default dropped idle WebSocket consumers);
+  pools allow `REDIS_MAX_CONNECTIONS` (default 1,000); channel capacity 20,000 (`CHANNEL_CAPACITY`).
+- The realtime service (WebSockets) runs as gunicorn with `WS_WORKERS` ASGI workers (default 3) instead of one
+  daphne process (Docker entrypoint, systemd unit).
+- Fan-out to many screens in three Redis round trips (bulk group send, pipelined sequence numbers); an alarm to
+  1,000 screens: 7 s → 0.8 s in the request. Screens get an alarm before webhooks and the ops log.
+- Heartbeats cost one query; content changes for many screens carry `spread` and players refetch within it.
+- Announcements notify screens in one batch and resolve screen groups and evacuation hints in bulk (sending to
+  1,000 screens: ~5 s → ~0.6 s); settings for many screens are read with one query (`settings_store.get_many`).
+- Operator handbook renumbered (sections 1–26) and extended (players, template gallery, plugins, capacity).
+
+### Fixed — Phase 9
+
+- Alarms through the API and two-person approvals failed with HTTP 500 on PostgreSQL (`FOR UPDATE` on the
+  nullable side of an outer join).
+- With Redis, a message to more than ~100 screens of one WebSocket process was partly dropped without an error
+  (channel-layer capacity): alarms reached only some screens under load.
+- Security review: Web Push endpoints limited to known push services (SSRF), safe `next` redirects in ops and crew,
+  constant-time comparison of speech-file signatures, notification channels no longer follow redirects
+  (`docs/SECURITY.md`).
+
 ### Added — Access (Phase 8)
 
 - Access module (`apps/access`, module `access`, ADR-0044):

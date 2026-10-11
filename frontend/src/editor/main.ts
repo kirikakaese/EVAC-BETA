@@ -11,7 +11,10 @@ import { pageNonce } from "../renderer/code";
 import { frameStyle, renderLayout, type RenderedLayout } from "../renderer/render";
 import { MemoryStore } from "../renderer/data";
 import { type ProgramData, ProgramStore } from "../renderer/program";
-import type { AssetEntry, ElementStyle, LayoutData, LayoutElement, RenderContext, WidgetData } from "../renderer/types";
+import type {
+  AssetEntry, ElementStyle, LayoutData, LayoutElement, PluginHost, PluginWidgetInfo, RenderContext, WidgetData,
+} from "../renderer/types";
+import { fetchHost } from "../renderer/plugin";
 import {
   align, type AlignMode, clone, createElement, duplicate, guidesFor, History, r2, reorder, resize, snapMove,
 } from "./model";
@@ -24,23 +27,32 @@ interface EditorConfig {
   themeVariables: Record<string, string>;
   vars: Record<string, unknown>;
   timezone: string;
-  urls: { save: string; publish: string; back: string; assets: string };
+  urls: { save: string; publish: string; back: string; assets: string; sources?: string };
   canPublish: boolean;
   canCode: boolean;
   types: string[];
   /** offered by other modules (custom widgets: list and their current rows) */
   choices?: { dataWidgets?: { value: string; label: string; visual: string }[];
               widgetData?: Record<string, WidgetData>;
-              programStages?: { value: string; label: string }[]; programData?: ProgramData };
+              programStages?: { value: string; label: string }[]; programData?: ProgramData;
+              pluginWidgets?: PluginChoice[] };
   findings?: Finding[];
 }
+
+/** A widget of a third-party plugin (ADR-0045) with the JSON schema of its settings. */
+interface PluginChoice extends PluginWidgetInfo {
+  value: string; label: string; description?: string;
+  schema?: { properties?: Record<string, SchemaProp>; required?: string[] };
+}
+interface SchemaProp { type?: string; title?: string; description?: string; enum?: unknown[]; default?: unknown;
+                       minimum?: number; maximum?: number; maxLength?: number }
 
 export interface Finding { level: "error" | "warning"; message: string; element?: string | null }
 
 const TYPE_LABELS: Record<string, string> = {
   text: "Text", richtext: "Rich text", image: "Image", slideshow: "Slideshow", video: "Video", audio: "Audio",
   shape: "Shape", qr: "QR code", clock: "Clock", countdown: "Countdown", date: "Date", code: "Code",
-  data: "Data widget", pictogram: "Safety sign", program: "Program",
+  data: "Data widget", pictogram: "Safety sign", program: "Program", plugin: "Plugin widget",
 };
 const TOKENS = ["primary", "accent", "text", "muted", "surface", "background", "success", "warning", "danger"];
 const TOKEN_LABELS: Record<string, string> = {
@@ -248,11 +260,21 @@ export class LayoutEditor extends LitElement {
   }
 
   // ---------------------------------------------------------------- canvas
+  private pluginHost: PluginHost | null = null;
+
+  private get plugins(): PluginHost {
+    if (!this.pluginHost) {
+      const widgets = Object.fromEntries((this.cfg.choices?.pluginWidgets ?? []).map((w) => [w.value, w]));
+      this.pluginHost = fetchHost(() => widgets, this.cfg.urls.sources ?? "");
+    }
+    return this.pluginHost;
+  }
+
   private get ctx(): RenderContext {
     return { vars: this.cfg.vars, now: () => Date.now(), timezone: this.cfg.timezone, assets: this.cfg.assets,
              fonts: this.cfg.fonts, editing: true, nonce: pageNonce(),
              data: new MemoryStore(this.cfg.choices?.widgetData ?? {}),
-             program: new ProgramStore(this.cfg.choices?.programData ?? null) };
+             program: new ProgramStore(this.cfg.choices?.programData ?? null), plugins: this.plugins };
   }
 
   updated(): void {
@@ -603,9 +625,47 @@ export class LayoutEditor extends LitElement {
             Math.max(1, Math.min(20, Math.round(v ?? 6)))), { min: 1, max: 20, step: 1 })}
           ${text("Heading", "title", 1)}`;
       }
+      case "plugin":
+        return this.pluginFields(p);
       default:
         return html``;
     }
+  }
+
+  /** Plugin widget: the widget, then a form generated from its settings schema (string, number, boolean, enum). */
+  private pluginFields(p: Record<string, unknown>): TemplateResult {
+    const widgets = this.cfg.choices?.pluginWidgets ?? [];
+    const chosen = widgets.find((w) => w.value === p.widget);
+    const settings = (p.settings as Record<string, unknown> | undefined) ?? {};
+    const set = (key: string, v: unknown) => {
+      const next = { ...settings, [key]: v };
+      if (v === undefined || v === "") delete next[key];
+      this.setProp("settings", next);
+    };
+    const fields = Object.entries(chosen?.schema?.properties ?? {}).slice(0, 50).map(([key, prop]) => {
+      const label = prop.title ?? key;
+      const value = settings[key] ?? prop.default;
+      let input: TemplateResult;
+      if (prop.enum) {
+        input = this.choice(label, String(value ?? ""), [["", "Default"], ...prop.enum.map((o): [string, string] =>
+          [String(o), String(o)])], (v) => set(key, v ? prop.enum?.find((o) => String(o) === v) : undefined));
+      } else if (prop.type === "boolean") {
+        input = this.check(label, Boolean(value), (v) => set(key, v));
+      } else if (prop.type === "number" || prop.type === "integer") {
+        input = this.num(label, value as number | undefined, (v) => set(key, v === undefined ? undefined
+          : prop.type === "integer" ? Math.round(v) : v), { min: prop.minimum, max: prop.maximum,
+                                                             step: prop.type === "integer" ? 1 : undefined });
+      } else {
+        input = this.field(label, html`<input .value=${String(value ?? "")} maxlength=${prop.maxLength ?? 500}
+          @change=${(e: Event) => set(key, (e.target as HTMLInputElement).value)}>`);
+      }
+      return html`${input}${prop.description ? html`<p class="small muted">${prop.description}</p>` : nothing}`;
+    });
+    return html`${this.choice("Widget", String(p.widget ?? ""),
+        [["", widgets.length ? "Choose…" : "No plugin widgets installed"],
+         ...widgets.map((w): [string, string] => [w.value, w.label])], (v) => this.patchSelected((x) => {
+          x.props = { ...(x.props ?? {}), widget: v, settings: {} }; }))}
+      ${chosen?.description ? html`<p class="small muted">${chosen.description}</p>` : nothing}${fields}`;
   }
 
   private codeFields(p: Record<string, unknown>): TemplateResult {

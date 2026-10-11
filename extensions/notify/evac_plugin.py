@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import ExtensionSpec, NotificationChannelSpec, PluginManifest
+from apps.core.plugins import ExtensionSpec, NotificationChannelSpec, PluginManifest, StaffCardSpec
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="notify", name="Announcement channels", version="1.0.0", kind="extension",
@@ -62,8 +62,23 @@ def specs() -> list[tuple[ExtensionSpec, int]]:
     ]
 
 
+def ntfy_card(request, event):
+    """Staff page: subscribe to the event's ntfy topic as a backup to Web Push (brief §12)."""
+    from apps.extensions import services as extensions
+
+    cfg = extensions.effective("ntfy", event)
+    topic = cfg.settings.get("topic", "") if cfg is not None else ""
+    if not topic:
+        return None
+    server = (cfg.settings.get("server") or "https://ntfy.sh").rstrip("/")
+    return {"server": server, "topic": topic, "url": f"{server}/{topic}", "protected": bool(cfg.secret("token"))}
+
+
 def register(r: Registry) -> None:
     from . import channels
+
+    r.staff_card(StaffCardSpec(key="ntfy", title=str(_("Backup notifications")), template="notify/_staff_ntfy.html",
+                               context=ntfy_card, module="announcements", order=95))
 
     for ext_spec, max_length in specs():
         r.extension(ext_spec)

@@ -5,6 +5,10 @@ Every EVAC module and extension — built-in or third party — is a **plugin**:
 Plugin API version: `apps.core.plugins.API_VERSION = 2` (2 added `layout_check`, `sync`, `node_action` and
 `ExtensionSpec.secrets_on_site`; plugins written for 1 still load).
 
+A complete, pip-installable example lives in [`examples/evac-weather`](../examples/evac-weather/README.md): a
+screen widget, its data source and an extension page with its own model, migration, Celery task and tests, all
+without a line changed in EVAC. Start from a copy of it.
+
 ## Minimal plugin
 
 ```
@@ -88,6 +92,48 @@ again without removing the package.
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 
 Duplicate keys raise `RegistryError`; a plugin needing a newer `api_version` refuses to load.
+
+## Screen widgets (custom elements)
+
+A plugin widget is a [custom element](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements)
+shipped as a JavaScript module in the plugin's static files ([ADR-0045](adr/0045-plugin-widgets.md)):
+
+```python
+r.data_source(DataSourceSpec(key="weather.current", name="Weather", ttl_seconds=60, fetch=current))
+r.widget(WidgetSpec(key="weather.current", name="Weather", element="evac-x-weather",
+                    script="evac_weather/weather.js", data_sources=("weather.current",),
+                    settings_schema={"type": "object", "properties": {
+                        "unit": {"type": "string", "title": "Unit", "enum": ["C", "F"], "default": "C"}}}))
+```
+
+- The layout editor lists it under **Plugin widget** and builds a form from `settings_schema` (strings, numbers,
+  integers, booleans and `enum` choices). The element is stored as `{"type": "plugin", "props": {"widget":
+  "weather.current", "settings": {...}}}`.
+- Screens receive the widget list in their content bundle, load `script` once with `import()` (and keep it in the
+  service worker cache for offline starts), create `element` inside the box and set three properties:
+  `settings` (the element's settings), `vars` (template variables: `event`, `screen`, …) and `data`
+  (`{source key: payload}`). The payloads come from `GET /player/api/content/sources/<key>/` (screen token) and are
+  refreshed every `ttl_seconds` (at least 10 s); while the server is unreachable the last payload stays, also
+  across restarts. The editor and previews read the same data at `/e/<event>/content/sources/<key>/`.
+- Only data sources that a plugin widget declares are readable this way. `fetch(event)` runs inside a request:
+  read your database there and fetch from the internet in a Celery task (see `evac_weather/services.py`).
+- The element only renders; it never talks to the server. Screens enforce a strict Content Security Policy:
+  no inline `style=""` or `<script>`, so style the element with a constructed style sheet in its shadow root
+  (`adoptedStyleSheets`) or CSSOM properties, and use the theme's CSS variables (`--evac-color-text`,
+  `--evac-color-muted`, `--evac-color-primary`, `--evac-font-body`, …). Sizes in `cqh`/`cqw` follow the box.
+- Built-in widgets (`script="player/player.js"`) are drawn by the renderer itself and never listed as plugins.
+
+## Testing a plugin
+
+Run your tests from an EVAC checkout so the fixtures in its `conftest.py` (`admin`, `event`, `venue`, …) and the
+test settings apply:
+
+```sh
+pip install -e ./my-plugin && .venv/bin/python manage.py makemigrations my_plugin
+.venv/bin/python -m pytest my-plugin/tests
+```
+
+CI does this for the example in the job *example plugin (pip install)*.
 
 ## Rules for plugin code
 
