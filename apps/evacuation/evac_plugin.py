@@ -97,6 +97,14 @@ def register(r: Registry) -> None:
                                "description": "Used by the layout checks: letters at least 1/250 of this high."},
         "screen_height_m": {"type": "number", "title": "Typical screen height (m)", "default": 0.6, "minimum": 0.1,
                             "maximum": 10},
+        "staff_alarm_channels": {
+            "type": "array", "title": "Also send alarms to staff through", "default": [],
+            "items": {"type": "string", "enum": ["ntfy", "matrix", "telegram", "email"],
+                      "x-enum-labels": ["ntfy (topic with an access token only)", "Matrix", "Telegram",
+                                        "E-mail (fixed recipients)"]},
+            "description": "A second way to reach staff besides push notifications and the staff app: every change "
+                           "of the evacuation state, drills marked. Set the channel up under Extensions first. "
+                           "Screens are never affected."},
         "drill_text": {"type": "string", "title": "Drill marker", "default": "DRILL", "maxLength": 40,
                        "description": "Shown on screens and prefixed to notifications during drills."},
     }

@@ -115,6 +115,9 @@ def _record(event: Any, row: EvacState, change: machine.Change, *, actor: Any, s
               scope={"zone": str(zone.pk)} if zone else {"zone": None, "source": source})
     payload = payload_of(event, row, change.kind)
     transaction.on_commit(lambda: webhooks.emit(STATE_CHANGED, payload, event=event))
+    from . import staff_alerts
+
+    transaction.on_commit(lambda: staff_alerts.send(event, entry))
     return entry
 
 

@@ -26,7 +26,8 @@ from typing import Any, Literal
 #: newer version than this EVAC provides refuses to load. 2: ``layout_check``, ``sync`` and ``node_action``.
 #: 3: ``NotificationChannelSpec.alert``, ``dashboard_panel`` and ``mqtt_topic``. 4: plugin widgets on screens
 #: (``WidgetSpec.element``/``script`` for third-party code, ADR-0045) and ``layout_template`` (ADR-0046).
-API_VERSION = 4
+#: 5: ``Alert.critical`` (evacuation alarms to staff channels, ADR-0049).
+API_VERSION = 5
 
 PluginKind = Literal["core", "module", "extension"]
 NavSection = Literal["event", "operations", "content", "settings", "admin"]
@@ -183,13 +184,16 @@ class LayoutTemplateSpec:
 @dataclass(frozen=True)
 class Alert:
     """A plain message for staff (incident escalation, "room full"), not an announcement. ``level`` is ``info``,
-    ``warn`` or ``err``; ``key`` is stable for one alert so a retried delivery can be recognised."""
+    ``warn`` or ``err``; ``key`` is stable for one alert so a retried delivery can be recognised. ``critical``: an
+    evacuation state change; a channel that cannot keep strangers from posting the same kind of message (an ntfy
+    topic without an access token) must refuse it rather than train staff to trust forgeable alarms."""
 
     title: str
     body: str = ""
     level: str = "info"
     url: str = ""
     key: str = ""
+    critical: bool = False
 
 
 @dataclass(frozen=True)

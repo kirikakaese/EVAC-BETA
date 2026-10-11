@@ -6,6 +6,17 @@ released.
 
 ## [Unreleased]
 
+### Added — Evacuation alarms to staff channels, pinned fetches (ADR-0049)
+
+- Opt-in setting *Settings → Evacuation → Staff alarm channels* (ntfy, Matrix, Telegram, e-mail): every evacuation
+  state change also goes to these channels through the outbox, after the screens; drills are marked and sent at
+  lower priority; going back to normal after an all clear is not sent. `Alert.critical` (plugin API 5): ntfy
+  refuses alarms for a topic without an access token.
+- `safefetch` pins the connection to the address it checked (DNS rebinding fixed); `safefetch.post` for outbound
+  POSTs (pretix check-ins use it).
+- Codespaces: `bash .devcontainer/start.sh` reinstalls dependencies after a pull, migrates, restarts EVAC and
+  reports why it did not start.
+
 ### Added — Hardening and ecosystem (Phase 9)
 
 - Plugin widgets on screens (ADR-0045): a plugin's `WidgetSpec(element=, script=)` is a custom element in an ES

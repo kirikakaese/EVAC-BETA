@@ -36,7 +36,7 @@ def enqueue(event: Any, keys: list[str], alert: Alert) -> int:
         if key not in usable:
             continue
         outbox.enqueue(JOB, {"channel": key, "title": alert.title, "body": alert.body, "level": alert.level,
-                             "url": alert.url, "key": alert.key}, event=event,
+                             "url": alert.url, "key": alert.key, "critical": alert.critical}, event=event,
                        key=f"alert:{key}:{alert.key}" if alert.key else "")
         n += 1
     return n
@@ -49,5 +49,6 @@ def handle_job(job: Any) -> None:
         job.result = {"skipped": "channel gone"}
         return
     result = spec.alert(job.event, Alert(title=p.get("title", ""), body=p.get("body", ""),
-                                         level=p.get("level", "info"), url=p.get("url", ""), key=p.get("key", "")))
+                                         level=p.get("level", "info"), url=p.get("url", ""), key=p.get("key", ""),
+                                         critical=bool(p.get("critical"))))
     job.result = dict(result or {})

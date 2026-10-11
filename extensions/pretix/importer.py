@@ -260,7 +260,6 @@ def on_event(event_type: str, payload: Any, event: Any) -> None:
 
 
 def handle_checkin(job: Any) -> None:
-    import requests
 
     from apps.access.models import Attendee
     from apps.extensions import services as ext
@@ -281,7 +280,10 @@ def handle_checkin(job: Any) -> None:
     body = {"secret": a.code, "source_type": "barcode", "lists": [int(s["checkin_list"])], "type": "entry",
             "force": True, "ignore_unpaid": False, "nonce": f"evac-{a.pk}",
             "datetime": job.payload.get("at") or timezone.now().isoformat()}
-    r = requests.post(url, json=body, headers=_headers(config), timeout=15, allow_redirects=False)
+    try:
+        r = safefetch.post(url, json=body, headers=_headers(config), allow_private=_allow_private(), timeout=15)
+    except safefetch.FetchError as exc:
+        raise RuntimeError(f"pretix not reachable: {exc}") from None  # the outbox retries
     if r.status_code >= 500 or r.status_code == 429:
         raise RuntimeError(f"pretix answered {r.status_code}")  # the outbox retries
     try:

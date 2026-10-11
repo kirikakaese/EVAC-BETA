@@ -17,7 +17,10 @@ Admin roles need two-factor authentication for alarm-relevant actions: set it up
 (an authenticator app or a passkey).
 
 - The port is **private**: only you, logged in to GitHub, can open the link. Don't switch it to public.
-- Server log: `tail -f /tmp/evac.log`. Restart: `pkill -f "manage.py runserver"; bash .devcontainer/start.sh`.
+- **Blank page or nothing on port 8000?** Run `bash .devcontainer/start.sh` in the terminal. It installs new
+  dependencies after a `git pull`, migrates the database, (re)starts EVAC and waits until it answers; if it does
+  not, it prints the end of the log.
+- Server log: `tail -f /tmp/evac.log`. Restart: `bash .devcontainer/start.sh`.
 - Start over with fresh demo data: `rm evac.sqlite3 && bash .devcontainer/setup.sh`, then restart.
 - E-mails (invitations) are not sent, they appear in the server log.
 - No Redis, no Celery worker: background jobs run immediately, live updates use the in-memory channel layer.

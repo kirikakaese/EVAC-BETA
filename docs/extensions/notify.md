@@ -42,6 +42,12 @@ Publishes to a topic on [ntfy.sh](https://ntfy.sh) or your own server. Settings:
 token for protected topics. Priority follows the level (info 2, important 3, urgent 4, emergency 5; emergency
 gets the 🚨 tag). With `EVAC_PUBLIC_URL` set, tapping the notification opens the announcement.
 
+**Evacuation alarms** (*Settings → Evacuation → Staff alarm channels*, ADR-0049) go to ntfy only when the topic
+needs an access token to publish: set up the topic with write access for a token only (`ntfy access` / `ntfy
+token add` on your own server, a reserved topic on ntfy.sh) and enter the token here. Without a token the alarm
+is refused and the extension log says why; announcements and other staff alerts are not affected. Alarms use
+priority 5 with the 🚨 tag, drills priority 4 marked with the drill text, all clear priority 3.
+
 ## Matrix
 
 Posts an `m.text` message with HTML (level in its colour) into a room. Create a bot account, invite it into the
