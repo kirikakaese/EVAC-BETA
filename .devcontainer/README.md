@@ -20,6 +20,12 @@ Admin roles need two-factor authentication for alarm-relevant actions: set it up
 - **Blank page or nothing on port 8000?** Run `bash .devcontainer/start.sh` in the terminal. It installs new
   dependencies after a `git pull`, migrates the database, (re)starts EVAC and waits until it answers; if it does
   not, it prints the end of the log.
+- **Screens (`/player/`) say "EVAC server not reachable"**: the player calls the API without cookies (a screen
+  authenticates with its own token), and a private codespace port turns away requests without GitHub's login
+  cookie. Open the player through a forwarded port instead: on your own computer run
+  `gh codespace ports forward 8000:8000` (GitHub CLI) and open `http://localhost:8000/player/`, or open the
+  codespace in VS Code Desktop, which forwards the port to `localhost` by itself. Pair it from the browser tab you
+  are logged in with (*Screens → Pair*). Layout previews in the portal work without this.
 - Server log: `tail -f /tmp/evac.log`. Restart: `bash .devcontainer/start.sh`.
 - Start over with fresh demo data: `rm evac.sqlite3 && bash .devcontainer/setup.sh`, then restart.
 - E-mails (invitations) are not sent, they appear in the server log.

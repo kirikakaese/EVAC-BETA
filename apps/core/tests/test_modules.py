@@ -71,6 +71,21 @@ def test_module_pages_toggle(admin_client, event):
 
 
 @pytest.mark.django_db
+def test_event_page_explains_a_module_off_for_the_instance(admin_client, event):
+    admin_client.post("/settings/modules/", {"key": "venues", "value": "off"})
+    r = admin_client.post("/e/demo/settings/modules/", {"key": "venues", "value": "on"}, follow=True)
+    assert b"stays inactive: it is off for the whole instance" in r.content
+    assert "Off for the whole instance" in _row(r, "Venues") and 'href="/settings/modules/"' in _row(r, "Venues")
+    admin_client.post("/settings/modules/", {"key": "venues", "value": "on"})
+    assert "Off for the whole instance" not in _row(admin_client.get("/e/demo/settings/modules/"), "Venues")
+
+
+def _row(response, name):
+    page = response.content.decode()
+    return page[page.index(f"<strong>{name}</strong>"):].split("</tr>", 1)[0]
+
+
+@pytest.mark.django_db
 def test_module_page_permissions(client, member, event):
     client.force_login(member)
     assert client.get("/settings/modules/").status_code == 403
