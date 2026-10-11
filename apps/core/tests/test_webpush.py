@@ -121,7 +121,8 @@ def test_notify_pushes_to_every_device(user, event, run):
     webpush.subscribe(user, b2.subscription("https://push.example.org/2"))
     sent = []
 
-    def post(url, data=None, headers=None, timeout=None):
+    def post(url, data=None, headers=None, timeout=None, allow_redirects=True):
+        assert allow_redirects is False  # a push service redirecting could lead into the server's network
         sent.append((url, data, headers))
         return Resp(201)
 
@@ -196,3 +197,17 @@ def test_push_endpoints(client, user):
     assert r["Location"] == "/notifications/"
     client.logout()
     assert client.post("/push/subscribe/", data="{}", content_type="application/json").status_code == 302
+
+
+@pytest.mark.django_db
+def test_only_push_services_are_accepted(user):
+    keys = {"p256dh": webpush.b64u(ec.generate_private_key(ec.SECP256R1()).public_key()
+                                   .public_bytes(serialization.Encoding.X962,
+                                                 serialization.PublicFormat.UncompressedPoint)),
+            "auth": webpush.b64u(b"0123456789abcdef")}
+    for bad in ("https://169.254.169.254/latest/meta-data", "https://evil.example.net/x",
+                "https://fcm.googleapis.com.evil.example/x", "http://fcm.googleapis.com/x",
+                "https://user:pw@fcm.googleapis.com/x"):
+        with pytest.raises(ValueError):
+            webpush.subscribe(user, {"endpoint": bad, "keys": keys})
+    assert webpush.subscribe(user, {"endpoint": "https://fcm.googleapis.com/fcm/send/abc", "keys": keys})

@@ -26,6 +26,18 @@ SCHEMA: dict[str, Any] = {
                        "title": "Keystone, horizontal (degrees)", "description": "Projectors mounted off-centre."},
         "keystone_y": {"type": "number", "minimum": -20, "maximum": 20, "default": 0,
                        "title": "Keystone, vertical (degrees)"},
+        "wall_columns": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1, "title": "Video wall: columns",
+                         "description": "Several displays showing one layout together. Set columns and rows on "
+                                        "the wall's screen group, the position on each screen. Alarms show "
+                                        "complete on every display."},
+        "wall_rows": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1, "title": "Video wall: rows"},
+        "wall_column": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1,
+                        "title": "Video wall: this display's column", "description": "1 = left."},
+        "wall_row": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1,
+                     "title": "Video wall: this display's row", "description": "1 = top."},
+        "wall_bezel": {"type": "number", "minimum": 0, "maximum": 10, "default": 0,
+                       "title": "Video wall: gap between displays (% of a display)",
+                       "description": "Frame width between two pictures, so lines continue straight across."},
         "expected_resolution": {"type": "string", "pattern": r"^(|\d{3,5}x\d{3,5})$", "maxLength": 11,
                                 "default": "", "title": "Expected resolution",
                                 "description": "e.g. 1920x1080. The screen page warns when the screen reports "

@@ -1,0 +1,20 @@
+{
+    "name": "EVAC screen",
+    "permissions": {
+        "network": "Talks to your EVAC server: pairing, evacuation state, announcements"
+    },
+    "options": [{
+        "title": "EVAC server",
+        "ui_width": 8,
+        "name": "server",
+        "type": "string",
+        "default": "https://evac.example.org",
+        "hint": "The address staff open EVAC with. After saving, the screen shows a pairing code: enter it in EVAC under Screens → Pair."
+    }, {
+        "title": "Show the clock when nothing is on",
+        "ui_width": 4,
+        "name": "clock",
+        "type": "boolean",
+        "default": true
+    }]
+}

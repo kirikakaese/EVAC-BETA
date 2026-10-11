@@ -108,6 +108,8 @@ def heartbeat(request):
     if screen is None:
         return _unauthorized()
     reply = services.heartbeat(screen, _json_body(request).get("data") or {}, ip=client_ip(request))
+    if reply is None:
+        return _unauthorized()
     return JsonResponse({"type": "heartbeat.ack", **reply})
 
 

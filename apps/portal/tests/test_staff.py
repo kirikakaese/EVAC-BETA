@@ -51,7 +51,7 @@ def test_staff_page_cards_and_approval(client, event, helpdesk, admin):
     login_2fa(client, helpdesk)
     page = client.get("/e/demo/staff/").content.decode()
     assert "1 of your announcements waits for approval." in page and "Approve" not in page
-    assert "Switch on notifications" in page and 'data-offline' not in page
+    assert "Switch on notifications" in page and "/approve/" not in page
     # an approver gets the buttons (forms queue offline) and returns to the staff page
     login_2fa(client, admin)
     page = client.get("/e/demo/staff/").content.decode()

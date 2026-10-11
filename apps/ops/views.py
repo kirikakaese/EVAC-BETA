@@ -18,7 +18,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from apps.events import rbac
-from apps.portal.shortcuts import event_view
+from apps.portal.shortcuts import event_view, safe_next
 
 from . import services
 from .forms import EscalationRuleForm, IncidentForm, LogEntryForm, NoteForm, StatusForm, TaskForm
@@ -136,7 +136,7 @@ def status(request, slug, pk, *, event):
         _fail(request, err)
     else:
         messages.success(request, _("Incident #%(n)s: %(s)s.") % {"n": inc.number, "s": inc.get_status_display()})
-    return redirect(request.POST.get("next") or f"{_url(event, inc)}")
+    return redirect(safe_next(request, f"{_url(event, inc)}"))
 
 
 def _url(event: Any, inc: Incident) -> str:
@@ -230,8 +230,7 @@ def tasks(request, slug, *, event):
                     _fail(request, err)
                 else:
                     messages.success(request, _("Task added."))
-            nxt = request.POST.get("next") or ""
-            return redirect(nxt if nxt.startswith("/") and not nxt.startswith("//") else f"/e/{slug}/ops/tasks/")
+            return redirect(safe_next(request, f"/e/{slug}/ops/tasks/"))
     show = request.GET.get("show", "open")
     qs = Task.objects.filter(event=event).select_related("assignee", "incident")
     if show == "open":
@@ -259,8 +258,7 @@ def task_done(request, slug, pk, *, event):
     if not (_can(request, event, "ops.manage") or t.assignee_id == request.user.pk):
         raise PermissionDenied("ops.manage")
     services.set_task_done(t, request.POST.get("done") == "1", actor=request.user, request=request)
-    nxt = request.POST.get("next") or ""
-    return redirect(nxt if nxt.startswith("/") and not nxt.startswith("//") else f"/e/{slug}/ops/tasks/")
+    return redirect(safe_next(request, f"/e/{slug}/ops/tasks/"))
 
 
 # ------------------------------------------------------------------ escalation

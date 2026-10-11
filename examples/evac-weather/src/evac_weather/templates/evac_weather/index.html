@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Weather" %}{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{{ settings_url }}">{% trans "Weather" %}</a> <span aria-hidden="true">›</span> {% trans "Readings" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Weather at the venue" %}</h1>
+  {% if config.settings.online %}<form method="post" action="{{ request.path }}fetch/">{% csrf_token %}<button class="btn">{% trans "Fetch now" %}</button></form>{% endif %}</div>
+<p class="muted">{% trans "Screens with the Weather widget show the latest reading. Enter one by hand when the venue is offline; with Open-Meteo switched on in the settings, readings are fetched in the background." %}</p>
+<div class="grid grid-2">
+  <form method="post" class="card" novalidate>{% csrf_token %}
+    <h2>{% trans "Enter a reading" %}</h2>
+    {% include "portal/_form.html" with form=form %}
+    <button class="btn btn-primary">{% trans "Save" %}</button>
+  </form>
+  <section class="card"><h2>{% trans "Recent readings" %}</h2>
+    {% if observations %}<table class="table"><thead><tr><th scope="col">{% trans "Time" %}</th><th scope="col">{% trans "Temperature" %}</th><th scope="col">{% trans "Conditions" %}</th><th scope="col">{% trans "Wind" %}</th><th scope="col">{% trans "Source" %}</th></tr></thead>
+    <tbody>{% for o in observations %}<tr><td>{{ o.observed_at|date:"D H:i" }}</td><td>{{ o.temperature_c|floatformat:1 }} °C</td><td>{{ o.condition }}</td><td>{% if o.wind_kmh is not None %}{{ o.wind_kmh|floatformat:0 }} km/h{% else %}–{% endif %}</td><td>{{ o.get_source_display }}{% if o.created_by %} ({{ o.created_by }}){% endif %}</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="muted">{% trans "No readings yet." %}</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -283,13 +283,34 @@
   const KEY = "evac.offline-queue";
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
   function save(q) { try { localStorage.setItem(KEY, JSON.stringify(q)); } catch (e) { /* storage full or blocked */ } }
+  // queues the scanner and the door counter keep themselves (they send while their page is open)
+  function otherQueues() {
+    const n = function (k) { try { return JSON.parse(localStorage.getItem(k) || "[]").length; } catch (e) { return 0; } };
+    return n("evac.scan-queue") + n("evac.count-queue");
+  }
+  // [data-sync-global] in the top bar: visible on every page while something waits or the device is offline
+  function showGlobal() {
+    const g = document.querySelector("[data-sync-global]");
+    if (!g) return;
+    const n = load().length + otherQueues();
+    const state = n ? "waiting" : (navigator.onLine ? "synced" : "offline");
+    g.hidden = state === "synced";
+    g.dataset.state = state;
+    const label = (g.getAttribute("data-label-" + state) || "").replace("{n}", String(n));
+    g.setAttribute("aria-label", label);
+    g.title = label;
+    const count = g.querySelector("[data-sync-count]");
+    if (count) count.textContent = n ? String(n) : "";
+  }
   function showSync() {
+    showGlobal();
     const el = document.querySelector("[data-sync]");
     if (!el) return;
     const q = load();
-    el.dataset.state = q.length ? "waiting" : (navigator.onLine ? "synced" : "offline");
+    const total = q.length + otherQueues();
+    el.dataset.state = total ? "waiting" : (navigator.onLine ? "synced" : "offline");
     const tpl = el.getAttribute("data-label-" + el.dataset.state) || "";
-    el.textContent = tpl.replace("{n}", String(q.length));
+    el.textContent = tpl.replace("{n}", String(total));
     const list = document.querySelector("[data-sync-list]");
     if (list) {
       list.replaceChildren.apply(list, q.map(function (item) {
@@ -340,8 +361,58 @@
   }, true);
   window.addEventListener("online", flush);
   window.addEventListener("offline", showSync);
+  window.addEventListener("storage", showSync);  // another tab (scanner, counter) changed a queue
+  setInterval(showGlobal, 5000);
   showSync();
   flush();
+
+  // ---- universal scan: <button data-scan data-label-…> opens the camera (BarcodeDetector, no library) and follows
+  // an EVAC link in the code (inventory labels, items, badges); anything else is shown as text.
+  const scanBtn = document.querySelector("[data-scan]");
+  if (scanBtn && "BarcodeDetector" in window && navigator.mediaDevices) {
+    scanBtn.hidden = false;
+    const box = document.querySelector("[data-scan-box]");
+    const video = box && box.querySelector("video");
+    const out = box && box.querySelector("[data-scan-result]");
+    let stream = null;
+    const stop = function () {
+      if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+      stream = null;
+      if (box) box.hidden = true;
+      scanBtn.setAttribute("aria-expanded", "false");
+    };
+    scanBtn.addEventListener("click", function () {
+      if (stream) return stop();
+      const detector = new window.BarcodeDetector({ formats: ["qr_code", "code_128", "ean_13"] });
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function (s) {
+        stream = s;
+        box.hidden = false;
+        scanBtn.setAttribute("aria-expanded", "true");
+        video.srcObject = s;
+        video.play();
+        const tick = function () {
+          if (!stream) return;
+          detector.detect(video).then(function (codes) {
+            if (!codes.length) return;
+            const raw = codes[0].rawValue || "";
+            let url = null;
+            try { url = new URL(raw, location.href); } catch (e) { url = null; }
+            if (url && url.origin === location.origin) {
+              stop();
+              location.assign(url.href);
+              return;
+            }
+            out.textContent = (scanBtn.getAttribute("data-label-other") || "") + " " + raw;
+          }).catch(function () { /* frame not ready */ }).then(function () { if (stream) setTimeout(tick, 300); });
+        };
+        tick();
+      }).catch(function () {
+        if (out) out.textContent = scanBtn.getAttribute("data-label-denied") || "";
+        if (box) box.hidden = false;
+      });
+    });
+    document.addEventListener("click", function (e) { if (e.target.closest("[data-scan-close]")) stop(); });
+  }
 
   // ---- alerts: <div data-alert-overlay data-label-ack="…"> shows urgent messages full screen with sound.
   const overlay = document.querySelector("[data-alert-overlay]");

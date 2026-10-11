@@ -24,8 +24,9 @@ from typing import Any, Literal
 
 #: Bumped when this module grows or changes. Plugins declare the API version they target; a plugin declaring a
 #: newer version than this EVAC provides refuses to load. 2: ``layout_check``, ``sync`` and ``node_action``.
-#: 3: ``NotificationChannelSpec.alert``, ``dashboard_panel`` and ``mqtt_topic``.
-API_VERSION = 3
+#: 3: ``NotificationChannelSpec.alert``, ``dashboard_panel`` and ``mqtt_topic``. 4: plugin widgets on screens
+#: (``WidgetSpec.element``/``script`` for third-party code, ADR-0045) and ``layout_template`` (ADR-0046).
+API_VERSION = 4
 
 PluginKind = Literal["core", "module", "extension"]
 NavSection = Literal["event", "operations", "content", "settings", "admin"]
@@ -160,6 +161,23 @@ class WidgetSpec:
     script: str = ""  # static path of the renderer bundle
     module: str = "core"
     description: str = ""
+
+
+@dataclass(frozen=True)
+class LayoutTemplateSpec:
+    """A ready-made layout in the template gallery (Content -> Templates, ADR-0046).
+
+    ``data()`` returns layout data (format 1, see ``apps/content/layout_format.py``); "use template" copies it into a
+    new layout of the event. ``module``: shown only while that module is on (a program template needs "program").
+    """
+
+    key: str
+    name: str
+    data: Callable[[], dict[str, Any]]
+    description: str = ""
+    category: str = "General"
+    module: str = "core"
+    order: int = 100
 
 
 @dataclass(frozen=True)

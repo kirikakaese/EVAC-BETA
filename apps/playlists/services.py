@@ -38,11 +38,11 @@ def _tz(event) -> ZoneInfo:
 class Target:
     """Who is asking: a screen (its id and groups) or a whole screen group (calendar)."""
 
-    def __init__(self, *, screen=None, group=None):
+    def __init__(self, *, screen=None, group=None, group_ids=None):
         self.screen = screen
         self.group = group
         if screen is not None:
-            self.group_ids = {g.pk for g in screen.groups()}
+            self.group_ids = set(group_ids) if group_ids is not None else {g.pk for g in screen.groups()}
         else:
             self.group_ids = {group.pk} if group is not None else set()
 

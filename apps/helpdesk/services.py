@@ -90,6 +90,22 @@ def save_item(obj: LostFound, *, actor: Any, request: Any = None) -> LostFound:
     return obj
 
 
+def quick_found(event: Any, *, what: str, where: str = "", description: str = "", actor: Any,
+                client_id: str = "", at: dt.datetime | None = None, request: Any = None) -> LostFound:
+    """A found item logged from the staff app, possibly written offline: ``client_id`` makes a replay harmless and
+    ``at`` (when it was written; never in the future, at most a day back) becomes the time it was found."""
+    client_id = (client_id or "")[:64]
+    if client_id:
+        old = LostFound.objects.filter(event=event, client_id=client_id).first()
+        if old is not None:
+            return old
+    now = timezone.now()
+    when = min(at, now) if at is not None and at > now - dt.timedelta(days=1) else now
+    obj = LostFound(event=event, kind=LostFound.Kind.FOUND, what=what.strip()[:120], where=where.strip()[:120],
+                    description=description.strip()[:2000], when=when, client_id=client_id)
+    return save_item(obj, actor=actor, request=request)
+
+
 def lf_payload(obj: LostFound) -> dict[str, Any]:
     return {"reference": obj.reference, "kind": obj.kind, "what": obj.what, "category": obj.category,
             "colour": obj.colour, "status": obj.status, "event": obj.event.slug,

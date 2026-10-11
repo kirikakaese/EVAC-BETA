@@ -177,16 +177,43 @@ TEMPLATES = [
 
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
-DATABASES["default"].setdefault("CONN_MAX_AGE", 60)
+if DATABASES["default"]["ENGINE"].endswith("postgresql") and env.bool("DB_POOL", default=True):
+    # Under ASGI every request runs in its own thread, so persistent connections (CONN_MAX_AGE) pile up until
+    # PostgreSQL refuses clients; a pool per process caps them (Django 5.1+, psycopg-pool). Each web/WebSocket/
+    # Celery process opens at most DB_POOL_MAX connections: keep processes x DB_POOL_MAX below max_connections.
+    DATABASES["default"]["CONN_MAX_AGE"] = 0
+    DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {
+        "min_size": env.int("DB_POOL_MIN", default=1), "max_size": env.int("DB_POOL_MAX", default=10),
+        "timeout": env.int("DB_POOL_TIMEOUT", default=30)}
+else:
+    DATABASES["default"].setdefault("CONN_MAX_AGE", 60)
 if DATABASES["default"]["ENGINE"].endswith("sqlite3"):
     # dev, tests and small venue nodes: take the write lock when a transaction starts, so two requests that read
     # and then write wait for each other instead of one failing with "database is locked"
     DATABASES["default"].setdefault("OPTIONS", {}).update({"transaction_mode": "IMMEDIATE", "timeout": 20})
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Web Push endpoints are accepted only on these hosts (and their subdomains): Chrome/Edge (FCM), Firefox
+# (Mozilla autopush), Safari/iOS (Apple), Windows (WNS). Add a self-hosted push service here if you run one.
+EVAC_PUSH_SERVICE_HOSTS = env.list("EVAC_PUSH_SERVICE_HOSTS", default=[
+    "fcm.googleapis.com", "android.googleapis.com", "push.services.mozilla.com", "push.apple.com",
+    "notify.windows.com"])
 REDIS_URL = env("REDIS_URL")
-CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}}
-CHANNEL_LAYERS = {"default": {"BACKEND": "channels_redis.core.RedisChannelLayer", "CONFIG": {"hosts": [REDIS_URL]}}}
+# redis-py 8 caps a connection pool at 100 by default and refuses the 101st command at once; a WebSocket process
+# with hundreds of screens (re)connecting needs more (each joins its groups at the same moment)
+REDIS_MAX_CONNECTIONS = env.int("REDIS_MAX_CONNECTIONS", default=1000)
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL,
+                      "OPTIONS": {"max_connections": REDIS_MAX_CONNECTIONS}}}
+# channels_redis blocks up to 5 s in BZPOPMIN; redis-py 8 also defaults socket_timeout to 5 s, so every quiet consumer
+# raced its own read timeout and was dropped. The socket timeout must stay well above the blocking pop.
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels_redis.core.RedisChannelLayer",
+                              "CONFIG": {"hosts": [{"address": REDIS_URL, "socket_timeout": 30,
+                                                    "socket_connect_timeout": 5,
+                                                    "max_connections": REDIS_MAX_CONNECTIONS}],
+                                         # all messages for the consumers of one WebSocket process share one Redis
+                                         # key, and group_send silently drops what exceeds its capacity (default
+                                         # 100): an alarm to 1,000 screens on one process must fit at once
+                                         "capacity": env.int("CHANNEL_CAPACITY", default=20000)}}}
 
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]

@@ -94,7 +94,7 @@ def test_all_channels_deliver(admin, event, levels, run, settings):
         configure(key, event)
     calls = []
 
-    def fake(method, url, json=None, headers=None, timeout=None):
+    def fake(method, url, json=None, headers=None, timeout=None, allow_redirects=True):
         calls.append((method, url, json, headers))
         if "mastodon" in url or "social" in url:
             return Resp(200, {"url": "https://social.example.org/@camp/1"})
@@ -226,7 +226,7 @@ def test_ntfy_and_mastodon_default_texts(admin, event, levels, run, settings):
     configure("mastodon", event)
     sent = []
     with mock.patch("extensions.notify.http.requests.request",
-                    side_effect=lambda m, u, json=None, headers=None, timeout=None: sent.append(json) or Resp(200, {})):
+                    side_effect=lambda m, u, json=None, **kw: sent.append(json) or Resp(200, {})):
         publish(admin, event, levels["info"], ["ntfy", "mastodon"], run, title="Bar open", body="Until 2 am")
     ntfy = next(b for b in sent if "topic" in b)
     toot = next(b for b in sent if "status" in b)
@@ -295,7 +295,7 @@ def test_staff_alerts(event, settings):
     assert "mastodon" not in alerts.channels(event)  # public: never for staff alerts
     calls = []
 
-    def fake(method, url, json=None, headers=None, timeout=None):
+    def fake(method, url, json=None, headers=None, timeout=None, allow_redirects=True):
         calls.append((method, url, json))
         return Resp(200, {"ok": True})
 
@@ -339,3 +339,22 @@ def test_alert_outbox_job(event, settings, django_capture_on_commit_callbacks):
     cfg.enabled = False
     cfg.save()
     assert alerts.channels(event) == {} or "ntfy" not in alerts.channels(event)
+
+
+def test_staff_page_offers_the_ntfy_topic_as_backup(client, admin, event):
+    from conftest import login_2fa
+
+    login_2fa(client, admin)
+    assert "Backup notifications" not in client.get("/e/demo/staff/").content.decode()
+    configure("ntfy", event)
+    page = client.get("/e/demo/staff/").content.decode()
+    assert "Backup notifications" in page and SETTINGS["ntfy"][0]["topic"] in page
+
+
+def test_redirects_are_not_followed():
+    from extensions.notify import http
+
+    with mock.patch("extensions.notify.http.requests.request", return_value=Resp(302)) as req:
+        with pytest.raises(http.Rejected):
+            http.call("POST", "https://ntfy.example.org/", json={})
+    assert req.call_args.kwargs["allow_redirects"] is False

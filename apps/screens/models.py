@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
+from typing import Any
 
 from django.db import models
 from django.utils import timezone
@@ -149,6 +150,20 @@ class Screen(TimeStampedModel):
         manual = set(self.manual_groups.values_list("pk", flat=True)) if not self._state.adding else set()
         return [g for g in ScreenGroup.objects.filter(event_id=self.event_id).prefetch_related(
             "match_venues", "match_zones", "match_rooms") if g.pk in manual or g.matches(self)]
+
+    @staticmethod
+    def group_ids_of(screens: list[Screen]) -> dict[Any, set[Any]]:
+        """``{screen pk: {group pks}}`` for many screens of one event with a fixed number of queries (an
+        announcement or a program change touches every screen)."""
+        if not screens:
+            return {}
+        groups = list(ScreenGroup.objects.filter(event_id=screens[0].event_id).prefetch_related(
+            "match_venues", "match_zones", "match_rooms"))
+        manual: dict[Any, set[Any]] = {}
+        for sid, gid in Screen.manual_groups.through.objects.filter(
+                screen_id__in=[s.pk for s in screens]).values_list("screen_id", "screengroup_id"):
+            manual.setdefault(sid, set()).add(gid)
+        return {s.pk: {g.pk for g in groups if g.pk in manual.get(s.pk, set()) or g.matches(s)} for s in screens}
 
     def evac_scope_chain(self):
         chain = []

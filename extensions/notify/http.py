@@ -21,7 +21,7 @@ class Temporary(Exception):
 def call(method: str, url: str, *, json: Any = None, headers: dict[str, str] | None = None,
          timeout: float = TIMEOUT) -> Any:
     try:
-        r = requests.request(method, url, json=json, timeout=timeout,
+        r = requests.request(method, url, json=json, timeout=timeout, allow_redirects=False,
                              headers={"User-Agent": USER_AGENT, **(headers or {})})
     except requests.RequestException as exc:
         raise Temporary(f"{type(exc).__name__}: no answer from the service") from None
@@ -29,6 +29,8 @@ def call(method: str, url: str, *, json: Any = None, headers: dict[str, str] | N
         raise Temporary(f"HTTP {r.status_code}")
     if r.status_code >= 400:
         raise Rejected(f"HTTP {r.status_code}: {_reason(r)}")
+    if r.status_code >= 300:  # redirects are not followed: they could lead into the server's own network
+        raise Rejected(f"HTTP {r.status_code}: redirected; use the final address")
     try:
         return r.json()
     except ValueError:

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EVAC Player setup</title>
+<link rel="stylesheet" href="setup.css">
+</head>
+<body>
+<main>
+  <h1>EVAC Player</h1>
+  <p>Enter the address of your EVAC server. The screen then shows a pairing code: enter it in EVAC under
+     <strong>Screens → Pair</strong>.</p>
+  <form id="setup">
+    <label for="server">EVAC server</label>
+    <input id="server" name="server" type="url" required placeholder="https://evac.example.org" autocomplete="url">
+    <button type="submit">Open the player</button>
+    <p id="error" role="alert"></p>
+  </form>
+  <p class="hint">Start with <code>--setup</code> to come back here, <code>--windowed</code> for a normal window.</p>
+</main>
+<script src="setup.js"></script>
+</body>
+</html>

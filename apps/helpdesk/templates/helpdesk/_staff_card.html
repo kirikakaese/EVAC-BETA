@@ -1,5 +1,13 @@
 {% load i18n %}<section class="card staff-helpdesk"><h2>{% trans "Helpdesk" %}</h2>
 {% if ctx.new %}<p><span class="badge badge-warn">{{ ctx.new }}</span> <a href="{% url 'helpdesk:index' event.slug %}?status=new">{% trans "new requests" %}</a></p>{% endif %}
 {% if ctx.mine %}<ul class="plain">{% for t in ctx.mine %}<li><a href="{% url 'helpdesk:ticket' event.slug t.pk %}"><span class="mono">{{ t.reference }}</span> {{ t.subject }}</a></li>{% endfor %}</ul>{% elif not ctx.new %}<p class="muted">✓ {% trans "Nothing waiting for you." %}</p>{% endif %}
-{% if ctx.can_manage %}<p><a class="btn btn-sm" href="{% url 'helpdesk:lf_new' event.slug %}">{% trans "Log a found item" %}</a></p>{% endif %}
+{% if ctx.can_manage %}<details class="staff-quick"><summary>{% trans "Log a found item" %}</summary>
+<form method="post" action="{% url 'helpdesk:lf_quick' event.slug %}" data-offline data-offline-label="{% trans 'Found item' %}">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.path }}"><input type="hidden" name="client_id" data-client-id><input type="hidden" name="written_at" data-written-at>
+  <div class="field"><label for="lf-what">{% trans "What" %}</label><input id="lf-what" name="what" maxlength="120" required placeholder="{% trans 'e.g. Black backpack' %}"></div>
+  <div class="field"><label for="lf-where">{% trans "Where" %}</label><input id="lf-where" name="where" maxlength="120"></div>
+  <div class="field"><label for="lf-desc">{% trans "Details" %}</label><textarea id="lf-desc" name="description" rows="2"></textarea></div>
+  <div class="form-actions"><button class="btn btn-primary">{% trans "Save" %}</button> <a class="btn btn-ghost" href="{% url 'helpdesk:lf_new' event.slug %}">{% trans "Full form (photo, storage)" %}</a></div>
+  <p class="small muted">{% trans "Works offline: the item is sent when the device is back online." %}</p>
+</form></details>{% endif %}
 </section>

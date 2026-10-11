@@ -6,6 +6,18 @@ export interface DisplaySettings {
   rotation?: string; overscan?: number; scale?: number; keystone_x?: number; keystone_y?: number;
   dim_from?: string; dim_until?: string; dim_level?: number; sleep_from?: string; sleep_until?: string;
   audio?: boolean; volume?: number; daily_reload?: string; expected_resolution?: string; evacuation_role?: string;
+  wall_columns?: number; wall_rows?: number; wall_column?: number; wall_row?: number; wall_bezel?: number;
+}
+
+/** Video wall: this screen's tile of a ``columns`` × ``rows`` wall (1-based), or null when it is a single screen. */
+export function wallTile(s: DisplaySettings): { cols: number; rows: number; col: number; row: number;
+                                                 bezel: number } | null {
+  const cols = Math.max(1, Math.min(8, Math.round(s.wall_columns ?? 1)));
+  const rows = Math.max(1, Math.min(8, Math.round(s.wall_rows ?? 1)));
+  if (cols === 1 && rows === 1) return null;
+  return { cols, rows, col: Math.max(1, Math.min(cols, Math.round(s.wall_column ?? 1))),
+           row: Math.max(1, Math.min(rows, Math.round(s.wall_row ?? 1))),
+           bezel: Math.max(0, Math.min(10, s.wall_bezel ?? 0)) };
 }
 
 /** "HH:MM" of ``now`` in ``timezone`` (falls back to the device's zone). */
@@ -34,10 +46,23 @@ export function displayState(s: DisplaySettings, hhmm: string): DisplayState {
 }
 
 /** CSS for the player root: rotation (swapping width/height for portrait), overscan (insets the content, not the test pattern), scale, keystone. */
-export function rootTransform(s: DisplaySettings): { width: string; height: string; transform: string;
-                                                      overscan: string } {
+export function rootTransform(s: DisplaySettings, wall = true): { width: string; height: string; transform: string;
+                                                                  overscan: string } {
   const rot = Number(s.rotation ?? 0) || 0;
   const portrait = rot === 90 || rot === 270;
+  const tile = wall ? wallTile(s) : null;
+  if (tile) {
+    // the stage spans the whole wall (bezel: the gap between two displays, in % of one display) and is moved so
+    // that this display's tile sits in the viewport; rotation and keystone do not apply to wall tiles
+    const unitW = 100 + tile.bezel;
+    const unitH = 100 + tile.bezel;
+    const width = tile.cols * 100 + (tile.cols - 1) * tile.bezel;
+    const height = tile.rows * 100 + (tile.rows - 1) * tile.bezel;
+    const cx = ((tile.col - 1) * unitW + 50) / width * 100;
+    const cy = ((tile.row - 1) * unitH + 50) / height * 100;
+    return { width: `${width}vw`, height: `${height}vh`, overscan: "0%",
+             transform: `translate(${-cx.toFixed(4)}%, ${-cy.toFixed(4)}%)` };
+  }
   const parts = ["translate(-50%, -50%)"];
   if (rot) parts.push(`rotate(${rot}deg)`);
   if (s.keystone_x || s.keystone_y) {
@@ -52,8 +77,9 @@ export function rootTransform(s: DisplaySettings): { width: string; height: stri
            overscan: `${over}%` };
 }
 
-export function applyRoot(root: HTMLElement, s: DisplaySettings): void {
-  const css = rootTransform(s);
+/** ``wall: false`` for the evacuation layer: an alarm shows complete on every display of a wall. */
+export function applyRoot(root: HTMLElement, s: DisplaySettings, wall = true): void {
+  const css = rootTransform(s, wall);
   root.classList.add("evac-root");
   root.style.width = css.width;
   root.style.height = css.height;

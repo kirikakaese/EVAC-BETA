@@ -2,10 +2,10 @@
 // EVAC slide preview, built from frontend/src with `npm run build` - do not edit.
 // Includes ISO 7010 safety signs from @iso-safety-signs/core (Copyright (c) Karl Norling, MIT,
 // https://github.com/karlnorling/iso-safety-signs).
-var rt = Object.defineProperty;
-var ot = (s, t, e) => t in s ? rt(s, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[t] = e;
-var E = (s, t, e) => ot(s, typeof t != "symbol" ? t + "" : t, e);
-const at = `(() => {
+var ot = Object.defineProperty;
+var at = (s, t, e) => t in s ? ot(s, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[t] = e;
+var E = (s, t, e) => at(s, typeof t != "symbol" ? t + "" : t, e);
+const ct = `(() => {
   let data = {}, received = 0;
   const listeners = [];
   const post = (m) => parent.postMessage(m, "*");
@@ -27,11 +27,11 @@ const at = `(() => {
   addEventListener("unhandledrejection", (e) => post({ type: "evac:error", message: String(e.reason) }));
   post({ type: "evac:ready" });
 })();`;
-function H(s) {
+function _(s) {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
-function ct(s, t, e, n = "") {
-  const i = H(t), r = e ? ` ${e}` : "", o = [
+function lt(s, t, e, n = "") {
+  const i = _(t), r = e ? ` ${e}` : "", o = [
     "default-src 'none'",
     `script-src 'nonce-${t}'`,
     `style-src 'nonce-${t}'`,
@@ -44,9 +44,9 @@ function ct(s, t, e, n = "") {
     "frame-src 'none'",
     "worker-src 'none'"
   ].join("; "), a = String(s.css ?? "").replace(/<\/style/gi, "<\\/style"), c = String(s.js ?? "").replace(/<\/script/gi, "<\\/script");
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${H(o)}"><style nonce="${i}">html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--evac-color-text,#fff);font-family:var(--evac-font-body,system-ui,sans-serif)}${n}</style><style nonce="${i}">${a}</style><script nonce="${i}">${at}<\/script></head><body>${String(s.html ?? "")}` + (c.trim() ? `<script nonce="${i}">${c}<\/script>` : "") + "</body></html>";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${_(o)}"><style nonce="${i}">html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--evac-color-text,#fff);font-family:var(--evac-font-body,system-ui,sans-serif)}${n}</style><style nonce="${i}">${a}</style><script nonce="${i}">${ct}<\/script></head><body>${String(s.html ?? "")}` + (c.trim() ? `<script nonce="${i}">${c}<\/script>` : "") + "</body></html>";
 }
-function lt(s) {
+function dt(s) {
   const t = [];
   try {
     const e = getComputedStyle(s);
@@ -61,11 +61,11 @@ function lt(s) {
   }
   return t.length ? `:root{${t.join(";")}}` : "";
 }
-function dt(s = document) {
+function ht(s = document) {
   const t = s.querySelector("script[nonce]");
   return t?.nonce || t?.getAttribute("nonce") || "";
 }
-function ht(s, t, e) {
+function ut(s, t, e) {
   const n = t.trim();
   if (n === "now") return new Date(e.now ? e.now() : Date.now());
   if (/^".*"$|^'.*'$/.test(n)) return n.slice(1, -1);
@@ -77,19 +77,19 @@ function ht(s, t, e) {
   }
   return i;
 }
-function ut(s) {
+function ft(s) {
   const t = [];
   let e = "", n = "";
   for (const i of s)
     n ? (i === n && (n = ""), e += i) : i === '"' || i === "'" ? (n = i, e += i) : i === "|" ? (t.push(e), e = "") : e += i;
   return t.push(e), t.map((i) => i.trim());
 }
-function ft(s) {
+function pt(s) {
   if (!s) return "";
   const t = s.trim();
   return /^".*"$|^'.*'$/.test(t) ? t.slice(1, -1) : t;
 }
-function W(s, t, e) {
+function j(s, t, e) {
   const n = e ? { timeZone: e } : {};
   switch (t) {
     case "short":
@@ -117,8 +117,8 @@ function W(s, t, e) {
 function v(s) {
   return s == null ? "" : Array.isArray(s) ? s.map(v).join(", ") : s instanceof Date ? s.toISOString() : typeof s == "object" ? s.name ?? "" : String(s);
 }
-function pt(s, t, e) {
-  const [n, ...i] = t.split(":"), r = ft(i.join(":")), o = () => s instanceof Date ? s : new Date(String(s));
+function mt(s, t, e) {
+  const [n, ...i] = t.split(":"), r = pt(i.join(":")), o = () => s instanceof Date ? s : new Date(String(s));
   switch (n.trim()) {
     case "upper":
       return v(s).toUpperCase();
@@ -133,39 +133,39 @@ function pt(s, t, e) {
     case "default":
       return v(s) === "" ? r : s;
     case "date":
-      return isNaN(o().getTime()) ? "" : W(o(), r || "long", e.timezone);
+      return isNaN(o().getTime()) ? "" : j(o(), r || "long", e.timezone);
     case "time":
-      return isNaN(o().getTime()) ? "" : W(o(), r || "HH:mm", e.timezone);
+      return isNaN(o().getTime()) ? "" : j(o(), r || "HH:mm", e.timezone);
     case "join":
       return Array.isArray(s) ? s.map(v).join(r || ", ") : v(s);
     default:
       return s;
   }
 }
-function z(s, t, e = {}) {
-  const [n, ...i] = ut(s);
-  let r = ht(t, n, e);
-  for (const o of i) r = pt(r, o, e);
+function N(s, t, e = {}) {
+  const [n, ...i] = ft(s);
+  let r = ut(t, n, e);
+  for (const o of i) r = mt(r, o, e);
   return r;
 }
-function mt(s) {
+function gt(s) {
   return Array.isArray(s) ? s.length > 0 : !(s == null || s === !1 || s === "" || s === 0);
 }
-function R(s, t, e = {}) {
+function O(s, t, e = {}) {
   const n = s.trim();
   if (!n) return !0;
-  if (n.startsWith("not ")) return !R(n.slice(4), t, e);
+  if (n.startsWith("not ")) return !O(n.slice(4), t, e);
   const i = /^(.+?)\s*(==|!=)\s*(.+)$/.exec(n);
   if (i) {
-    const r = v(z(i[1], t, e)), o = v(z(i[3], t, e));
+    const r = v(N(i[1], t, e)), o = v(N(i[3], t, e));
     return i[2] === "==" ? r === o : r !== o;
   }
-  return mt(z(n.replace(/^\{\{|\}\}$/g, ""), t, e));
+  return gt(N(n.replace(/^\{\{|\}\}$/g, ""), t, e));
 }
-const gt = /(\{%\s*(?:if\s+[^%]+|else|endif)\s*%\}|\{\{[^}]*\}\})/g;
-function G(s, t, e = {}) {
+const vt = /(\{%\s*(?:if\s+[^%]+|else|endif)\s*%\}|\{\{[^}]*\}\})/g;
+function V(s, t, e = {}) {
   if (!s || !s.includes("{{") && !s.includes("{%")) return s ?? "";
-  const n = s.split(gt);
+  const n = s.split(vt);
   let i = 0;
   const r = (o) => {
     let a = "";
@@ -175,17 +175,17 @@ function G(s, t, e = {}) {
         const u = l[1].startsWith("if") ? "if" : l[1];
         if (o.includes(u)) return [a, u];
         if (u === "if") {
-          const h = R(l[2], t, e), [f, w] = r(["else", "endif"]);
+          const h = O(l[2], t, e), [f, w] = r(["else", "endif"]);
           let g = "";
           w === "else" && (g = r(["endif"])[0]), a += h ? f : g;
         }
-      } else c.startsWith("{{") && c.endsWith("}}") ? a += v(z(c.slice(2, -2), t, e)) : a += c;
+      } else c.startsWith("{{") && c.endsWith("}}") ? a += v(N(c.slice(2, -2), t, e)) : a += c;
     }
     return [a, ""];
   };
   return r([])[0];
 }
-const V = {
+const Z = {
   E001: {
     name: "Emergency exit (left hand)",
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 105.833 105.833"><path fill="#fff" d="M105.833 0H0v105.833h105.833z"/><path fill="#237f52" d="M103.187 2.646H2.646v100.541h100.541z"/><path d="M148.169 80.71v60.715c6.316.483 10.53 5.636 10.53 10.315v2.47l-2.468-.007-8.062-.018v12.739l6.082 5.985h-40.129l-7.432-7.12h-9.24l7.433 7.12H93.428l-6.082-5.985v-41.75H98.01c.084 0 .163.004.246.004.056 0 .083-.007.136-.008q.052 0 .103-.004c1.439-.028 1.75-.282 2.779-1.31l6.241-7.378c1.731 3.785 3.362 7.004 5.085 10.66.195.374.655 1.213.31 1.867l-17.153 34.636 6.292-.021c3.29.072 4.662-2.198 5.819-4.23 4.64-9.353 9.301-18.697 13.949-28.05l.877 16.643c.23 2.88 2.176 3.612 4.726 3.691l28.817.066c0-3.312-3.282-7.687-8.627-7.895 0 0-10.292.116-15.673.137-.682 0-.869-.38-.948-.948-.25-4.282-.488-8.591-.754-12.872-.166-2.126-.352-3.598-.969-5.207-2.01-4.31-4.022-8.6-6.035-12.895l7.364-.085c.193-.007.344.035.444.208l5.33 9.337c2.199 4.01 8.139 1.086 6.149-3.166l-6.537-10.933c-1.15-1.71-1.674-2.299-4.661-2.392 0 0-13.956-.022-20.945-.022-2.27-.05-2.53.661-3.614 1.817a649 649 0 0 1-8.95 10.79c-.395.473-.617.675-1.558.667a62 62 0 0 0-4.619.081h-4.288V80.71Zm-38.65 8.337c-4 0-7.067 3.075-7.067 7.097 0 4.03 3.067 7.104 7.068 7.104s7.075-3.075 7.075-7.104c0-4.022-3.075-7.097-7.075-7.097" display="inline" fill="#fff" fill-opacity="1" stroke-width=".264583" transform="translate(-65.617 -71.967)"/></svg>'
@@ -206,7 +206,7 @@ const V = {
     name: "General warning sign",
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 524"><path fill="#f9a800" stroke="#000" stroke-linejoin="round" stroke-width="32" d="m300 16 284 492H16z"/><path d="M337 192a37 37 0 0 0-74 0l11 143a26 26 0 0 0 52 0m12 85a38 38 0 1 1 0-1"/></svg>'
   }
-}, vt = "#237f52", wt = ["ahead", "ahead_right", "right", "back_right", "back", "back_left", "left", "ahead_left"], yt = {
+}, wt = "#237f52", yt = ["ahead", "ahead_right", "right", "back_right", "back", "back_left", "left", "ahead_left"], bt = {
   E001: "Emergency exit (left)",
   E002: "Emergency exit (right)",
   E003: "First aid",
@@ -214,35 +214,35 @@ const V = {
   W001: "General warning",
   arrow: "Direction"
 };
-function bt(s) {
-  const t = wt.indexOf(s);
+function Ct(s) {
+  const t = yt.indexOf(s);
   return t < 0 ? 0 : t * 45;
 }
-function Ct(s, t, e, n) {
+function xt(s, t, e, n) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="${t}"
  color="${n}" fill="currentColor"><rect width="100" height="100" rx="4" fill="${e}"/>${s}</svg>`;
 }
-function xt(s, t) {
-  return V[s].svg.replace(/^<svg\b/, `<svg role="img" aria-label="${t}"`);
+function Et(s, t) {
+  return Z[s].svg.replace(/^<svg\b/, `<svg role="img" aria-label="${t}"`);
 }
-function Et(s, t = "ahead") {
-  const e = yt[s] ?? "Safety sign";
-  if (s in V) return xt(s, e);
-  const n = bt(t);
-  return Ct(
+function St(s, t = "ahead") {
+  const e = bt[s] ?? "Safety sign";
+  if (s in Z) return Et(s, e);
+  const n = Ct(t);
+  return xt(
     `<g transform="rotate(${n} 50 50)"><path d="M50 12 L80 46 H60 V88 H40 V46 H20 Z"/></g>`,
     `${e}: ${String(t).replace("_", " ")}`,
-    vt,
+    wt,
     "#fff"
   );
 }
 var C = /* @__PURE__ */ ((s) => (s[s.Border = -1] = "Border", s[s.Data = 0] = "Data", s[s.Function = 1] = "Function", s[s.Position = 2] = "Position", s[s.Timing = 3] = "Timing", s[s.Alignment = 4] = "Alignment", s))(C || {});
-const Mt = [0, 1], U = [1, 0], Z = [2, 3], Y = [3, 2], St = {
+const Mt = [0, 1], Y = [1, 0], J = [2, 3], K = [3, 2], $t = {
   L: Mt,
-  M: U,
-  Q: Z,
-  H: Y
-}, $t = /^\d*$/, At = /^[A-Z0-9 $%*+./:-]*$/, D = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", L = 1, O = 40, _ = 3, zt = 3, S = 40, kt = 10, J = [
+  M: Y,
+  Q: J,
+  H: K
+}, At = /^\d*$/, zt = /^[A-Z0-9 $%*+./:-]*$/, D = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:", L = 1, T = 40, q = 3, Nt = 3, $ = 40, kt = 10, X = [
   // Version: (note that index 0 is for padding, and is set to an illegal value)
   // 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
   [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
@@ -253,7 +253,7 @@ const Mt = [0, 1], U = [1, 0], Z = [2, 3], Y = [3, 2], St = {
   // Quartile
   [-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
   // High
-], K = [
+], Q = [
   // Version: (note that index 0 is for padding, and is set to an illegal value)
   // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40    Error correction level
   [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
@@ -265,7 +265,7 @@ const Mt = [0, 1], U = [1, 0], Z = [2, 3], Y = [3, 2], St = {
   [-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81]
   // High
 ];
-class Nt {
+class Pt {
   /* -- Constructor (low level) and fields -- */
   // Creates a new QR Code with the given version number,
   // error correction level, data codeword bytes, and mask number.
@@ -284,7 +284,7 @@ class Nt {
     // Immutable after constructor finishes. Accessed through getModule().
     E(this, "modules", []);
     E(this, "types", []);
-    if (this.version = t, this.ecc = e, t < L || t > O)
+    if (this.version = t, this.ecc = e, t < L || t > T)
       throw new RangeError("Version value out of range");
     if (i < -1 || i > 7)
       throw new RangeError("Mask value out of range");
@@ -389,12 +389,12 @@ class Nt {
     const e = this.version, n = this.ecc;
     if (t.length !== k(e, n))
       throw new RangeError("Invalid argument");
-    const i = K[n[0]][e], r = J[n[0]][e], o = Math.floor(B(e) / 8), a = i - o % i, c = Math.floor(o / i), l = [], u = Tt(r);
+    const i = Q[n[0]][e], r = X[n[0]][e], o = Math.floor(B(e) / 8), a = i - o % i, c = Math.floor(o / i), l = [], u = Ht(r);
     for (let f = 0, w = 0; f < i; f++) {
       const g = t.slice(w, w + c - r + (f < a ? 0 : 1));
       w += g.length;
-      const it = Ht(g, u);
-      f < a && g.push(0), l.push(g.concat(it));
+      const rt = Wt(g, u);
+      f < a && g.push(0), l.push(g.concat(rt));
     }
     const h = [];
     for (let f = 0; f < l[0].length; f++)
@@ -468,20 +468,20 @@ class Nt {
       let o = !1, a = 0;
       const c = [0, 0, 0, 0, 0, 0, 0];
       for (let l = 0; l < this.size; l++)
-        this.modules[r][l] === o ? (a++, a === 5 ? t += _ : a > 5 && t++) : (this.finderPenaltyAddHistory(a, c), o || (t += this.finderPenaltyCountPatterns(c) * S), o = this.modules[r][l], a = 1);
-      t += this.finderPenaltyTerminateAndCount(o, a, c) * S;
+        this.modules[r][l] === o ? (a++, a === 5 ? t += q : a > 5 && t++) : (this.finderPenaltyAddHistory(a, c), o || (t += this.finderPenaltyCountPatterns(c) * $), o = this.modules[r][l], a = 1);
+      t += this.finderPenaltyTerminateAndCount(o, a, c) * $;
     }
     for (let r = 0; r < this.size; r++) {
       let o = !1, a = 0;
       const c = [0, 0, 0, 0, 0, 0, 0];
       for (let l = 0; l < this.size; l++)
-        this.modules[l][r] === o ? (a++, a === 5 ? t += _ : a > 5 && t++) : (this.finderPenaltyAddHistory(a, c), o || (t += this.finderPenaltyCountPatterns(c) * S), o = this.modules[l][r], a = 1);
-      t += this.finderPenaltyTerminateAndCount(o, a, c) * S;
+        this.modules[l][r] === o ? (a++, a === 5 ? t += q : a > 5 && t++) : (this.finderPenaltyAddHistory(a, c), o || (t += this.finderPenaltyCountPatterns(c) * $), o = this.modules[l][r], a = 1);
+      t += this.finderPenaltyTerminateAndCount(o, a, c) * $;
     }
     for (let r = 0; r < this.size - 1; r++)
       for (let o = 0; o < this.size - 1; o++) {
         const a = this.modules[r][o];
-        a === this.modules[r][o + 1] && a === this.modules[r + 1][o] && a === this.modules[r + 1][o + 1] && (t += zt);
+        a === this.modules[r][o + 1] && a === this.modules[r + 1][o] && a === this.modules[r + 1][o + 1] && (t += Nt);
       }
     let e = 0;
     for (const r of this.modules)
@@ -527,7 +527,7 @@ function b(s, t, e) {
 function y(s, t) {
   return (s >>> t & 1) !== 0;
 }
-class T {
+class H {
   // Creates a new QR Code segment with the given attributes and data.
   // The character count (numChars) must agree with the mode and the bit buffer length,
   // but the constraint isn't checked. The given bit buffer is cloned and stored.
@@ -542,28 +542,28 @@ class T {
     return this.bitData.slice();
   }
 }
-const Pt = [1, 10, 12, 14], Dt = [2, 9, 11, 13], Ft = [4, 8, 16, 16];
-function X(s, t) {
+const Dt = [1, 10, 12, 14], It = [2, 9, 11, 13], Ft = [4, 8, 16, 16];
+function tt(s, t) {
   return s[Math.floor((t + 7) / 17) + 1];
 }
-function Q(s) {
+function et(s) {
   const t = [];
   for (const e of s)
     b(e, 8, t);
-  return new T(Ft, s.length, t);
+  return new H(Ft, s.length, t);
 }
 function Bt(s) {
-  if (!tt(s))
+  if (!nt(s))
     throw new RangeError("String contains non-numeric characters");
   const t = [];
   for (let e = 0; e < s.length; ) {
     const n = Math.min(s.length - e, 3);
     b(Number.parseInt(s.substring(e, e + n), 10), n * 3 + 1, t), e += n;
   }
-  return new T(Pt, s.length, t);
+  return new H(Dt, s.length, t);
 }
-function It(s) {
-  if (!et(s))
+function Rt(s) {
+  if (!st(s))
     throw new RangeError("String contains unencodable characters in alphanumeric mode");
   const t = [];
   let e;
@@ -571,28 +571,28 @@ function It(s) {
     let n = D.indexOf(s.charAt(e)) * 45;
     n += D.indexOf(s.charAt(e + 1)), b(n, 11, t);
   }
-  return e < s.length && b(D.indexOf(s.charAt(e)), 6, t), new T(Dt, s.length, t);
+  return e < s.length && b(D.indexOf(s.charAt(e)), 6, t), new H(It, s.length, t);
 }
-function Rt(s) {
-  return s === "" ? [] : tt(s) ? [Bt(s)] : et(s) ? [It(s)] : [Q(Ot(s))];
+function Ot(s) {
+  return s === "" ? [] : nt(s) ? [Bt(s)] : st(s) ? [Rt(s)] : [et(Tt(s))];
 }
-function tt(s) {
-  return $t.test(s);
-}
-function et(s) {
+function nt(s) {
   return At.test(s);
+}
+function st(s) {
+  return zt.test(s);
 }
 function Lt(s, t) {
   let e = 0;
   for (const n of s) {
-    const i = X(n.mode, t);
+    const i = tt(n.mode, t);
     if (n.numChars >= 1 << i)
       return Number.POSITIVE_INFINITY;
     e += 4 + i + n.bitData.length;
   }
   return e;
 }
-function Ot(s) {
+function Tt(s) {
   s = encodeURI(s);
   const t = [];
   for (let e = 0; e < s.length; e++)
@@ -600,7 +600,7 @@ function Ot(s) {
   return t;
 }
 function B(s) {
-  if (s < L || s > O)
+  if (s < L || s > T)
     throw new RangeError("Version number out of range");
   let t = (16 * s + 128) * s + 64;
   if (s >= 2) {
@@ -610,9 +610,9 @@ function B(s) {
   return t;
 }
 function k(s, t) {
-  return Math.floor(B(s) / 8) - J[t[0]][s] * K[t[0]][s];
+  return Math.floor(B(s) / 8) - X[t[0]][s] * Q[t[0]][s];
 }
-function Tt(s) {
+function Ht(s) {
   if (s < 1 || s > 255)
     throw new RangeError("Degree out of range");
   const t = [];
@@ -622,20 +622,20 @@ function Tt(s) {
   let e = 1;
   for (let n = 0; n < s; n++) {
     for (let i = 0; i < t.length; i++)
-      t[i] = I(t[i], e), i + 1 < t.length && (t[i] ^= t[i + 1]);
-    e = I(e, 2);
+      t[i] = R(t[i], e), i + 1 < t.length && (t[i] ^= t[i + 1]);
+    e = R(e, 2);
   }
   return t;
 }
-function Ht(s, t) {
+function Wt(s, t) {
   const e = t.map((n) => 0);
   for (const n of s) {
     const i = n ^ e.shift();
-    e.push(0), t.forEach((r, o) => e[o] ^= I(r, i));
+    e.push(0), t.forEach((r, o) => e[o] ^= R(r, i));
   }
   return e;
 }
-function I(s, t) {
+function R(s, t) {
   if (s >>> 8 || t >>> 8)
     throw new RangeError("Byte out of range");
   let e = 0;
@@ -643,8 +643,8 @@ function I(s, t) {
     e = e << 1 ^ (e >>> 7) * 285, e ^= (t >>> n & 1) * s;
   return e;
 }
-function Wt(s, t, e = 1, n = 40, i = -1, r = !0) {
-  if (!(L <= e && e <= n && n <= O) || i < -1 || i > 7)
+function _t(s, t, e = 1, n = 40, i = -1, r = !0) {
+  if (!(L <= e && e <= n && n <= T) || i < -1 || i > 7)
     throw new RangeError("Invalid value");
   let o, a;
   for (o = e; ; o++) {
@@ -656,11 +656,11 @@ function Wt(s, t, e = 1, n = 40, i = -1, r = !0) {
     if (o >= n)
       throw new RangeError("Data too long");
   }
-  for (const h of [U, Z, Y])
+  for (const h of [Y, J, K])
     r && a <= k(o, h) * 8 && (t = h);
   const c = [];
   for (const h of s) {
-    b(h.mode[0], 4, c), b(h.numChars, X(h.mode, o), c);
+    b(h.mode[0], 4, c), b(h.numChars, tt(h.mode, o), c);
     for (const f of h.getData())
       c.push(f);
   }
@@ -669,9 +669,9 @@ function Wt(s, t, e = 1, n = 40, i = -1, r = !0) {
   for (let h = 236; c.length < l; h ^= 253)
     b(h, 8, c);
   const u = Array.from({ length: Math.ceil(c.length / 8) }, () => 0);
-  return c.forEach((h, f) => u[f >>> 3] |= h << 7 - (f & 7)), new Nt(o, t, u, i);
+  return c.forEach((h, f) => u[f >>> 3] |= h << 7 - (f & 7)), new Pt(o, t, u, i);
 }
-function _t(s, t) {
+function jt(s, t) {
   const {
     ecc: e = "L",
     boostEcc: n = !1,
@@ -679,17 +679,17 @@ function _t(s, t) {
     maxVersion: r = 40,
     maskPattern: o = -1,
     border: a = 1
-  } = t || {}, c = typeof s == "string" ? Rt(s) : Array.isArray(s) ? [Q(s)] : void 0;
+  } = t || {}, c = typeof s == "string" ? Ot(s) : Array.isArray(s) ? [et(s)] : void 0;
   if (!c)
     throw new Error(`uqr only supports encoding string and binary data, but got: ${typeof s}`);
-  const l = Wt(
+  const l = _t(
     c,
-    St[e],
+    $t[e],
     i,
     r,
     o,
     n
-  ), u = jt({
+  ), u = qt({
     version: l.version,
     maskPattern: l.mask,
     size: l.size,
@@ -698,7 +698,7 @@ function _t(s, t) {
   }, a);
   return t?.invert && (u.data = u.data.map((h) => h.map((f) => !f))), t?.onEncoded?.(u), u;
 }
-function jt(s, t = 1) {
+function qt(s, t = 1) {
   if (!t)
     return s;
   const { size: e } = s, n = e + t * 2;
@@ -717,17 +717,17 @@ function jt(s, t = 1) {
     s.types.unshift(Array.from({ length: n }, (o) => i)), s.types.push(Array.from({ length: n }, (o) => i));
   return s;
 }
-const F = "http://www.w3.org/2000/svg";
-function qt(s, t = document) {
-  const { data: e, size: n } = _t(s, { ecc: "M", border: 2 }), i = t.createElementNS(F, "svg");
+const I = "http://www.w3.org/2000/svg";
+function Gt(s, t = document) {
+  const { data: e, size: n } = jt(s, { ecc: "M", border: 2 }), i = t.createElementNS(I, "svg");
   i.setAttribute("viewBox", `0 0 ${n} ${n}`), i.setAttribute("shape-rendering", "crispEdges"), i.setAttribute("class", "qr");
-  const r = t.createElementNS(F, "rect");
+  const r = t.createElementNS(I, "rect");
   r.setAttribute("width", String(n)), r.setAttribute("height", String(n)), r.setAttribute("fill", "#fff"), i.appendChild(r);
   let o = "";
   e.forEach((c, l) => c.forEach((u, h) => {
     u && (o += `M${h} ${l}h1v1h-1z`);
   }));
-  const a = t.createElementNS(F, "path");
+  const a = t.createElementNS(I, "path");
   return a.setAttribute("d", o), a.setAttribute("fill", "#000"), i.appendChild(a), i;
 }
 class m extends HTMLElement {
@@ -748,7 +748,7 @@ class m extends HTMLElement {
     }
   }
   text(t) {
-    return G(String(t ?? ""), this.ctx.vars, { now: this.ctx.now, timezone: this.ctx.timezone });
+    return V(String(t ?? ""), this.ctx.vars, { now: this.ctx.now, timezone: this.ctx.timezone });
   }
   every(t, e) {
     this.timers.push(setInterval(() => this.safely(e), t));
@@ -768,7 +768,7 @@ class m extends HTMLElement {
     this.timers.splice(0).forEach(clearInterval), this.observers.splice(0).forEach((t) => t.disconnect());
   }
 }
-function Gt(s, t) {
+function Ut(s, t) {
   t.style.removeProperty("font-size");
   const e = parseFloat(getComputedStyle(t).fontSize) || 16, n = () => t.scrollHeight <= s.clientHeight + 1 && t.scrollWidth <= s.clientWidth + 1;
   if (!s.clientHeight || n()) return;
@@ -790,7 +790,7 @@ class Vt extends m {
     } else
       t.textContent = e, n && (t.classList.add("evac-clamp"), t.style.setProperty("-webkit-line-clamp", String(n)));
     if (this.replaceChildren(t), this.props.autofit && !this.props.marquee) {
-      const i = () => Gt(this, t);
+      const i = () => Ut(this, t);
       requestAnimationFrame(i), document.fonts?.ready.then(i).catch(() => {
       }), this.observe(i);
     }
@@ -799,7 +799,7 @@ class Vt extends m {
     });
   }
 }
-class Ut extends m {
+class Zt extends m {
   draw() {
     const t = document.createElement("div");
     t.className = "evac-richtext";
@@ -821,7 +821,7 @@ class Ut extends m {
     this.replaceChildren(t);
   }
 }
-function nt(s, t, e) {
+function it(s, t, e) {
   const n = document.createElement("picture");
   for (const [r, o] of [["avif", "image/avif"], ["webp", "image/webp"]])
     if (s.urls[r]) {
@@ -831,19 +831,19 @@ function nt(s, t, e) {
   const i = document.createElement("img");
   return i.src = s.urls.original, i.alt = e || s.alt || "", i.decoding = "async", i.style.objectFit = t, n.appendChild(i), n;
 }
-class Zt extends m {
+class Yt extends m {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Image");
-    this.replaceChildren(nt(t, String(this.props.fit ?? "contain"), String(this.props.alt ?? "")));
+    this.replaceChildren(it(t, String(this.props.fit ?? "contain"), String(this.props.alt ?? "")));
   }
 }
-class Yt extends m {
+class Jt extends m {
   draw() {
     const t = (Array.isArray(this.props.assets) ? this.props.assets : []).map((o) => this.asset(o)).filter((o) => !!o);
     if (!t.length) return this.placeholder("Slideshow");
     const e = String(this.props.fit ?? "cover"), n = t.map((o) => {
-      const a = nt(o, e, "");
+      const a = it(o, e, "");
       return a.className = "evac-slide", a;
     });
     this.replaceChildren(...n);
@@ -854,7 +854,7 @@ class Yt extends m {
     r(), this.every(500, r);
   }
 }
-class Jt extends m {
+class Kt extends m {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Video");
@@ -869,7 +869,7 @@ class Jt extends m {
     })), this.replaceChildren(e);
   }
 }
-class Kt extends m {
+class Xt extends m {
   draw() {
     const t = this.asset(this.props.asset);
     if (!t) return this.placeholder("Audio");
@@ -878,33 +878,33 @@ class Kt extends m {
     e.src = t.urls.audio ?? t.urls.original, e.loop = this.props.loop !== !1, e.muted = this.ctx.audio?.enabled === !1, e.volume = Math.max(0, Math.min(1, (this.ctx.audio?.volume ?? 100) / 100)), e.autoplay = !0, this.replaceChildren(e);
   }
 }
-class Xt extends m {
+class Qt extends m {
   draw() {
     this.dataset.shape = String(this.props.shape ?? "rect"), this.replaceChildren();
   }
 }
-class Qt extends m {
+class te extends m {
   draw() {
     const t = this.text(this.props.text);
     if (!t) return this.placeholder("QR code");
-    const e = qt(t);
+    const e = Gt(t);
     e.setAttribute("role", "img"), e.setAttribute("aria-label", t), this.replaceChildren(e);
   }
 }
-const te = {
+const ee = {
   "HH:mm": { hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
   "HH:mm:ss": { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" },
   "h:mm a": { hour: "numeric", minute: "2-digit", hourCycle: "h12" }
 };
-class ee extends m {
+class ne extends m {
   draw() {
-    const t = String(this.props.format ?? "HH:mm"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, n = new Intl.DateTimeFormat(t === "h:mm a" ? "en-US" : "en-GB", { ...te[t], timeZone: e }), i = document.createElement("time"), r = () => {
+    const t = String(this.props.format ?? "HH:mm"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, n = new Intl.DateTimeFormat(t === "h:mm a" ? "en-US" : "en-GB", { ...ee[t], timeZone: e }), i = document.createElement("time"), r = () => {
       i.textContent = n.format(new Date(this.ctx.now()));
     };
     r(), this.replaceChildren(i), this.every(1e3, r);
   }
 }
-class ne extends m {
+class se extends m {
   draw() {
     const t = String(this.props.format ?? "long"), e = String(this.props.timezone || this.ctx.timezone || "") || void 0, n = {
       long: { weekday: "long", day: "numeric", month: "long" },
@@ -917,22 +917,22 @@ class ne extends m {
     o(), this.replaceChildren(r), this.every(3e4, o);
   }
 }
-function se(s, t) {
+function ie(s, t) {
   const e = Math.max(0, Math.floor(s / 1e3)), n = Math.floor(e / 86400), i = Math.floor(e % 86400 / 3600), r = Math.floor(e % 3600 / 60), o = e % 60, a = (c) => String(c).padStart(2, "0");
   return t === "days" ? `${n} ${n === 1 ? "day" : "days"}` : t === "ms" ? `${a(Math.floor(e / 60))}:${a(o)}` : t === "hms" || n === 0 ? `${a(i + n * 24)}:${a(r)}:${a(o)}` : `${n}d ${a(i)}:${a(r)}:${a(o)}`;
 }
-class ie extends m {
+class re extends m {
   draw() {
     const t = new Date(this.text(this.props.target)).getTime();
     if (isNaN(t)) return this.placeholder("Countdown");
     const e = document.createElement("span"), n = () => {
       const i = t - this.ctx.now();
-      e.textContent = i <= 0 && this.props.finished ? this.text(this.props.finished) : se(i, String(this.props.format ?? "auto"));
+      e.textContent = i <= 0 && this.props.finished ? this.text(this.props.finished) : ie(i, String(this.props.format ?? "auto"));
     };
     n(), this.replaceChildren(e), this.every(250, n);
   }
 }
-class re extends m {
+class oe extends m {
   constructor() {
     super(...arguments), this.frame = null, this.onMessage = (t) => {
       if (!this.frame || t.source !== this.frame.contentWindow || typeof t.data != "object" || !t.data) return;
@@ -944,7 +944,7 @@ class re extends m {
     const t = this.ctx.nonce ?? "";
     if (!t) return this.placeholder("Code (not available on this page)");
     const e = this.props, n = document.createElement("iframe");
-    n.setAttribute("sandbox", "allow-scripts"), n.setAttribute("referrerpolicy", "no-referrer"), n.setAttribute("allow", "autoplay"), n.setAttribute("title", this.el.name || "Code"), n.setAttribute("tabindex", "-1"), n.className = "evac-code-frame", n.srcdoc = ct(e, t, location.origin, lt(this)), this.frame = n, window.addEventListener("message", this.onMessage), this.replaceChildren(n), (e.data ?? []).includes("time") && this.every(1e4, () => this.send());
+    n.setAttribute("sandbox", "allow-scripts"), n.setAttribute("referrerpolicy", "no-referrer"), n.setAttribute("allow", "autoplay"), n.setAttribute("title", this.el.name || "Code"), n.setAttribute("tabindex", "-1"), n.className = "evac-code-frame", n.srcdoc = lt(e, t, location.origin, dt(this)), this.frame = n, window.addEventListener("message", this.onMessage), this.replaceChildren(n), (e.data ?? []).includes("time") && this.every(1e4, () => this.send());
   }
   /** Only the kinds of data the element asked for (and that the server let it ask for). */
   send() {
@@ -966,25 +966,25 @@ class re extends m {
     window.removeEventListener("message", this.onMessage), this.frame = null, super.disconnectedCallback();
   }
 }
-const P = {
+const M = {
   text: Vt,
-  richtext: Ut,
-  image: Zt,
-  slideshow: Yt,
-  video: Jt,
-  audio: Kt,
-  shape: Xt,
-  qr: Qt,
-  clock: ee,
-  countdown: ie,
-  date: ne,
-  code: re
+  richtext: Zt,
+  image: Yt,
+  slideshow: Jt,
+  video: Kt,
+  audio: Xt,
+  shape: Qt,
+  qr: te,
+  clock: ne,
+  countdown: re,
+  date: se,
+  code: oe
 };
-function oe(s = customElements) {
-  for (const [t, e] of Object.entries(P))
+function ae(s = customElements) {
+  for (const [t, e] of Object.entries(M))
     s.get(`evac-${t}`) || s.define(`evac-${t}`, e);
 }
-class ae extends m {
+class ce extends m {
   draw() {
     const t = String(this.props.code ?? "E002");
     let e = String(this.props.direction ?? "auto");
@@ -996,11 +996,11 @@ class ae extends m {
       }
       e = n?.arrow ?? "ahead";
     }
-    this.hidden = !1, this.innerHTML = Et(t, e);
+    this.hidden = !1, this.innerHTML = St(t, e);
   }
 }
-P.pictogram = ae;
-class ce {
+M.pictogram = ce;
+class le {
   constructor(t = {}) {
     this.data = t, this.listeners = /* @__PURE__ */ new Set();
   }
@@ -1026,7 +1026,7 @@ function x(s) {
   }
   return null;
 }
-function $(s, t) {
+function A(s, t) {
   if (typeof s != "string" || !s) return "";
   const e = /^\d{4}-\d{2}-\d{2}$/.test(s), n = new Date(e ? `${s}T12:00:00Z` : s);
   if (Number.isNaN(n.getTime())) return s;
@@ -1037,8 +1037,8 @@ function $(s, t) {
     return new Intl.DateTimeFormat("en-GB", i).format(n);
   }
 }
-const le = ["time", "title", "subtitle", "label", "value"];
-class de extends m {
+const de = ["time", "title", "subtitle", "label", "value"];
+class he extends m {
   constructor() {
     super(...arguments), this.unsubscribe = null;
   }
@@ -1055,11 +1055,11 @@ class de extends m {
     const n = d("div", `evac-data evac-data-${e.visual}`), i = String(this.props.title || e.options.heading || "");
     i && n.appendChild(d("div", "evac-data-heading", i));
     const r = d("div", "evac-data-body");
-    n.appendChild(r), (j[e.visual] ?? j.list)(r, e, this), this.ctx.editing && e.stale && n.appendChild(d("span", "evac-data-stale", "stale")), this.replaceChildren(n);
+    n.appendChild(r), (G[e.visual] ?? G.list)(r, e, this), this.ctx.editing && e.stale && n.appendChild(d("span", "evac-data-stale", "stale")), this.replaceChildren(n);
   }
   /** template text with {{ data.first.title }}, {{ data.rows }}, {{ data.count }} next to the usual variables */
   tmpl(t, e) {
-    return G(
+    return V(
       t,
       { ...this.ctx.vars, data: {
         first: e.rows[0] ?? {},
@@ -1076,10 +1076,10 @@ class de extends m {
     this.unsubscribe?.(), this.unsubscribe = null, super.disconnectedCallback();
   }
 }
-function M(s, t) {
+function S(s, t) {
   return t.rows.length ? !1 : (s.appendChild(d("div", "evac-data-empty", "–")), !0);
 }
-const j = {
+const G = {
   text(s, t, e) {
     s.appendChild(d("div", "evac-data-text", e.tmpl(
       String(t.options.template || "{{ data.first.title }}"),
@@ -1087,28 +1087,28 @@ const j = {
     )));
   },
   list(s, t, e) {
-    if (M(s, t)) return;
+    if (S(s, t)) return;
     const n = d("ul", "evac-data-list");
     for (const i of t.rows) {
       const r = d("li");
-      i.time && r.appendChild(d("span", "evac-data-time", $(i.time, e.tz)));
+      i.time && r.appendChild(d("span", "evac-data-time", A(i.time, e.tz)));
       const o = d("span", "evac-data-main");
       o.appendChild(d("span", "evac-data-title", i.title ?? i.label ?? i.value)), i.subtitle && o.appendChild(d("span", "evac-data-sub", i.subtitle)), r.appendChild(o), i.value !== void 0 && i.value !== null && i.title && r.appendChild(d("span", "evac-data-value", i.value)), n.appendChild(r);
     }
     s.appendChild(n);
   },
   table(s, t, e) {
-    if (M(s, t)) return;
-    const n = le.filter((o) => t.rows.some((a) => a[o] !== void 0 && a[o] !== null && a[o] !== "")), i = d("table", "evac-data-table"), r = d("tbody");
+    if (S(s, t)) return;
+    const n = de.filter((o) => t.rows.some((a) => a[o] !== void 0 && a[o] !== null && a[o] !== "")), i = d("table", "evac-data-table"), r = d("tbody");
     for (const o of t.rows) {
       const a = d("tr");
-      for (const c of n) a.appendChild(d("td", `evac-data-${c}`, c === "time" ? $(o[c], e.tz) : o[c]));
+      for (const c of n) a.appendChild(d("td", `evac-data-${c}`, c === "time" ? A(o[c], e.tz) : o[c]));
       r.appendChild(a);
     }
     i.appendChild(r), s.appendChild(i);
   },
   cards(s, t, e) {
-    if (M(s, t)) return;
+    if (S(s, t)) return;
     const n = d("div", "evac-data-cards");
     for (const i of t.rows) {
       const r = d("div", "evac-data-card");
@@ -1116,7 +1116,7 @@ const j = {
         const o = d("img");
         o.src = i.image, o.alt = "", r.appendChild(o);
       }
-      i.time && r.appendChild(d("div", "evac-data-time", $(i.time, e.tz))), r.appendChild(d("div", "evac-data-title", i.title ?? i.label)), i.subtitle && r.appendChild(d("div", "evac-data-sub", i.subtitle)), i.value !== void 0 && i.value !== null && r.appendChild(d("div", "evac-data-value", i.value)), n.appendChild(r);
+      i.time && r.appendChild(d("div", "evac-data-time", A(i.time, e.tz))), r.appendChild(d("div", "evac-data-title", i.title ?? i.label)), i.subtitle && r.appendChild(d("div", "evac-data-sub", i.subtitle)), i.value !== void 0 && i.value !== null && r.appendChild(d("div", "evac-data-value", i.value)), n.appendChild(r);
     }
     s.appendChild(n);
   },
@@ -1136,12 +1136,12 @@ const j = {
     t.options.unit && u.appendChild(d("span", "evac-data-unit", ` ${t.options.unit}`)), s.appendChild(u), (e.label || e.title) && s.appendChild(d("div", "evac-data-sub", e.label ?? e.title));
   },
   ticker(s, t, e) {
-    if (M(s, t)) return;
-    const n = t.rows.map((o) => [o.time ? $(o.time, e.tz) : "", o.title ?? o.label ?? ""].filter(Boolean).join(" ")).join("   ◆   "), i = d("div", "evac-marquee-box"), r = d("span", "evac-marquee", n);
+    if (S(s, t)) return;
+    const n = t.rows.map((o) => [o.time ? A(o.time, e.tz) : "", o.title ?? o.label ?? ""].filter(Boolean).join(" ")).join("   ◆   "), i = d("div", "evac-marquee-box"), r = d("span", "evac-marquee", n);
     r.style.animationDuration = `${Math.max(10, n.length / 5)}s`, i.appendChild(r), s.appendChild(i);
   },
   bars(s, t) {
-    if (M(s, t)) return;
+    if (S(s, t)) return;
     const e = t.rows.map((r) => x(r.value) ?? 0), n = x(t.options.maximum) || Math.max(...e, 1), i = d("div", "evac-data-bars");
     t.rows.forEach((r, o) => {
       const a = d("div", "evac-bar");
@@ -1151,8 +1151,8 @@ const j = {
     }), s.appendChild(i);
   }
 };
-P.data = de;
-class he {
+M.data = he;
+class ue {
   constructor(t = null) {
     this.data = t, this.listeners = /* @__PURE__ */ new Set();
   }
@@ -1170,7 +1170,7 @@ function p(s, t = "", e) {
   const n = document.createElement(s);
   return t && (n.className = t), e != null && e !== "" && (n.textContent = String(e)), n;
 }
-function A(s, t) {
+function z(s, t) {
   const e = new Date(s);
   if (Number.isNaN(e.getTime())) return "";
   const n = { hour: "2-digit", minute: "2-digit", hour12: !1 };
@@ -1180,21 +1180,21 @@ function A(s, t) {
     return new Intl.DateTimeFormat("en-GB", n).format(e);
   }
 }
-function q(s, t) {
+function U(s, t) {
   try {
     return new Intl.DateTimeFormat("en-CA", { timeZone: t, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(s));
   } catch {
     return new Date(s).toISOString().slice(0, 10);
   }
 }
-function ue(s, t, e) {
+function fe(s, t, e) {
   const n = s.filter((o) => (t === null || o.stage === t) && o.status !== "cancelled").sort((o, a) => Date.parse(o.start) - Date.parse(a.start)), i = n.find((o) => Date.parse(o.start) <= e && Date.parse(o.end) > e) ?? null, r = n.find((o) => Date.parse(o.start) > e) ?? null;
   return { now: i, next: r };
 }
-function fe(s, t) {
+function pe(s, t) {
   return t || (s.screen_room ? s.stages.find((e) => e.room === s.screen_room)?.id ?? null : null);
 }
-class pe extends m {
+class me extends m {
   constructor() {
     super(...arguments), this.unsubscribe = null, this.ticking = !1;
   }
@@ -1213,7 +1213,7 @@ class pe extends m {
     this.classList.remove("evac-placeholder");
     const n = p("div", `evac-program evac-program-${e}`), i = String(this.props.title ?? "");
     i && n.appendChild(p("div", "evac-program-heading", i));
-    const r = this.ctx.now(), o = fe(t, String(this.props.stage ?? "")), a = Math.max(1, Math.min(20, Number(this.props.count) || 6));
+    const r = this.ctx.now(), o = pe(t, String(this.props.stage ?? "")), a = Math.max(1, Math.min(20, Number(this.props.count) || 6));
     e === "changes" ? this.changes(n, t, a) : e === "day" ? this.day(n, t, o, r, a) : this.nowNext(n, t, o, r), this.replaceChildren(n);
   }
   badge(t) {
@@ -1223,7 +1223,7 @@ class pe extends m {
     const i = p("div", `evac-program-session${t.status === "cancelled" ? " is-cancelled" : ""}`);
     t.colour && i.style.setProperty("--evac-track", t.colour);
     const r = p("div", "evac-program-when");
-    e && r.appendChild(p("span", "evac-program-label", e)), r.appendChild(p("span", "evac-program-time", `${A(t.start, this.tz)}–${A(t.end, this.tz)}`)), t.planned_start && t.delay && r.appendChild(p("s", "evac-program-was", A(t.planned_start, this.tz)));
+    e && r.appendChild(p("span", "evac-program-label", e)), r.appendChild(p("span", "evac-program-time", `${z(t.start, this.tz)}–${z(t.end, this.tz)}`)), t.planned_start && t.delay && r.appendChild(p("s", "evac-program-was", z(t.planned_start, this.tz)));
     const o = this.badge(t);
     o && r.appendChild(o), i.appendChild(r), i.appendChild(p("div", "evac-program-title", t.title));
     const a = [n ? t.stage_name : "", t.speakers.join(", ")].filter(Boolean).join(" · ");
@@ -1233,7 +1233,7 @@ class pe extends m {
     const r = n ? e.stages.filter((c) => c.id === n) : e.stages;
     let o = 0;
     for (const c of r) {
-      const { now: l, next: u } = ue(e.sessions, c.id, i);
+      const { now: l, next: u } = fe(e.sessions, c.id, i);
       if (!l && !u) continue;
       const h = p("div", "evac-program-stage");
       n || h.appendChild(p("div", "evac-program-stage-name", c.name)), l && h.appendChild(this.session(l, "Now", !1)), u && h.appendChild(this.session(u, "Next", !1)), t.appendChild(h), o++;
@@ -1243,7 +1243,7 @@ class pe extends m {
     !o && !a.length && t.appendChild(p("div", "evac-program-empty", "Nothing more today"));
   }
   day(t, e, n, i, r) {
-    const o = q(i, this.tz), a = e.sessions.filter((c) => (!n || c.stage === n) && Date.parse(c.end) > i && q(Date.parse(c.start), this.tz) === o).sort((c, l) => Date.parse(c.start) - Date.parse(l.start));
+    const o = U(i, this.tz), a = e.sessions.filter((c) => (!n || c.stage === n) && Date.parse(c.end) > i && U(Date.parse(c.start), this.tz) === o).sort((c, l) => Date.parse(c.start) - Date.parse(l.start));
     if (!a.length) {
       t.appendChild(p("div", "evac-program-empty", "Nothing more today"));
       return;
@@ -1261,7 +1261,7 @@ class pe extends m {
     const i = p("ul", "evac-program-changes");
     for (const r of e.changes.slice(0, n)) {
       const o = p("li", `evac-program-change evac-program-change-${r.kind}`);
-      o.appendChild(p("span", "evac-program-time", A(r.at, this.tz))), o.appendChild(p("span", "evac-program-change-text", r.text)), i.appendChild(o);
+      o.appendChild(p("span", "evac-program-time", z(r.at, this.tz))), o.appendChild(p("span", "evac-program-change-text", r.text)), i.appendChild(o);
     }
     t.appendChild(i);
   }
@@ -1269,30 +1269,95 @@ class pe extends m {
     this.unsubscribe?.(), this.unsubscribe = null, this.ticking = !1, super.disconnectedCallback();
   }
 }
-P.program = pe;
-function N(s) {
+M.program = me;
+function P(s) {
   return s ? s.startsWith("token:") ? `var(--evac-color-${s.slice(6)})` : /^#[0-9a-fA-F]{6}$/.test(s) || s === "transparent" ? s : "" : "";
 }
-function me(s, t) {
+function ge(s, t) {
   return s ? s === "token:heading" ? "var(--evac-font-heading)" : s === "token:body" ? "var(--evac-font-body)" : t.fonts[s] ?? "" : "";
 }
-function ge(s, t, e) {
+function ve(s, t, e) {
   const n = s.style;
   if (!t) return;
   const i = (r, o) => {
     o && n.setProperty(r, o);
   };
-  i("color", N(t.color)), i("background", N(t.background)), t.borderWidth && n.setProperty("border", `${t.borderWidth / 10}cqh solid ${N(t.borderColor) || "currentColor"}`), t.radius !== void 0 && n.setProperty("border-radius", `${t.radius}cqh`), t.padding !== void 0 && n.setProperty("padding", `${t.padding}cqh`), t.opacity !== void 0 && n.setProperty("opacity", String(t.opacity)), i("font-family", me(t.fontFamily, e)), t.fontSize && n.setProperty("font-size", `${t.fontSize}cqh`), t.fontWeight && n.setProperty("font-weight", String(t.fontWeight)), i("font-style", t.fontStyle ?? ""), i("text-align", t.textAlign ?? ""), t.verticalAlign && n.setProperty("justify-content", { top: "flex-start", middle: "center", bottom: "flex-end" }[t.verticalAlign]), t.lineHeight && n.setProperty("line-height", String(t.lineHeight)), t.letterSpacing !== void 0 && n.setProperty("letter-spacing", `${t.letterSpacing}em`), i("text-transform", t.textTransform ?? ""), t.tabularNumbers && n.setProperty("font-variant-numeric", "tabular-nums"), t.shadow && n.setProperty("box-shadow", "var(--evac-shadow)");
+  i("color", P(t.color)), i("background", P(t.background)), t.borderWidth && n.setProperty("border", `${t.borderWidth / 10}cqh solid ${P(t.borderColor) || "currentColor"}`), t.radius !== void 0 && n.setProperty("border-radius", `${t.radius}cqh`), t.padding !== void 0 && n.setProperty("padding", `${t.padding}cqh`), t.opacity !== void 0 && n.setProperty("opacity", String(t.opacity)), i("font-family", ge(t.fontFamily, e)), t.fontSize && n.setProperty("font-size", `${t.fontSize}cqh`), t.fontWeight && n.setProperty("font-weight", String(t.fontWeight)), i("font-style", t.fontStyle ?? ""), i("text-align", t.textAlign ?? ""), t.verticalAlign && n.setProperty("justify-content", { top: "flex-start", middle: "center", bottom: "flex-end" }[t.verticalAlign]), t.lineHeight && n.setProperty("line-height", String(t.lineHeight)), t.letterSpacing !== void 0 && n.setProperty("letter-spacing", `${t.letterSpacing}em`), i("text-transform", t.textTransform ?? ""), t.tabularNumbers && n.setProperty("font-variant-numeric", "tabular-nums"), t.shadow && n.setProperty("box-shadow", "var(--evac-shadow)");
 }
-function ve(s, t) {
+const F = /* @__PURE__ */ new Map();
+function we(s) {
+  let t = F.get(s);
+  return t || (t = import(
+    /* @vite-ignore */
+    s
+  ), F.set(s, t), t.catch(() => F.delete(s))), t;
+}
+function ye(s, t, e = () => ({}), n = !1) {
+  const i = /* @__PURE__ */ new Map(), r = (o) => `evac.plugin-source.${o}`;
+  return {
+    get widgets() {
+      return s();
+    },
+    async source(o) {
+      try {
+        const a = await fetch(`${t}${encodeURIComponent(o)}/`, { headers: e(), cache: "no-store" });
+        if (!a.ok) throw new Error(`HTTP ${a.status}`);
+        const c = await a.json();
+        if (i.set(o, c.data), n)
+          try {
+            localStorage.setItem(r(o), JSON.stringify(c.data));
+          } catch {
+          }
+        return c.data;
+      } catch (a) {
+        if (i.has(o)) return i.get(o);
+        if (n)
+          try {
+            const c = localStorage.getItem(r(o));
+            if (c !== null) return JSON.parse(c);
+          } catch {
+          }
+        throw a;
+      }
+    }
+  };
+}
+class be extends m {
+  constructor() {
+    super(...arguments), this.inner = null;
+  }
+  draw() {
+    const t = String(this.props.widget ?? ""), e = t ? this.ctx.plugins?.widgets[t] : void 0;
+    if (!e) return this.placeholder(t ? `Plugin widget “${t}” is not installed` : "Plugin widget");
+    const n = this.props.settings ?? {};
+    we(e.script).then(() => {
+      if (!this.isConnected && !this.ctx.editing) return;
+      if (!customElements.get(e.element)) throw new Error(`${e.script} did not define <${e.element}>`);
+      const i = document.createElement(e.element);
+      i.className = "evac-plugin-element", i.settings = n, i.vars = this.ctx.vars, i.data = {}, this.replaceChildren(i), this.inner = i, this.refresh(e), e.sources.length && this.every(Math.max(10, e.ttl) * 1e3, () => this.refresh(e));
+    }).catch((i) => this.safely(() => {
+      throw i;
+    }));
+  }
+  refresh(t) {
+    const e = this.ctx.plugins;
+    if (e)
+      for (const n of t.sources)
+        e.source(n).then((i) => {
+          this.inner && (this.inner.data = { ...this.inner.data ?? {}, [n]: i });
+        }).catch((i) => this.ctx.onError?.(this.el.id, i));
+  }
+}
+M.plugin = be;
+function Ce(s, t) {
   const e = t.frame;
   s.style.left = `${e.x}%`, s.style.top = `${e.y}%`, s.style.width = `${e.w}%`, s.style.height = `${e.h}%`, s.style.transform = e.rotate ? `rotate(${e.rotate}deg)` : "";
 }
-function we(s, t) {
-  const e = !s.visible_if || R(s.visible_if, t.vars, { now: t.now, timezone: t.timezone });
+function xe(s, t) {
+  const e = !s.visible_if || O(s.visible_if, t.vars, { now: t.now, timezone: t.timezone });
   if (s.hidden && !t.editing || !e && !t.editing) return null;
   const n = document.createElement("div");
-  n.className = `evac-el evac-el-${s.type}`, n.dataset.id = s.id, (!e || s.hidden) && n.classList.add("evac-dimmed"), ve(n, s), ge(n, s.style, t);
+  n.className = `evac-el evac-el-${s.type}`, n.dataset.id = s.id, (!e || s.hidden) && n.classList.add("evac-dimmed"), Ce(n, s), ve(n, s.style, t);
   const i = s.animation;
   i?.enter && i.enter !== "none" && !t.reducedMotion && !t.editing && (n.classList.add(`evac-enter-${i.enter}`), n.style.animationDuration = `${i.duration ?? 600}ms`, n.style.animationDelay = `${i.delay ?? 0}ms`);
   const r = `evac-${s.type}`;
@@ -1301,18 +1366,18 @@ function we(s, t) {
   const o = document.createElement(r);
   return o.className = "evac-widget", n.appendChild(o), o.configure(s, t), n;
 }
-function ye(s, t, e) {
-  oe();
+function Ee(s, t, e) {
+  ae();
   const n = document.createElement("div");
   n.className = "evac-stage";
   const i = t.background;
-  if (i?.color && (n.style.background = N(i.color)), i?.asset && e.assets[i.asset]) {
+  if (i?.color && (n.style.background = P(i.color)), i?.asset && e.assets[i.asset]) {
     const c = e.assets[i.asset], l = c.urls.webp ?? c.urls.original;
     n.style.backgroundImage = `url("${l}")`, n.style.backgroundSize = i.fit ?? "cover", n.style.backgroundPosition = "center";
   }
   const r = /* @__PURE__ */ new Map();
   for (const c of t.elements) {
-    const l = we(c, e);
+    const l = xe(c, e);
     l && (r.set(c.id, l), n.appendChild(l));
   }
   s.replaceChildren(n);
@@ -1332,33 +1397,43 @@ function ye(s, t, e) {
     }
   };
 }
-function st(s, t) {
+function W(s, t) {
   const e = Date.now();
   s.replaceChildren(), s.style.aspectRatio = `${t.layout.width} / ${t.layout.height}`;
   for (const [n, i] of Object.entries(t.themeVariables ?? {})) s.style.setProperty(n, i);
-  s.classList.add("evac-preview-host"), ye(s, t.layout, {
+  s.classList.add("evac-preview-host"), Ee(s, t.layout, {
     vars: t.vars,
     now: () => t.at + (Date.now() - e),
     timezone: t.timezone,
     assets: t.assets,
     fonts: t.fonts,
     reducedMotion: !0,
-    nonce: dt(),
-    data: new ce(t.data ?? {}),
-    program: new he(t.program ?? null)
+    nonce: ht(),
+    data: new le(t.data ?? {}),
+    program: new ue(t.program ?? null),
+    plugins: t.plugins ? ye(() => t.plugins?.widgets ?? {}, t.plugins.sources) : void 0
   });
 }
-function be(s, t) {
+function Se(s, t) {
   s.replaceChildren(), (t.pages ?? []).forEach((e, n) => {
     const i = document.createElement("div");
-    i.className = "evac-print-page", i.setAttribute("role", "img"), i.setAttribute("aria-label", t.pageLabels?.[n] ?? ""), s.appendChild(i), st(i, { ...t, vars: { ...t.vars, ...e } });
+    i.className = "evac-print-page", i.setAttribute("role", "img"), i.setAttribute("aria-label", t.pageLabels?.[n] ?? ""), s.appendChild(i), W(i, { ...t, vars: { ...t.vars, ...e } });
   });
+}
+function Me(s, t) {
+  for (const e of s.querySelectorAll("[data-preview-layout]")) {
+    const n = t.layouts?.[e.dataset.previewLayout ?? ""];
+    n && W(e, { ...t, layout: n });
+  }
 }
 if (typeof document < "u") {
   const s = document.getElementById("preview-config"), t = document.querySelector("[data-preview]"), e = document.querySelector("[data-preview-pages]");
-  s && t && st(t, JSON.parse(s.textContent || "{}")), s && e && be(e, JSON.parse(s.textContent || "{}"));
+  s && t && W(t, JSON.parse(s.textContent || "{}")), s && e && Se(e, JSON.parse(s.textContent || "{}"));
+  const n = document.querySelector("[data-preview-gallery]");
+  s && n && Me(n, JSON.parse(s.textContent || "{}"));
 }
 export {
-  be as mountPages,
-  st as mountPreview
+  Me as mountGallery,
+  Se as mountPages,
+  W as mountPreview
 };

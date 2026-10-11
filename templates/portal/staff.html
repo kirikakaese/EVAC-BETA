@@ -7,6 +7,10 @@
   <span class="sync-state" data-sync role="status" data-label-synced="{% trans 'All actions sent' %}" data-label-offline="{% trans 'Offline – actions are kept and sent later' %}" data-label-waiting="{% trans '{n} action(s) waiting to be sent' %}"></span>
 </div>
 <ul class="sync-list small" data-sync-list aria-label="{% trans 'Actions waiting to be sent' %}"></ul>
+<div class="staff-scan">
+  <button type="button" class="btn btn-primary btn-lg" data-scan hidden aria-expanded="false" aria-controls="scan-box" data-label-other="{% trans 'Not an EVAC code:' %}" data-label-denied="{% trans 'The camera is not available. Allow it in the browser settings.' %}">{% trans "Scan a code" %}</button>
+  <div id="scan-box" class="scan-box" data-scan-box hidden><video muted playsinline aria-label="{% trans 'Camera' %}"></video><p class="small" data-scan-result role="status"></p><button type="button" class="btn btn-sm" data-scan-close>{% trans "Close camera" %}</button></div>
+</div>
 
 
 <section class="card" data-push data-key="{{ vapid_key }}" data-subscribe-url="{% url 'core:push_subscribe' %}" data-unsubscribe-url="{% url 'core:push_unsubscribe' %}"

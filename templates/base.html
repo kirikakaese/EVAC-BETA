@@ -50,6 +50,7 @@
         {% for e in switcher_events %}<option value="{{ e.slug }}" {% if current_event and e.pk == current_event.pk %}selected{% endif %}>{{ e.name }}</option>{% endfor %}
       </select>
       {% endif %}
+      <a class="btn btn-ghost btn-icon nav-sync" data-sync-global hidden aria-label="{% trans 'Sync state of this device' %}" href="{% if current_event %}{% url 'portal:staff' current_event.slug %}{% else %}{% url 'portal:home' %}{% endif %}" data-label-waiting="{% trans '{n} action(s) waiting to be sent' %}" data-label-offline="{% trans 'Offline – actions are kept and sent later' %}" data-label-synced="{% trans 'All actions sent' %}"><span aria-hidden="true">⇅</span><span class="badge badge-warn" data-sync-count></span></a>
       <a class="btn btn-ghost btn-icon" href="{% url 'core:notifications' %}" aria-label="{% blocktrans count n=unread_notifications %}Notifications, {{ n }} unread{% plural %}Notifications, {{ n }} unread{% endblocktrans %}"><span aria-hidden="true">🔔</span>{% if unread_notifications %}<span class="badge badge-warn">{{ unread_notifications }}</span>{% endif %}</a>
       {% endif %}
       <button type="button" class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="{% trans 'Toggle dark mode' %}" title="{% trans 'Toggle dark mode' %}">◐</button>

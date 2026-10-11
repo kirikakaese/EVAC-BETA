@@ -74,3 +74,15 @@ def superuser_view(fn):
         return fn(request, *args, **kwargs)
 
     return wrapper
+
+
+def safe_next(request, default: str) -> str:
+    """The ``next`` parameter when it points into this site (``url_has_allowed_host_and_scheme``, which also
+    refuses ``/\\evil.example`` and ``//evil.example``), else ``default``."""
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    nxt = request.POST.get("next") or request.GET.get("next") or ""
+    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()},
+                                               require_https=request.is_secure()):
+        return nxt
+    return default

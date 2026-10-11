@@ -494,6 +494,10 @@ def publish_layout(layout, *, actor, request=None, version=None, at=None):
     layout.save(update_fields=["published", "updated_at"])
     log(action="layout.published", actor=actor, target=layout, event=layout.event, request=request,
         message=f"Layout {layout.name} v{version.number} published")
+    if layout.event_id:
+        from django.core.cache import cache
+
+        cache.delete(f"evac:plugin-sources:{layout.event_id}")  # plugin_widgets.published_sources
     _notify_screens(None, event=layout.event if layout.event_id else None)
     return version
 
@@ -593,8 +597,12 @@ def bundle(event, *, url_for, font_url_for, draft_layout=None) -> dict:
                           font_url_for)
     fonts_used = set().union(*(lf.font_ids(entry["data"]) for entry in layouts)) if layouts else set()
     fonts_used |= {str(theme["tokens"].get("font_body")), str(theme["tokens"].get("font_heading"))}
+    from . import plugin_widgets
+
     payload = {
         "theme": theme, "layouts": layouts, "assets": assets,
+        "plugins": {k: {f: w[f] for f in ("element", "script", "sources", "ttl")}
+                    for k, w in plugin_widgets.widgets(event).items()},
         "fonts_css": fonts_css(event, font_url_for, only=fonts_used),
         "fonts": {str(f.pk): f.stack for f in font_families(event)},
     }

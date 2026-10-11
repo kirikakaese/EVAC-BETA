@@ -112,10 +112,11 @@ def payloads(event: Any, screens: list[Any] | None = None, *, seq: int | None = 
 
     cfg = services.config(event)
     seq = current_seq(event) if seq is None else seq
-    views = services.screen_views(event)
     if screens is not None:
-        wanted = {str(s.pk) for s in screens}
-        views = [v for v in views if str(v.screen.pk) in wanted]
+        # only these screens (one screen asking for its state must not compute every screen of the event)
+        views = services.screen_views(event, screens=services.screens_by_id(event, [s.pk for s in screens]))
+    else:
+        views = services.screen_views(event)
     contents: dict[str, dict[str, Any]] = {}
     layouts: dict[str, dict[str, Any] | None] = {}
     ids = {v.guidance.toward for v in views} | {v.guidance.target for v in views}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block title %}{% trans "Template gallery" %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% url 'content:fonts_css' event.slug %}"><link rel="stylesheet" href="{% static 'editor/preview.css' %}?v={{ editor_version }}">
+{{ config|json_script:"preview-config" }}<script type="module" nonce="{{ csp_nonce }}" src="{% static 'editor/preview.js' %}?v={{ editor_version }}"></script>{% endblock %}
+{% block breadcrumbs %}<p class="breadcrumbs"><a href="{% url 'content:index' event.slug %}">{% trans "Design & assets" %}</a> <span aria-hidden="true">›</span> <a href="{% url 'content:layouts' event.slug %}">{% trans "Layouts" %}</a> <span aria-hidden="true">›</span> {% trans "Templates" %}</p>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Template gallery" %}</h1></div>
+<p class="muted">{% trans "Ready-made layouts in your event's theme. Using one creates a new layout you can change freely; nothing is published until you publish it." %}</p>
+<div data-preview-gallery>
+{% for cat in categories %}<section aria-labelledby="cat-{{ forloop.counter }}"><h2 id="cat-{{ forloop.counter }}">{{ cat }}</h2>
+<div class="template-grid">{% for s in specs %}{% if s.category == cat %}
+  <article class="card template-card">
+    <div class="screen-preview template-thumb" data-preview-layout="{{ s.key }}" role="img" aria-label="{% blocktrans with name=s.name %}Preview of the template {{ name }}{% endblocktrans %}"></div>
+    <h3>{{ s.name }}</h3>
+    {% if s.description %}<p class="small muted">{{ s.description }}</p>{% endif %}
+    {% if can_edit %}<form method="post" class="template-use">{% csrf_token %}<input type="hidden" name="template" value="{{ s.key }}">
+      <label for="name-{{ s.key }}">{% trans "Name of the new layout" %}</label>
+      <div class="split"><input id="name-{{ s.key }}" name="name" maxlength="200" required value="{{ s.name }}"><button class="btn btn-primary">{% trans "Use template" %}</button></div></form>{% endif %}
+  </article>{% endif %}{% endfor %}</div></section>
+{% empty %}<p class="muted">{% trans "No templates available." %}</p>{% endfor %}
+</div>
+{% endblock %}

@@ -98,3 +98,5 @@ svg.evac-data-gauge { width: 90%; max-height: 55%; flex: 0 1 auto; }
 .evac-program-changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4em; }
 .evac-program-change { display: flex; gap: .6em; font-variant-numeric: tabular-nums; }
 .evac-program-change .evac-program-time { opacity: .7; }
+/* plugin widgets (ADR-0045): the plugin's element fills the box */
+.evac-el-plugin .evac-widget, .evac-plugin-element { display: block; width: 100%; height: 100%; }

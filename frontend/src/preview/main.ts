@@ -7,7 +7,8 @@ import { pageNonce } from "../renderer/code";
 import { MemoryStore } from "../renderer/data";
 import { type ProgramData, ProgramStore } from "../renderer/program";
 import { renderLayout } from "../renderer/render";
-import type { AssetEntry, LayoutData, WidgetData } from "../renderer/types";
+import { fetchHost } from "../renderer/plugin";
+import type { AssetEntry, LayoutData, PluginWidgetInfo, WidgetData } from "../renderer/types";
 
 interface PreviewConfig {
   layout: LayoutData; at: number; timezone: string; vars: Record<string, unknown>;
@@ -16,6 +17,10 @@ interface PreviewConfig {
   data?: Record<string, WidgetData>;
   /** program sessions ("program" elements) */
   program?: ProgramData | null;
+  /** widgets of third-party plugins and the portal URL their data sources are read from (ADR-0045) */
+  plugins?: { widgets: Record<string, PluginWidgetInfo>; sources: string };
+  /** a gallery: several layouts sharing the rest of the config, each shown in ``[data-preview-layout=key]`` */
+  layouts?: Record<string, LayoutData>;
   /** a print sheet: one page per entry, each rendered with these variables merged over ``vars`` (badges) */
   pages?: Record<string, unknown>[];
   /** accessible name of each page (e.g. "Badge of Ada Lovelace") */
@@ -32,6 +37,7 @@ export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
     vars: cfg.vars, now: () => cfg.at + (Date.now() - started), timezone: cfg.timezone, assets: cfg.assets,
     fonts: cfg.fonts, reducedMotion: true, nonce: pageNonce(), data: new MemoryStore(cfg.data ?? {}),
     program: new ProgramStore(cfg.program ?? null),
+    plugins: cfg.plugins ? fetchHost(() => cfg.plugins?.widgets ?? {}, cfg.plugins.sources) : undefined,
   });
 }
 
@@ -48,10 +54,20 @@ export function mountPages(sheet: HTMLElement, cfg: PreviewConfig): void {
   });
 }
 
+/** A gallery: one thumbnail per layout (template gallery). */
+export function mountGallery(root: HTMLElement, cfg: PreviewConfig): void {
+  for (const host of root.querySelectorAll<HTMLElement>("[data-preview-layout]")) {
+    const layout = cfg.layouts?.[host.dataset.previewLayout ?? ""];
+    if (layout) mountPreview(host, { ...cfg, layout });
+  }
+}
+
 if (typeof document !== "undefined") {
   const data = document.getElementById("preview-config");
   const host = document.querySelector<HTMLElement>("[data-preview]");
   const sheet = document.querySelector<HTMLElement>("[data-preview-pages]");
   if (data && host) mountPreview(host, JSON.parse(data.textContent || "{}") as PreviewConfig);
   if (data && sheet) mountPages(sheet, JSON.parse(data.textContent || "{}") as PreviewConfig);
+  const gallery = document.querySelector<HTMLElement>("[data-preview-gallery]");
+  if (data && gallery) mountGallery(gallery, JSON.parse(data.textContent || "{}") as PreviewConfig);
 }

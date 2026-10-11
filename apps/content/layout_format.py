@@ -53,6 +53,9 @@ ELEMENT_TYPES = {
     "program": {"view": {"enum": ["now_next", "day", "changes"]}, "stage": UUID,
                 "count": {"type": "integer", "minimum": 1, "maximum": 20},
                 "title": {"type": "string", "maxLength": 200}},
+    # a widget of a third-party plugin (ADR-0045): the renderer loads the plugin's script and element
+    "plugin": {"widget": {"type": "string", "pattern": r"^[a-z0-9_.-]{0,64}$"},
+               "settings": {"type": "object", "maxProperties": 50}},
     # code mode (ADR-0018): runs in a sandboxed frame without network; only the data listed in "data" is sent in
     "code": {"html": {"type": "string", "maxLength": 50_000}, "css": {"type": "string", "maxLength": 50_000},
              "js": {"type": "string", "maxLength": 100_000},

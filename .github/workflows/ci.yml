@@ -67,7 +67,7 @@ jobs:
           pip install -r requirements-ci.txt
 
       - name: Ruff
-        run: ruff check apps evac extensions bridge conftest.py scripts
+        run: ruff check apps evac extensions bridge conftest.py scripts examples
 
       - name: Mypy (strict core modules)
         run: mypy
@@ -156,6 +156,7 @@ jobs:
           python -m pip install --upgrade pip
           eval "$DEPS_CMD" > requirements-ci.txt
           pip install -r requirements-ci.txt
+          pip install ./examples/evac-weather  # phase 9: the example plugin on a screen
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -226,6 +227,130 @@ jobs:
           pip install -r requirements-ci.txt
       - name: 500 players, alarm through the API, trigger-to-screen time
         run: python scripts/load_ws.py --players 500
+
+  load-screens:
+    name: screens load (1,000 simulated screens, production shape)
+    runs-on: ubuntu-latest
+    needs: [test]
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:16
+        env:
+          POSTGRES_USER: evac
+          POSTGRES_PASSWORD: evac
+          POSTGRES_DB: evacload
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U evac -d evacload"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+      redis:
+        image: public.ecr.aws/docker/library/redis:7
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          eval "$DEPS_CMD" > requirements-ci.txt
+          pip install -r requirements-ci.txt
+      - name: Boot, heartbeats, content change, alarm on 1,000 screens (gunicorn + daphne + Celery + Redis + PostgreSQL)
+        env:
+          LOAD_DATABASE_URL: postgres://evac:evac@localhost:5432/evacload
+          LOAD_REDIS_URL: redis://localhost:6379/15
+        run: python scripts/load_screens.py --screens 1000 --production --minutes 1
+
+  example-plugin:
+    name: example plugin (pip install, entry point, no core changes)
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies and the example plugin as a package
+        run: |
+          python -m pip install --upgrade pip
+          eval "$DEPS_CMD" > requirements-ci.txt
+          pip install -r requirements-ci.txt
+          pip install ./examples/evac-weather
+      - name: Lint the example
+        run: ruff check examples
+      - name: Its migrations are complete
+        env:
+          DJANGO_SETTINGS_MODULE: evac.settings.test
+        run: python manage.py makemigrations --check --dry-run
+      - name: Its tests, with EVAC unchanged
+        run: python -m pytest -p no:cacheprovider examples/evac-weather/tests
+
+  postgres-tests:
+    name: evacuation, content and helpdesk tests on PostgreSQL
+    runs-on: ubuntu-latest
+    needs: [test]
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:16
+        env:
+          POSTGRES_USER: evac
+          POSTGRES_PASSWORD: evac
+          POSTGRES_DB: evac
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U evac -d evac"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          eval "$DEPS_CMD" > requirements-ci.txt
+          pip install -r requirements-ci.txt
+      - name: Alarm, content and staff paths on PostgreSQL (row locks, joins)
+        env:
+          TEST_DATABASE_URL: postgres://evac:evac@localhost:5432/evac
+        run: python -m pytest -p no:cacheprovider apps/evacuation apps/content apps/helpdesk apps/playlists
+
+  tauri:
+    name: Tauri player wrapper (build, unit tests)
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            deploy/tauri/src-tauri/target
+          key: tauri-${{ hashFiles('deploy/tauri/src-tauri/Cargo.lock') }}
+      - name: Tests and lints
+        working-directory: deploy/tauri/src-tauri
+        run: |
+          cargo test --locked
+          cargo clippy --locked -- -D warnings
 
   node-sync:
     name: venue node sync (two instances)

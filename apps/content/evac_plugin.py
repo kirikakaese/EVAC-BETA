@@ -48,6 +48,10 @@ def register(r: Registry) -> None:
     ]:
         r.widget(WidgetSpec(key=key, name=str(name), description=str(desc), module="content",
                             element=f"evac-{key}", script="player/player.js"))
+    from . import gallery, plugin_widgets
+
+    r.editor_choices("pluginWidgets", plugin_widgets.editor_choices, module="content")
+    gallery.register(r)
     r.nav(NavEntry(module="content", label=str(_("Design & assets")), url_name="content:index",
                    permission="content.view", section="content", order=20))
     r.settings_namespace(SettingsNamespace(

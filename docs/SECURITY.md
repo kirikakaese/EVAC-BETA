@@ -24,7 +24,8 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 | A forged screen / rogue player | Per-screen device tokens, revocable (phase 1); uploads (screenshots, logs) only accepted within two minutes of a staff request, size-limited, images re-encoded before storing and never served as uploaded |
 | A malicious `.evacpack` | Structure, sizes, hashes and Ed25519 signature checked before anything is shown; unsigned packs and unknown keys need an explicit confirmation or are refused (*only trusted packs*); import goes through the normal services (code needs `content.code`, feed URLs the SSRF check), creates copies only and is audit-logged with signer and fingerprint ([ADR-0024](adr/0024-evacpack.md)) |
 | Privilege escalation via role editing | Editing roles and handing out roles with sensitive permissions requires `events.roles` (sensitive); orga cannot grant admin; last-admin guard |
-| A compromised plugin | Plugins are code with full access: install only trusted plugins; `EVAC_DISABLED_PLUGINS` removes one |
+| A compromised plugin | Plugins are code with full access: install only trusted plugins; `EVAC_DISABLED_PLUGINS` removes one. Plugin widgets (ADR-0045) run their JavaScript in the player page, not sandboxed: installing a plugin is an administrator's decision on the server |
+| Plugin data leaking to screens | Screens read a plugin data source only when a widget in one of the event's **published** layouts declares it; people in the editor only with `content.view` plus the source's own `permission` |
 
 ### False (or suppressed) evacuation alarms — phase 3
 
@@ -57,6 +58,8 @@ Threat model and controls. Updated with every phase; evacuation-specific control
 | CSRF / clickjacking | Django CSRF on all forms, HTMX sends the token header, `X-Frame-Options: DENY`, `frame-ancestors 'none'` |
 | Webhook forgery / replay | HMAC-SHA256 with constant-time comparison, per-config secrets shown once, delivery-id idempotency |
 | Map tile fetching | Tiles are fetched by a background task, never inside a request, from the one tile server an instance admin configured; size limit, image type check, login required to view; bulk download refused for the public OpenStreetMap servers ([ADR-0028](adr/0028-georeference-and-map-tiles.md)) |
+| SSRF via Web Push | Push endpoints are accepted only on known push-service hosts (`EVAC_PUSH_SERVICE_HOSTS`: FCM, Mozilla, Apple, Windows), checked when subscribing and again when sending; redirects are not followed |
+| Open redirects | Every `next` parameter goes through `safe_next` (`url_has_allowed_host_and_scheme`, refuses `//host` and `/\host`) |
 | SSRF via outbound webhooks | Only admins/orgas with `extensions.manage` add endpoints; deliveries do not follow redirects. Venue LANs are private networks by design, so private addresses are allowed — restrict egress at the firewall if needed |
 | Secret disclosure | Fernet at rest, write-only forms, never in audit/logs, key rotation |
 | Audit tampering | Hash chain + immutable rows + PostgreSQL trigger; verify on demand |
@@ -71,6 +74,23 @@ Threat model and controls. Updated with every phase; evacuation-specific control
   `secrets_on_site`) and are re-encrypted there; other extension secrets never leave central.
 - Central accepts from a node only changes of live state of the event checked out to it; audit entries join
   central's chain as imported rows that keep the node's hash. A lost node is revoked after a forced check-in.
+
+### Security review (Phase 9)
+
+A review of templates (unescaped output), CSRF exemptions, redirects, permission checks and object scoping on
+state-changing views, raw SQL, file serving, subprocess use and outbound HTTP found no high-severity issues. Fixed:
+SSRF through Web Push endpoints, weak `next` checks in ops and crew, a non-constant-time signature comparison for
+speech files, notification channels following redirects, and plugin data sources readable without the source's
+permission. Known limitations, accepted for now:
+
+- **DNS rebinding**: `safefetch` resolves a host to check it is not private and `requests` resolves it again when
+  connecting; a rebinding domain could slip through between the two. Feeds are added by people with
+  `widgets.manage`; pin egress at the firewall if feeds from untrusted sources are allowed.
+- **Extension URLs** (webhooks, notification channels) may point into private networks by design (venue LANs);
+  event-level `extensions.manage` holders can therefore probe internal services through delivery logs. Grant
+  `extensions.manage` only to trusted orgas or restrict egress.
+- The info-beamer player does not verify alarm signatures (no crypto library on the device); use HTTPS.
+- Production must run on PostgreSQL with the connection pool (ADR-0047); alarms are tested on PostgreSQL in CI.
 
 ## Privacy (GDPR)
 

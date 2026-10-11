@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The local setup page may save the server address. Remote pages (EVAC's player) get no IPC.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

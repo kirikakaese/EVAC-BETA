@@ -12,6 +12,7 @@ urlpatterns = [
     path("requests/<uuid:pk>/", views.ticket, name="ticket"),
     path("lost-found/", views.lost_found, name="lost_found"),
     path("lost-found/new/", views.lf_edit, name="lf_new"),
+    path("lost-found/quick/", views.lf_quick, name="lf_quick"),
     path("lost-found/<uuid:pk>/", views.lf, name="lf"),
     path("lost-found/<uuid:pk>/edit/", views.lf_edit, name="lf_edit"),
     path("lost-found/<uuid:pk>/action/", views.lf_action, name="lf_action"),

@@ -1,0 +1,7 @@
+{% load i18n %}<section class="card staff-ntfy"><h2>{% trans "Backup notifications (ntfy)" %}</h2>
+<p>{% trans "If push notifications do not reach this phone, subscribe to the event's topic in the free ntfy app. Announcements and staff alerts are sent there too." %}</p>
+<p><span class="small muted">{% trans "Server" %}</span> <code>{{ ctx.server }}</code><br><span class="small muted">{% trans "Topic" %}</span> <code id="ntfy-topic">{{ ctx.topic }}</code>
+<button type="button" class="btn btn-sm" data-action="copy" data-target="#ntfy-topic" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></p>
+{% if ctx.protected %}<p class="small muted">{% trans "The topic needs an access token: ask the event's admins." %}</p>{% endif %}
+<p><a class="btn btn-sm" href="{{ ctx.url }}" rel="noopener" target="_blank">{% trans "Open the topic" %}</a></p>
+</section>

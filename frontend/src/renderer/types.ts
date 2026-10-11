@@ -53,6 +53,15 @@ export interface DataStore {
   subscribe(fn: () => void): () => void;
 }
 
+/** A plugin widget as the server describes it (ADR-0045). */
+export interface PluginWidgetInfo { element: string; script: string; sources: string[]; ttl: number }
+
+/** Where plugin widgets come from and how their data sources are read. */
+export interface PluginHost {
+  widgets: Record<string, PluginWidgetInfo>;
+  source(key: string): Promise<unknown>;
+}
+
 export interface RenderContext {
   /** template variables: event, screen, data, ... */
   vars: Record<string, unknown>;
@@ -71,6 +80,8 @@ export interface RenderContext {
   data?: DataStore;
   /** the event's program ("program" elements, ADR-0038) */
   program?: import("./program").ProgramStore;
+  /** widgets of third-party plugins ("plugin" elements, ADR-0045) */
+  plugins?: PluginHost;
   /** screen audio settings: off mutes every media widget */
   audio?: { enabled: boolean; volume: number };
   onError?: (elementId: string, error: unknown) => void;

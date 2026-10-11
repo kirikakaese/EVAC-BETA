@@ -155,6 +155,25 @@ def lf(request, slug, pk, *, event):
 
 @require_POST
 @event_view("helpdesk.manage", module=MODULE)
+def lf_quick(request, slug, *, event):
+    """"Log a found item" on the staff page; also replayed by the offline queue (``client_id``)."""
+    from django.utils.dateparse import parse_datetime
+
+    from apps.portal.shortcuts import safe_next
+
+    try:
+        obj = services.quick_found(event, what=request.POST.get("what", ""), where=request.POST.get("where", ""),
+                                   description=request.POST.get("description", ""), actor=request.user,
+                                   client_id=request.POST.get("client_id", ""),
+                                   at=parse_datetime(request.POST.get("written_at") or "") or None, request=request)
+        messages.success(request, _("Saved as %(r)s.") % {"r": obj.reference})
+    except ValidationError as err:
+        _fail(request, err)
+    return redirect(safe_next(request, reverse("helpdesk:lost_found", args=[slug])))
+
+
+@require_POST
+@event_view("helpdesk.manage", module=MODULE)
 def lf_action(request, slug, pk, *, event):
     obj = get_object_or_404(LostFound.objects.select_related("match"), event=event, pk=pk)
     action = request.POST.get("action", "")

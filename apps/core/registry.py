@@ -24,6 +24,7 @@ from .plugins import (
     EventHook,
     ExtensionSpec,
     LayoutCheck,
+    LayoutTemplateSpec,
     MapLayerSpec,
     ModuleSpec,
     MqttTopicSpec,
@@ -78,6 +79,7 @@ class Registry:
         self.webhook_sinks: list[WebhookSink] = []
         self.program_sources: list[ProgramSource] = []
         self.layout_checks: list[LayoutCheck] = []
+        self.layout_templates: dict[str, LayoutTemplateSpec] = {}
         self.sync_specs: dict[str, SyncSpec] = {}
         self.node_actions: dict[str, NodeAction] = {}
         self.staff_cards: dict[str, StaffCardSpec] = {}
@@ -194,6 +196,9 @@ class Registry:
     def program_source(self, fn: ProgramSource) -> None:
         """Contribute entries/overlays to every screen's program (see ``plugins.ProgramSource``)."""
         self.program_sources.append(fn)
+
+    def layout_template(self, spec: LayoutTemplateSpec) -> None:
+        self._add(self.layout_templates, spec.key, spec, "layout template")
 
     def layout_check(self, fn: LayoutCheck) -> None:
         """Check a layout on save and publish: ``fn(layout, data) -> [{"level": "error"|"warning", "message",

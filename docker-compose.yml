@@ -4,7 +4,7 @@
 #   docker compose up --build -d
 #   open http://localhost:8000   -> first-run wizard (or demo: EVAC_SEED_DEMO=1, admin@evac.local / evac-demo-admin)
 #
-# Services: web (HTTP + SSE, gunicorn with ASGI workers), channels (WebSockets, daphne), worker + beat
+# Services: web (HTTP + SSE, gunicorn with ASGI workers), channels (WebSockets, gunicorn with ASGI workers), worker + beat
 # (celery), db, redis. Without a reverse proxy, browsers open WebSockets on :8001 (EVAC_REALTIME_URL).
 # Behind a reverse proxy, route /ws/ to channels:8001 and everything else to web:8000, and leave
 # EVAC_REALTIME_URL empty.
