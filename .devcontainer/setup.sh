@@ -29,6 +29,6 @@ fi
 if ! command -v ffmpeg >/dev/null 2>&1; then
     sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg || true
 fi
-make dev
+make dev && touch .venv/.deps-stamp
 .venv/bin/python manage.py migrate --noinput
 .venv/bin/python manage.py evac_seed_demo

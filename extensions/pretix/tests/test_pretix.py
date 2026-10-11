@@ -155,7 +155,8 @@ def test_checkins_go_back_to_pretix(event, admin, django_capture_on_commit_callb
     with mock.patch.object(safefetch, "check_url", side_effect=safefetch.FetchError("Unknown host")):
         importer.handle_checkin(job)
     assert job.result == {"failed": "Unknown host"}
-    with mock.patch("requests.post", return_value=resp) as post, mock.patch.object(safefetch, "check_url"):
+    with mock.patch("requests.post", return_value=resp) as post, mock.patch.object(safefetch, "check_url"), \
+            mock.patch.object(safefetch, "resolve", return_value="203.0.113.7"):
         importer.handle_checkin(job)
     url, kw = post.call_args[0][0], post.call_args[1]
     assert url == "https://pretix.example.org/api/v1/organizers/camp/checkinrpc/redeem/"
@@ -163,7 +164,7 @@ def test_checkins_go_back_to_pretix(event, admin, django_capture_on_commit_callb
     assert job.result == {"status": 201, "pretix": "ok"}
     resp.status_code = 503
     with mock.patch("requests.post", return_value=resp), mock.patch.object(safefetch, "check_url"), \
-            pytest.raises(RuntimeError):
+            mock.patch.object(safefetch, "resolve", return_value="203.0.113.7"), pytest.raises(RuntimeError):
         importer.handle_checkin(job)
     # check-ins that came from pretix are not sent back; manual attendees neither
     importer.on_event("access.checked_in", {"source": "", "id": "x"}, event)

@@ -208,6 +208,11 @@ legally required systems ([EVACUATION.md](EVACUATION.md)).
   secondary nodes that serve the signed state to screens without the server, and rotate it when such a device
   is lost.
 - During an alarm the **watchdog** alerts the control room when screens have not confirmed it after 30 s.
+- **Staff alarm channels** (*Settings → Evacuation*, off by default): tick ntfy, Matrix, Telegram or e-mail and
+  every state change (alarm, escalation, all clear) is also sent there, after the screens, with drills marked and
+  at lower priority. It is an extra way to reach staff phones, never the main one: the screens, the staff app and
+  Web Push work without it. ntfy is used only for a topic that needs an access token to publish (see
+  [the ntfy channel](extensions/notify.md#ntfy)); without one the alarm is refused and logged.
 
 ## 8. Screens
 
@@ -374,7 +379,8 @@ browser's *Add to home screen*. The page shows
 - **Log a found item**: what, where, details. Works offline like approvals; replays never create duplicates. The
   full form (photo, storage place) stays under *Helpdesk → Lost & found*.
 - **Backup notifications (ntfy)**: when the ntfy extension is set up for the event, the staff app shows its topic;
-  staff subscribe in the ntfy app as a second way to receive announcements and staff alerts.
+  staff subscribe in the ntfy app as a second way to receive announcements and staff alerts, and evacuation
+  alarms when *Staff alarm channels* includes ntfy and the topic is protected by an access token (section 7).
 - The other cards come from the modules: incidents (*Report*), door counter, my shifts with check-in, inventory,
   check-in gates, helpdesk and the evacuation status with the panic page for those allowed.
 

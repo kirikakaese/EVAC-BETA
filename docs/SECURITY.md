@@ -83,12 +83,15 @@ SSRF through Web Push endpoints, weak `next` checks in ops and crew, a non-const
 speech files, notification channels following redirects, and plugin data sources readable without the source's
 permission. Known limitations, accepted for now:
 
-- **DNS rebinding**: `safefetch` resolves a host to check it is not private and `requests` resolves it again when
-  connecting; a rebinding domain could slip through between the two. Feeds are added by people with
-  `widgets.manage`; pin egress at the firewall if feeds from untrusted sources are allowed.
+- **DNS rebinding** (fixed, ADR-0049): `safefetch` resolves a host once, checks every answer and connects to the
+  checked address; Host header, TLS server name and certificate check keep the hostname. Behind an egress proxy
+  the proxy resolves the name, so the proxy must refuse private targets itself.
 - **Extension URLs** (webhooks, notification channels) may point into private networks by design (venue LANs);
   event-level `extensions.manage` holders can therefore probe internal services through delivery logs. Grant
   `extensions.manage` only to trusted orgas or restrict egress.
+- **Evacuation alarms to staff channels** (ADR-0049) are opt-in per event and never replace the screens, Web
+  Push or the staff app. ntfy refuses them for a topic without an access token, since anyone who knows an open
+  topic's name could post a fake "Evacuate" to every subscribed phone.
 - The info-beamer player does not verify alarm signatures (no crypto library on the device); use HTTPS.
 - Production must run on PostgreSQL with the connection pool (ADR-0047); alarms are tested on PostgreSQL in CI.
 

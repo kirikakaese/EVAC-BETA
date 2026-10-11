@@ -226,13 +226,18 @@ def alert_email(cfg, event, alert) -> dict[str, Any]:
 
 
 def alert_ntfy(cfg, event, alert) -> dict[str, Any]:
+    token = cfg.secret("token")
+    if alert.critical and not token:
+        # anyone who knows an open topic's name can post a fake "Evacuate" to every subscribed phone
+        raise Rejected(_("Evacuation alarms need an ntfy topic that requires an access token to publish; set the "
+                         "token in the ntfy extension."))
     body = {"topic": cfg.settings.get("topic", ""), "title": alert.title[:250], "message": alert.body or alert.title,
             "priority": NTFY_PRIORITY[ALERT_URGENCY.get(alert.level, "normal")],
-            "tags": ["warning"] if alert.level != "info" else []}
+            "tags": (["rotating_light"] if alert.critical and alert.level == "err"
+                     else ["warning"] if alert.level != "info" else [])}
     link = _alert_link(alert)
     if link:
         body["click"] = link
-    token = cfg.secret("token")
     call("POST", _base(cfg.settings.get("server") or "https://ntfy.sh"), json=body,
          headers={"Authorization": f"Bearer {token}"} if token else None)
     return {"recipients": 1, "detail": _("topic %(t)s") % {"t": body["topic"]}}

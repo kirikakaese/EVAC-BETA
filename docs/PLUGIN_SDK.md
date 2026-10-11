@@ -2,8 +2,8 @@
 
 Every EVAC module and extension — built-in or third party — is a **plugin**: a Django app with an
 `evac_plugin.py`. The core uses exactly the same API ([ADR-0001](adr/0001-architecture-and-plugin-model.md)).
-Plugin API version: `apps.core.plugins.API_VERSION = 2` (2 added `layout_check`, `sync`, `node_action` and
-`ExtensionSpec.secrets_on_site`; plugins written for 1 still load).
+Plugin API version: `apps.core.plugins.API_VERSION = 5` (2 added `layout_check`, `sync`, `node_action` and
+`ExtensionSpec.secrets_on_site`; 4 `layout_template`; 5 `Alert.critical`; plugins written for 1 still load).
 
 A complete, pip-installable example lives in [`examples/evac-weather`](../examples/evac-weather/README.md): a
 screen widget, its data source and an extension page with its own model, migration, Celery task and tests, all
@@ -69,7 +69,7 @@ again without removing the package.
 | `SettingsNamespace` | `r.settings_namespace` | typed settings with inheritance and generated forms |
 | `ScopeKind` | `r.scope_kind` | objects role assignments can be scoped to |
 | `DataSourceSpec`, `WidgetSpec` | `r.data_source`, `r.widget` | screen content; a data source with `fetch(event)` returning JSON-like data can feed custom widgets (ADR-0023) |
-| `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (raise to retry); `available(event)` hides it where it is not set up; `max_length` offers an own text per channel (ADR-0019, ADR-0020; example: `extensions/notify`). Optional `alert(event, Alert)` sends a plain staff alert (incident escalation, "room full"); public channels leave it out; queue alerts with `apps.core.alerts.enqueue(event, keys, Alert(...))` (ADR-0039) |
+| `NotificationChannelSpec` | `r.notification_channel` | announcement channels: `send(delivery) -> {"status", "recipients", "detail"}`, called from the outbox (raise to retry); `available(event)` hides it where it is not set up; `max_length` offers an own text per channel (ADR-0019, ADR-0020; example: `extensions/notify`). Optional `alert(event, Alert)` sends a plain staff alert (incident escalation, "room full"); public channels leave it out; queue alerts with `apps.core.alerts.enqueue(event, keys, Alert(...))` (ADR-0039). `Alert.critical` marks evacuation alarms: a channel where strangers could post forged messages must refuse them (raise `Rejected`) (ADR-0049) |
 | `EvacTriggerSpec` | `r.evac_trigger` | alarm trigger sources (phase 3) |
 | `WebhookEventSpec` | `r.webhook_event` | outbound event types (`apps.core.webhooks.emit`) |
 | `CliCommandSpec` | `r.cli_command` | `evac <name>` sub-commands |
