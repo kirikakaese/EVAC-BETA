@@ -1,0 +1,1 @@
+{% load i18n %}{% if status == "ok" %}<span class="badge badge-ok">{% trans "OK" %}</span>{% elif status == "warn" %}<span class="badge badge-warn">{% trans "Degraded" %}</span>{% elif status == "down" %}<span class="badge badge-down">{% trans "Down" %}</span>{% else %}<span class="badge badge-unknown">{% trans "Unknown" %}</span>{% endif %}

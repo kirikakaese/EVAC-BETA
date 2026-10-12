@@ -1,0 +1,8 @@
+{% load i18n %}{% for g in ov.groups %}<section class="card" aria-labelledby="hb-{{ g.spec.key|slugify }}"><h2 id="hb-{{ g.spec.key|slugify }}">{{ g.spec.name }}</h2>
+{% if g.spec.description %}<p class="small muted">{{ g.spec.description }}</p>{% endif %}
+<div class="table-wrap"><table class="hb-table"><thead><tr><th scope="col">{% trans "What" %}</th><th scope="col">{% trans "Status" %}</th><th scope="col">{% trans "Details" %}</th><th scope="col">{% trans "Since" %}</th></tr></thead>
+<tbody>{% for o in g.items %}<tr><td>{% if o.item.url %}<a href="{{ o.item.url }}">{{ o.item.label }}</a>{% else %}{{ o.item.label }}{% endif %}</td>
+<td>{% include "heartbeat/_badge.html" with status=o.item.status %}{% if o.state and o.state.candidate and o.state.candidate != o.state.status %}<br><span class="small muted">{% trans "changing, waiting for the grace period" %}</span>{% endif %}</td>
+<td class="small">{{ o.item.detail|default:"–" }}</td>
+<td class="small tabular">{% if o.state and o.state.status == o.item.status %}<time datetime="{{ o.state.since|date:'c' }}">{{ o.state.since|date:"H:i" }}</time> <span class="muted">({% blocktrans with t=o.state.since|timesince:now %}{{ t }} ago{% endblocktrans %})</span>{% endif %}{% if o.item.since %}<br><span class="muted">{% trans "last contact" %} <time datetime="{{ o.item.since|date:'c' }}">{{ o.item.since|date:"H:i" }}</time></span>{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% empty %}<section class="card"><h2>{% trans "Checks" %}</h2><p class="muted">{% trans "Nothing to watch here: the modules with health checks are off." %}</p></section>{% endfor %}

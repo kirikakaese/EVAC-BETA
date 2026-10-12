@@ -2,7 +2,7 @@
 """Venue nodes (ADR-0002, ADR-0036): part of the core, always on."""
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import NavEntry, PermissionSpec, PluginManifest
+from apps.core.plugins import HealthCheckSpec, NavEntry, PermissionSpec, PluginManifest
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="nodes", name="Venue nodes", version="1.0.0", kind="core")
@@ -15,3 +15,12 @@ def register(r: Registry) -> None:
                    section="admin", order=35, global_=True, active=("nodes_admin:*",)))
     r.nav(NavEntry(module="core", label=str(_("Venue node")), url_name="nodes:index", permission="nodes.checkout",
                    section="settings", order=80, active=("nodes:*",)))
+    from . import health
+
+    r.health_check(HealthCheckSpec(key="nodes.event", name=str(_("Venue node")), check=health.event_check,
+                                   module="core", order=20, while_checked_out=True,
+                                   description=str(_("The venue node holding this event: last contact and sync."))))
+    r.health_check(HealthCheckSpec(key="nodes.instance", name=str(_("Venue nodes")), check=health.instance_check,
+                                   module="core", scope="instance", order=20,
+                                   description=str(_("Enrolled venue nodes (central) or the link to central "
+                                                     "(on a node)."))))

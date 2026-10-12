@@ -6,6 +6,33 @@ released.
 
 ## [Unreleased]
 
+### Added — Heartbeat: health monitor, alive indicator, operator check-in (ADR-0052)
+
+- New module `heartbeat` (on by default; *Operations → Heartbeat*, `heartbeat.view` / `heartbeat.manage`). Plugin
+  API 7: `r.health_check(HealthCheckSpec(...))` returning `HealthItem`s (`ok`, `warn`, `down`, `unknown`). Checks
+  of modules that are off are skipped.
+- Built-in checks, each registered by its own app: screens (last heartbeat), the venue node holding the event and
+  all enrolled nodes (or, on a node, the link to central), hardware bridges (heartbeat, input faults; read-only),
+  the DIAL link, other extensions' connection tests, data feeds, the outbox (depth, oldest untried job, retries,
+  dead jobs) and the Celery worker and beat (a pulse written by the new beat task `heartbeat-evaluate`, every
+  30 s).
+- Alerts on a change into `down` after a grace period (default 60 s, no flapping), and on recovery:
+  - in-app notifications (Web Push) for the roles in *Notify roles*;
+  - optional staff alert channels through the outbox;
+  - the audit log;
+  - webhook events `heartbeat.down` and `heartbeat.recovered`, which the ops log turns into control-room lines.
+  Many changes of one check become one message. Alerts go out only in the chosen event states (default: setup
+  and live). The instance-wide view (*Instance → Heartbeat*) notifies instance admins.
+- Control room dashboard panel *Heartbeat*: problems and the check-in.
+- Alive indicator for screens: the plugin widget `heartbeat.alive` (`<evac-heartbeat-alive>`, no renderer change)
+  shows a pulsing dot and the time. It turns grey with "Offline since HH:MM" when fresh data stops arriving. No
+  pulse with reduced motion.
+- Operator check-in (off by default): a member of the check-in roles presses “I'm here” every N minutes, on the
+  heartbeat page, the dashboard or the staff app. A missed check-in sends a reminder, then escalates along a chain
+  of roles, one step per grace period, also through channels. Only while live (configurable); audited; webhook
+  events `heartbeat.checked_in` and `heartbeat.checkin_missed`. Never touches evacuation or alarm states.
+- Built-in roles of new events: control room gets `heartbeat.*`, security `heartbeat.view`.
+
 ### Added — Event setup wizard and checklist (ADR-0050)
 
 - *New event* is now a guided wizard: basics (the event is created here; *Create and skip the wizard* goes straight

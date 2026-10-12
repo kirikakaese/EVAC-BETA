@@ -2,6 +2,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
+    HealthCheckSpec,
     ModuleSpec,
     NavEntry,
     PackSectionSpec,
@@ -46,3 +47,8 @@ def register(r: Registry) -> None:
     r.pack_section(PackSectionSpec(key="widgets", title=str(_("Custom widgets")), module="widgets", order=50,
                                    choices=packs.widget_choices, requires=packs.widget_requires,
                                    dump=packs.dump_widgets, load=packs.load_widgets))
+    from . import health
+
+    r.health_check(HealthCheckSpec(key="widgets.feeds", name=str(_("Data feeds")), check=health.check,
+                                   module="widgets", order=60,
+                                   description=str(_("Feeds of custom widgets: failed fetches and old data."))))

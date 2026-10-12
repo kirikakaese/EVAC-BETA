@@ -1,0 +1,3 @@
+{% load i18n %}<section class="card staff-checkin"><h2>{% trans "Check-in" %}</h2>
+<p class="small muted">{% trans "Confirm that you are at your post. Works only with a connection: a check-in is counted when the server receives it." %}</p>
+{% include "heartbeat/_checkin.html" with st=ctx.checkin.status can=ctx.checkin.can source="staff" %}</section>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Heartbeat" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Heartbeat" %}</h1>
+<div class="actions">{% if can_manage %}<a class="btn btn-ghost" href="{% url 'portal:settings_ns' event.slug 'heartbeat' %}">{% trans "Settings" %}</a>{% endif %}</div></div>
+{% if remote %}<div class="alert alert-info" role="status">{% trans "This event is checked out to a venue node: screens, bridges and check-ins report there. Central only watches the node's sync and its own services." %}</div>{% endif %}
+<section class="card" aria-labelledby="hb-sum"><h2 id="hb-sum">{% trans "Overview" %}</h2>
+{% include "heartbeat/_summary.html" with counts=ov.counts %}
+<p class="small muted">{% blocktrans with s=cfg.grace_seconds %}Something must be down for {{ s }} seconds before anyone is told; its recovery is reported too. Checked every 30 seconds in the background; this page shows the state right now.{% endblocktrans %}</p></section>
+{% include "heartbeat/_checks.html" %}
+<section class="card" aria-labelledby="hb-ci"><h2 id="hb-ci">{% trans "Operator check-in" %}</h2>
+{% if checkin.enabled %}{% include "heartbeat/_checkin.html" with st=checkin can=can_checkin source="page" %}
+<p class="small muted">{% blocktrans with i=cfg.checkin_interval_minutes g=cfg.checkin_grace_minutes %}Every {{ i }} minutes; escalated every {{ g }} minutes after a missed check-in.{% endblocktrans %}
+{% trans "Checks in:" %} {{ checkin_roles_names|join:", "|default:"–" }}.
+{% trans "Escalation:" %} {{ checkin_escalation_names|join:" → "|default:"–" }}.</p>
+{% if history %}<h3>{% trans "Recent check-ins" %}</h3><ul class="plain small">{% for c in history %}<li><time datetime="{{ c.at|date:'c' }}">{{ c.at|date:"D H:i" }}</time> {{ c.user_repr }}{% if c.source %} <span class="muted">({{ c.source }})</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
+{% else %}<p class="muted">{% trans "Operator check-in is off. When it is on, someone of the control room confirms “I'm here” regularly and missed check-ins are escalated." %}</p>{% endif %}</section>
+<section class="card" aria-labelledby="hb-al"><h2 id="hb-al">{% trans "Who is told" %}</h2>
+<p>{% trans "Notified in the app:" %} {% if notify_roles_names %}{{ notify_roles_names|join:", " }}{% else %}<span class="muted">{% trans "nobody" %}</span>{% endif %}{% if cfg.alert_channels %}; {% trans "channels:" %} {{ cfg.alert_channels|join:", " }}{% endif %}.
+{% trans "Integrations receive the webhook events heartbeat.down and heartbeat.recovered; the ops log shows them." %}</p>
+{% if channels %}<p class="small muted">{% trans "Alert channels of this event (keys for the settings):" %} {% for k, n in channels.items %}<code>{{ k }}</code> ({{ n }}){% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}</section>
+{% endblock %}

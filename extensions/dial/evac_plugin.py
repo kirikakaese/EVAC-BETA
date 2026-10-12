@@ -15,6 +15,7 @@ from apps.core.plugins import (
     EvacTriggerSpec,
     ExtensionFeature,
     ExtensionSpec,
+    HealthCheckSpec,
     NotificationChannelSpec,
     PermissionSpec,
     PluginManifest,
@@ -89,3 +90,7 @@ def register(r: Registry) -> None:
     r.dashboard_panel(DashboardPanelSpec(key="dial.dect", title=str(_("DIAL / DECT")), template="dial/panel.html",
                                          context=panels.dashboard, module="extensions", order=55,
                                          refresh_seconds=30))
+    from . import health
+
+    r.health_check(HealthCheckSpec(key="dial", name="DIAL", check=health.check, module="extensions", order=40,
+                                   description=str(_("The link to the event's DIAL phone network."))))
