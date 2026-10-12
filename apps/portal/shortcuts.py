@@ -86,3 +86,14 @@ def safe_next(request, default: str) -> str:
                                                require_https=request.is_secure()):
         return nxt
     return default
+
+
+def pair_screen_url(event, code: str, name: str, next_url: str) -> str:
+    """The screens module's pairing page, pre-filled with the code a screen shows, returning to ``next_url`` (first-run
+    and event setup wizards). Only a URL: the screens module stays optional."""
+    from urllib.parse import urlencode
+
+    from django.urls import reverse
+
+    return reverse("screens:pair", args=[event.slug]) + "?" + urlencode(
+        {"code": code.strip(), "name": name.strip()[:200], "next": next_url})

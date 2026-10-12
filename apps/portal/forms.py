@@ -70,6 +70,28 @@ class EventForm(forms.ModelForm):
             self.fields["slug"].help_text = _("The short name cannot be changed after creation.")
 
 
+class EventBasicsForm(EventForm):
+    """Step 1 of the event setup wizard (ADR-0050): what, when, which time zone. Branding stays in the settings."""
+
+    class Meta(EventForm.Meta):
+        fields = ["name", "slug", "description", "timezone", "start_date", "end_date"]
+        help_texts = {"slug": _("Used in URLs (/e/<short name>/) and exports; cannot be changed later.")}
+
+
+class SetupVenuesForm(forms.Form):
+    """Event setup wizard, venue step: the venues the event takes place at. Instance admins may pick any venue
+    (venues are shared between events), others only keep or drop the ones already linked."""
+
+    venues = forms.ModelMultipleChoiceField(queryset=Venue.objects.none(), required=False,
+                                            widget=forms.CheckboxSelectMultiple, label=_("Venues of this event"))
+
+    def __init__(self, *args, event, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        qs = Venue.objects.all() if user.is_superuser else event.venues.all()
+        self.fields["venues"].queryset = qs.order_by("name")
+        self.fields["venues"].initial = list(event.venues.values_list("pk", flat=True))
+
+
 class SetupEventForm(EventForm):
     """The wizard's event step. Modules with a statement to accept (the evacuation module) can be switched on here:
     the statement is shown and must be accepted (brief §2)."""
