@@ -1,0 +1,131 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% if creating %}{% trans "New event" %}{% else %}{% blocktrans with name=event.name %}Set up {{ name }}{% endblocktrans %}{% endif %}{% endblock %}
+{% block main_class %}wizard{% endblock %}
+{% block content %}
+<ol class="steps" aria-label="{% trans 'Setup progress' %}">
+  {% for p in progress %}<li class="{% if p.current %}current{% elif p.done %}done{% endif %}"{% if p.current %} aria-current="step"{% endif %}>{{ p.label }}{% if p.done %}<span class="sr-only"> ({% trans "done" %})</span>{% endif %}</li>{% endfor %}
+</ol>
+<p class="small muted">{% blocktrans with n=step_number total=step_count %}Step {{ n }} of {{ total }}{% endblocktrans %}{% if event %} · {{ event.name }}{% endif %}</p>
+<div class="card">
+{% if step == "basics" %}
+  <h1>{% if creating %}{% trans "New event" %}{% else %}{% trans "The basics" %}{% endif %}</h1>
+  <p>{% trans "What is it called and when does it happen? Colours, logo and everything else can be changed later in the event settings." %}</p>
+  <form method="post" novalidate>{% csrf_token %}{% include "portal/_form.html" with form=form %}
+    <div class="actions wizard-actions">
+      <button class="btn btn-primary">{% if creating %}{% trans "Create and continue" %}{% else %}{% trans "Save and continue" %}{% endif %}</button>
+      {% if creating %}<button class="btn btn-ghost" name="skip_wizard" value="1">{% trans "Create and skip the wizard" %}</button>{% endif %}
+    </div></form>
+
+{% elif step == "venue" %}
+  <h1>{% trans "Where does it happen?" %}</h1>
+  <p>{% trans "Venues are shared between events: a permanent venue keeps its rooms, zones and exits for the next event." %}</p>
+  <form method="post" novalidate>{% csrf_token %}
+    {% if form.fields.venues.queryset %}{% include "portal/_form.html" with form=form %}{% else %}<p class="muted">{% trans "No venue yet." %}</p>{% endif %}
+    {% if new %}<fieldset><legend>{% trans "Add a new venue (optional)" %}</legend>
+      {% include "portal/_form.html" with form=new %}</fieldset>{% endif %}
+    <div class="actions wizard-actions">
+      <button class="btn btn-primary">{% trans "Save and continue" %}</button>
+      <button class="btn btn-ghost" name="skip" value="1" formnovalidate>{% trans "Skip" %}</button>
+    </div></form>
+
+{% elif step == "modules" %}
+  <h1>{% trans "What kind of event is it?" %}</h1>
+  <p>{% trans "The type decides which modules are on for this event. You can switch single modules on or off at any time under Settings → Modules." %}</p>
+  <form method="post" novalidate>{% csrf_token %}
+    <fieldset class="presets"><legend>{% trans "Event type" %}</legend>
+    {% for p in presets %}<div class="preset">
+      <label class="checkbox" for="preset-{{ p.preset.key }}"><input type="radio" id="preset-{{ p.preset.key }}" name="preset" value="{{ p.preset.key }}"{% if chosen == p.preset.key %} checked{% endif %} aria-describedby="preset-{{ p.preset.key }}-help"> <strong>{{ p.preset.name }}</strong></label>
+      <div class="help" id="preset-{{ p.preset.key }}-help"><p>{{ p.preset.description }}</p>
+        <p class="small">{% trans "Switches on:" %}</p>
+        <ul class="plain small module-list">{% for r in p.modules %}<li>{% if r.blocked %}<span class="badge badge-off">{% trans "unavailable" %}</span> {{ r.spec.name }} <span class="muted">— {{ r.blocked }}</span>{% elif r.spec.acknowledgement %}<span class="badge badge-pending">{% trans "statement" %}</span> {{ r.spec.name }} <span class="muted">— {% trans "after you accept its safety statement in the next step" %}</span>{% else %}<span class="badge badge-ok">{% trans "on" %}</span> {{ r.spec.name }}{% endif %}{% if r.instance_off and not r.blocked %} <span class="muted">{% trans "(off for this server: it is switched on there too, so other events can use it)" %}</span>{% endif %}</li>{% endfor %}</ul>
+      </div></div>{% endfor %}
+    <div class="preset">
+      <label class="checkbox" for="preset-custom"><input type="radio" id="preset-custom" name="preset" value="custom"{% if chosen == "custom" %} checked{% endif %} aria-describedby="preset-custom-help"> <strong>{% trans "Custom" %}</strong></label>
+      <div class="help" id="preset-custom-help"><p>{% trans "Choose the modules yourself. Modules another module needs are switched on with it." %}</p></div>
+      <fieldset class="module-choices"><legend>{% trans "Modules (only used with “Custom”)" %}</legend>
+      {% for r in rows %}<div class="field">
+        <label class="checkbox" for="mod-{{ r.spec.key }}"><input type="checkbox" id="mod-{{ r.spec.key }}" name="modules" value="{{ r.spec.key }}"{% if r.active or r.spec.key in pending %} checked{% endif %}{% if r.blocked %} disabled{% endif %} aria-describedby="mod-{{ r.spec.key }}-help"> <span>{{ r.spec.name }}</span></label>
+        <div class="help" id="mod-{{ r.spec.key }}-help">{% if r.blocked %}<span class="badge badge-off">{% trans "unavailable" %}</span> {{ r.blocked }} {% endif %}{{ r.spec.description }}{% if r.needs %} <span class="muted">{% blocktrans with m=r.needs|join:", " %}Needs: {{ m }}.{% endblocktrans %}</span>{% endif %}{% if r.spec.acknowledgement %} <span class="muted">{% trans "Has a safety statement to accept in the next step." %}</span>{% endif %}{% if r.instance_off and not r.blocked %} <span class="muted">{% trans "Off for this server: it is switched on there too, so other events can use it." %}</span>{% endif %}</div>
+      </div>{% endfor %}</fieldset>
+    </div>
+    </fieldset>
+    <div class="actions wizard-actions">
+      <button class="btn btn-primary">{% trans "Apply and continue" %}</button>
+      <button class="btn btn-ghost" name="skip" value="1" formnovalidate>{% trans "Skip" %}</button>
+    </div></form>
+
+{% elif step == "safety" %}
+  <h1>{% trans "Safety" %}</h1>
+  {% for r in rows %}<section aria-labelledby="ack-{{ r.spec.key }}">
+    <h2 id="ack-{{ r.spec.key }}">{{ r.spec.name }}</h2>
+    <div class="alert alert-warn ack-statement">{{ r.spec.acknowledgement|linebreaks }}</div>
+    {% if r.accepted %}<p><span class="badge badge-done">{% trans "accepted" %}</span> {% blocktrans with who=r.accepted.accepted_by_repr when=r.accepted.accepted_at|date:"Y-m-d H:i" %}Accepted for this event by {{ who }} on {{ when }}.{% endblocktrans %}{% if not r.active %} {% trans "The module is off; continuing switches it on." %}{% endif %}</p>
+    {% elif r.blocked %}<p><span class="badge badge-off">{% trans "unavailable" %}</span> {{ r.blocked }}</p>
+    {% elif not r.can %}<p class="muted">{% trans "An organiser with the permission to manage modules must accept this statement." %}</p>{% endif %}
+  </section>{% endfor %}
+  <section aria-labelledby="tf-title">
+    <h2 id="tf-title">{% trans "Your two-factor sign-in" %}</h2>
+    <p>{% trans "Alarm permissions (raising, changing and clearing alarms, drills) only work in a session confirmed with a second factor, for everyone including instance admins." %}</p>
+    <p>{% if two_factor.set_up %}<span class="badge badge-ok">{% trans "set up" %}</span> {% if two_factor.verified %}{% trans "Two-factor sign-in is set up and this session is confirmed." %}{% else %}{% trans "Two-factor sign-in is set up, but this session is not confirmed with it. Sign in again with your second factor before you handle alarms." %}{% endif %}
+      {% else %}<span class="badge badge-warn">{% trans "missing" %}</span> {% trans "You have no second factor yet." %}{% endif %}
+      <a href="{% url 'accounts:security' %}">{% trans "Security settings" %}</a></p>
+  </section>
+  <form method="post">{% csrf_token %}
+    {% for r in rows %}{% if r.needed and r.can and not r.blocked %}<div class="field"><label class="checkbox" for="accept-{{ r.spec.key }}"><input type="checkbox" id="accept-{{ r.spec.key }}" name="accept_{{ r.spec.key }}"> <span>{% blocktrans with m=r.spec.name %}I have read the statement and accept it for this event; switch {{ m }} on.{% endblocktrans %}</span></label></div>{% endif %}{% endfor %}
+    <p class="small muted">{% trans "Accepting is recorded with your name in the audit log, once per event." %}</p>
+    <div class="actions wizard-actions">
+      <button class="btn btn-primary">{% trans "Continue" %}</button>
+      <button class="btn btn-ghost" name="skip" value="1">{% trans "Not now" %}</button>
+    </div></form>
+
+{% elif step == "team" %}
+  <h1>{% trans "Who helps?" %}</h1>
+  <p>{% trans "Invite people by e-mail and give them a role. Existing accounts get the role at once; other addresses receive an invitation link." %}</p>
+  {% if last_invite_url %}<div class="alert alert-info" role="status">{% trans "Invitation link (also sent by e-mail):" %} <code id="invite-url">{{ last_invite_url }}</code> <button type="button" class="btn btn-sm" data-action="copy" data-target="#invite-url" data-copied="{% trans 'Copied' %}">{% trans "Copy" %}</button></div>{% endif %}
+  <form method="post" novalidate>{% csrf_token %}{% include "portal/_form.html" with form=form %}
+    <button class="btn">{% trans "Invite" %}</button></form>
+  <h2>{% trans "Team so far" %}</h2>
+  <ul class="plain small">{% for m in members %}<li>{{ m.user.email }} · {% for a in m.assignments.all %}{{ a.role.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>{% endfor %}
+    {% for inv in invitations %}<li>{{ inv.email }} · {{ inv.role }} <span class="badge badge-pending">{% trans "invited" %}</span></li>{% endfor %}</ul>
+  <div class="actions wizard-actions"><a class="btn btn-primary" href="{{ next_url }}">{% trans "Continue" %}</a></div>
+
+{% elif step == "screens" %}
+  <h1>{% trans "Screens" %}</h1>
+  {% if can_template %}<section aria-labelledby="tpl-title">
+    <h2 id="tpl-title">{% trans "Pick a layout" %}</h2>
+    {% if layout_done %}<p><span class="badge badge-done">{% trans "done" %}</span> {% trans "A layout of this event is already published. You can add another one." %}</p>{% endif %}
+    <p>{% if can_publish %}{% trans "Ready-made layouts in your event's look. The new layout is published at once; change it any time in the layout editor." %}{% else %}{% trans "Ready-made layouts in your event's look. The new layout is created as a draft; someone with the publish permission publishes it." %}{% endif %} <a href="{% url 'content:templates' event.slug %}">{% trans "See previews in the template gallery" %}</a></p>
+    <form method="post" action="{% url 'content:templates' event.slug %}" novalidate>{% csrf_token %}
+      <input type="hidden" name="next" value="{{ here }}">{% if can_publish %}<input type="hidden" name="publish" value="1">{% endif %}
+      <fieldset><legend>{% trans "Template" %}</legend>
+      {% for t in templates %}<div class="field"><label class="checkbox" for="tpl-{{ t.key }}"><input type="radio" id="tpl-{{ t.key }}" name="template" value="{{ t.key }}"{% if forloop.first %} checked{% endif %}> <span>{{ t.name }} <span class="muted small">· {{ t.category }}</span></span></label>{% if t.description %}<div class="help">{{ t.description }}</div>{% endif %}</div>
+      {% empty %}<p class="muted">{% trans "No templates available." %}</p>{% endfor %}</fieldset>
+      <div class="field"><label for="tpl-name">{% trans "Name of the new layout" %}</label><input id="tpl-name" name="name" maxlength="200" required value="{% trans 'Main screen' %}"></div>
+      <button class="btn">{% if can_publish %}{% trans "Create and publish" %}{% else %}{% trans "Create layout" %}{% endif %}</button></form>
+  </section>{% endif %}
+  {% if can_pair %}<section aria-labelledby="pair-title">
+    <h2 id="pair-title">{% trans "Pair a screen" %}</h2>
+    {% if screen_done %}<p><span class="badge badge-done">{% trans "done" %}</span> {% trans "A screen is paired. You can pair more." %}</p>{% endif %}
+    <ol class="setup-howto">
+      <li>{% blocktrans with url=player_url %}Open <strong>{{ url }}</strong> in the browser of a display (TV, monitor, Raspberry Pi kiosk). It shows a six-character code.{% endblocktrans %}</li>
+      <li>{% trans "Type the code here. You can place the screen in a venue, zone and room on the next page." %}</li>
+    </ol>
+    <form method="post" novalidate>{% csrf_token %}
+      <div class="field"><label for="id_code">{% trans "Code shown on the screen" %}</label>
+        <input id="id_code" name="code" class="code-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12"></div>
+      <div class="field"><label for="id_name">{% trans "Name of the screen" %}</label>
+        <input id="id_name" name="name" maxlength="200" placeholder="{% trans 'e.g. Foyer left' %}"></div>
+      <button class="btn">{% trans "Pair screen" %}</button></form>
+  </section>{% endif %}
+  <div class="actions wizard-actions"><a class="btn btn-primary" href="{{ next_url }}">{% trans "Continue" %}</a></div>
+
+{% else %}
+  <h1>{% trans "Ready to go" %}</h1>
+  <p>{% blocktrans with name=event.name %}{{ name }} is set up. The checklist on the overview shows what is still open.{% endblocktrans %}</p>
+  {% if checklist %}<ul class="plain checklist">{% for i in checklist %}<li>{% if i.done %}<span class="badge badge-done">{% trans "done" %}</span>{% elif i.optional %}<span class="badge badge-info">{% trans "recommended" %}</span>{% else %}<span class="badge badge-pending">{% trans "to do" %}</span>{% endif %} {{ i.label }}</li>{% endfor %}</ul>{% endif %}
+  {% if evacuation %}{% include "portal/_safety.html" %}{% endif %}
+  <div class="actions wizard-actions"><a class="btn btn-primary" href="{% url 'portal:event_dashboard' event.slug %}">{% trans "Open the event" %}</a></div>
+{% endif %}
+</div>
+{% if back or event and step != "done" %}<p class="wizard-nav small">{% if back %}<a href="{{ back }}">{% trans "← Back" %}</a>{% endif %}{% if event and step != "done" %} <a href="{% url 'portal:event_dashboard' event.slug %}">{% trans "Leave the wizard" %}</a>{% endif %}</p>{% endif %}
+{% endblock %}

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth import login
@@ -28,7 +27,7 @@ from apps.events.models import Event, ScheduledTransition
 from apps.venues.models import Venue
 
 from . import forms
-from .shortcuts import event_view, superuser_view
+from .shortcuts import event_view, pair_screen_url, superuser_view
 
 
 def home(request):
@@ -107,9 +106,7 @@ def setup(request):
                 event.venues.add(venue)
             for key in form.modules_to_enable():
                 modules.acknowledge(event, key, user=request.user, request=request)
-                if not modules.instance_enabled(key):
-                    modules.set_instance(key, True, user=request.user, request=request)
-                modules.set_event(event, key, True, user=request.user, request=request)
+                modules.switch_on(event, key, user=request.user, request=request)
             request.session["evac_setup_event"] = event.slug
             request.session["evac_setup_step"] = "screen"
             return redirect(reverse("portal:setup") + "?step=screen")
@@ -123,9 +120,8 @@ def setup(request):
             request.session["evac_setup_step"] = "done"
             code = (request.POST.get("code") or "").strip()
             if can_pair and code and "skip" not in request.POST:
-                done = reverse("portal:setup") + "?step=done"
-                return redirect(reverse("screens:pair", args=[event.slug]) + "?" + urlencode(
-                    {"code": code, "name": (request.POST.get("name") or "").strip()[:200], "next": done}))
+                return redirect(pair_screen_url(event, code, request.POST.get("name") or "",
+                                                reverse("portal:setup") + "?step=done"))
             return redirect(reverse("portal:setup") + "?step=done")
         return render(request, "portal/setup.html", {"step": step, "steps": SETUP_STEPS, "event": event,
                                                      "can_pair": can_pair,
@@ -139,28 +135,31 @@ def setup(request):
 
 # --------------------------------------------------------------------------- events
 
-@superuser_view
-def event_create(request):
-    form = forms.EventForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
-        data = {k: v for k, v in form.cleaned_data.items() if k not in ("name", "slug", "venues")}
-        event = services.create_event(name=form.cleaned_data["name"], slug=form.cleaned_data["slug"],
-                                      user=request.user, request=request, **data)
-        event.venues.set(form.cleaned_data["venues"])
-        messages.success(request, _("Event created."))
-        return redirect("portal:event_dashboard", event.slug)
-    return render(request, "portal/event_form.html", {"form": form, "creating": True})
+def save_event_form(request, form) -> Event:
+    """Save an edit form of an existing event (settings page, setup wizard): audit log and ``event.updated``."""
+    from apps.core.webhooks import emit
+
+    event = form.instance
+    before = {f: str(getattr(Event.objects.get(pk=event.pk), f)) for f in form.changed_data if f != "venues"}
+    obj = form.save()
+    log(action="event.updated", actor=request.user, target=obj, event=obj, request=request,
+        changes={f: [before.get(f), str(getattr(obj, f, ""))] for f in form.changed_data})
+    emit("event.updated", {"slug": obj.slug}, event=obj)
+    return obj
 
 
 @event_view("events.view")
 def event_dashboard(request, slug, *, event):
+    from apps.core import setup
+
     info = rbac.effective(request.user, event, request=request)
     recent = AuditLog.objects.for_event(event)[:10] if "audit.view" in info.permissions else []
+    can_manage = "events.manage" in info.permissions
     return render(request, "portal/event_dashboard.html", {
         "event": event, "recent": recent, "modules": [r for r in modules.status(event) if not r["spec"].required],
         "members": event.memberships.count(), "venues": event.venues.all(),
         "scheduled": event.scheduled_transitions.filter(applied_at__isnull=True, error=""),
-        "can_manage": "events.manage" in info.permissions,
+        "can_manage": can_manage, "setup_card": setup.card(event, request) if can_manage else None,
     })
 
 
@@ -169,13 +168,7 @@ def event_settings(request, slug, *, event):
     rbac.require(request, event, "events.manage")
     form = forms.EventForm(request.POST or None, request.FILES or None, instance=event)
     if request.method == "POST" and form.is_valid():
-        before = {f: str(getattr(Event.objects.get(pk=event.pk), f)) for f in form.changed_data if f != "venues"}
-        obj = form.save()
-        log(action="event.updated", actor=request.user, target=obj, event=obj, request=request,
-            changes={f: [before.get(f), str(getattr(obj, f, ""))] for f in form.changed_data})
-        from apps.core.webhooks import emit
-
-        emit("event.updated", {"slug": obj.slug}, event=obj)
+        obj = save_event_form(request, form)
         messages.success(request, _("Event saved."))
         return redirect("portal:event_settings", obj.slug)
     from apps.core.registry import registry

@@ -44,6 +44,18 @@ def register(r: Registry) -> None:
             },
         },
     ))
+    r.settings_namespace(SettingsNamespace(
+        key="setup", title=str(_("Setup checklist")), levels=("event",), order=90, permission="events.manage",
+        schema={
+            "type": "object",
+            "properties": {
+                "checklist_hidden": {
+                    "type": "boolean", "title": "Hide the setup checklist", "default": False,
+                    "description": "The checklist on the event overview lists what is still missing (venue, exits, "
+                                   "screens, team, two-factor). It disappears by itself once everything is done."},
+            },
+        },
+    ))
     for key, desc in [
         ("event.created", "An event was created."),
         ("event.updated", "Event settings changed."),

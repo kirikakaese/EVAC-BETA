@@ -38,6 +38,7 @@ from .plugins import (
     ProgramSource,
     ScopeKind,
     SettingsNamespace,
+    SetupCheckSpec,
     StaffCardSpec,
     SyncSpec,
     TimeAnchorSpec,
@@ -84,6 +85,7 @@ class Registry:
         self.node_actions: dict[str, NodeAction] = {}
         self.staff_cards: dict[str, StaffCardSpec] = {}
         self.dashboard_panels: dict[str, DashboardPanelSpec] = {}
+        self.setup_checks: dict[str, SetupCheckSpec] = {}
         self.mqtt_topics: dict[str, MqttTopicSpec] = {}
         self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
         self.pack_sections: dict[str, PackSectionSpec] = {}
@@ -242,6 +244,10 @@ class Registry:
     def dashboard_panel(self, spec: DashboardPanelSpec) -> None:
         """A panel of the control room dashboard (ADR-0039)."""
         self._add(self.dashboard_panels, spec.key, spec, "dashboard panel")
+
+    def setup_check(self, spec: SetupCheckSpec) -> None:
+        """An item of the setup checklist on the event overview (ADR-0050)."""
+        self._add(self.setup_checks, spec.key, spec, "setup check")
 
     def mqtt_topic(self, spec: MqttTopicSpec) -> None:
         """MQTT messages routed to a module by the MQTT extension (ADR-0039)."""

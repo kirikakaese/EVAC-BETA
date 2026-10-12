@@ -1,0 +1,13 @@
+{% load i18n %}<section class="card setup-checklist" aria-labelledby="setup-title">
+  <div class="card-header"><h2 id="setup-title">{% trans "Set up this event" %}</h2>
+    <span class="small muted">{% blocktrans count n=card.open %}{{ n }} step still open{% plural %}{{ n }} steps still open{% endblocktrans %}</span></div>
+  <ul class="plain checklist">{% for i in card.items %}<li{% if i.done %} class="is-done"{% endif %}>
+    {% if i.done %}<span class="badge badge-done">{% trans "done" %}</span>{% elif i.optional %}<span class="badge badge-info">{% trans "recommended" %}</span>{% else %}<span class="badge badge-pending">{% trans "to do" %}</span>{% endif %}
+    {% if not i.done and i.url %}<a href="{{ i.url }}">{{ i.label }}</a>{% else %}<span>{{ i.label }}</span>{% endif %}
+    {% if not i.done %}{% if i.detail %}<span class="small muted">— {{ i.detail }}</span>{% elif i.help %}<span class="small muted">— {{ i.help }}</span>{% endif %}{% endif %}
+  </li>{% endfor %}</ul>
+  <div class="actions">
+    <a class="btn btn-sm" href="{% url 'portal:event_setup' event.slug %}">{% trans "Continue the setup wizard" %}</a>
+    <form method="post" action="{% url 'portal:setup_checklist' event.slug %}">{% csrf_token %}<button class="btn btn-sm btn-ghost" name="hide" value="1">{% trans "Hide the checklist" %}</button></form>
+  </div>
+</section>

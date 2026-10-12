@@ -117,6 +117,97 @@ def set_event(event, key: str, enabled: bool | None, user=None, request=None) ->
         changes={"enabled": [before, enabled]}, scope={"module": key, "level": "event"})
 
 
+def blocked_reason(key: str, user) -> str:
+    """Why ``user`` cannot switch the module on for an event ("" = they can, given the event permission).
+
+    A module that is off for the whole instance has to be switched on there first, and only instance admins may do
+    that."""
+    from django.utils.translation import gettext as _
+
+    spec = registry.ensure_loaded().modules.get(key)
+    if spec is None:
+        return _("This module is not installed.")
+    if instance_enabled(key) or getattr(user, "is_superuser", False):
+        return ""
+    return _("Switched off for this server. Only an instance admin can switch it on.")
+
+
+def with_dependencies(keys) -> set[str]:
+    """``keys`` plus every installed module they depend on (transitively)."""
+    reg = registry.ensure_loaded().modules
+    out: set[str] = set()
+    todo = [k for k in keys if k in reg]
+    while todo:
+        key = todo.pop()
+        if key not in out:
+            out.add(key)
+            todo.extend(d for d in reg[key].depends_on if d in reg)
+    return out
+
+
+def _own_on(key: str, event) -> bool:
+    """On at instance level and not switched off for the event (dependencies aside)."""
+    spec = registry.ensure_loaded().modules[key]
+    return spec.required or (instance_enabled(key) and (not spec.event_toggle or _event_states(event).get(key)
+                                                        is not False))
+
+
+def switch_on(event, key: str, *, user=None, request=None) -> None:
+    """Switch a module (and the modules it depends on) on for ``event``, at instance level too where it is off
+    there (instance admins only: ``PermissionError`` otherwise). Accepting its statement is a separate step
+    (:func:`acknowledge`)."""
+    reg = registry.ensure_loaded().modules
+    for dep in reg[key].depends_on:
+        if dep in reg and not reg[dep].required:
+            switch_on(event, dep, user=user, request=request)
+    spec = reg[key]
+    if _own_on(key, event):
+        return
+    if not instance_enabled(key):
+        if blocked_reason(key, user):
+            raise PermissionError(f"module {key} is off for the instance")
+        set_instance(key, True, user=user, request=request)
+    if spec.event_toggle and not _own_on(key, event):
+        set_event(event, key, True, user=user, request=request)
+
+
+def apply_selection(event, wanted, *, user=None, request=None) -> dict[str, list[str]]:
+    """Make exactly ``wanted`` (plus dependencies) the modules of ``event`` (event setup wizard, ADR-0050).
+
+    Returns ``{"on", "off", "unavailable", "pending"}`` (module keys): modules the user may not switch on stay off
+    (``unavailable``); modules with a statement nobody accepted for the event yet stay off until it is accepted
+    (``pending``, see :func:`acknowledge` and :func:`switch_on`). Required modules and modules without a per-event
+    switch are left alone."""
+    reg = registry.ensure_loaded().modules
+    wanted = with_dependencies(wanted)
+    result: dict[str, list[str]] = {"on": [], "off": [], "unavailable": [], "pending": []}
+    blocked: set[str] = set()
+    for spec in sorted(reg.values(), key=lambda s: (s.order, s.key)):
+        if spec.required or not spec.event_toggle:
+            continue
+        key = spec.key
+        if key in wanted and any(d in blocked for d in spec.depends_on):
+            blocked.add(key)
+            result["unavailable"].append(key)
+            continue
+        if key in wanted and blocked_reason(key, user):
+            blocked.add(key)
+            result["unavailable"].append(key)
+            continue
+        if key in wanted and acknowledgement_needed(key, event):
+            result["pending"].append(key)
+            key_wanted = False
+        else:
+            key_wanted = key in wanted
+        if key_wanted and not _own_on(key, event):
+            switch_on(event, key, user=user, request=request)
+            result["on"].append(key)
+        elif not key_wanted and _own_on(key, event):
+            set_event(event, key, False, user=user, request=request)
+            result["off"].append(key)
+    return result
+
+
 def acknowledgement_needed(key: str, event) -> bool:
     """The module has a statement (``ModuleSpec.acknowledgement``) nobody accepted for ``event`` yet."""
     from .models import ModuleAcknowledgement

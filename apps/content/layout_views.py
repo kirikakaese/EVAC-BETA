@@ -19,7 +19,7 @@ from django.views.decorators.http import require_POST, require_safe
 
 from apps.core.middleware import allow_code_frames
 from apps.events import rbac
-from apps.portal.shortcuts import event_view
+from apps.portal.shortcuts import event_view, safe_next
 
 from . import files, forms, layout_format, services
 from . import tokens as tok
@@ -111,8 +111,17 @@ def templates(request, slug, *, event):
             layout = services.create_layout(event, name=form.cleaned_data["name"], key=form.key(),
                                             actor=request.user, request=request, data=spec.data())
             messages.success(request, _("Layout created from the template “%(name)s”.") % {"name": spec.name})
-            return redirect("content:layout_edit", slug, layout.pk)
-        messages.error(request, _("Give the new layout a name."))
+            # the event setup wizard (ADR-0050) publishes it at once and comes back to its own page
+            if request.POST.get("publish") == "1" and _perm(request, event, "content.publish"):
+                try:
+                    services.publish_layout(layout, actor=request.user, request=request)
+                    messages.success(request, _("Layout published."))
+                except ValidationError as exc:
+                    messages.warning(request, "; ".join(exc.messages))
+            return redirect(safe_next(request, reverse("content:layout_edit", args=[slug, layout.pk])))
+        messages.error(request, _("Give the new layout a name and pick a template."))
+        if request.POST.get("next"):
+            return redirect(safe_next(request, request.path))
     theme = services.event_theme(event)
     values = services.resolved_tokens(theme)
     stacks = services.font_stacks(event)

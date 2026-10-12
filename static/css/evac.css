@@ -742,6 +742,21 @@ code.block { display: block; padding: var(--space-2); margin: var(--space-2) 0; 
 .steps li { counter-increment: step; color: var(--fg-muted); font-size: .9rem; margin: 0; }
 .steps li::before { content: counter(step) ". "; }
 .steps li.current { color: var(--fg); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.steps li.done::after { content: " \2713"; }
+/* event setup wizard and checklist (ADR-0050) */
+.page.wizard { max-width: 760px; margin-left: auto; margin-right: auto; }
+.wizard-actions { margin-top: var(--space-4); }
+.wizard-nav { display: flex; gap: var(--space-4); margin-top: var(--space-3); }
+.wizard h2 { margin-top: var(--space-5); }
+.presets .preset { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-3); margin: 0 0 var(--space-3); }
+.presets .preset .help p { margin: .25rem 0; }
+.module-list li { margin: .2rem 0; }
+.module-choices { margin-top: var(--space-3); }
+.checklist li { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: baseline; padding: .3rem 0; border-bottom: 1px solid var(--border); }
+.checklist li:last-child { border-bottom: 0; }
+.checklist li.is-done > span:not(.badge) { color: var(--fg-muted); }
+.setup-checklist { margin-bottom: var(--space-4); }
+.setup-checklist .actions { margin-top: var(--space-3); }
 .lifecycle { display: flex; gap: .4rem; list-style: none; padding: 0; flex-wrap: wrap; }
 .lifecycle li + li::before { content: "\2192 "; }
 fieldset.setting { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); margin: 0 0 var(--space-4); }

@@ -78,10 +78,38 @@ Open EVAC in a browser. Until the first account exists every page redirects to t
 4. **First screen** — open `/player/` on a display and type the code it shows; the screen pairs and shows a
    welcome slide (skip with *Later*).
 
-The wizard cannot be re-run once an account exists.
+The wizard cannot be re-run once an account exists. Every further event is created with the **event setup
+wizard** (section 3).
 
 ## 3. Events
 
+- **New event** (*Events → New event*, instance admins) opens the **event setup wizard**. Each step is short; all but
+  the first can be skipped, *Back* goes one step back, and *Leave the wizard* goes to the overview. The wizard
+  remembers the step you were on: *Continue the setup wizard* on the overview (or `/e/<short name>/setup/`) picks
+  it up again.
+  1. **Basics** — name, short name, description, time zone and dates. The event is created here; *Create and skip
+     the wizard* goes straight to it.
+  2. **Venue** — link existing venues and/or add a new one.
+  3. **Event type** — a preset switches the matching modules on for the event and the others off:
+     *Conference* (venues, evacuation, screens and screen content, playlists, schedules, live overrides, custom
+     widgets, screen packs, program, announcements, incidents, access, helpdesk), *Festival / camp* (the same plus
+     occupancy, crew & shifts and inventory), *Venue screens only* (venues and the screen modules) or *Custom*
+     (tick the modules yourself; modules they need are switched on with them). Extensions and third-party modules
+     are not touched. A module that is off for the whole server can only be switched on by an instance admin
+     (it is then on for the server, too); for everyone else it is shown as unavailable.
+  4. **Safety** — only when evacuation was chosen or is on: read the safety statement and tick the box to switch
+     evacuation on (recorded in the audit log). The page also shows whether you have two-factor sign-in: alarm
+     permissions only work in a two-factor confirmed session.
+  5. **Team** — invite people by e-mail with a role.
+  6. **Screens** — pick a layout template (created and published at once if you may publish) and pair a first
+     screen with the code it shows.
+  7. **Done** — what is still open, and the way to the overview.
+- **Setup checklist**: organisers (`events.manage`) see a *Set up this event* card on the overview with what is still
+  missing — venue linked, zones and exits drawn, evacuation statement accepted, a screen paired, a layout published,
+  team invited, two-factor sign-in for everyone with alarm permissions and (recommended) a staff notification
+  channel. Each item links to the page that fixes it; items of switched-off modules are left out. The card disappears
+  once everything required is done; *Hide the checklist* hides it earlier (*Event settings → Setup checklist* shows
+  it again).
 - **Lifecycle**: Draft → Setup → Live → Teardown → Archived. One step back is allowed to correct mistakes.
   Archiving needs the `events.delete` permission (admin role, two-factor verified session).
 - **Scheduled transitions**: *Event settings → Lifecycle → Schedule*; beat applies them within a minute.

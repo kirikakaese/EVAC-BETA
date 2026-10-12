@@ -30,29 +30,36 @@ User = get_user_model()
 
 # --------------------------------------------------------------------------- members
 
+def invite_member(request, event, form) -> None:
+    """Members page and setup wizard: give an existing account the role at once, invite a new address by e-mail
+    (the link is kept in the session to be shown once). Roles with alarm-relevant permissions need
+    ``events.roles``."""
+    role = form.cleaned_data["role"]
+    if role.grants_sensitive and not rbac.has_perm(request.user, event, "events.roles", request=request):
+        raise PermissionDenied("events.roles")
+    kind, sid = form.scope_parts()
+    email = form.cleaned_data["email"].lower()
+    user = User.objects.filter(email__iexact=email).first()
+    try:
+        if user is not None:
+            services.assign_role(event, user, role, scope_kind=kind, scope_id=sid, actor=request.user,
+                                 request=request)
+            messages.success(request, _("%(email)s now has the role %(role)s.") % {"email": email, "role": role})
+        else:
+            _inv, url = services.invite(event, email, role, actor=request.user, request=request,
+                                        scope_kind=kind, scope_id=sid)
+            messages.success(request, _("Invitation sent to %(email)s.") % {"email": email})
+            request.session["evac_last_invite_url"] = url
+    except ValidationError as exc:
+        messages.error(request, exc.messages[0])
+
+
 @event_view("events.members")
 def members(request, slug, *, event):
     rbac.require(request, event, "events.members")
     form = forms.InviteForm(request.POST or None, event=event)
     if request.method == "POST" and form.is_valid():
-        role = form.cleaned_data["role"]
-        if role.grants_sensitive and not rbac.has_perm(request.user, event, "events.roles", request=request):
-            raise PermissionDenied("events.roles")
-        kind, sid = form.scope_parts()
-        email = form.cleaned_data["email"].lower()
-        user = User.objects.filter(email__iexact=email).first()
-        try:
-            if user is not None:
-                services.assign_role(event, user, role, scope_kind=kind, scope_id=sid, actor=request.user,
-                                     request=request)
-                messages.success(request, _("%(email)s now has the role %(role)s.") % {"email": email, "role": role})
-            else:
-                _inv, url = services.invite(event, email, role, actor=request.user, request=request,
-                                            scope_kind=kind, scope_id=sid)
-                messages.success(request, _("Invitation sent to %(email)s.") % {"email": email})
-                request.session["evac_last_invite_url"] = url
-        except ValidationError as exc:
-            messages.error(request, exc.messages[0])
+        invite_member(request, event, form)
         return redirect("portal:members", slug)
     rows = (Membership.objects.filter(event=event).select_related("user")
             .prefetch_related("assignments__role").order_by("user__email"))
