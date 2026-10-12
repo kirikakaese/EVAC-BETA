@@ -39,6 +39,26 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
 .identify-detail { margin: 0; font-size: clamp(1rem, 4vmin, 3rem); color: var(--fg); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .view.layout { padding: 0; gap: 0; }
+/* slide transitions (ADR-0051): the incoming slide is drawn over the outgoing one, which goes when it ends */
+.view.evac-tr-in, .view.evac-tr-out { animation-duration: var(--evac-tr-ms, 600ms); animation-timing-function: ease-in-out;
+  animation-fill-mode: both; }
+html:not(.obs) .view.evac-tr-in { background: var(--evac-background, var(--bg)); }
+.view.evac-tr-in.evac-tr-fade { animation-name: evac-tr-fade-in; }
+.view.evac-tr-in.evac-tr-zoom { animation-name: evac-tr-zoom-in; }
+.view.evac-tr-in.evac-tr-slide-left { animation-name: evac-tr-from-right; }
+.view.evac-tr-out.evac-tr-slide-left { animation-name: evac-tr-to-left; }
+.view.evac-tr-in.evac-tr-slide-up { animation-name: evac-tr-from-below; }
+.view.evac-tr-out.evac-tr-slide-up { animation-name: evac-tr-to-top; }
+@keyframes evac-tr-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes evac-tr-zoom-in { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes evac-tr-from-right { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes evac-tr-to-left { from { transform: none; } to { transform: translateX(-100%); } }
+@keyframes evac-tr-from-below { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes evac-tr-to-top { from { transform: none; } to { transform: translateY(-100%); } }
+/* the screen's "Reduce motion" display setting: no transitions, entrance effects or fades (tickers keep moving;
+   the player does not start effects at all, this only makes sure) */
+html.reduce-motion .view, html.reduce-motion .evac-el { animation: none !important; }
+html.reduce-motion evac-slideshow .evac-slide { transition: none !important; }
 /* display settings: the root is centred and can be rotated, scaled and keystoned; overscan pads it */
 #player.evac-root { inset: auto; left: 50%; top: 50%; transform-origin: center; overflow: hidden; }
 #player.evac-root > .view { inset: var(--evac-overscan, 0); }
@@ -65,7 +85,7 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
 .ann-layer { position: absolute; inset: var(--evac-overscan, 0); z-index: 15; pointer-events: none; font-family: var(--evac-font-body, system-ui, sans-serif); }
 .ann-banner, .ann-ticker { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 2.5vmin;
   min-height: 9vmin; padding: 1.5vmin 3vmin; background: var(--ann-bg); color: var(--ann-fg); font-size: clamp(1rem, 4.2vmin, 4rem);
-  font-weight: 600; box-shadow: 0 -1vmin 3vmin rgba(0,0,0,.35); animation: ann-in .5s ease-out; }
+  font-weight: 600; box-shadow: 0 -1vmin 3vmin rgba(0,0,0,.35); }
 .ann-layer.has-bottom .ann-banner { bottom: 9vmin; }
 .ann-level { flex: none; text-transform: uppercase; letter-spacing: .12em; font-size: .62em; font-weight: 800; padding: .25em .7em;
   border: .12em solid currentColor; border-radius: 99em; }
@@ -75,19 +95,19 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vmin, 4rem); font-weight: var(--evac
 .ann-track { display: flex; gap: 6vmin; animation: ann-scroll var(--ann-duration, 20s) linear infinite; }
 .ann-track span { flex: none; }
 .ann-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(80%, 150vmin); max-height: 80%; overflow: hidden;
-  padding: 4vmin 5vmin; border-radius: 3vmin; background: var(--ann-bg); color: var(--ann-fg); box-shadow: 0 2vmin 8vmin rgba(0,0,0,.55);
-  animation: ann-pop .45s ease-out; }
+  padding: 4vmin 5vmin; border-radius: 3vmin; background: var(--ann-bg); color: var(--ann-fg); box-shadow: 0 2vmin 8vmin rgba(0,0,0,.55); }
+/* banners and cards appear at once, never animated in (ADR-0051, brief §8); only the ticker moves */
 .ann-card .ann-level { display: inline-block; font-size: clamp(.8rem, 2.6vmin, 2.4rem); }
 .ann-card .ann-title { margin: 2vmin 0 1.5vmin; font-size: clamp(2rem, 8vmin, 8rem); line-height: 1.1; }
 .ann-card .ann-text { margin: 0; font-size: clamp(1.2rem, 4.2vmin, 4rem); line-height: 1.35; }
 @keyframes ann-scroll { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 3vmin)); } }
-@keyframes ann-in { from { transform: translateY(100%); } to { transform: none; } }
-@keyframes ann-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%); } }
-@media (prefers-reduced-motion: reduce) { .ann-banner, .ann-card { animation: none; } .ann-track { animation-duration: calc(var(--ann-duration, 20s) * 2); } }
+@media (prefers-reduced-motion: reduce) { .ann-track { animation-duration: calc(var(--ann-duration, 20s) * 2); } }
 
 /* ---------------------------------------------------------------- evacuation (ADR-0033): above everything */
 #evac-layer { position: fixed; inset: 0; z-index: 60; font-family: var(--evac-font-body, system-ui, sans-serif);
               color: #fff; }
+/* the alarm is never animated in (ADR-0051): the controller renders without effects, this makes sure */
+#evac-layer, #evac-layer .evac-el, #evac-layer .evac-takeover { animation: none !important; transition: none !important; }
 #evac-layer.evac-root { inset: auto; left: 50%; top: 50%; transform-origin: center; overflow: hidden; }
 #evac-layer[data-mode="banner"] { pointer-events: none; }
 #evac-layer[data-mode="takeover"] { background: #000; }

@@ -55,6 +55,7 @@ def register(r: Registry) -> None:
         ("clock", _("Clock"), _("Digital clock in the event time zone")),
         ("countdown", _("Countdown"), _("Counts down to a time")),
         ("date", _("Date"), _("Today's date")),
+        ("progress", _("Slide timer"), _("A bar that shows how long the current slide stays on screen")),
         ("code", _("Code"), _("Your own HTML, CSS and JavaScript in a sandbox (needs content.code)")),
     ]:
         r.widget(WidgetSpec(key=key, name=str(name), description=str(desc), module="content",

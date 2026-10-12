@@ -6,6 +6,31 @@ released.
 
 ## [Unreleased]
 
+### Added — Screen motion: transitions, entrance effects, slide timer (ADR-0051)
+
+- Slide transitions for playlists: *None (cut)*, *Fade*, *Slide to the left*, *Slide up*, *Zoom* with a duration
+  (≤ 5 s, never more than half a slide), as the playlist's default and per item (*Transition* column on the playlist
+  page, add form, API fields `transition`/`transition_ms` on playlists and items, packs, venue-node sync). The
+  program carries `transition: {effect, ms}` on items that have one. Default *None*: existing playlists cut as
+  before.
+- The player draws the next slide over the current one with CSS keyframes and removes the old one when the
+  transition ends; transitions run in step on all screens (shared clock).
+- Entrance effects of layout elements now also play in previews (playback preview, pack review, widget preview);
+  the editor has *Play animations*.
+- New element *Slide timer* (`progress`): a bar that shrinks or grows over the time the playlist slide stays on
+  screen (horizontal or vertical, either end, colour and track from the element's style); full or hidden for slides
+  without an end; loops over the layout's duration in the editor and previews.
+- Display setting *Reduce motion* (screen, group, event, instance): no transitions or entrance effects; the device's
+  `prefers-reduced-motion` does the same. Slide timers then count in one-second steps.
+- Browser test `frontend/e2e/motion.mjs` (transition, effect, timer, drill evacuation during a transition).
+
+### Changed — Screen motion (ADR-0051)
+
+- Evacuation layouts render without entrance effects whatever they contain, and an alarm takeover ends a running
+  slide transition at once; full-screen announcements and emergency overrides never get transitions or effects.
+- Announcement banners and cards appear at once (their slide-in and pop-in animations are gone).
+- The theme's transition tokens are labelled as what they are: CSS variables for code elements.
+
 ### Added — Heartbeat: health monitor, alive indicator, operator check-in (ADR-0052)
 
 - New module `heartbeat` (on by default; *Operations → Heartbeat*, `heartbeat.view` / `heartbeat.manage`). Plugin

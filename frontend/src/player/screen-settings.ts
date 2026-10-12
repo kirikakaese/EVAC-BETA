@@ -7,6 +7,8 @@ export interface DisplaySettings {
   dim_from?: string; dim_until?: string; dim_level?: number; sleep_from?: string; sleep_until?: string;
   audio?: boolean; volume?: number; daily_reload?: string; expected_resolution?: string; evacuation_role?: string;
   wall_columns?: number; wall_rows?: number; wall_column?: number; wall_row?: number; wall_bezel?: number;
+  /** no slide transitions or entrance effects (ADR-0051) */
+  reduce_motion?: boolean;
 }
 
 /** Video wall: this screen's tile of a ``columns`` × ``rows`` wall (1-based), or null when it is a single screen. */

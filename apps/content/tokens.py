@@ -65,10 +65,12 @@ def schema(fonts: list[tuple[str, str]] | None = None, images: list[tuple[str, s
                              "x-enum-labels": [label for _, label in images], "default": ""},
         "logo": {"type": "string", "title": "Logo", "enum": [v for v, _ in images],
                  "x-enum-labels": [label for _, label in images], "default": ""},
-        "transition": {"type": "string", "title": "Slide transition", "enum": ["fade", "slide", "none"],
-                       "x-enum-labels": ["Fade", "Slide", "None"], "default": "fade"},
-        "transition_ms": {"type": "integer", "title": "Transition duration (ms)", "minimum": 0, "maximum": 5000,
-                          "default": 600},
+        "transition": {"type": "string", "title": "Transition style (code elements)", "enum": ["fade", "slide", "none"],
+                       "x-enum-labels": ["Fade", "Slide", "None"], "default": "fade",
+                       "description": "Offered to code elements as --evac-transition. Slide transitions are set "
+                                      "on playlists (Playback)."},
+        "transition_ms": {"type": "integer", "title": "Transition duration (code elements, ms)", "minimum": 0,
+                          "maximum": 5000, "default": 600},
     })
     return {"type": "object", "properties": props}
 

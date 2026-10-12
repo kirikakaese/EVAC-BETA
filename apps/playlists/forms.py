@@ -9,7 +9,7 @@ from apps.content.models import Layout
 from apps.screens.forms import TagsField
 from apps.screens.models import Screen, ScreenGroup
 
-from .models import Override, Playlist, PlaylistItem, ScheduleRule
+from .models import TRANSITION_MAX_MS, Override, Playlist, PlaylistItem, ScheduleRule
 
 LOCAL = {"type": "datetime-local"}
 WEEKDAYS = [(0, _("Mon")), (1, _("Tue")), (2, _("Wed")), (3, _("Thu")), (4, _("Fri")), (5, _("Sat")), (6, _("Sun"))]
@@ -22,12 +22,23 @@ def _layouts(event):
 class PlaylistForm(forms.ModelForm):
     class Meta:
         model = Playlist
-        fields = ["name", "description", "mode", "default_duration", "is_default"]
+        fields = ["name", "description", "mode", "default_duration", "transition", "transition_ms", "is_default"]
         widgets = {"description": forms.Textarea(attrs={"rows": 2})}
 
     def __init__(self, *args, event, **kwargs):
         super().__init__(*args, **kwargs)
         self.event = event
+        # older clients (and scripts) post without the transition fields: they keep what is set
+        for name in ("transition", "transition_ms"):
+            self.fields[name].required = False
+        self.fields["transition_ms"].widget.attrs.update(min=0, max=TRANSITION_MAX_MS, step=50)
+
+    def clean_transition(self):
+        return self.cleaned_data.get("transition") or self.instance.transition
+
+    def clean_transition_ms(self):
+        value = self.cleaned_data.get("transition_ms")
+        return self.instance.transition_ms if value is None else value
 
     def clean_name(self):
         name = self.cleaned_data["name"]
@@ -46,7 +57,7 @@ class ItemForm(forms.ModelForm):
     class Meta:
         model = PlaylistItem
         fields = ["layout", "child", "duration", "weight", "tags", "condition", "valid_from", "valid_until",
-                  "enabled"]
+                  "transition", "transition_ms", "enabled"]
         widgets = {"valid_from": forms.DateTimeInput(attrs=LOCAL), "valid_until": forms.DateTimeInput(attrs=LOCAL)}
 
     def __init__(self, *args, playlist, **kwargs):

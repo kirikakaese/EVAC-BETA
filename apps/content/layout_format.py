@@ -46,6 +46,10 @@ ELEMENT_TYPES = {
     "pictogram": {"code": {"enum": ["E001", "E002", "E007", "E003", "W001", "arrow"]},
                   "direction": {"enum": ["auto", "ahead", "ahead_right", "right", "back_right", "back", "back_left",
                                          "left", "ahead_left"]}},
+    # slide timer (ADR-0051): a bar that shrinks (or grows) over the time the current playlist slide stays on
+    # screen; "untimed" says what it shows when the slide has no end (a single layout, an override)
+    "progress": {"orientation": {"enum": ["horizontal", "vertical"]}, "mode": {"enum": ["shrink", "grow"]},
+                 "reverse": {"type": "boolean"}, "untimed": {"enum": ["full", "hide"]}},
     # a custom widget of the widgets module (ADR-0023): its rows arrive separately from /player/api/widgets/data/
     "data": {"widget": UUID, "title": {"type": "string", "maxLength": 200}},
     # the program module (ADR-0038): now/next on a stage ("" = the stage in the screen's room, else all), the

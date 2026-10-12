@@ -11,6 +11,7 @@ from __future__ import annotations
 import uuid
 
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -21,6 +22,13 @@ from apps.core.models import TimeStampedModel
 PRIORITY_DEFAULT = 0
 PRIORITY_SCHEDULE = 100
 PRIORITY_EVACUATION = 1000
+
+#: slide transitions (ADR-0051): how the next slide of a playlist replaces the current one
+TRANSITIONS = [("none", _("None (cut)")), ("fade", _("Fade")), ("slide-left", _("Slide to the left")),
+               ("slide-up", _("Slide up")), ("zoom", _("Zoom"))]
+TRANSITION_KEYS = [k for k, _label in TRANSITIONS]
+#: longest transition; the player also keeps it below half of the slide
+TRANSITION_MAX_MS = 5000
 
 
 class Playlist(TimeStampedModel):
@@ -39,6 +47,11 @@ class Playlist(TimeStampedModel):
         help_text=_("Used when neither the item nor the layout sets a duration."))
     is_default = models.BooleanField(_("default playlist of the event"), default=False,
                                      help_text=_("Plays when no schedule or override applies."))
+    transition = models.CharField(_("slide transition"), max_length=12, choices=TRANSITIONS, default="none",
+                                  help_text=_("How the next slide replaces the current one. Items can choose "
+                                              "their own. Off on screens set to reduce motion."))
+    transition_ms = models.PositiveIntegerField(
+        _("transition duration (ms)"), default=600, validators=[MaxValueValidator(TRANSITION_MAX_MS)])
     updated_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="+")
 
@@ -68,12 +81,24 @@ class PlaylistItem(models.Model):
     valid_from = models.DateTimeField(_("from"), null=True, blank=True)
     valid_until = models.DateTimeField(_("until"), null=True, blank=True)
     enabled = models.BooleanField(_("enabled"), default=True)
+    transition = models.CharField(_("transition into this slide"), max_length=12, blank=True, default="",
+                                  choices=[("", _("Playlist default")), *TRANSITIONS],
+                                  help_text=_("Nested playlists use their own transitions."))
+    transition_ms = models.PositiveIntegerField(
+        _("transition duration (ms)"), null=True, blank=True, validators=[MaxValueValidator(TRANSITION_MAX_MS)],
+        help_text=_("Empty: the playlist's duration."))
 
     class Meta:
         ordering = ["position", "id"]
 
     def __str__(self):
         return str(self.layout or self.child or "?")
+
+    def effective_transition(self) -> tuple[str, int]:
+        """``(effect, ms)`` of the transition into this item's slide: its own, else the playlist's."""
+        effect = self.transition or self.playlist.transition
+        ms = self.transition_ms if self.transition_ms is not None else self.playlist.transition_ms
+        return effect, min(ms, TRANSITION_MAX_MS)
 
     def clean(self):
         if bool(self.layout_id) == bool(self.child_id):

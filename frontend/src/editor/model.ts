@@ -56,6 +56,8 @@ const DEFAULTS: Record<string, Partial<LayoutElement>> = {
                                                                    tabularNumbers: true },
                props: { target: "", format: "auto", finished: "Now!" } },
   date: { frame: { x: 5, y: 5, w: 40, h: 8 }, style: { fontSize: 4 }, props: { format: "long" } },
+  progress: { frame: { x: 0, y: 98.5, w: 100, h: 1.5 }, style: { color: "token:accent" },
+              props: { orientation: "horizontal", mode: "shrink", untimed: "full" } },
   data: { frame: { x: 10, y: 15, w: 45, h: 60 }, style: { fontSize: 4.5 }, props: { widget: "" } },
   program: { frame: { x: 5, y: 15, w: 55, h: 70 }, style: { fontSize: 4 },
              props: { view: "now_next", stage: "", count: 6, title: "" } },

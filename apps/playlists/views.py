@@ -139,9 +139,12 @@ def playlist(request, slug, pk, *, event):
                     messages.success(request, _("Added."))
                     return redirect("playlists:playlist", slug, pl.pk)
                 meta = forms.PlaylistForm(instance=pl, event=event, prefix="meta")
-            elif action in ("up", "down", "remove", "toggle"):
+            elif action in ("up", "down", "remove", "toggle", "transition"):
                 item = get_object_or_404(PlaylistItem, playlist=pl, pk=request.POST.get("item"))
-                if action == "remove":
+                if action == "transition":
+                    item.transition = request.POST.get("transition", "")
+                    services.save_item(item, actor=request.user, request=request)
+                elif action == "remove":
                     services.delete_item(item, actor=request.user, request=request)
                 elif action == "toggle":
                     item.enabled = not item.enabled
@@ -177,6 +180,7 @@ def playlist(request, slug, pk, *, event):
     return _render(request, "playlists/playlist.html", {
         "event": event, "playlist": pl, "items": items, "meta": meta, "add": add, "can_edit": can_edit,
         "total": total, "used_by": ScheduleRule.objects.filter(playlist=pl),
+        "transitions": PlaylistItem._meta.get_field("transition").choices,
     })
 
 

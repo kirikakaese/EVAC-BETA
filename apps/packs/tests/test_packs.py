@@ -78,8 +78,10 @@ def content(event, admin):
     layout.theme = theme
     layout.save()
     content_services.publish_layout(layout, actor=admin)
-    pl = playlist_services.save_playlist(Playlist(event=event, name="Main loop", default_duration=12), actor=admin)
-    playlist_services.save_item(PlaylistItem(playlist=pl, layout=layout, weight=2, tags=["foyer"]), actor=admin)
+    pl = playlist_services.save_playlist(Playlist(event=event, name="Main loop", default_duration=12,
+                                                  transition="slide-up", transition_ms=900), actor=admin)
+    playlist_services.save_item(PlaylistItem(playlist=pl, layout=layout, weight=2, tags=["foyer"], transition="zoom",
+                                             transition_ms=300), actor=admin)
     return {"asset": asset, "theme": theme, "base": base, "feed": feed, "widget": widget, "layout": layout,
             "playlist": pl, "inter": inter}
 
@@ -203,6 +205,7 @@ def test_import_into_other_event(event, target, admin, content):
     pl = Playlist.objects.get(event=target)
     item = pl.items.get()
     assert (pl.default_duration, item.layout, item.weight, item.tags) == (12, layout, 2, ["foyer"])
+    assert (pl.transition, pl.transition_ms, item.transition, item.transition_ms) == ("slide-up", 900, "zoom", 300)
     pi.refresh_from_db()
     assert pi.status == PackImport.Status.IMPORTED and not services.staged_path(pi).exists()
     entry = AuditLog.objects.filter(action="packs.imported").get()

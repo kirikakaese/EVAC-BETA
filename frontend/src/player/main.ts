@@ -27,6 +27,7 @@ import { canCapture, captureScreenshot, clearCaches, upload } from "./remote";
 import { applyRoot, applyState, displayState, localHHMM, type DisplaySettings } from "./screen-settings";
 import { getConfig, getToken, setConfig, setToken } from "./storage";
 import { EvacController, probeAudio, type EvacBundle, type EvacPayload } from "./evac";
+import { isUrgent, transitionFor } from "./transition";
 import type { Signed } from "./ed25519";
 
 const PAIR_POLL_MS = 3000;
@@ -66,6 +67,8 @@ export class Player {
   private plugins: PluginHost | null = null;
   private program: Program | null = null;
   private shown = "";
+  /** the playlist slide on screen (entry, item, start): a transition plays only when it changes */
+  private shownSlide = "";
   private timer: ReturnType<typeof setTimeout> | null = null;
   private refresher: ReturnType<typeof setInterval> | null = null;
   private housekeeping: ReturnType<typeof setInterval> | null = null;
@@ -366,6 +369,8 @@ export class Player {
         }).catch(() => undefined);
       },
       onChange: () => {
+        // an alarm never waits for a slide transition (ADR-0051): a running one ends at once
+        this.display.settle();
         this.updateDisplayState();
         this.shown = "";
         this.show();
@@ -465,6 +470,8 @@ export class Player {
     this.overlays.update(this.program?.overlays, now, { hidden: takeover, audio });
     // a full-screen announcement speaks once per appearance (after its alert tone, if any)
     const entry = slide ? this.program?.entries.find((e) => e.id === slide?.entry) : undefined;
+    // evacuation, full-screen announcements and emergency overrides appear at once: no transition, no effects
+    const urgent = evacuating || isUrgent(entry);
     if (entry?.speech && audio.enabled && !evacuating) {
       this.speaker.say(`${entry.id}@${slide?.start ?? 0}`, entry.speech, { volume: audio.volume,
                                                                          delayMs: SPEECH_DELAY_MS });
@@ -474,15 +481,24 @@ export class Player {
     this.reloadAtNextSlide = "";
     this.shown = key;
     log("info", `showing ${this.slide}`);
+    const reduced = this.reducedMotion();
+    const slideKey = slide?.item ? `${slide.entry}|${slide.item}|${slide.start ?? ""}` : "";
+    const transition = slideKey && slideKey !== this.shownSlide
+      ? transitionFor(this.program, slide, { reduced, urgent }) : null;
+    this.shownSlide = slideKey;
+    // slide timers count down the playlist slide; a lone slide or an override has no end (ADR-0051)
+    const timed = slide && slide.count > 1 && slide.start !== null && slide.end !== null
+      ? { start: slide.start, end: slide.end } : null;
+    if (urgent) this.display.settle();
     try {
       if (!data || !this.bundle) throw new Error("nothing to show");
       this.display.layout(data, {
         vars: this.vars(), now: () => this.clock.now(), timezone: cfg.event.timezone, assets: this.bundle.assets,
-        fonts: this.bundle.fonts, reducedMotion: matchMedia?.("(prefers-reduced-motion: reduce)").matches, audio,
+        fonts: this.bundle.fonts, reducedMotion: reduced, motion: !urgent, slide: timed, audio,
         nonce: pageNonce(), data: this.widgetData, program: this.schedule, plugins: this.plugins ?? undefined,
         onError: (id, err) => recordError(`${id}: ${String(err)}`),
         onLog: (id, message) => log("info", `${id}: ${message}`),
-      }, variables);
+      }, variables, transition);
     } catch (err) {
       if (data) recordError(`render failed, showing the idle slide: ${String(err)}`);
       this.slide = "idle";
@@ -491,10 +507,17 @@ export class Player {
     this.overlays.attach(this.root);
   }
 
+  /** The device asks for reduced motion, or the screen's display settings do (ADR-0051). */
+  private reducedMotion(): boolean {
+    return !!this.config?.display?.reduce_motion
+      || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
   /** Rotation, overscan, scale, keystone and the dim/sleep overlay from the display settings. */
   private applySettings(): void {
     const s: DisplaySettings = this.config?.display ?? {};
     applyRoot(this.root, s);
+    document.documentElement.classList.toggle("reduce-motion", !!s.reduce_motion);
     // the evacuation layer lives outside #player (above the dim overlay) but turns and fits like it
     if (this.evac) applyRoot(this.evac.layer, s, false);
     this.updateDisplayState();

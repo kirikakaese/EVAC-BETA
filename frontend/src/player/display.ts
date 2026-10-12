@@ -6,6 +6,9 @@ import type { LayoutData, RenderContext } from "../renderer/types";
 import type { ScreenConfig } from "./api";
 import type { Clock } from "./clock";
 import { qrSvg } from "../renderer/qr";
+import type { Transition } from "./transition";
+
+const TRANSITION_CLASSES = ["evac-tr-fade", "evac-tr-slide-left", "evac-tr-slide-up", "evac-tr-zoom"];
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -22,8 +25,29 @@ export class Display {
   constructor(private root: HTMLElement, private clock: Clock) {}
 
   private rendered: RenderedLayout | null = null;
+  /** the view on screen (a layout keeps it for the next transition) */
+  private view: HTMLElement | null = null;
+  /** a running slide transition: the outgoing view goes when it ends (ADR-0051) */
+  private leaving: { view: HTMLElement; rendered: RenderedLayout | null; timer: ReturnType<typeof setTimeout> } | null
+    = null;
+
+  /** Whether a slide transition is running. */
+  get transitioning(): boolean { return this.leaving !== null; }
+
+  /** End a running transition at once: the outgoing slide goes, the incoming one stands still. Alarms and
+   *  urgent content call this, so nothing waits for an animation. */
+  settle(): void {
+    const t = this.leaving;
+    if (!t) return;
+    this.leaving = null;
+    clearTimeout(t.timer);
+    t.rendered?.destroy();
+    t.view.remove();
+    this.view?.classList.remove("evac-tr-in", ...TRANSITION_CLASSES);
+  }
 
   private reset(): HTMLElement {
+    this.settle();
     if (this.clockTimer) clearInterval(this.clockTimer);
     this.clockTimer = null;
     this.rendered?.destroy();
@@ -31,6 +55,7 @@ export class Display {
     this.root.replaceChildren();
     const main = el("main", "view");
     this.root.appendChild(main);
+    this.view = main;
     return main;
   }
 
@@ -75,11 +100,39 @@ export class Display {
     this.clockTimer = setInterval(tick, 1000);
   }
 
-  layout(data: LayoutData, ctx: RenderContext, variables?: Record<string, string>): void {
-    const main = this.reset();
-    main.classList.add("layout");
+  /** Show a layout. With a ``transition`` and a layout on screen, the new slide comes in over the old one, which
+   *  is removed when the transition ends (or at once by :meth:`settle`). */
+  layout(data: LayoutData, ctx: RenderContext, variables?: Record<string, string>,
+         transition: Transition | null = null): void {
+    const outgoing = transition && this.view?.classList.contains("layout") && this.view.parentElement === this.root
+      ? this.view : null;
+    if (!outgoing || !transition) {
+      const main = this.reset();
+      main.classList.add("layout");
+      for (const [k, v] of Object.entries(variables ?? {})) main.style.setProperty(k, v);
+      this.rendered = renderLayout(main, data, ctx);
+      return;
+    }
+    this.settle();
+    const leaving = this.rendered;
+    if (this.clockTimer) clearInterval(this.clockTimer);
+    this.clockTimer = null;
+    // everything but the outgoing slide goes, as with any slide change (overlays are attached again afterwards)
+    for (const child of [...this.root.children]) if (child !== outgoing) child.remove();
+    const main = el("main", "view layout");
     for (const [k, v] of Object.entries(variables ?? {})) main.style.setProperty(k, v);
+    this.root.appendChild(main);
+    this.view = main;
     this.rendered = renderLayout(main, data, ctx);
+    outgoing.setAttribute("aria-hidden", "true");
+    outgoing.inert = true;
+    for (const node of [main, outgoing]) {
+      node.style.setProperty("--evac-tr-ms", `${transition.ms}ms`);
+      node.classList.add(`evac-tr-${transition.effect}`);
+    }
+    main.classList.add("evac-tr-in");
+    outgoing.classList.add("evac-tr-out");
+    this.leaving = { view: outgoing, rendered: leaving, timer: setTimeout(() => this.settle(), transition.ms + 50) };
   }
 
   /** Colour bars, a grid and circles to check geometry, overscan and colours (with name and resolution). */

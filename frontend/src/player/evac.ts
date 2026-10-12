@@ -20,6 +20,9 @@ export const ALARMS = ["staff_alert", "attention", "shelter_in_place", "evacuate
 const SEVERITY: Record<string, number> = { normal: 0, all_clear: 1, staff_alert: 2, attention: 3,
                                            shelter_in_place: 4, evacuate: 5 };
 export const STALE_CLEAR_MS = 10 * 60_000;
+/** An alarm appears at once and complete: no entrance effects, no slide timer (ADR-0051), whatever the layout
+ *  says and whatever the content context carries. */
+export const STILL = { motion: false, reducedMotion: true, slide: null } as const;
 const KEY_PAYLOAD = "evac.player.evac";
 const KEY_BUNDLE = "evac.player.evacbundle";
 
@@ -245,7 +248,7 @@ export class EvacController {
       let failed = "";
       try {
         const ctx = this.opts.context();
-        renderLayout(host, p.layout, { ...ctx, vars: this.vars(p, p.texts[0] ?? ""),
+        renderLayout(host, p.layout, { ...ctx, ...STILL, vars: this.vars(p, p.texts[0] ?? ""),
           onError: (id, err) => { failed = failed || `${id}: ${String(err)}`; } }).destroy();
       } catch (err) {
         failed = String(err);
@@ -339,7 +342,7 @@ export class EvacController {
           this.rendered?.destroy();
           host.replaceChildren();
           const ctx = this.opts.context();
-          this.rendered = renderLayout(host, p.layout, { ...ctx, vars: this.vars(p, text),
+          this.rendered = renderLayout(host, p.layout, { ...ctx, ...STILL, vars: this.vars(p, text),
             onError: (id, err) => { failed = true; ctx.onError?.(id, err); } });
         } catch {
           failed = true;

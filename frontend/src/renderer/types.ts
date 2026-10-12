@@ -73,7 +73,15 @@ export interface RenderContext {
   fonts: Record<string, string>;
   /** editor: show placeholders and error outlines instead of hiding problems */
   editing?: boolean;
+  /** play entrance effects (default: on, off in the editor); evacuation and urgent content pass false (ADR-0051) */
+  motion?: boolean;
+  /** the device or the screen's display settings ask for reduced motion: no effects, timers step */
   reducedMotion?: boolean;
+  /** the playlist slide on screen (synchronised ms) for slide timers; null: the slide has no end; left out
+   *  (editor, previews): timers loop over ``loopMs`` */
+  slide?: { start: number; end: number } | null;
+  /** editor and previews: the nominal slide length slide timers loop over (renderLayout sets it) */
+  loopMs?: number;
   /** CSP nonce of the page: code elements need it (their sandboxed frame inherits the page policy) */
   nonce?: string;
   /** rows of custom widgets ("data" elements) */

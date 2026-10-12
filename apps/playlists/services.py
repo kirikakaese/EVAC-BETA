@@ -104,13 +104,22 @@ def _published_layouts(event) -> dict[str, int | None]:
     return out
 
 
+def _transition(item: PlaylistItem) -> dict[str, Any]:
+    """``{"transition": {"effect", "ms"}}`` for a layout item whose slide comes in with a transition, else ``{}``
+    (ADR-0051: no key means a cut, as before; nested playlists use their own items' transitions)."""
+    if item.child_id:
+        return {}
+    effect, ms = item.effective_transition()
+    return {"transition": {"effect": effect, "ms": ms}} if effect != "none" and ms > 0 else {}
+
+
 def playlist_payload(pl: Playlist) -> dict[str, Any]:
     return {
         "name": pl.name, "mode": pl.mode, "default": pl.default_duration * 1000,
         "items": [
             {"id": str(i.pk), **({"playlist": str(i.child_id)} if i.child_id else {"layout": str(i.layout_id)}),
              "duration": i.duration * 1000 if i.duration else None, "weight": i.weight, "tags": i.tags or [],
-             "when": i.condition, "from": _ms(i.valid_from), "until": _ms(i.valid_until)}
+             "when": i.condition, "from": _ms(i.valid_from), "until": _ms(i.valid_until), **_transition(i)}
             for i in pl.items.all() if i.enabled
         ],
     }
@@ -312,7 +321,8 @@ def save_playlist(pl: Playlist, *, actor, request=None) -> Playlist:
             Playlist.objects.filter(event=pl.event, is_default=True).exclude(pk=pl.pk).update(is_default=False)
     log(action="playlist.created" if created else "playlist.updated", actor=actor, target=pl, event=pl.event,
         request=request, message=f"Playlist {pl.name}",
-        changes={"mode": pl.mode, "default_duration": pl.default_duration, "is_default": pl.is_default})
+        changes={"mode": pl.mode, "default_duration": pl.default_duration, "is_default": pl.is_default,
+                 "transition": pl.transition, "transition_ms": pl.transition_ms})
     notify_screens(pl.event)
     return pl
 
@@ -344,7 +354,8 @@ def save_item(item: PlaylistItem, *, actor, request=None) -> PlaylistItem:
     log(action="playlist.item_added" if created else "playlist.item_changed", actor=actor, target=pl,
         event=pl.event, request=request, message=f"{pl.name}: {item}",
         changes={"item": str(item.pk), "duration": item.duration, "weight": item.weight, "tags": item.tags,
-                 "condition": item.condition, "enabled": item.enabled})
+                 "condition": item.condition, "enabled": item.enabled, "transition": item.transition,
+                 "transition_ms": item.transition_ms})
     notify_screens(pl.event)
     return item
 

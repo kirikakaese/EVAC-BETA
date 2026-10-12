@@ -27,7 +27,11 @@ interface PreviewConfig {
   pageLabels?: string[];
 }
 
-export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
+/** ``motion``: play entrance effects (unless the device asks for reduced motion); off for print sheets and
+ *  gallery thumbnails. Slide timers loop over the layout's duration (ADR-0051). */
+export function mountPreview(host: HTMLElement, cfg: PreviewConfig, motion = false): void {
+  const reduced = !motion || (typeof matchMedia === "function"
+                              && matchMedia("(prefers-reduced-motion: reduce)").matches);
   const started = Date.now();
   host.replaceChildren();
   host.style.aspectRatio = `${cfg.layout.width} / ${cfg.layout.height}`;
@@ -35,7 +39,7 @@ export function mountPreview(host: HTMLElement, cfg: PreviewConfig): void {
   host.classList.add("evac-preview-host");
   renderLayout(host, cfg.layout, {
     vars: cfg.vars, now: () => cfg.at + (Date.now() - started), timezone: cfg.timezone, assets: cfg.assets,
-    fonts: cfg.fonts, reducedMotion: true, nonce: pageNonce(), data: new MemoryStore(cfg.data ?? {}),
+    fonts: cfg.fonts, reducedMotion: reduced, nonce: pageNonce(), data: new MemoryStore(cfg.data ?? {}),
     program: new ProgramStore(cfg.program ?? null),
     plugins: cfg.plugins ? fetchHost(() => cfg.plugins?.widgets ?? {}, cfg.plugins.sources) : undefined,
   });
@@ -66,7 +70,7 @@ if (typeof document !== "undefined") {
   const data = document.getElementById("preview-config");
   const host = document.querySelector<HTMLElement>("[data-preview]");
   const sheet = document.querySelector<HTMLElement>("[data-preview-pages]");
-  if (data && host) mountPreview(host, JSON.parse(data.textContent || "{}") as PreviewConfig);
+  if (data && host) mountPreview(host, JSON.parse(data.textContent || "{}") as PreviewConfig, true);
   if (data && sheet) mountPages(sheet, JSON.parse(data.textContent || "{}") as PreviewConfig);
   const gallery = document.querySelector<HTMLElement>("[data-preview-gallery]");
   if (data && gallery) mountGallery(gallery, JSON.parse(data.textContent || "{}") as PreviewConfig);
