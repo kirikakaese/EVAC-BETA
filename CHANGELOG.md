@@ -9,7 +9,7 @@ released.
 ### Added — Heartbeat: health monitor, alive indicator, operator check-in (ADR-0052)
 
 - New module `heartbeat` (on by default; *Operations → Heartbeat*, `heartbeat.view` / `heartbeat.manage`). Plugin
-  API 6: `r.health_check(HealthCheckSpec(...))` returning `HealthItem`s (`ok`, `warn`, `down`, `unknown`). Checks
+  API 7: `r.health_check(HealthCheckSpec(...))` returning `HealthItem`s (`ok`, `warn`, `down`, `unknown`). Checks
   of modules that are off are skipped.
 - Built-in checks, each registered by its own app: screens (last heartbeat), the venue node holding the event and
   all enrolled nodes (or, on a node, the link to central), hardware bridges (heartbeat, input faults; read-only),
@@ -32,6 +32,22 @@ released.
   of roles, one step per grace period, also through channels. Only while live (configurable); audited; webhook
   events `heartbeat.checked_in` and `heartbeat.checkin_missed`. Never touches evacuation or alarm states.
 - Built-in roles of new events: control room gets `heartbeat.*`, security `heartbeat.view`.
+
+### Added — Event setup wizard and checklist (ADR-0050)
+
+- *New event* is now a guided wizard: basics (the event is created here; *Create and skip the wizard* goes straight
+  to it) → venue (link or quick-create) → event type (presets *Conference*, *Festival / camp*, *Venue screens only*
+  or *Custom*, which switch the matching modules on and respect dependencies; modules off for the server are only
+  available to instance admins) → safety (evacuation statement and the user's two-factor status, only when
+  evacuation is chosen or on) → team (invitations) → screens (a gallery template, created and published, and
+  pairing a first screen) → done. Every later step works on the real event at `/e/<event>/setup/<step>/`, can be
+  skipped and is resumed from `/e/<event>/setup/`.
+- Setup checklist on the event overview for organisers: what is still missing, with a link per item, hidden once
+  everything required is done or per event (setting `setup.checklist_hidden`). Items come from plugins:
+  `r.setup_check(SetupCheckSpec(...))` (plugin API 6); venues, evacuation, screens, content, events and the notify
+  extension register theirs.
+- `apps.core.modules`: `blocked_reason`, `with_dependencies`, `switch_on`, `apply_selection` (shared by both
+  wizards); the template gallery accepts `publish=1` and a `next` URL.
 
 ### Changed
 

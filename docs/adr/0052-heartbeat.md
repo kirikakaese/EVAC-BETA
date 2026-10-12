@@ -30,7 +30,7 @@ Constraints:
 
 ## Decision
 
-**Registry hook (plugin API 6).**
+**Registry hook (plugin API 7).**
 - `r.health_check(HealthCheckSpec(key, name, check, module=, scope=, order=, description=, while_checked_out=))`.
 - `check(event | None) -> [HealthItem(key, label, status, detail, since, url)]`.
 - `status` is one of:

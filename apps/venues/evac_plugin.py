@@ -9,6 +9,8 @@ from apps.core.plugins import (
     PluginManifest,
     ScopeKind,
     SettingsNamespace,
+    SetupCheckSpec,
+    SetupResult,
 )
 from apps.core.registry import Registry
 
@@ -40,6 +42,32 @@ def _assembly_choices(event):
         venue__events=event, kind=Point.Kind.ASSEMBLY).select_related("venue")]
 
 
+def _venue_check(event, request):
+    """Setup checklist: the event takes place somewhere."""
+    return "done" if event.venues.exists() else "todo"
+
+
+def _map_check(event, request):
+    """Setup checklist: every venue of the event has zones and at least one exit (routes and evacuation need them)."""
+    from django.db.models import Count, Q
+    from django.urls import reverse
+
+    from .models import Point, Venue
+
+    rows = list(Venue.objects.filter(events=event).annotate(
+        n_zones=Count("zones", distinct=True),
+        n_exits=Count("points", filter=Q(points__kind=Point.Kind.EXIT), distinct=True)).order_by("name"))
+    if not rows:
+        return None
+    lacking = [v for v in rows if not v.n_zones or not v.n_exits]
+    if not lacking:
+        return "done"
+    v = lacking[0]
+    what = (_("no zones and no exits") if not v.n_zones and not v.n_exits
+            else _("no zones") if not v.n_zones else _("no exits"))
+    return SetupResult("todo", detail=f"{v.name}: {what}", url=reverse("venues:map", args=[event.slug, v.slug]))
+
+
 def register(r: Registry) -> None:
     from . import sync as node_sync
 
@@ -53,6 +81,12 @@ def register(r: Registry) -> None:
         PermissionSpec("venues.view", str(_("See venues, rooms and zones")), scopes=("venue",)),
         PermissionSpec("venues.manage", str(_("Edit venues, rooms and zones")), scopes=("venue",)),
     ])
+    r.setup_check(SetupCheckSpec(
+        key="venue", label=str(_("Link a venue")), check=_venue_check, module="venues", order=10,
+        url_name="venues:index", help=str(_("Where the event takes place; venues are shared between events."))))
+    r.setup_check(SetupCheckSpec(
+        key="venue_map", label=str(_("Draw zones and exits")), check=_map_check, module="venues", order=20,
+        url_name="venues:index", help=str(_("Zones target announcements and alarms; exits make routes possible."))))
     r.scope_kind(ScopeKind(key="venue", label=str(_("Venue")), choices=_venue_choices, module="venues"))
     r.scope_kind(ScopeKind(key="zone", label=str(_("Zone")), choices=_zone_choices, module="venues"))
     r.scope_kind(ScopeKind(key="room", label=str(_("Room")), choices=_room_choices, module="venues"))

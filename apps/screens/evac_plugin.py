@@ -12,6 +12,7 @@ from apps.core.plugins import (
     PluginManifest,
     ScopeKind,
     SettingsNamespace,
+    SetupCheckSpec,
     WebhookEventSpec,
 )
 from apps.core.registry import Registry
@@ -25,12 +26,23 @@ def _group_choices(event):
     return [(str(g.pk), g.name) for g in event.screen_groups.all()]
 
 
+def _paired_check(event, request):
+    """Setup checklist: at least one screen is paired (and not revoked)."""
+    from .models import Screen
+
+    return "done" if Screen.objects.filter(event=event, paired_at__isnull=False,
+                                           revoked_at__isnull=True).exists() else "todo"
+
+
 def register(r: Registry) -> None:
     from . import sync as node_sync
 
     r.sync(node_sync.spec())
     from . import api, consumers, services
 
+    r.setup_check(SetupCheckSpec(
+        key="screens", label=str(_("Pair a screen")), check=_paired_check, module="screens", order=40,
+        url_name="screens:pair", help=str(_("Open /player/ on a display and type the code it shows."))))
     r.map_layer(MapLayerSpec(key="screens", title=str(_("Screens")), items=services.map_items,
                              place=services.map_place, rescale=services.map_rescale, module="screens", order=10))
 

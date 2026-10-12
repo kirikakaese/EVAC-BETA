@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.plugins import ExtensionSpec, NotificationChannelSpec, PluginManifest, StaffCardSpec
+from apps.core.plugins import ExtensionSpec, NotificationChannelSpec, PluginManifest, SetupCheckSpec, StaffCardSpec
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="notify", name="Announcement channels", version="1.0.0", kind="extension",
@@ -74,12 +74,30 @@ def ntfy_card(request, event):
     return {"server": server, "topic": topic, "url": f"{server}/{topic}", "protected": bool(cfg.secret("token"))}
 
 
+#: channels that reach staff (Mastodon is public)
+STAFF_CHANNELS = ("email", "ntfy", "matrix", "telegram")
+
+
+def staff_channel_check(event, request):
+    """Setup checklist (optional): a channel that reaches staff outside EVAC is set up for the event."""
+    from apps.core import modules
+    from apps.extensions import services as extensions
+
+    if not modules.is_enabled("extensions", event):
+        return None  # nowhere to set one up
+    return "done" if any(extensions.effective(k, event) is not None for k in STAFF_CHANNELS) else "todo"
+
+
 def register(r: Registry) -> None:
     from . import channels
 
     r.staff_card(StaffCardSpec(key="ntfy", title=str(_("Backup notifications")), template="notify/_staff_ntfy.html",
                                context=ntfy_card, module="announcements", order=95))
 
+    r.setup_check(SetupCheckSpec(
+        key="staff_channel", label=str(_("Set up a staff notification channel")), check=staff_channel_check,
+        module="announcements", order=80, url_name="extensions:event_index", optional=True,
+        help=str(_("E-mail, ntfy, Matrix or Telegram: reaches staff outside EVAC as a backup."))))
     for ext_spec, max_length in specs():
         r.extension(ext_spec)
         r.notification_channel(NotificationChannelSpec(

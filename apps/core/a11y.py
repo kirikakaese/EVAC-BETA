@@ -343,6 +343,9 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
         "/settings/extensions/", "/settings/extensions/webhooks/", "/settings/modules/", "/settings/general/",
         "/settings/general/general/", "/settings/audit/", "/settings/users/", "/events/new/", "/events/import/",
         "/accounts/privacy/delete/", "/settings/heartbeat/", f"{e}/settings/s/heartbeat/",
+        # event setup wizard (ADR-0050)
+        f"{e}/setup/basics/", f"{e}/setup/venue/", f"{e}/setup/modules/", f"{e}/setup/safety/", f"{e}/setup/team/",
+        f"{e}/setup/screens/", f"{e}/setup/done/",
     ]
     return {"anonymous": ["/accounts/login/", "/docs/", "/about/", f"/public/{event_slug}/help/",
                           f"/public/{event_slug}/help/request/", f"/public/{event_slug}/help/lost/"],

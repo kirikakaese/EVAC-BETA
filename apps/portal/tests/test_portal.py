@@ -81,10 +81,9 @@ def test_strangers_cannot_see_event(client, other, event):
 
 @pytest.mark.django_db
 def test_event_create_and_settings(admin_client, venue):
-    r = admin_client.post("/events/new/", {"name": "Winter", "slug": "winter", "timezone": "UTC",
-                                           "primary_color": "#112233", "accent_color": "#445566",
-                                           "venues": [str(venue.pk)]})
-    assert r.status_code == 302
+    r = admin_client.post("/events/new/", {"name": "Winter", "slug": "winter", "timezone": "UTC"})
+    assert r.status_code == 302 and r.url == "/e/winter/setup/venue/"
+    admin_client.post(r.url, {"venues": [str(venue.pk)]})
     ev = Event.objects.get(slug="winter")
     assert ev.venues.get() == venue
     r = admin_client.post("/e/winter/settings/", {"name": "Winter Fest", "timezone": "UTC", "primary_color": "#112233",

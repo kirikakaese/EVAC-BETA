@@ -89,7 +89,7 @@ def fake():
 
 # ------------------------------------------------------------------ registry
 def test_registry_hook_and_api_version():
-    assert API_VERSION == 6
+    assert API_VERSION == 7
     keys = set(registry.ensure_loaded().health_checks)
     assert {"screens", "nodes.event", "nodes.instance", "evacuation.bridges", "dial", "celery", "outbox",
             "extensions", "widgets.feeds"} <= keys

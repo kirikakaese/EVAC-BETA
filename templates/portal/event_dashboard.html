@@ -7,6 +7,7 @@
 <div class="live-status small muted" data-live-url="{% url 'core:sse' event.slug %}" data-poll-url="{% url 'core:poll' event.slug %}" data-live-ws="{{ realtime_ws_base }}/ws/e/{{ event.slug }}/">
   <span data-live-status data-label-websocket="{% trans 'Live (WebSocket)' %}" data-label-sse="{% trans 'Live (SSE)' %}" data-label-polling="{% trans 'Live (polling)' %}" data-label-reconnecting="{% trans 'Reconnecting…' %}" data-label-offline="{% trans 'Offline' %}">{% trans "Connecting…" %}</span>
 </div>
+{% if setup_card %}{% include "portal/_setup_checklist.html" with card=setup_card %}{% endif %}
 <div class="grid grid-4 stats">
   <div class="card stat"><span class="stat-label">{% trans "State" %}</span><span class="badge badge-{{ event.state }}">{{ event.get_state_display }}</span></div>
   <div class="card stat"><span class="stat-label">{% trans "Dates" %}</span><span>{% if event.start_date %}{{ event.start_date|date:"j M" }} – {{ event.end_date|date:"j M Y" }}{% else %}–{% endif %}</span></div>
