@@ -110,6 +110,13 @@ def _can_change(request: HttpRequest, event: Any) -> bool:
                for p in (services.PERM_TRIGGER, services.PERM_CLEAR, services.PERM_DRILL))
 
 
+def _needs_two_factor(request: HttpRequest, event: Any) -> bool:
+    """The user holds an alarm permission that only counts in a two-factor verified session, and this one is not."""
+    held = rbac.effective(request.user, event, request=request, two_factor=True).permissions
+    return (not _can_change(request, event)
+            and any(p in held for p in (services.PERM_TRIGGER, services.PERM_CLEAR, services.PERM_DRILL)))
+
+
 @event_view("evacuation.view", module=MODULE)
 def index(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
     return _page(request, event)
@@ -125,6 +132,7 @@ def _page(request: HttpRequest, event: Any, form: ChangeForm | None = None) -> H
     return render(request, "evacuation/index.html", {
         "event": event, "ev": ev, "zones": zones if zones_model or any(z["own"]["alarm"] for z in zones) else [],
         "cfg": cfg, "can_change": can_change, "zones_model": zones_model,
+        "needs_two_factor": _needs_two_factor(request, event),
         "model_label": dict(MODEL_LABELS)[cfg.model], "points": _points(event) if zones_model else [],
         "can_block": can_block, "screens": _screen_rows(event, cfg),
         "can_manage": rbac.has_any(request.user, event, "evacuation.manage", request=request),
@@ -364,6 +372,7 @@ def panic(request: HttpRequest, slug: str, *, event: Any) -> HttpResponse:
     stages = sorted((s for s in cfg.enabled if s in machine.ALARMS), key=lambda s: -machine.SEVERITY[s])
     return render(request, "evacuation/panic.html", {
         "event": event, "ev": ev, "cfg": cfg, "zones": zones, "can_raise": can_raise, "can_drill": can_drill,
+        "needs_two_factor": _needs_two_factor(request, event),
         "stages": [(s.value, cfg.labels[s.value]) for s in stages], "pending": triggers.pending(event),
         "alarm": acks.alarm_since(event) is not None})
 
