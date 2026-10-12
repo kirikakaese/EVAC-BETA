@@ -283,3 +283,4 @@ extension page; `frontend/e2e/phase9.mjs` shows a reading entered on that page o
 | 9.3 | ✅ Template gallery ([ADR-0046](adr/0046-template-gallery.md)) |
 | 9.4 | ✅ Tauri player wrapper; info-beamer hosted package ([ADR-0048](adr/0048-other-players-and-video-walls.md)) |
 | 9.5 | ✅ Performance/load tuning (PostgreSQL pool, Redis, bulk fan-out, WebSocket workers); security review; handbook polish; video walls |
+| 9.6 | ✅ Heartbeat: health monitor (`r.health_check`), alive indicator widget, operator check-in ([ADR-0052](adr/0052-heartbeat.md)) |

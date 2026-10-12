@@ -26,8 +26,9 @@ from typing import Any, Literal
 #: newer version than this EVAC provides refuses to load. 2: ``layout_check``, ``sync`` and ``node_action``.
 #: 3: ``NotificationChannelSpec.alert``, ``dashboard_panel`` and ``mqtt_topic``. 4: plugin widgets on screens
 #: (``WidgetSpec.element``/``script`` for third-party code, ADR-0045) and ``layout_template`` (ADR-0046).
-#: 5: ``Alert.critical`` (evacuation alarms to staff channels, ADR-0049).
-API_VERSION = 5
+#: 5: ``Alert.critical`` (evacuation alarms to staff channels, ADR-0049). 6: ``health_check`` with
+#: ``HealthCheckSpec``/``HealthItem`` (the heartbeat module watches what should be alive, ADR-0052).
+API_VERSION = 6
 
 PluginKind = Literal["core", "module", "extension"]
 NavSection = Literal["event", "operations", "content", "settings", "admin"]
@@ -242,6 +243,44 @@ class DashboardPanelSpec:
     order: int = 100
     size: str = "normal"
     refresh_seconds: int = 10
+
+
+HealthStatus = Literal["ok", "warn", "down", "unknown"]
+HEALTH_STATUSES: tuple[HealthStatus, ...] = ("ok", "warn", "down", "unknown")
+
+
+@dataclass(frozen=True)
+class HealthItem:
+    """One thing a health check watches (a screen group, a bridge, the outbox). ``key`` is stable within the check
+    (an object id, or the check's own key for a single item): the heartbeat module tracks status changes per key.
+    ``status``: ``ok``, ``warn`` (degraded, shown but never alerted), ``down`` (alerted after a grace period) or
+    ``unknown`` (no data yet, e.g. never seen). ``since``: an aware datetime (last contact, or when the problem
+    started); ``url``: a page with details (empty: none)."""
+
+    key: str
+    label: str
+    status: HealthStatus = "ok"
+    detail: str = ""
+    since: Any = None
+    url: str = ""
+
+
+@dataclass(frozen=True)
+class HealthCheckSpec:
+    """Something the heartbeat module watches (ADR-0052). ``check(event) -> [HealthItem, ...]`` reads the database
+    only (it runs on the heartbeat page and every 30 s in Celery; never call external services here). ``event`` is
+    None for the instance-wide view when ``scope`` includes "instance". Checks of a module that is off are skipped.
+    ``while_checked_out``: still evaluated on central while the event is checked out to a venue node (only checks
+    that look at central's own view, like the node's sync; screens then report to the node)."""
+
+    key: str
+    name: str
+    check: Callable[[Any], Sequence[HealthItem]]
+    module: str = "core"
+    scope: Literal["event", "instance", "both"] = "event"
+    order: int = 100
+    description: str = ""
+    while_checked_out: bool = False
 
 
 @dataclass(frozen=True)

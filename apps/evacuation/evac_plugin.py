@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.plugins import (
     DashboardPanelSpec,
     EvacTriggerSpec,
+    HealthCheckSpec,
     ModuleSpec,
     NavEntry,
     PermissionSpec,
@@ -157,3 +158,8 @@ def register(r: Registry) -> None:
     r.dashboard_panel(DashboardPanelSpec(key="evacuation.state", title=str(_("Alarms")),
                                          template="evacuation/panel.html", context=panels.dashboard,
                                          module="evacuation", order=10, refresh_seconds=3))
+    from . import health
+
+    r.health_check(HealthCheckSpec(key="evacuation.bridges", name=str(_("Hardware bridges")), check=health.check,
+                                   module="evacuation", order=30,
+                                   description=str(_("Trigger bridges by their heartbeat and input faults."))))

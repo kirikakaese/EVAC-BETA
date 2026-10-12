@@ -2,8 +2,9 @@
 
 Every EVAC module and extension — built-in or third party — is a **plugin**: a Django app with an
 `evac_plugin.py`. The core uses exactly the same API ([ADR-0001](adr/0001-architecture-and-plugin-model.md)).
-Plugin API version: `apps.core.plugins.API_VERSION = 5` (2 added `layout_check`, `sync`, `node_action` and
-`ExtensionSpec.secrets_on_site`; 4 `layout_template`; 5 `Alert.critical`; plugins written for 1 still load).
+Plugin API version: `apps.core.plugins.API_VERSION = 6` (2 added `layout_check`, `sync`, `node_action` and
+`ExtensionSpec.secrets_on_site`; 4 `layout_template`; 5 `Alert.critical`; 6 `health_check`; plugins written for 1
+still load).
 
 A complete, pip-installable example lives in [`examples/evac-weather`](../examples/evac-weather/README.md): a
 screen widget, its data source and an extension page with its own model, migration, Celery task and tests, all
@@ -88,6 +89,7 @@ again without removing the package.
 | node action | `r.node_action(kind, fn)` | `fn(event, payload, actor) -> dict`: a live action central forwards to the node holding a checked-out event; call `apps.nodes.guard.remote(event)` / `forward(...)` in your services |
 | webhook sink | `r.webhook_sink(fn)` | receive every emitted event (used by the webhooks extension and the ops log) |
 | dashboard panel | `r.dashboard_panel(DashboardPanelSpec(key, title, template, context, module=, order=, size=, refresh_seconds=))` | a panel of the control room dashboard; `context(request, event)` returns the template context or `None` to hide it; refreshed every `refresh_seconds` (ADR-0039) |
+| health check | `r.health_check(HealthCheckSpec(key, name, check, module=, scope=, order=, description=, while_checked_out=))` | something the heartbeat module watches: `check(event)` returns `[HealthItem(key, label, status, detail, since, url)]` with `status` `ok`, `warn`, `down` or `unknown`; database reads only; `scope` `event`, `instance` (called with `None`) or `both`; skipped while the module is off. A `down` that lasts the grace period alerts the control room (ADR-0052) |
 | MQTT topic | `r.mqtt_topic(MqttTopicSpec(key, pattern, handler, module=))` | MQTT messages below the configured prefix (`crowd/+/+`) handed to `handler(topic, payload)` by the MQTT extension; validate the payload yourself (ADR-0040) |
 | WebSocket / API routes | `r.websocket_route`, `r.api_route(prefix, viewset, basename)` | realtime consumers, REST endpoints |
 
@@ -122,6 +124,32 @@ r.widget(WidgetSpec(key="weather.current", name="Weather", element="evac-x-weath
   (`adoptedStyleSheets`) or CSSOM properties, and use the theme's CSS variables (`--evac-color-text`,
   `--evac-color-muted`, `--evac-color-primary`, `--evac-font-body`, …). Sizes in `cqh`/`cqw` follow the box.
 - Built-in widgets (`script="player/player.js"`) are drawn by the renderer itself and never listed as plugins.
+
+## Health checks
+
+The heartbeat module ([ADR-0052](adr/0052-heartbeat.md)) shows every registered check on `/e/<event>/heartbeat/`
+and the control room dashboard, and alerts when an item stays `down` for the grace period (and when it is back):
+
+```python
+from apps.core.plugins import HealthCheckSpec, HealthItem
+
+def lockers(event):
+    out = []
+    for gw in Gateway.objects.filter(event=event):          # your model: database reads only, no HTTP here
+        late = gw.last_seen is None or timezone.now() - gw.last_seen > dt.timedelta(minutes=2)
+        out.append(HealthItem(key=str(gw.pk), label=gw.name, status="down" if late else "ok",
+                              detail="No contact for 2 min" if late else "", since=gw.last_seen,
+                              url=reverse("lockers:gateway", args=[event.slug, gw.pk])))
+    return out
+
+r.health_check(HealthCheckSpec(key="lockers.gateways", name="Locker gateways", check=lockers, module="lockers"))
+```
+
+- `key` of an item must stay the same between runs: changes are tracked per item.
+- Use `warn` for "degraded, look at it" (never alerted) and `unknown` for "no data yet" (never alerted).
+- Contact external systems in a Celery task or the outbox and store what you learned; the check only reads it.
+- `while_checked_out=True` only for checks that look at central's own view (the event's venue node runs its own
+  heartbeat while it holds the event).
 
 ## Testing a plugin
 

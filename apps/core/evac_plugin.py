@@ -2,7 +2,14 @@
 """Core plugin: the always-on platform (audit, settings, modules)."""
 from django.utils.translation import gettext_lazy as _
 
-from .plugins import ModuleSpec, PermissionSpec, PluginManifest, SettingsNamespace, WebhookEventSpec
+from .plugins import (
+    HealthCheckSpec,
+    ModuleSpec,
+    PermissionSpec,
+    PluginManifest,
+    SettingsNamespace,
+    WebhookEventSpec,
+)
 from .registry import Registry
 
 manifest = PluginManifest(key="core", name="EVAC core", version="0.1.0", kind="core")
@@ -18,6 +25,12 @@ def register(r: Registry) -> None:
     from . import alerts
 
     r.outbox_handler(alerts.JOB, alerts.handle_job)
+    from . import health
+
+    r.health_check(HealthCheckSpec(key="outbox", name=str(_("Outbox")), check=health.outbox, scope="both", order=80,
+                                   while_checked_out=True,
+                                   description=str(_("Outgoing deliveries: webhooks, staff alerts, Web Push, "
+                                                     "integrations."))))
     r.module(ModuleSpec(key="core", name=str(_("Core")), required=True, order=0,
                         description=str(_("Accounts, events, roles, audit log, settings and the plugin framework."))))
     r.permissions_([

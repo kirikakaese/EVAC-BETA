@@ -10,7 +10,8 @@ It is being built in phases (see [the roadmap](docs/ROADMAP.md)):
 - **Announcements** across screens, push, ntfy, e-mail, Matrix, Telegram, Mastodon and phone *(phase 2)*.
 - **Evacuation and alarm information** that keeps working when the network or the server fails *(phase 3)*.
 - **Integrations** ("extensions"), first of all **DIAL — DECT & IP Administration Layer** *(phase 4)*, and optional
-  modules for program, crew, incidents, crowd control, access, inventory and the helpdesk.
+  modules for program, crew, incidents, crowd control, access, inventory, the helpdesk and a heartbeat that watches
+  screens, nodes, bridges and services and checks that the control room is staffed.
 
 **Available now (phase 0, foundation):** multi-event platform with events and lifecycle, reusable venues,
 accounts with e-mail login, invitations, OpenID Connect SSO, TOTP and WebAuthn two-factor authentication,

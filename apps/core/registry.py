@@ -23,6 +23,7 @@ from .plugins import (
     EvacTriggerSpec,
     EventHook,
     ExtensionSpec,
+    HealthCheckSpec,
     LayoutCheck,
     LayoutTemplateSpec,
     MapLayerSpec,
@@ -85,6 +86,7 @@ class Registry:
         self.staff_cards: dict[str, StaffCardSpec] = {}
         self.dashboard_panels: dict[str, DashboardPanelSpec] = {}
         self.mqtt_topics: dict[str, MqttTopicSpec] = {}
+        self.health_checks: dict[str, HealthCheckSpec] = {}
         self.editor_choices_: dict[str, tuple[str, Callable[[Any], Any]]] = {}
         self.pack_sections: dict[str, PackSectionSpec] = {}
         self.anchor_sources: dict[str, TimeAnchorSpec] = {}
@@ -246,6 +248,10 @@ class Registry:
     def mqtt_topic(self, spec: MqttTopicSpec) -> None:
         """MQTT messages routed to a module by the MQTT extension (ADR-0039)."""
         self._add(self.mqtt_topics, spec.key, spec, "MQTT topic")
+
+    def health_check(self, spec: HealthCheckSpec) -> None:
+        """Something the heartbeat module watches and alerts on (ADR-0052)."""
+        self._add(self.health_checks, spec.key, spec, "health check")
 
     def websocket_route(self, route: Any) -> None:
         self.websocket_routes.append(route)

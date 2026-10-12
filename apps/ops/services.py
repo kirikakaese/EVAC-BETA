@@ -331,6 +331,15 @@ def sink(event_type: str, payload: Any, event: Any) -> None:
     elif event_type == "inventory.overdue":
         text = _("Not returned: %(i)s %(n)s (%(b)s)") % {"i": p.get("item", "?"), "n": p.get("name", ""),
                                                         "b": p.get("borrower", "?")}
+    elif event_type == "heartbeat.down":
+        text, important = _("Down: %(l)s (%(c)s)") % {"l": p.get("label", "?"), "c": p.get("check_name", "?")}, True
+        if p.get("detail"):
+            text += f" – {p['detail']}"
+    elif event_type == "heartbeat.recovered":
+        text = _("Back up: %(l)s (%(c)s)") % {"l": p.get("label", "?"), "c": p.get("check_name", "?")}
+    elif event_type == "heartbeat.checkin_missed":
+        text, important = _("Operator check-in missed, escalated to %(r)s") % {
+            "r": ", ".join(p.get("roles") or []) or "?"}, True
     elif event_type == "helpdesk.request" and p.get("category") == "accessibility":
         text = _("Accessibility request: %(s)s") % {"s": p.get("subject", "?")}
     if text:

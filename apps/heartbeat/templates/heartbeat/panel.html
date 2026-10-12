@@ -1,0 +1,5 @@
+{% load i18n %}{% if ctx.can_view %}{% include "heartbeat/_summary.html" with counts=ctx.counts %}
+{% if ctx.problems %}<ul class="plain panel-list">{% for o in ctx.problems %}<li>{% include "heartbeat/_badge.html" with status=o.item.status %} <strong>{{ o.item.label }}</strong>{% if o.item.label != o.spec.name %} <span class="small muted">{{ o.spec.name }}</span>{% endif %}{% if o.item.detail %}<br><span class="small">{{ o.item.detail|truncatechars:120 }}</span>{% endif %}</li>{% endfor %}</ul>
+{% else %}<p class="small muted">{% blocktrans count n=ctx.total %}{{ n }} thing watched, all fine.{% plural %}{{ n }} things watched, all fine.{% endblocktrans %}</p>{% endif %}{% endif %}
+{% if ctx.checkin %}<h3>{% trans "Operator check-in" %}</h3>{% include "heartbeat/_checkin.html" with st=ctx.checkin.status can=ctx.checkin.can source="dashboard" next=ctx.next %}{% endif %}
+{% if ctx.can_view %}<p><a class="btn btn-sm btn-ghost" href="{% url 'heartbeat:index' event.slug %}">{% trans "Heartbeat" %}</a></p>{% endif %}

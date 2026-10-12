@@ -98,6 +98,7 @@ EVAC_BUILTIN_PLUGINS = [
     "apps.inventory",
     "apps.helpdesk",
     "apps.packs",
+    "apps.heartbeat",
     "apps.evacuation",
     "extensions.webhooks",
     "extensions.notify",
@@ -306,6 +307,7 @@ CELERY_BEAT_SCHEDULE = {
     "pretix-sync-due": {"task": "extensions.pretix.tasks.sync_due", "schedule": 60.0},
     "packs-cleanup": {"task": "apps.packs.tasks.cleanup", "schedule": 3600.0},
     "evacuation-process-due": {"task": "apps.evacuation.tasks.process_due", "schedule": 5.0},
+    "heartbeat-evaluate": {"task": "apps.heartbeat.tasks.evaluate", "schedule": 30.0},
 }
 
 # --------------------------------------------------------------------------- REST framework
