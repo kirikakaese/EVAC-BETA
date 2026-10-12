@@ -158,6 +158,10 @@ def _toggle(request, event=None):
         else:
             modules.set_event(event, key, None if value == "inherit" else value == "on", user=request.user,
                               request=request)
+            if value != "off" and not modules.instance_enabled(key):
+                messages.warning(request, _("Saved, but %(m)s stays inactive: it is off for the whole instance. An "
+                                            "instance administrator switches it on under Settings → Modules.")
+                                 % {"m": registry.ensure_loaded().modules[key].name})
         from apps.core.webhooks import emit
 
         emit("module.toggled", {"module": key, "value": value, "level": "event" if event else "instance"},

@@ -6,6 +6,14 @@ released.
 
 ## [Unreleased]
 
+### Changed
+
+- The event's modules page says when a module stays inactive because it is off for the whole instance, with a
+  link to the instance modules page for instance administrators; switching such a module on for an event warns.
+- The evacuation control page and panic page say when changing the state needs two-factor authentication
+  (the user holds the permission, the session is not verified) instead of hiding the controls silently.
+- Codespaces README: how to open the screen player (`/player/`) through a forwarded port.
+
 ### Added — Evacuation alarms to staff channels, pinned fetches (ADR-0049)
 
 - Opt-in setting *Settings → Evacuation → Staff alarm channels* (ntfy, Matrix, Telegram, e-mail): every evacuation
