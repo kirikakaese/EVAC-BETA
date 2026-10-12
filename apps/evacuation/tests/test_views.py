@@ -100,3 +100,14 @@ def test_permission_denied_in_scope(client, event, role, zones):
     services.change(event, "attention", actor=None, source="test")
     assert services.effective_for(event, [str(north.pk)]).state.value == "evacuate"
     assert tf(u).user == u
+
+
+def test_without_two_factor_the_page_says_why(client, admin, event):
+    client.force_login(admin)  # holds the alarm permissions, but the session is not two-factor verified
+    html = page(client)
+    assert "need two-factor authentication" in html and 'href="/accounts/security/"' in html
+    assert 'data-hold="1500"' not in html
+    assert "need two-factor authentication" in page(client, f"{URL}panic/")
+    login_2fa(client, admin)
+    html = page(client)
+    assert "need two-factor authentication" not in html and 'data-hold="1500"' in html
