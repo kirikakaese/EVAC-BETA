@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Heartbeat" %}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% trans "Heartbeat" %}</h1>
+<div class="actions"><a class="btn btn-ghost" href="{% url 'portal:instance_settings_ns' 'heartbeat' %}">{% trans "Settings" %}</a></div></div>
+<section class="card" aria-labelledby="hb-sum"><h2 id="hb-sum">{% trans "This server" %}</h2>
+{% include "heartbeat/_summary.html" with counts=ov.counts %}
+<p class="small muted">{% trans "Services of the whole installation: the background worker, the outbox and venue nodes. Instance admins are notified when something goes down. Each event has its own heartbeat page for its screens, bridges and integrations." %}</p></section>
+{% include "heartbeat/_checks.html" %}
+{% endblock %}

@@ -704,7 +704,67 @@ removed. Event audit logs can be filtered and exported as CSV or JSON (`audit.ex
   connections per process are capped by `REDIS_MAX_CONNECTIONS` (default 1000), queued realtime messages per
   process by `CHANNEL_CAPACITY` (default 20,000).
 
-## 25. Venue node
+## 25. Heartbeat
+
+*Operations → Heartbeat* (`heartbeat.view`) shows everything that should be alive, each with a badge (✓ OK,
+! degraded, ✕ down, ? unknown), details, since when and the last contact
+([ADR-0052](adr/0052-heartbeat.md)). It watches:
+- screens: offline after *Settings → Screens → offline after*;
+- the venue node holding the event;
+- hardware bridges: no heartbeat for 30 s; an input fault shows as degraded;
+- the DIAL link: the last connection test, status fetches and failed broadcasts;
+- other extensions and data feeds (degraded only);
+- the outbox;
+- the background worker (Celery worker and beat).
+
+The control room dashboard has a *Heartbeat* panel with the problems. Instance admins see the server's own
+services (worker, outbox, venue nodes) under *Instance → Heartbeat*.
+
+**Alerts.** Every 30 seconds the worker checks everything.
+- Something that stays down for the grace period (*Settings → Heartbeat → Report “down” after*, default 60 s) is
+  reported once. Short blips are not reported.
+- Who is told:
+  - the members of *Notify roles* (default: control room), in the app and by Web Push;
+  - the *channels* you list (ntfy, Matrix, Telegram, e-mail, DIAL DECT message);
+  - the ops log, as an important line;
+  - integrations, through the webhook event `heartbeat.down`.
+- When it is back up, the same people are told.
+- Many screens going down at once (a power cut) become one message.
+- Alerts are only sent while the event is in the states you choose (default: setup and live). During teardown
+  screens go off on purpose.
+- The heartbeat only watches and reports. It never raises, changes or clears an alarm. Bridges and screens keep
+  their own offline alerts.
+
+If the **background worker** is down, nothing is checked in the background, so it cannot alert about itself: the
+page and the dashboard panel show it as down, and `/metrics` (outbox depth) is the signal for external monitoring.
+
+While the event is **checked out to a venue node**, the node watches its screens and bridges. Central only shows
+the node's sync, the outbox and its worker.
+
+**Alive indicator on screens.** In the layout editor add *Plugin widget → Alive indicator*: a small pulsing dot
+with the current time. When the screen has lost the server for about 35 seconds, the dot turns grey and the text
+says "Offline since 14:05". Settings:
+- a text next to the dot;
+- seconds;
+- pulse on or off. Screens whose browser asks for reduced motion never pulse.
+
+**Operator check-in** (off by default; *Settings → Heartbeat*). It answers the question "is somebody at the
+desk?".
+- Every *interval* (default 30 min), somebody of the *roles that check in* (default: control room) presses
+  **I'm here**. The button is on the heartbeat page, the dashboard panel and the staff app card. People with
+  `heartbeat.manage` can check in too.
+- When a check-in is due, those roles get a reminder.
+- After each further *escalation* period (default 5 min) without a check-in, the next role of the *escalation
+  chain* is notified (default: orga, then admin), also through the channels you list.
+- The next check-in ends the escalation and tells the roles that were alerted.
+- Check-ins are only required while the event is live, unless you switch that off.
+- A check-in needs a connection: it is not queued offline.
+- Every check-in, reminder and escalation is in the audit log.
+
+Roles are given by their short name (`control-room`, `orga`, `admin`, …: see *Roles*). Built-in roles of new
+events have the heartbeat permissions. For existing events, add `heartbeat.*` to the control room role.
+
+## 26. Venue node
 
 A venue node is EVAC on a small computer at the venue (`EVAC_MODE=node`, same image or package). While an event
 is *checked out* to it, screens, announcements, overrides and evacuation run there, with or without the uplink
@@ -726,7 +786,7 @@ is *checked out* to it, screens, announcements, overrides and evacuation run the
 
 `manage.py evac_node status` on the node shows what it holds and what is still to send.
 
-## 26. Backups and upgrades
+## 27. Backups and upgrades
 
 Back up PostgreSQL (`pg_dump`), the `media` volume and `.env` (with `EVAC_SECRETS_KEYS`). Upgrades:
 `git pull && docker compose up --build -d` — migrations run automatically on start of `web`.

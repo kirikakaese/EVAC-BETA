@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.plugins import (
     DashboardPanelSpec,
+    HealthCheckSpec,
     MapLayerSpec,
     ModuleSpec,
     NavEntry,
@@ -93,3 +94,7 @@ def register(r: Registry) -> None:
     r.dashboard_panel(DashboardPanelSpec(key="screens.health", title=str(_("Screens")),
                                          template="screens/panel.html", context=panels.dashboard,
                                          module="screens", order=40, refresh_seconds=15))
+    from . import health
+
+    r.health_check(HealthCheckSpec(key="screens", name=str(_("Screens")), check=health.check, module="screens",
+                                   order=10, description=str(_("Every paired screen by its last heartbeat."))))

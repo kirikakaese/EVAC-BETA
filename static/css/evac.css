@@ -373,6 +373,8 @@ td.empty, .table-wrap .empty { text-align: center; }
 .badge-warn::before, .badge-setup::before, .badge-teardown::before, .badge-requested::before, .badge-pending::before, .badge-registration::before, .badge-processing::before, .badge-new-pin::before { content: "!"; }
 .badge-err::before, .badge-error::before, .badge-rejected::before, .badge-suspended::before, .badge-down::before, .badge-offline::before, .badge-failed::before, .badge-dead::before, .badge-critical::before { content: "\2715"; }
 .badge::before { font-weight: 800; line-height: 1; }
+.badge-unknown { color: var(--fg-muted); }
+.badge-unknown::before { content: "?"; }
 .alert {
   padding: .75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); border-left-width: 4px; background: var(--bg-elev);
 }

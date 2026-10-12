@@ -314,6 +314,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
               f"{e}/announcements/templates/", f"{e}/announcements/levels/", f"{e}/staff/", f"{e}/widgets/",
               f"{e}/evacuation/", f"{e}/evacuation/history/", f"{e}/evacuation/panic/", f"{e}/schedule/",
               f"{e}/ops/", f"{e}/ops/control/", f"{e}/ops/log/", f"{e}/ops/tasks/", f"{e}/crowd/",
+              f"{e}/heartbeat/",
               f"{e}/access/", f"{e}/access/types/",
               f"{e}/crew/", f"{e}/crew/teams/", f"{e}/inventory/", f"{e}/helpdesk/", f"{e}/helpdesk/lost-found/",
               "/offline/", "/", "/about/", "/docs/", "/docs/operator-handbook/", "/search/?q=event",
@@ -341,7 +342,7 @@ def smoke_urls(event_slug: str = "demo", venue_slug: str = "") -> dict[str, list
         f"{e}/settings/extensions/", f"{e}/settings/extensions/webhooks/",
         "/settings/extensions/", "/settings/extensions/webhooks/", "/settings/modules/", "/settings/general/",
         "/settings/general/general/", "/settings/audit/", "/settings/users/", "/events/new/", "/events/import/",
-        "/accounts/privacy/delete/",
+        "/accounts/privacy/delete/", "/settings/heartbeat/", f"{e}/settings/s/heartbeat/",
         # event setup wizard (ADR-0050)
         f"{e}/setup/basics/", f"{e}/setup/venue/", f"{e}/setup/modules/", f"{e}/setup/safety/", f"{e}/setup/team/",
         f"{e}/setup/screens/", f"{e}/setup/done/",
