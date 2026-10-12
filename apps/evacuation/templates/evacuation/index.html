@@ -59,6 +59,7 @@
 <button class="btn btn-sm">{% trans "Save" %}</button></form></td>{% endif %}</tr>{% endfor %}</tbody></table></div>
 {% else %}<p class="muted">{% trans "No screens in this event." %}</p>{% endif %}</section>
 
+{% if needs_two_factor %}<section class="card"><h2>{% trans "Change the state" %}</h2><p class="badge badge-warn">{% trans "Changing the state and running drills need two-factor authentication." %} <a href="{% url 'accounts:security' %}">{% trans "Set it up under Account → Security" %}</a></p></section>{% endif %}
 {% if form %}<form method="post" action="{% url 'evacuation:change' event.slug %}" class="card evac-change">{% csrf_token %}
 <h2>{% trans "Change the state" %}</h2>
 {% include "portal/_form.html" with form=form %}

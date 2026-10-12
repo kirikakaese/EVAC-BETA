@@ -8,6 +8,7 @@
   <tbody>{% for r in rows %}<tr>
     <td><strong>{{ r.spec.name }}</strong>{% if r.spec.required %} <span class="badge">{% trans "required" %}</span>{% endif %}<div class="small muted">{{ r.spec.description }}</div>
       {% if r.spec.depends_on %}<div class="small">{% trans "Needs:" %} {{ r.spec.depends_on|join:", " }}</div>{% endif %}
+      {% if level == "event" and not r.instance %}<div class="small badge badge-warn">{% trans "Off for the whole instance, so it stays inactive here." %}{% if request.user.is_superuser %} <a href="{% url 'portal:instance_modules' %}">{% trans "Switch it on under Settings → Modules" %}</a>{% else %} {% trans "An instance administrator can switch it on." %}{% endif %}</div>{% endif %}
       {% if r.missing_deps %}<div class="small badge badge-warn">{% trans "Inactive because these are off:" %} {{ r.missing_deps|join:", " }}</div>{% endif %}</td>
     <td>{% if r.spec.required %}<span class="badge badge-ok">{% trans "on" %}</span>{% elif level == "instance" %}
       <form method="post">{% csrf_token %}<input type="hidden" name="key" value="{{ r.spec.key }}">
