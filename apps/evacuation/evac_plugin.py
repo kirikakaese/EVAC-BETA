@@ -11,6 +11,8 @@ from apps.core.plugins import (
     PermissionSpec,
     PluginManifest,
     SettingsNamespace,
+    SetupCheckSpec,
+    SetupStatus,
     StaffCardSpec,
     WebhookEventSpec,
 )
@@ -34,6 +36,13 @@ SAFETY_STATEMENT = _(
     "procedures the venue and the authorities require. Screens, networks and power can fail: plan the evacuation "
     "so that it works without EVAC, and keep the venue's own alarms as the alarm that counts.\n\n"
     "Test the evacuation content, the self-test and a drill before the event.")
+
+
+def _statement_check(event: Any, request: Any) -> SetupStatus:
+    """Setup checklist: the safety statement was accepted for the event (the module's pages wait for it)."""
+    from apps.core import modules
+
+    return "todo" if modules.acknowledgement_needed("evacuation", event) else "done"
 
 
 def register(r: Registry) -> None:
@@ -60,6 +69,10 @@ def register(r: Registry) -> None:
                        sensitive=True),
         PermissionSpec("evacuation.manage", str(_("Configure evacuation states"))),
     ])
+    r.setup_check(SetupCheckSpec(
+        key="evacuation_statement", label=str(_("Accept the evacuation safety statement")), check=_statement_check,
+        module="evacuation", order=30, url_name="evacuation:index",
+        help=str(_("Once per event: EVAC complements, and never replaces, the venue's own alarm systems."))))
     r.nav(NavEntry(module="evacuation", label=str(_("Evacuation")), url_name="evacuation:index",
                    permission="evacuation.view", section="event", order=5))
     props: dict[str, Any] = {

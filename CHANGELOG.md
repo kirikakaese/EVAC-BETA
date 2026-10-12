@@ -6,6 +6,22 @@ released.
 
 ## [Unreleased]
 
+### Added — Event setup wizard and checklist (ADR-0050)
+
+- *New event* is now a guided wizard: basics (the event is created here; *Create and skip the wizard* goes straight
+  to it) → venue (link or quick-create) → event type (presets *Conference*, *Festival / camp*, *Venue screens only*
+  or *Custom*, which switch the matching modules on and respect dependencies; modules off for the server are only
+  available to instance admins) → safety (evacuation statement and the user's two-factor status, only when
+  evacuation is chosen or on) → team (invitations) → screens (a gallery template, created and published, and
+  pairing a first screen) → done. Every later step works on the real event at `/e/<event>/setup/<step>/`, can be
+  skipped and is resumed from `/e/<event>/setup/`.
+- Setup checklist on the event overview for organisers: what is still missing, with a link per item, hidden once
+  everything required is done or per event (setting `setup.checklist_hidden`). Items come from plugins:
+  `r.setup_check(SetupCheckSpec(...))` (plugin API 6); venues, evacuation, screens, content, events and the notify
+  extension register theirs.
+- `apps.core.modules`: `blocked_reason`, `with_dependencies`, `switch_on`, `apply_selection` (shared by both
+  wizards); the template gallery accepts `publish=1` and a `next` URL.
+
 ### Added — Evacuation alarms to staff channels, pinned fetches (ADR-0049)
 
 - Opt-in setting *Settings → Evacuation → Staff alarm channels* (ntfy, Matrix, Telegram, e-mail): every evacuation

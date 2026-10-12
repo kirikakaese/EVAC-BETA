@@ -8,11 +8,19 @@ from apps.core.plugins import (
     PermissionSpec,
     PluginManifest,
     SettingsNamespace,
+    SetupCheckSpec,
     WidgetSpec,
 )
 from apps.core.registry import Registry
 
 manifest = PluginManifest(key="content", name="Screen content", version="0.1.0", kind="module")
+
+
+def _published_check(event, request):
+    """Setup checklist: a layout of the event is published (screens show published layouts only)."""
+    from .models import Layout
+
+    return "done" if Layout.objects.filter(event=event, published__isnull=False).exists() else "todo"
 
 
 def register(r: Registry) -> None:
@@ -22,6 +30,9 @@ def register(r: Registry) -> None:
     from . import api, packs, services
 
     r.webhook_sink(services.welcome_on_first_pairing)
+    r.setup_check(SetupCheckSpec(
+        key="layout", label=str(_("Publish a layout")), check=_published_check, module="content", order=45,
+        url_name="content:templates", help=str(_("Start from a template in the event's look."))))
     r.module(ModuleSpec(key="content", name=str(_("Screen content")), order=31, category="screens",
                         depends_on=("screens",),
                         description=str(_("Themes, fonts and the asset library for screens; layouts, widgets "

@@ -3,7 +3,7 @@ from django.urls import path
 
 from apps.accounts import views as account_views
 
-from . import admin_views, docs, staff, views
+from . import admin_views, docs, event_setup, staff, views
 
 app_name = "portal"
 urlpatterns = [
@@ -20,7 +20,7 @@ urlpatterns = [
     path("docs/", docs.index, name="docs_index"),
     path("docs/<slug:slug>/", docs.page, name="docs_page"),
     # instance administration
-    path("events/new/", views.event_create, name="event_create"),
+    path("events/new/", event_setup.create, name="event_create"),
     path("events/import/", views.event_import, name="event_import"),
     path("settings/modules/", admin_views.instance_modules, name="instance_modules"),
     path("settings/general/", admin_views.instance_settings, name="instance_settings"),
@@ -31,6 +31,9 @@ urlpatterns = [
     # event
     path("e/<slug:slug>/", views.event_dashboard, name="event_dashboard"),
     path("e/<slug:slug>/switch/", views.switch_event, name="switch_event"),
+    path("e/<slug:slug>/setup/", event_setup.resume, name="event_setup"),
+    path("e/<slug:slug>/setup/<slug:step>/", event_setup.step_view, name="event_setup_step"),
+    path("e/<slug:slug>/settings/checklist/", event_setup.checklist, name="setup_checklist"),
     path("e/<slug:slug>/settings/", views.event_settings, name="event_settings"),
     path("e/<slug:slug>/settings/lifecycle/", views.event_lifecycle, name="event_lifecycle"),
     path("e/<slug:slug>/settings/clone/", views.event_clone, name="event_clone"),

@@ -26,8 +26,9 @@ from typing import Any, Literal
 #: newer version than this EVAC provides refuses to load. 2: ``layout_check``, ``sync`` and ``node_action``.
 #: 3: ``NotificationChannelSpec.alert``, ``dashboard_panel`` and ``mqtt_topic``. 4: plugin widgets on screens
 #: (``WidgetSpec.element``/``script`` for third-party code, ADR-0045) and ``layout_template`` (ADR-0046).
-#: 5: ``Alert.critical`` (evacuation alarms to staff channels, ADR-0049).
-API_VERSION = 5
+#: 5: ``Alert.critical`` (evacuation alarms to staff channels, ADR-0049). 6: ``setup_check`` (the setup checklist
+#: on the event overview, ADR-0050).
+API_VERSION = 6
 
 PluginKind = Literal["core", "module", "extension"]
 NavSection = Literal["event", "operations", "content", "settings", "admin"]
@@ -242,6 +243,40 @@ class DashboardPanelSpec:
     order: int = 100
     size: str = "normal"
     refresh_seconds: int = 10
+
+
+SetupStatus = Literal["done", "todo"]
+
+
+@dataclass(frozen=True)
+class SetupResult:
+    """What a setup check found: ``status`` plus an optional ``detail`` ("2 of 3 venues") and ``url`` (overrides the
+    spec's link, e.g. the map of the venue that still lacks exits)."""
+
+    status: SetupStatus
+    detail: str = ""
+    url: str = ""
+
+
+@dataclass(frozen=True)
+class SetupCheckSpec:
+    """An item of the setup checklist on the event overview (ADR-0050), e.g. "Pair a screen".
+
+    ``check(event, request)`` returns ``"done"``, ``"todo"``, a ``SetupResult`` or ``None`` (not relevant for this
+    event: hidden). Keep it cheap (one or two queries): it runs on every overview page view of organisers. The
+    item links to ``url(event)`` or, without it, to ``url_name`` reversed with the event slug. Checks of a module
+    that is off are not called. ``optional`` items are recommendations: they are listed while open but do not keep
+    the checklist on the page once every other item is done."""
+
+    key: str
+    label: str
+    check: Callable[[Any, Any], SetupStatus | SetupResult | None]
+    module: str = "core"
+    order: int = 100
+    url_name: str = ""
+    url: Callable[[Any], str] | None = None
+    help: str = ""
+    optional: bool = False
 
 
 @dataclass(frozen=True)
