@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
 from . import services
-from .models import Playlist, PlaylistItem
+from .models import TRANSITION_KEYS, TRANSITION_MAX_MS, Playlist, PlaylistItem
 
 
 def choices(event) -> list[tuple[str, str]]:
@@ -38,10 +38,11 @@ def dump(event, ids: set[str], files) -> list[dict[str, Any]]:
     for pk in sorted(rows, key=lambda k: rows[k].name):
         visit(pk)
     return [{"id": str(pl.pk), "name": pl.name, "description": pl.description, "mode": pl.mode,
-             "default_duration": pl.default_duration,
+             "default_duration": pl.default_duration, "transition": pl.transition, "transition_ms": pl.transition_ms,
              "items": [{"layout": str(i.layout_id) if i.layout_id else None,
                         "child": str(i.child_id) if i.child_id else None, "duration": i.duration, "weight": i.weight,
-                        "tags": i.tags, "condition": i.condition, "enabled": i.enabled} for i in pl.items.all()]}
+                        "tags": i.tags, "condition": i.condition, "enabled": i.enabled, "transition": i.transition,
+                        "transition_ms": i.transition_ms} for i in pl.items.all()]}
             for pl in ordered]
 
 
@@ -53,6 +54,14 @@ def _name(event, base: str) -> str:
     return value
 
 
+def _ms(value: Any, default: int | None) -> int | None:
+    """A transition duration from a pack, clamped (packs from older versions have none)."""
+    try:
+        return max(0, min(int(value), TRANSITION_MAX_MS))
+    except (TypeError, ValueError):
+        return default
+
+
 def load(event, items: list[dict[str, Any]], ctx) -> list[str]:
     from apps.content.models import Layout
 
@@ -62,7 +71,9 @@ def load(event, items: list[dict[str, Any]], ctx) -> list[str]:
         pl = services.save_playlist(
             Playlist(event=event, name=_name(event, str(item.get("name") or _("Imported playlist"))),
                      description=str(item.get("description") or "")[:2000], mode=mode,
-                     default_duration=max(1, min(int(item.get("default_duration") or 10), 86400))),
+                     default_duration=max(1, min(int(item.get("default_duration") or 10), 86400)),
+                     transition=item.get("transition") if item.get("transition") in TRANSITION_KEYS else "none",
+                     transition_ms=_ms(item.get("transition_ms"), 600) or 0),
             actor=ctx.actor, request=ctx.request)
         ctx.ids[str(item["id"])] = str(pl.pk)
         for entry in item.get("items") or []:
@@ -79,7 +90,9 @@ def load(event, items: list[dict[str, Any]], ctx) -> list[str]:
                     playlist=pl, layout=layout, child=child, duration=entry.get("duration") or None,
                     weight=max(1, min(int(entry.get("weight") or 1), 100)),
                     tags=[str(t)[:64] for t in entry.get("tags") or []][:20],
-                    condition=str(entry.get("condition") or "")[:300], enabled=bool(entry.get("enabled", True))),
+                    condition=str(entry.get("condition") or "")[:300], enabled=bool(entry.get("enabled", True)),
+                    transition=entry.get("transition") if entry.get("transition") in TRANSITION_KEYS else "",
+                    transition_ms=_ms(entry.get("transition_ms"), None)),
                     actor=ctx.actor, request=ctx.request)
             except (ValidationError, TypeError, ValueError) as exc:
                 ctx.warn(_("Playlist %(name)s: an item was skipped (%(error)s).")

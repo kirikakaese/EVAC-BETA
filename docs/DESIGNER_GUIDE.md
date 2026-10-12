@@ -8,8 +8,8 @@ Everything about how screens look: themes, fonts, files, layouts and widgets. Al
 
 A theme is a set of **design tokens**: colours for dark and light mode (background, surface, text, muted text,
 primary, accent, success, warning, danger), body and heading font, base text size, type scale, line height,
-letter spacing, spacing, corner radius, shadow, background (colour, gradient or image), logo and slide
-transition. A theme can inherit from another theme; ticked *inherited* fields come from the parent (or the EVAC
+letter spacing, spacing, corner radius, shadow, background (colour, gradient or image), logo and a transition
+style for code elements (`--evac-transition`; slide transitions are set on playlists, see *Motion*). A theme can inherit from another theme; ticked *inherited* fields come from the parent (or the EVAC
 defaults). *Use for this event's screens* switches every screen at once. Layouts can pick a different theme.
 
 In layouts, colours can refer to tokens (*Primary*, *Accent*, …): change the theme and every layout follows.
@@ -35,7 +35,8 @@ editor:
 - Drag to move, drag the handles to resize. Elements snap to the grid and to the edges and centres of other
   elements and the canvas (a pink guide shows it); hold **Alt** to move freely.
 - **Properties** on the right: position and size, content, style (colour, background, font, size, weight,
-  alignment, spacing, border, radius, shadow, opacity), entrance animation, *Show only if*, hidden, locked.
+  alignment, spacing, border, radius, shadow, opacity), entrance effect (see *Motion*), *Show only if*, hidden,
+  locked.
   With several elements selected: align left/centre/right/top/middle/bottom.
 - Keys: arrows nudge (shift: 10×), Delete, Ctrl+Z / Ctrl+Shift+Z undo/redo, Ctrl+D duplicate, Ctrl+C / Ctrl+V
   copy and paste (also between layouts), Ctrl+S save, Escape deselect.
@@ -61,8 +62,37 @@ often as 1, spread evenly). Items can be limited:
 - *From / until*: e.g. a "doors open soon" slide only in the hour before the doors open;
 - a **nested playlist** plays all its items at that position.
 
+A playlist's *Slide transition* (and each item's) decides how the next slide comes in; see *Motion*.
+
 A **schedule** shows a playlist or layout on chosen screens at chosen times; an **override** pushes a message,
 layout or playlist at once. *Preview* shows any screen at any time with the same engine the screens use.
+
+## Motion
+
+Three kinds of motion, all optional and all off for existing content (ADR-0051):
+
+- **Slide transitions** (*Playback → Playlists*): *Slide transition* of a playlist — *None (cut)*, *Fade* (the
+  next slide fades in over the current one), *Slide to the left*, *Slide up*, *Zoom* — with a duration in ms (up to
+  5,000; screens keep it below half of the slide). An item can pick its own transition into its slide, or *None*.
+  A nested playlist uses its own items' transitions. All screens change slides at the same moment, so a
+  transition runs in step across a room.
+- **Entrance effects** (editor, *Animation* in the properties): *Fade*, *Slide up*, *Slide in* (from the right),
+  *Zoom in*, with a duration (up to 10 s) and a delay (up to 60 s) after the slide appears. They play on screens
+  and in previews, not while editing: *Play animations* in the editor toolbar plays them once. Stagger the delays
+  (0, 200, 400 ms) to bring a list in line by line.
+- **Slide timer** (element *Slide timer*): a bar that counts down the time the slide stays on screen. Its colour is
+  the element's *Colour* (default: accent), the track behind it the *Background*; its thickness is the element's
+  height (or width when *Vertical*). Options: *Horizontal* / *Vertical*, the bar *Shrinks* or *Grows*, *Start from
+  the other end* (right instead of left, top instead of bottom), and *Without an end time*: *Show a full bar* or
+  *Hide*. The timer counts only playlist slides that change; a playlist with one slide, a schedule or override that
+  shows a single layout, or the default layout have no end, so the timer shows full (or hides). In the editor and
+  previews it loops over the layout's *Seconds on screen (playlists)* (10 s when empty).
+
+Screens with *Reduce motion* (display setting) or whose device asks for reduced motion show no transitions or
+entrance effects; slide timers still count down, in one-second steps. **Evacuation and emergency content is never
+animated**: an alarm takeover, a full-screen announcement or an emergency override appears at once, cuts a running
+transition short and plays no entrance effects (also when its layout has some); announcement banners and cards
+appear at once as well.
 
 ## Widgets
 
@@ -76,6 +106,7 @@ layout or playlist at once. *Preview* shows any screen at any time with the same
 | QR code | for any text or link (template variables allowed) |
 | Clock, Date | in the event time zone (or another one), synchronised with the server |
 | Countdown | to a date and time, with a text when it is over |
+| Slide timer | a bar that shrinks or grows over the time the slide stays on screen (see *Motion*) |
 | Program | *now and next* on a stage (automatic: the stage in the screen's room), *the day's sessions* or *live changes*; delays, cancellations and room changes show as badges (Program module) |
 
 A widget that fails (missing file, wrong input) shows nothing on a public screen; the editor outlines it.

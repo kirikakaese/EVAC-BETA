@@ -230,8 +230,10 @@ legally required systems ([EVACUATION.md](EVACUATION.md)).
 - `/player/` works behind the early-access password: screens use their device token instead.
 - **Display settings** (*Screen → Display settings*, *Screen group → Display settings*, or per event under
   *Event settings → Display*): rotation, overscan, content scale, keystone, expected resolution (the screen page
-  warns on a mismatch), dim and "screen off" times, sound and volume, the daily reload time and the evacuation
-  role (used in phase 3). Values inherit instance → event → screen groups (in name order) → screen. Use portrait
+  warns on a mismatch), dim and "screen off" times, sound and volume, the daily reload time, the evacuation
+  role (used in phase 3) and *Reduce motion* (no slide transitions or entrance effects on this screen, for
+  example for people who are sensitive to motion or for slow hardware; screens whose device asks for reduced
+  motion behave the same). Values inherit instance → event → screen groups (in name order) → screen. Use portrait
   layouts on screens rotated by 90°.
 - **Remote management** (*Screen → Remote management*): **Take screenshot** (a real capture of the screen; kiosks
   set up with `deploy/kiosk` allow it, other browsers report why not), **Fetch logs** (the player's last 300
@@ -258,7 +260,7 @@ legally required systems ([EVACUATION.md](EVACUATION.md)).
 ## 9. Design & assets
 
 - **Themes** (*Design & assets → Themes*): colours for dark and light mode, fonts, text sizes, spacing, corner
-  radius, shadows, background (colour, gradient, image), logo and slide transitions. A theme can inherit
+  radius, shadows, background (colour, gradient, image) and logo. A theme can inherit
   from another; ticked *inherited* fields come from the parent. *Use for this event's screens* switches every
   screen of the event at once. If two people edit the same theme, the second save is refused with a notice.
 - **Fonts**: upload WOFF2, WOFF, TTF or OTF (variable fonts included). *Keep Latin characters only* makes
@@ -279,6 +281,11 @@ legally required systems ([EVACUATION.md](EVACUATION.md)).
   portrait information, countdown, sponsor slideshow, picture with ticker, wayfinding, and with the program
   module stage screen and day program) shown live in the event's theme. *Use template* creates an ordinary layout
   to change and publish; plugins can add their own templates.
+- **Motion** (ADR-0051): elements can have an *entrance effect* (fade, slide up, slide in, zoom; duration and
+  delay) that plays when the slide appears on a screen or in a preview (*Play animations* in the editor shows it).
+  The **Slide timer** element is a bar that shrinks (or grows) over the time the slide stays on screen in a
+  playlist; for a slide without an end (a single layout, an override) it shows a full bar or hides. Slide
+  transitions are set on playlists (see 10).
 - **Plugin widgets**: installed plugins can bring their own widgets (for example the weather example plugin);
   they appear in the layout editor under *Plugin widget* with a settings form, and screens keep their data for
   offline playback.
@@ -301,6 +308,12 @@ every screen shows. Highest wins:
   duration or the playlist default. Items can be limited to screens with a tag, to a condition
   (`screen.zone == "North"`), to a time window, be paused or be another playlist (nesting). Make one playlist
   the event's default.
+- **Transitions**: a playlist's *Slide transition* (none, fade, slide to the left, slide up, zoom) and its duration
+  (up to 5 s; never more than half a slide) decide how the next slide replaces the current one; each item can
+  choose its own (*Transition* column, or when adding it) or *None* for a cut. New playlists cut, as before.
+  Screens set to *Reduce motion* always cut. **Alarms never wait**: an evacuation, a full-screen announcement or
+  an emergency override appears at once, ends a running transition and plays no effects; announcement banners and
+  cards appear at once too.
 - **Schedules**: "Stage screens 18:00–20:00 → Concert playlist": a playlist or layout for all screens, screen
   groups or single screens, on weekdays and/or a date range, in the event time zone; a slot ending before it
   starts runs past midnight. The **calendar** shows per screen group what wins when in a week.

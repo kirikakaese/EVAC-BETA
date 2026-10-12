@@ -61,7 +61,7 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlaylistItem
         fields = ["id", "layout", "child", "duration", "weight", "tags", "condition", "valid_from", "valid_until",
-                  "enabled"]
+                  "transition", "transition_ms", "enabled"]
         read_only_fields = ["id"]
 
 
@@ -70,7 +70,8 @@ class PlaylistSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Playlist
-        fields = ["id", "name", "description", "mode", "default_duration", "is_default", "items", "updated_at"]
+        fields = ["id", "name", "description", "mode", "default_duration", "transition", "transition_ms",
+                  "is_default", "items", "updated_at"]
         read_only_fields = ["id", "updated_at"]
 
 

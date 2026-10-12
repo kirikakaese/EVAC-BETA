@@ -39,6 +39,18 @@ evac-clock time, evac-date time, evac-countdown span { display: block; white-spa
 @keyframes evac-slide-up { from { opacity: 0; transform: translateY(8cqh); } }
 @keyframes evac-slide-left { from { opacity: 0; transform: translateX(8cqw); } }
 @keyframes evac-zoom { from { opacity: 0; transform: scale(.85); } }
+/* slide timer ("progress", ADR-0051): the bar is scaled from its anchor edge; colour = the element's colour */
+.evac-el-progress { color: var(--evac-color-primary, #4f8cff); }
+.evac-el.evac-off { visibility: hidden; }
+evac-progress { position: relative; overflow: hidden; }
+.evac-progress-bar { position: absolute; inset: 0; display: block; background: currentColor; transform-origin: left center; }
+evac-progress[data-reverse] .evac-progress-bar { transform-origin: right center; }
+evac-progress[data-orientation="vertical"] .evac-progress-bar { transform-origin: center bottom; }
+evac-progress[data-orientation="vertical"][data-reverse] .evac-progress-bar { transform-origin: center top; }
+@keyframes evac-timer-shrink-x { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes evac-timer-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes evac-timer-shrink-y { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes evac-timer-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @media (prefers-reduced-motion: reduce) {
   .evac-stage *, .evac-stage { animation: none !important; transition: none !important; }
 }

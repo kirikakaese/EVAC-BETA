@@ -53,6 +53,7 @@ const TYPE_LABELS: Record<string, string> = {
   text: "Text", richtext: "Rich text", image: "Image", slideshow: "Slideshow", video: "Video", audio: "Audio",
   shape: "Shape", qr: "QR code", clock: "Clock", countdown: "Countdown", date: "Date", code: "Code",
   data: "Data widget", pictogram: "Safety sign", program: "Program", plugin: "Plugin widget",
+  progress: "Slide timer",
 };
 const TOKENS = ["primary", "accent", "text", "muted", "surface", "background", "success", "warning", "danger"];
 const TOKEN_LABELS: Record<string, string> = {
@@ -114,6 +115,8 @@ export class LayoutEditor extends LitElement {
   private rendered: RenderedLayout | null = null;
   private drag: Drag | null = null;
   private clipboardKey = "evac.editor.clipboard";
+  /** the next canvas render plays the entrance effects once ("Play animations", ADR-0051) */
+  private playMotion = false;
 
   createRenderRoot() { return this; }
 
@@ -185,6 +188,14 @@ export class LayoutEditor extends LitElement {
   private redo(): void {
     const next = this.history.redo(this.data);
     if (next) { this.data = next; this.status = "dirty"; }
+  }
+
+  /** Render the canvas once with the entrance effects, as screens show the slide. */
+  playAnimations(): void {
+    this.playMotion = true;
+    this.rendered?.destroy();
+    this.rendered = null;
+    this.requestUpdate();
   }
 
   // ---------------------------------------------------------------- save and publish
@@ -272,7 +283,7 @@ export class LayoutEditor extends LitElement {
 
   private get ctx(): RenderContext {
     return { vars: this.cfg.vars, now: () => Date.now(), timezone: this.cfg.timezone, assets: this.cfg.assets,
-             fonts: this.cfg.fonts, editing: true, nonce: pageNonce(),
+             fonts: this.cfg.fonts, editing: true, nonce: pageNonce(), ...(this.playMotion ? { motion: true } : {}),
              data: new MemoryStore(this.cfg.choices?.widgetData ?? {}),
              program: new ProgramStore(this.cfg.choices?.programData ?? null), plugins: this.plugins };
   }
@@ -284,6 +295,7 @@ export class LayoutEditor extends LitElement {
       this.rendered?.destroy();
       for (const [k, v] of Object.entries(this.cfg.themeVariables ?? {})) host.style.setProperty(k, v);
       this.rendered = renderLayout(host, this.data, this.ctx);
+      this.playMotion = false;
       if (this.zoom) {
         this.rendered.stage.style.width = `${this.data.width * this.zoom}px`;
         this.rendered.stage.style.height = `${this.data.height * this.zoom}px`;
@@ -374,6 +386,7 @@ export class LayoutEditor extends LitElement {
           <select @change=${(e: Event) => { this.zoom = Number((e.target as HTMLSelectElement).value); }}>
             <option value="0">${this.t("Fit")}</option>${[0.25, 0.5, 0.75, 1].map((z) => html`
             <option value=${z}>${z * 100}%</option>`)}</select></label>
+        <button class="btn btn-sm" @click=${() => this.playAnimations()}>${this.t("Play animations")}</button>
         <span class="ed-status" role="status" data-status=${this.status}>${statusText}</span>
         ${this.error && this.status !== "error" ? html`<span class="ed-status" role="status">${this.error}</span>` : nothing}
         <button class="btn btn-sm btn-primary" @click=${() => void this.save()}>${this.t("Save")}</button>
@@ -627,6 +640,15 @@ export class LayoutEditor extends LitElement {
       }
       case "plugin":
         return this.pluginFields(p);
+      case "progress":
+        return html`<p class="small muted">${this.t("Counts down the time the slide stays on screen in a playlist. The editor loops over the layout's seconds on screen.")}</p>
+          ${this.choice("Orientation", String(p.orientation ?? "horizontal"), [["horizontal", "Horizontal"],
+            ["vertical", "Vertical"]], (v) => this.setProp("orientation", v))}
+          ${this.choice("Bar", String(p.mode ?? "shrink"), [["shrink", "Shrinks"], ["grow", "Grows"]],
+            (v) => this.setProp("mode", v))}
+          ${this.check("Start from the other end", p.reverse as boolean, (v) => this.setProp("reverse", v || undefined))}
+          ${this.choice("Without an end time", String(p.untimed ?? "full"), [["full", "Show a full bar"],
+            ["hide", "Hide"]], (v) => this.setProp("untimed", v))}`;
       default:
         return html``;
     }

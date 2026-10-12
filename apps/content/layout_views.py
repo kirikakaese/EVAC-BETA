@@ -34,6 +34,11 @@ EDITOR_STRINGS = [
     "E002 Emergency exit (right)", "E003 First aid", "E007 Assembly point", "Not published.",
     "Safety sign", "Sign", "W001 General warning",
     "Data widget", "Widget",
+    # motion (ADR-0051): slide timer, playing entrance effects in the editor
+    "Slide timer", "Play animations", "Orientation", "Horizontal", "Vertical", "Bar", "Shrinks", "Grows",
+    "Start from the other end", "Without an end time", "Show a full bar", "Hide",
+    ("Counts down the time the slide stays on screen in a playlist. The editor loops over the layout's seconds on "
+     "screen."),
     # program element (ADR-0038)
     "Program", "Show", "Now and next", "The day's sessions", "Live changes", "Stage",
     "Automatic: the screen's room, else all stages", "Rows", "Heading",

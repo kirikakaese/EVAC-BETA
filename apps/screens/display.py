@@ -53,6 +53,10 @@ SCHEMA: dict[str, Any] = {
         "audio": {"type": "boolean", "default": True, "title": "Play sound",
                   "description": "Off mutes every video and audio widget on this screen."},
         "volume": {"type": "integer", "minimum": 0, "maximum": 100, "default": 80, "title": "Volume (%)"},
+        "reduce_motion": {"type": "boolean", "default": False, "title": "Reduce motion",
+                          "description": "No slide transitions or entrance effects (as when the device asks for "
+                                         "reduced motion). Slide timers still count down, in steps. Alarms and "
+                                         "announcements always appear at once."},
         "daily_reload": {**HHMM, "default": "04:00", "title": "Daily reload at (HH:MM)",
                          "description": "Reloads the player once a day to free memory. Empty: never."},
         "evacuation_role": {"type": "string", "enum": ["participant", "info", "excluded"], "default": "participant",

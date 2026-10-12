@@ -11,11 +11,25 @@ import { defineWidgets, EvacWidget } from "./widgets";
 import "./data";  // registers the "data" element (custom widgets)
 import "./program";  // registers the "program" element (ADR-0038)
 import "./plugin";  // registers the "plugin" element (ADR-0045)
+import "./timer";  // registers the "progress" element (slide timer, ADR-0051)
 
 export interface RenderedLayout {
   stage: HTMLElement;
   elements: Map<string, HTMLElement>;
   destroy(): void;
+}
+
+const ENTRANCES = new Set(["fade", "slide-up", "slide-left", "zoom"]);
+/** the layout format's bounds (apps/content/layout_format.py) */
+export const MAX_EFFECT_MS = 10_000;
+export const MAX_DELAY_MS = 60_000;
+
+const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, Number(v) || 0));
+
+/** Whether entrance effects play: not with reduced motion, not for evacuation or urgent content
+ *  (``motion: false``), and in the editor only when asked for (ADR-0051). */
+export function motionOn(ctx: RenderContext): boolean {
+  return !ctx.reducedMotion && (ctx.motion ?? !ctx.editing);
 }
 
 export function frameStyle(node: HTMLElement, el: LayoutElement): void {
@@ -38,10 +52,10 @@ export function renderElement(el: LayoutElement, ctx: RenderContext): HTMLElemen
   frameStyle(box, el);
   applyStyle(box, el.style, ctx);
   const anim = el.animation;
-  if (anim?.enter && anim.enter !== "none" && !ctx.reducedMotion && !ctx.editing) {
+  if (anim?.enter && ENTRANCES.has(anim.enter) && motionOn(ctx)) {
     box.classList.add(`evac-enter-${anim.enter}`);
-    box.style.animationDuration = `${anim.duration ?? 600}ms`;
-    box.style.animationDelay = `${anim.delay ?? 0}ms`;
+    box.style.animationDuration = `${clamp(anim.duration ?? 600, 0, MAX_EFFECT_MS)}ms`;
+    box.style.animationDelay = `${clamp(anim.delay ?? 0, 0, MAX_DELAY_MS)}ms`;
   }
   const tag = `evac-${el.type}`;
   if (!customElements.get(tag)) {
@@ -57,6 +71,8 @@ export function renderElement(el: LayoutElement, ctx: RenderContext): HTMLElemen
 
 export function renderLayout(host: HTMLElement, layout: LayoutData, ctx: RenderContext): RenderedLayout {
   defineWidgets();
+  // slide timers outside the player loop over the layout's own duration (or 10 s)
+  if (ctx.loopMs === undefined) ctx = { ...ctx, loopMs: Math.max(1, layout.duration ?? 10) * 1000 };
   const stage = document.createElement("div");
   stage.className = "evac-stage";
   const bg = layout.background;

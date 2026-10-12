@@ -18,6 +18,8 @@ export interface Entry {
 export interface Item {
   id: string; layout?: string; playlist?: string; duration: number | null; weight: number; tags: string[];
   when: string; from: number | null; until: number | null;
+  /** how this item's slide comes in (ADR-0051); left out: a cut. Not part of the resolution. */
+  transition?: { effect: string; ms: number };
 }
 
 export interface PlaylistData { name?: string; mode: "ordered" | "shuffle" | "weighted"; default: number; items: Item[] }

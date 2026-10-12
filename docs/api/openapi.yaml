@@ -7623,6 +7623,27 @@ components:
           format: date-time
           nullable: true
           title: Until
+        transition:
+          title: Transition into this slide
+          description: |-
+            Nested playlists use their own transitions.
+
+            * `` - Playlist default
+            * `none` - None (cut)
+            * `fade` - Fade
+            * `slide-left` - Slide to the left
+            * `slide-up` - Slide up
+            * `zoom` - Zoom
+          oneOf:
+          - $ref: '#/components/schemas/TransitionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        transition_ms:
+          type: integer
+          maximum: 5000
+          minimum: 0
+          nullable: true
+          title: Transition duration (ms)
+          description: 'Empty: the playlist''s duration.'
         enabled:
           type: boolean
       required:
@@ -7669,6 +7690,27 @@ components:
           format: date-time
           nullable: true
           title: Until
+        transition:
+          title: Transition into this slide
+          description: |-
+            Nested playlists use their own transitions.
+
+            * `` - Playlist default
+            * `none` - None (cut)
+            * `fade` - Fade
+            * `slide-left` - Slide to the left
+            * `slide-up` - Slide up
+            * `zoom` - Zoom
+          oneOf:
+          - $ref: '#/components/schemas/TransitionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        transition_ms:
+          type: integer
+          maximum: 5000
+          minimum: 0
+          nullable: true
+          title: Transition duration (ms)
+          description: 'Empty: the playlist''s duration.'
         enabled:
           type: boolean
     Layout:
@@ -9559,6 +9601,23 @@ components:
           format: int64
           title: Seconds per slide
           description: Used when neither the item nor the layout sets a duration.
+        transition:
+          allOf:
+          - $ref: '#/components/schemas/TransitionEnum'
+          title: Slide transition
+          description: |-
+            How the next slide replaces the current one. Items can choose their own. Off on screens set to reduce motion.
+
+            * `none` - None (cut)
+            * `fade` - Fade
+            * `slide-left` - Slide to the left
+            * `slide-up` - Slide up
+            * `zoom` - Zoom
+        transition_ms:
+          type: integer
+          maximum: 5000
+          minimum: 0
+          title: Transition duration (ms)
         is_default:
           type: boolean
           title: Default playlist of the event
@@ -9906,6 +9965,23 @@ components:
           format: int64
           title: Seconds per slide
           description: Used when neither the item nor the layout sets a duration.
+        transition:
+          allOf:
+          - $ref: '#/components/schemas/TransitionEnum'
+          title: Slide transition
+          description: |-
+            How the next slide replaces the current one. Items can choose their own. Off on screens set to reduce motion.
+
+            * `none` - None (cut)
+            * `fade` - Fade
+            * `slide-left` - Slide to the left
+            * `slide-up` - Slide up
+            * `zoom` - Zoom
+        transition_ms:
+          type: integer
+          maximum: 5000
+          minimum: 0
+          title: Transition duration (ms)
         is_default:
           type: boolean
           title: Default playlist of the event
@@ -9942,6 +10018,23 @@ components:
           format: int64
           title: Seconds per slide
           description: Used when neither the item nor the layout sets a duration.
+        transition:
+          allOf:
+          - $ref: '#/components/schemas/TransitionEnum'
+          title: Slide transition
+          description: |-
+            How the next slide replaces the current one. Items can choose their own. Off on screens set to reduce motion.
+
+            * `none` - None (cut)
+            * `fade` - Fade
+            * `slide-left` - Slide to the left
+            * `slide-up` - Slide up
+            * `zoom` - Zoom
+        transition_ms:
+          type: integer
+          maximum: 5000
+          minimum: 0
+          title: Transition duration (ms)
         is_default:
           type: boolean
           title: Default playlist of the event
@@ -11203,6 +11296,21 @@ components:
           nullable: true
       required:
       - name
+    TransitionEnum:
+      enum:
+      - none
+      - fade
+      - slide-left
+      - slide-up
+      - zoom
+      type: string
+      description: |-
+        * `` - Playlist default
+        * `none` - None (cut)
+        * `fade` - Fade
+        * `slide-left` - Slide to the left
+        * `slide-up` - Slide up
+        * `zoom` - Zoom
     TransitionRequest:
       type: object
       properties:
